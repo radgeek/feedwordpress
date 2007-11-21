@@ -3,11 +3,11 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://projects.radgeek.com/feedwordpress
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 0.99
+Version: 0.991a
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
-Last modified: 2007-09-16 11:13 PDT
+Last modified: 2007-09-25 12:48 PDT
 */
 
 # This uses code derived from:
@@ -27,7 +27,7 @@ Last modified: 2007-09-16 11:13 PDT
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '0.99');
+define ('FEEDWORDPRESS_VERSION', '0.991a');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
@@ -56,6 +56,8 @@ if (FEEDWORDPRESS_DEBUG) :
 	 // make sure FEEDWORDPRESS_DEBUG is FALSE for any site that will be
 	 // used for more than testing purposes!
 	define('MAGPIE_CACHE_AGE', 1);
+else :
+	define('MAGPIE_DEBUG', false);
 endif;
 
 // Note that the rss-functions.php that comes prepackaged with WordPress is
@@ -74,14 +76,14 @@ if (isset($wp_db_version)) :
 	elseif ($wp_db_version >= FWP_SCHEMA_21) : // WordPress 2.1 and 2.2, but not 2.3
 		require_once (ABSPATH . WPINC . '/registration.php'); 		// for wp_insert_user
 		require_once (ABSPATH . 'wp-admin/admin-db.php'); 		// for wp_insert_category 
-	elseif ($wp_db_version >= 3308) : // WordPress 2.0
+	elseif ($wp_db_version >= FWP_SCHEMA_20) : // WordPress 2.0
 		require_once (ABSPATH . WPINC . '/registration-functions.php');	// for wp_insert_user
 		require_once (ABSPATH . 'wp-admin/admin-db.php');		// for wp_insert_category
 	endif;
 endif;
 
 if (function_exists('wp_enqueue_script')) :
-	wp_enqueue_script( 'ajaxcat' );
+	wp_enqueue_script( 'ajaxcat' ); // Provides the handy-dandy new category text box
 endif;
 
 // Magic quotes are just about the stupidest thing ever.
@@ -89,63 +91,60 @@ if (is_array($_POST)) :
 	$fwp_post = stripslashes_deep($_POST);
 endif;
 
-// Is this being loaded from within WordPress 1.5 or later?
-if (isset($wp_version) and $wp_version >= 1.5):
 
-	if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
+if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 
-		# Syndicated items are generally received in output-ready (X)HTML and
-		# should not be folded, crumpled, mutilated, or spindled by WordPress
-		# formatting filters. But we don't want to interfere with filters for
-		# any locally-authored posts, either.
-		#
-		# What WordPress should really have is a way for upstream filters to
-		# stop downstream filters from running at all. Since it doesn't, and
-		# since a downstream filter can't access the original copy of the text
-		# that is being filtered, what we will do here is (1) save a copy of the
-		# original text upstream, before any other filters run, and then (2)
-		# retrieve that copy downstream, after all the other filters run, *if*
-		# this is a syndicated post
+	# Syndicated items are generally received in output-ready (X)HTML and
+	# should not be folded, crumpled, mutilated, or spindled by WordPress
+	# formatting filters. But we don't want to interfere with filters for
+	# any locally-authored posts, either.
+	#
+	# What WordPress should really have is a way for upstream filters to
+	# stop downstream filters from running at all. Since it doesn't, and
+	# since a downstream filter can't access the original copy of the text
+	# that is being filtered, what we will do here is (1) save a copy of the
+	# original text upstream, before any other filters run, and then (2)
+	# retrieve that copy downstream, after all the other filters run, *if*
+	# this is a syndicated post
 
-		add_filter('the_content', 'feedwordpress_preserve_syndicated_content', -10000);
-		add_filter('the_content', 'feedwordpress_restore_syndicated_content', 10000);
+	add_filter('the_content', 'feedwordpress_preserve_syndicated_content', -10000);
+	add_filter('the_content', 'feedwordpress_restore_syndicated_content', 10000);
 	
-		# Filter in original permalinks if the user wants that
-		add_filter('post_link', 'syndication_permalink', 1);
+	# Filter in original permalinks if the user wants that
+	add_filter('post_link', 'syndication_permalink', 1);
 	
-		# Admin menu
-		add_action('admin_menu', 'fwp_add_pages');
+	# Admin menu
+	add_action('admin_menu', 'fwp_add_pages');
 	
-		# Inbound XML-RPC update methods
-		add_filter('xmlrpc_methods', 'feedwordpress_xmlrpc_hook');
+	# Inbound XML-RPC update methods
+	add_filter('xmlrpc_methods', 'feedwordpress_xmlrpc_hook');
 	
-		# Outbound XML-RPC ping reform
-		remove_action('publish_post', 'generic_ping'); // WP 1.5.x
-		remove_action('do_pings', 'do_all_pings', 10, 1); // WP 2.1, 2.2
-		remove_action('publish_post', '_publish_post_hook', 5, 1); // WP 2.3
+	# Outbound XML-RPC ping reform
+	remove_action('publish_post', 'generic_ping'); // WP 1.5.x
+	remove_action('do_pings', 'do_all_pings', 10, 1); // WP 2.1, 2.2
+	remove_action('publish_post', '_publish_post_hook', 5, 1); // WP 2.3
 
-		add_action('publish_post', 'fwp_publish_post_hook', 5, 1);
-		add_action('do_pings', 'fwp_do_pings', 10, 1);
-		add_action('feedwordpress_update', 'fwp_hold_pings');
-		add_action('feedwordpress_update_complete', 'fwp_release_pings');
+	add_action('publish_post', 'fwp_publish_post_hook', 5, 1);
+	add_action('do_pings', 'fwp_do_pings', 10, 1);
+	add_action('feedwordpress_update', 'fwp_hold_pings');
+	add_action('feedwordpress_update_complete', 'fwp_release_pings');
 
-		# Hook in logging functions only if the logging option is ON
-		$update_logging = get_option('feedwordpress_update_logging');
-		if ($update_logging == 'yes') :
-			add_action('post_syndicated_item', 'log_feedwordpress_post', 100);
-			add_action('update_syndicated_item', 'log_feedwordpress_update_post', 100);
-			add_action('feedwordpress_update', 'log_feedwordpress_update_feeds', 100);
-			add_action('feedwordpress_check_feed', 'log_feedwordpress_check_feed', 100);
-			add_action('feedwordpress_update_complete', 'log_feedwordpress_update_complete', 100);
-		endif;
+	# Hook in logging functions only if the logging option is ON
+	$update_logging = get_option('feedwordpress_update_logging');
+	if ($update_logging == 'yes') :
+		add_action('post_syndicated_item', 'log_feedwordpress_post', 100);
+		add_action('update_syndicated_item', 'log_feedwordpress_update_post', 100);
+		add_action('feedwordpress_update', 'log_feedwordpress_update_feeds', 100);
+		add_action('feedwordpress_check_feed', 'log_feedwordpress_check_feed', 100);
+		add_action('feedwordpress_update_complete', 'log_feedwordpress_update_complete', 100);
+	endif;
 		
-		# Cron-less auto-update. Hooray!
-		add_action('init', 'feedwordpress_auto_update');
-	else :
-		# Hook in the menus, which will just point to the upgrade interface
-		add_action('admin_menu', 'fwp_add_pages');
-	endif; // if (!FeedWordPress::needs_upgrade())
-endif;
+	# Cron-less auto-update. Hooray!
+	add_action('init', 'feedwordpress_auto_update');
+else :
+	# Hook in the menus, which will just point to the upgrade interface
+	add_action('admin_menu', 'fwp_add_pages');
+endif; // if (!FeedWordPress::needs_upgrade())
 
 function feedwordpress_auto_update () {
 	if (FeedWordPress::stale()) :
@@ -380,7 +379,7 @@ function fwp_add_pages () {
 function fwp_category_box ($checked, $object) {
 	global $wp_db_version;
 
-	if (isset($wp_db_version) and $wp_db_version >= 3308) : // WordPress 2.x
+	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_20) : // WordPress 2.x
 ?>
 		<div id="poststuff">
 		
@@ -466,18 +465,27 @@ if ($cont):
 		
 		echo "<div class=\"updated\">\n";
 		echo "<ul>\n";
+		$tdelta = NULL;
 		foreach ($update_set as $uri) :
 			if ($uri == '*') : $uri = NULL; endif;
 			$delta = $feedwordpress->update($uri);
+			if (!is_null($delta)) :
+				if (is_null($tdelta)) :
+					$tdelta = $delta;
+				else :
+					$tdelta['new'] += $delta['new'];
+					$tdelta['updated'] += $delta['updated'];
+				endif;
+			else :
+				echo "<li><p><strong>Error:</strong> There was a problem updating <a href=\"$uri\">$uri</a></p></li>\n";
+			endif;
 		endforeach;
 		echo "</ul>\n";
 
-		if (is_null($delta)) :
-			echo "<p><strong>Error:</strong> I don't syndicate <a href=\"$uri\">$uri</a></p>\n";
-		else :
+		if (!is_null($tdelta)) :
 			$mesg = array();
-			if (isset($delta['new'])) : $mesg[] = ' '.$delta['new'].' new posts were syndicated'; endif;
-			if (isset($delta['updated'])) : $mesg[] = ' '.$delta['updated'].' existing posts were updated'; endif;
+			if (isset($delta['new'])) : $mesg[] = ' '.$tdelta['new'].' new posts were syndicated'; endif;
+			if (isset($delta['updated'])) : $mesg[] = ' '.$tdelta['updated'].' existing posts were updated'; endif;
 			echo "<p>Update complete.".implode(' and', $mesg)."</p>";
 			echo "\n"; flush();
 		endif;
@@ -2427,7 +2435,7 @@ class SyndicatedPost {
 
 		$cat_ids = array ();
 		foreach ($cats as $cat_name) :
-			if (preg_match('/{#([0-9]+)}/', $cat_name, $backref)) :
+			if (preg_match('/^{#([0-9]+)}$/', $cat_name, $backref)) :
 				$cat_id = (int) $backref[1];
 				if (function_exists('is_term') and is_term($cat_id, 'category')) :
 					$cat_ids[] = $cat_id;
