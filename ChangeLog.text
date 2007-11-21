@@ -1,6 +1,52 @@
 FeedWordPress Change Log
 ========================
 
+Changes from 0.98 to 0.981
+--------------------------
+
+Version 0.981 is a narrowly targeted bugfix and compatibility release, whose
+main purpose is to resolve a major outstanding problem: the incompatibility
+between version 0.98 of WordPress and the recently released WordPress 2.1.
+
+*	WORDPRESS 2.1 COMPATIBILITY: FeedWordPress is now compatible with
+	WordPress 2.1, as well as retaining its existing support for WordPress
+	2.0 and 1.5. Incompatibilities that resulted in database warnings, fatal
+	errors, and which prevented FeedWordPress from syndicating new posts,
+	have been eliminated.
+
+*	RSS-FUNCTIONS.PHP RENAMED TO RSS.PHP: if you use the upgraded MagpieRSS
+	replacement that's included with FeedWordPress, be sure to note that
+	there are now *two* files to upload from the `OPTIONAL/wp-includes`
+	subdirectory in order to carry out the upgrade: rss-functions.php and
+	rss.php. **It is necessary to upload both files**, due to a change in
+	the file naming scheme in WordPress 2.1, and it is necessary to do so
+	whether you are using WordPress 2.1 or not. If you only upload the
+	`rss-functions.php` file as in previous installations you will not have
+	a working copy of MagpieRSS; the rss.php file contains the actual code.
+
+*	DATE BUG AFFECTING SOME PHP INSTALLATIONS RESOLVED: due to a subtle bug
+	in parse_w3cdtf(), some installations of PHP encountered problems with
+	FeedWordPress's attempt to date posts, which would cause some new posts
+	on Atom feeds to be dated as if they had apppeared in 1969 or 1970
+	(thus, effectively, never appearing on front apge at all). This bug in
+	the date handling should now be fixed.
+
+*	PHP <?=...?> SHORT FORM ELIMINATED: some installations of PHP do not
+	allow the <?=...?> short form for printing PHP values, which was used
+	extensively in the FeedWordPress interface code. Since this could cause
+	fatal errors for users with the wrong installation of PHP, the short
+	form has been replaced with full PHP echo statements, and is no longer
+	used in FeedWordPress.
+
+*	BETTER USER INTERFACE INTEGRATION WITH WORDPRESS 2.x: Some minor changes
+	have been made to help the FeedWordPress interface pages blend in better
+	with the user interface when running under WordPress 2.x.
+
+* 	GLOBAL CATEGORIES BUG RESOLVED: a bug that prevented some users from
+	setting one or more categories to apply to syndicated posts from all
+	feeds (using the checkbox interface under Options --> Syndication) has
+	been resolved.
+
 Changes from 0.97 to 0.98
 --------------------------
 

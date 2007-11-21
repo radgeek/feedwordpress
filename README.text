@@ -2,7 +2,7 @@ FeedWordPress
 =============
 
 * Author: [Charles Johnson](http://radgeek.com/contact)
-* Version: 0.98
+* Version: 0.981
 * Project URI: <http://projects.radgeek.com/feedwordpress>
 * License: GPL 2. See License below for copyright jots and tittles.
 
@@ -20,13 +20,14 @@ originally developed it because I needed a more flexible replacement for
 
 FeedWordPress is designed with flexibility, ease of use, and ease of
 configuration in mind. You'll need a working installation of WordPress (version
-[2.0][] or [1.5][]), and also FTP or SFTP access to your web host. The ability
-to create cron jobs on your web host would be very helpful but it's not
+[2.1][], [2.0][] or [1.5][]), and also FTP or SFTP access to your web host. The
+ability to create cron jobs on your web host would be very helpful but it's not
 absolutely necessary. You *don't* need to tweak any plain-text configuration
 files and you *don't* need shell access to your web host to make it work.
 (Although, I should point out, web hosts that *don't* offer shell access are
 *bad web hosts*.)
 
+  [2.1]: http://wordpress.org/development/2007/01/ella-21/
   [2.0]: http://wordpress.org/development/2005/12/wp2/
   [1.5]: http://wordpress.org/development/2005/02/strayhorn/
 
@@ -34,10 +35,11 @@ Installation
 ------------
 ### Requirements ###
 
-To use version 0.98 of FeedWordPress, you will need:
+To use version 0.981 of FeedWordPress, you will need:
 
-1.	an installed configured copy of WordPress 2.0.x or 1.5.x. (FeedWordPress
-	*will not work* with WP 1.2 or WP MU development builds.)
+1.	an installed and configured copy of WordPress 2.1, 2.0.x, or 1.5.x.
+	(FeedWordPress currently *will not work* with older versions of
+	WordPress, or with WordPress MU.)
 
 2.	FTP or SFTP access to your web host
 
@@ -51,13 +53,13 @@ And you'll probably also want to have either:
 
 #### Upgrades ####
 
-To *upgrade* an existing installation of FeedWordPress to version 0.98:
+To *upgrade* an existing installation of FeedWordPress to version 0.981:
 
 1.	Download the FeedWordPress archive in zip or gzipped tar format and
 	extract the files on your computer. Replace your existing FeedWordPress
-	files with the new files. Be sure to upgrade `rss-functions.php` if you
-	use the optional MagpieRSS upgrade, or don't use it yet but do want to
-	syndicate Atom 1.0 feeds.
+	files with the new files. Be sure to upgrade `rss.php` and
+	`rss-functions.php` if you use the optional MagpieRSS upgrade, or don't
+	use it yet but do want to syndicate Atom 1.0 feeds.
 
 2.	If you are upgrading from version 0.96 or earlier, **immediately** log
 	in to the WordPress Dashboard, and go to Options --> Syndicated. Follow
@@ -88,7 +90,7 @@ To *upgrade* an existing installation of FeedWordPress to version 0.98:
 	and `update-feeds.php` in your WordPress `wp-content` directory.
 	
 2.	(Optional) Upgrade the copy of MagpieRSS packaged with WordPress by
-	installing the new `rss-functions.php` (archived in
+	installing the new `rss.php` and `rss-functions.php` (archived in
 	`OPTIONAL/wp-includes`) into your WordPress `wp-includes` directory.
 	Upgrading MagpieRSS is necessary if you want to take advantage of
 	support for Atom 1.0, multiple post categories, RSS enclosures, and
@@ -109,11 +111,11 @@ To *upgrade* an existing installation of FeedWordPress to version 0.98:
 	provides some light security by keeping passing ruffians from saying
 	"Update all the feeds" at will to your FeedWordPress installation.
 
-5.	Go to Links --> Syndicated to set up the list of sites that you want
-	FeedWordPress to syndicate onto your blog. (If you have the feeds you
-	want to aggregate in a service such as Bloglines, you may prefer to
-	export them to an OPML file and use WordPress's Links --> Import to
-	import them into the contributors category.)
+5.	Go to Blogroll --> Syndicated or Links --> Syndicated to set up the list
+	of sites that you want FeedWordPress to syndicate onto your blog. (If
+	you have the feeds you want to aggregate in a service such as Bloglines,
+	you may prefer to export them to an OPML file and use WordPress's Links
+	--> Import to import them into the contributors category.)
 
 #### Setting Up Feed Updates ####
 
