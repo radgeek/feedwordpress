@@ -4,20 +4,21 @@
  * Author:	Kellan Elliot-McCrea <kellan@protest.net>
  *		WordPress development team <http://www.wordpress.org/>
  *		Charles Johnson <technophilia@radgeek.com>
- * Version:	0.7wp (2005.05.07)
+ * Version:	0.8wp (2005.10.14)
  * License:	GPL
  *
  * Provenance:
  *
  * This is a drop-in replacement for the `rss-functions.php` provided with the
  * WordPress 1.5 distribution, which upgrades the version of MagpieRSS from 0.51
- * to a modification of 0.7. In addition to improved handling of character
- * encoding and other updates, this branch of MagpieRSS 0.7 also supports
- * multiple categorization of posts (using <dc:subject> or <category>). The
- * file is, therefore, derived from four sources: (1) Kellan's MagpieRSS 0.51,
- * (2) the WordPress development team's modifications to MagpieRSS 0.51,
- * (3) Kellan's MagpieRSS 0.7, and (4) Charles Johnson's modifications to
- * MagpieRSS 0.7. All possible because of the GPL. Yay for free software!
+ * to 0.8a. The update improves handling of character encoding, supports
+ * multiple categories for posts (using <dc:subject> or <category>), supports
+ * Atom 1.0, and implements many other useful features. The file is derived from
+ * a combination of (1) the WordPress development team's modifications to
+ * MagpieRSS 0.51 and (2) the latest bleeding-edge updates to the "official"
+ * MagpieRSS software, including Kellan's original work and some substantial
+ * updates by Charles Johnson. All possible through the magic of the GPL. Yay
+ * for free software!
  *
  * Differences from the main branch of MagpieRSS:
  *
@@ -33,37 +34,74 @@
  *
  * 4.	There are two WordPress-specific functions, get_rss() and wp_rss()
  *
- * 5.	New cases added to MagpieRSS::feed_start_element(),
- * 	MagpieRSS::feed_end_element(), and MagpieRSS::normalize() to handle:
+ * Differences from the version of MagpieRSS packaged with WordPress:
  *
- * 	(a) Multiple categories
- *	(b) RSS 2.0 and Atom 0.6+ enclosures
+ * 1.	Support for translation between multiple character encodings. Under
+ *	PHP 5 this is very nicely handled by the XML parsing library. Under PHP
+ *	4 we need to do a little bit of work ourselves, using either iconv or
+ *	mb_convert_encoding if it is not one of the (extremely limited) number
+ *	of character sets that PHP 4's XML module can handle natively.
  *
- * 	Categories are stored in $item['category'], $item['categories'],
- *	$item['dc']['subject'], and $item['dc']['subjects'] (the singular keys
- * 	point to string values for the first category used; the plural keys
- *	point to an array of all the categories the item is in)
+ * 2.	Numerous bug fixes.
  *
- *	Enclosures are stored in the array $item['enclosure'] as suggested
- *	at <http://magpie.laughingmeme.org/blog/?p=101>. So the URL of the first
- *	enclosure is $item['enclosure'][0]['url']; the length is
- *	$item['enclosure'][0]['length']; and the type is
- * 	$item['enclosure'][0]['type']
+ * 3.	The parser class MagpieRSS has been substantially revised to better
+ *	support popular features such as enclosures and multiple categories,
+ *	and to support the new Atom 1.0 IETF standard. (Atom feeds are
+ *	normalized so as to make the data available using terminology from
+ *	either Atom 0.3 or Atom 1.0. Atom 0.3 backward-compatibility is provided
+ *	to allow existing software to easily begin accepting Atom 1.0 data; new
+ *	software SHOULD NOT depend on the 0.3 terminology, but rather use the
+ *	normalization as a convenient way to keep supporting 0.3 feeds while
+ *	they linger in the world.)
  *
- *	Note that these are hacked-in solutions for inherited problems with
- *	MagpieRSS as of version 0.7. They are not guaranteed to be
- *	forward-compatible when/if Kellan solves these problems in the official
- *	Magpie branch in the future. If you have filters (for example) that
- *	depend on either categories or enclosures working as they currently do,
- *	keep an eye on the ChangeLog in future releases.
+ *	The upgraded MagpieRSS can also now handle some content constructs that
+ *	had not been handled well by previous versions of Magpie (such as the
+ *	use of namespaced XHTML in <xhtml:body> or <xhtml:div> elements to
+ *	provide the full content of posts in RSS 2.0 feeds).
+ *
+ *	Unlike previous versions of MagpieRSS, this version can parse multiple
+ *	instances of the same child element in item/entry and channel/feed
+ *	containers. This is done using simple counters next to the element
+ *	names: the first <category> element on an RSS item, for example, can be
+ *	found in $item['category'] (thus preserving backward compatibility); the
+ *	second in $item['category#2'], the third in $item['category#3'], and so
+ *	on. The number of categories applied to the item can be found in
+ *	$item['category#']
+ *
+ *	Also unlike previous versions of MagpieRSS, this version allows you to
+ *	access the values of elements' attributes as well as the content they
+ *	contain. This can be done using a simple syntax inspired by XPath: to
+ *	access the type attribute of an RSS 2.0 enclosure, for example, you
+ *	need only access `$item['enclosure@type']`. A comma-separated list of
+ *	attributes for the enclosure element is stored in `$item['enclosure@']`.
+ *	(This syntax interacts easily with the syntax for multiple categories;
+ *	for example, the value of the `scheme` attribute for the fourth category
+ *	element on a particular item is stored in `$item['category#4@scheme']`.)
+ *
+ *	Note also that this implementation IS NOT backward-compatible with the
+ *	kludges that were used to hack in support for multiple categories and
+ *	for enclosures in upgraded versions of MagpieRSS distributed with
+ *	previous versions of FeedWordPress. If your hacks or filter plugins
+ *	depended on the old way of doing things... well, I warned you that they
+ *	might not be permanent. Sorry!
  */
 
 define('RSS', 'RSS');
 define('ATOM', 'Atom');
-define('MAGPIE_USER_AGENT', 'WordPress/' . $wp_version);
 
-# UPDATED: rss_parse.inc: class MagpieRSS, function map_attrs
-# --- cut here ---
+################################################################################
+## WordPress: make some settings WordPress-appropriate #########################
+################################################################################
+
+define('MAGPIE_USER_AGENT', 'WordPress/' . $wp_version . '(+http://www.wordpress.org)');
+
+$wp_encoding = get_settings('blog_charset');
+define('MAGPIE_OUTPUT_ENCODING', ($wp_encoding?$wp_encoding:'ISO-8859-1'));
+
+################################################################################
+## rss_parse.inc: from MagpieRSS 0.8a ##########################################
+################################################################################
+
 /**
 * Hybrid parser, and object, takes RSS as a string and returns a simple object.
 *
@@ -89,21 +127,26 @@ class MagpieRSS {
     
     // define some constants
     
-    var $_CONTENT_CONSTRUCTS = array('content', 'summary', 'info', 'title', 'tagline', 'copyright');
+    var $_ATOM_CONTENT_CONSTRUCTS = array(
+    	'content', 'summary', 'title', /* common */
+	'info', 'tagline', 'copyright', /* Atom 0.3 */
+    	'rights', 'subtitle', /* Atom 1.0 */
+	);
+    var $_XHTML_CONTENT_CONSTRUCTS = array('body', 'div');
     var $_KNOWN_ENCODINGS    = array('UTF-8', 'US-ASCII', 'ISO-8859-1');
 
     // parser variables, useless if you're not a parser, treat as private
     var $stack              = array(); // parser stack
     var $inchannel          = false;
     var $initem             = false;
-    var $incontent          = false; // if in Atom <content mode="xml"> field 
+    
+    var $incontent          = array(); // non-empty if in namespaced XML content field
+    var $exclude_top	    = false; // true when Atom 1.0 type="xhtml"
+
     var $intextinput        = false;
     var $inimage            = false;
     var $current_namespace  = false;
     
-    var $incategory         = false;
-    var $current_category   = 0;
-
     /**
      *  Set up XML parser, parse source, and return populated RSS object..
      *   
@@ -164,7 +207,7 @@ class MagpieRSS {
                 'feed_start_element', 'feed_end_element' );
                         
         xml_set_character_data_handler( $this->parser, 'feed_cdata' ); 
-    
+	
         $status = xml_parse( $this->parser, $source );
         
         if (! $status ) {
@@ -189,14 +232,16 @@ class MagpieRSS {
         $attrs = array_change_key_case($attrs, CASE_LOWER);
         
         // check for a namespace, and split if found
-        $ns = false;
-        if ( strpos( $element, ':' ) ) {
-            list($ns, $el) = split( ':', $element, 2); 
-        }
-        if ( $ns and $ns != 'rdf' ) {
-            $this->current_namespace = $ns;
-        }
-            
+        if ( empty($this->incontent) ) { // Don't munge content tags
+		$ns = false;
+		if ( strpos( $element, ':' ) ) {
+		    list($ns, $el) = split( ':', $element, 2); 
+		}
+		if ( $ns and $ns != 'rdf' ) {
+		    $this->current_namespace = $ns;
+		}
+	}
+
         # if feed type isn't set, then this is first element of feed
         # identify feed from root element
         #
@@ -211,16 +256,38 @@ class MagpieRSS {
             }
             elseif ( $el == 'feed' ) {
                 $this->feed_type = ATOM;
-                $this->feed_version = $attrs['version'];
+		if ($attrs['xmlns'] == 'http://www.w3.org/2005/Atom') { // Atom 1.0
+			$this->feed_version = '1.0';
+		}
+		else { // Atom 0.3, probably.
+			$this->feed_version = $attrs['version'];
+		}
                 $this->inchannel = true;
             }
             return;
         }
     
-        if ( $el == 'channel' ) 
+        // if we're inside a namespaced content construct, treat tags as text
+        if ( !empty($this->incontent) ) 
+        {
+		if ((count($this->incontent) > 1) or !$this->exclude_top) {
+			// if tags are inlined, then flatten
+			$attrs_str = join(' ', 
+				array_map('map_attrs', 
+				array_keys($attrs), 
+				array_values($attrs) ) );
+				if (strlen($attrs_str) > 0) $attrs_str = ' '.$attrs_str;
+	    
+				$this->append_content( "<{$element}{$attrs_str}>"  );
+		}
+		array_push($this->incontent, $el); // stack for parsing content XML
+        }
+	
+	elseif ( $el == 'channel' ) 
         {
             $this->inchannel = true;
         }
+	
         elseif ($el == 'item' or $el == 'entry' ) 
         {
             $this->initem = true;
@@ -228,12 +295,7 @@ class MagpieRSS {
                 $this->current_item['about'] = $attrs['rdf:about']; 
             }
         }
-        
-	elseif ($this->initem and ($el == 'category' or ($this->current_namespace == 'dc' and $el == 'subject'))) {
-            $this->incategory = true;
-            array_unshift( $this->stack, $el );
-	}
-        
+
         // if we're in the default namespace of an RSS feed,
         //  record textinput or image fields
         elseif ( 
@@ -252,82 +314,87 @@ class MagpieRSS {
             $this->inimage = true;
         }
         
-	# -- Handle RSS 2 enclosures. Suggested by <http://magpie.laughingmeme.org/blog/?p=101>
-        elseif (
-            $this->feed_type == RSS and
-            $el == 'enclosure' )
-        {
-            $this->current_item[$el][] = $attrs;
-            $this->incontent = $el;
-        }
-
-        # handle atom content constructs
-        elseif ( $this->feed_type == ATOM and in_array($el, $this->_CONTENT_CONSTRUCTS) )
-        {
-            // avoid clashing w/ RSS mod_content
-            if ($el == 'content' ) {
-                $el = 'atom_content';
-            }
-            
-            $this->incontent = $el;
-            
-            
-        }
-
-        // if inside an Atom content construct (e.g. content or summary) field treat tags as text
-        elseif ($this->feed_type == ATOM and $this->incontent ) 
-        {
-            // if tags are inlined, then flatten
-            $attrs_str = join(' ', 
-                    array_map('map_attrs', 
-                    array_keys($attrs), 
-                    array_values($attrs) ) );
-            
-            $this->append_content( "<$element $attrs_str>"  );
-                    
-            array_unshift( $this->stack, $el );
-        }
-        
-        // Atom support many links per containging element.
-        // Magpie treats link elements of type rel='alternate'
-        // as being equivalent to RSS's simple link element.
-        //
-        elseif ($this->feed_type == ATOM and $el == 'link' ) 
-        {
-	    # -- CWJ: Treat <link> elements without explicit rel as rel="alternate"
-            if ( !isset($attrs['rel']) or isset($attrs['rel']) and $attrs['rel'] == 'alternate' ) 
-            {
-                $link_el = 'link';
-            }
-	    # -- CWJ: support Atom 0.6+ enclosures
-	    elseif ( isset($attrs['rel']) and $attrs['rel'] == 'enclosure' )
-	    {
-		    $link_el = 'link_' . $attrs['rel'];
-		    
-		    # -- CWJ: Normalize to RSS 2.0 enclosure handling
-		    $n = count($this->current_item[$attrs['rel']]);
-		    $this->current_item[$attrs['rel']][$n] = $attrs;
-		    $this->current_item[$attrs['rel']][$n]['url'] =
-		    	$this->current_item[$attrs['rel']][$n]['href'];
-	    }
-            else {
-                $link_el = 'link_' . $attrs['rel'];
-            }
-            
-            $this->append($link_el, $attrs['href']);
-        }
-
         // set stack[0] to current element
         else {
-            array_unshift($this->stack, $el);
+		// Atom support many links per containing element.
+		// Magpie treats link elements of type rel='alternate'
+		// as being equivalent to RSS's simple link element.
+
+		$atom_link = false;
+		if ($this->feed_type == ATOM and $el == 'link') {
+			$atom_link = true;
+			if (isset($attrs['rel']) and $attrs['rel'] != 'alternate') {
+				$el = $el . "_" . $attrs['rel'];  // pseudo-element names for Atom link elements
+			}
+		}
+		# handle atom content constructs
+		elseif ( $this->feed_type == ATOM and in_array($el, $this->_ATOM_CONTENT_CONSTRUCTS) )
+		{
+			// avoid clashing w/ RSS mod_content
+			if ($el == 'content' ) {
+				$el = 'atom_content';
+			}
+
+			// assume that everything accepts namespaced XML
+			// (that will pass through some non-validating feeds;
+			// but so what? this isn't a validating parser)
+			$this->incontent = array();
+			array_push($this->incontent, $el); // start a stack
+
+			if (
+				isset($attrs['type'])
+				and trim(strtolower($attrs['type']))=='xhtml'
+			) {
+				$this->exclude_top = true;
+			} else {
+				$this->exclude_top = false;
+			}
+		}
+		# Handle inline XHTML body elements --CWJ
+		elseif (
+			($this->current_namespace=='xhtml' or (isset($attrs['xmlns']) and $attrs['xmlns'] == 'http://www.w3.org/1999/xhtml'))
+			and in_array($el, $this->_XHTML_CONTENT_CONSTRUCTS) )
+		{
+			$this->current_namespace = 'xhtml';
+			$this->incontent = array();
+			array_push($this->incontent, $el); // start a stack
+			$this->exclude_top = false;
+		}
+
+		array_unshift($this->stack, $el);
+		$elpath = join('_', array_reverse($this->stack));
+		
+		$n = $this->element_count($elpath);
+		$this->element_count($elpath, $n+1);
+		
+		if ($n > 0) {
+		    array_shift($this->stack);
+		    array_unshift($this->stack, $el.'#'.($n+1));
+		    $elpath = join('_', array_reverse($this->stack));
+		}
+
+		// this makes the baby Jesus cry, but we can't do it in normalize()
+		// because we've made the element name for Atom links unpredictable
+		// by tacking on the relation to the end. -CWJ
+		if ($atom_link and isset($attrs['href'])) {
+			$this->append($elpath, $attrs['href']);
+		}
+		
+		// add attributes
+		if (count($attrs) > 0) {
+			$this->append($elpath.'@', join(',', array_keys($attrs)));
+			foreach ($attrs as $attr => $value) {
+				$this->append($elpath.'@'.$attr, $value);
+			}
+		}
         }
     }
     
 
     
     function feed_cdata ($p, $text) {
-        if ($this->feed_type == ATOM and $this->incontent) 
-        {
+        
+        if ($this->incontent) {
             $this->append_content( $text );
         }
         else {
@@ -339,7 +406,32 @@ class MagpieRSS {
     function feed_end_element ($p, $el) {
         $el = strtolower($el);
 
-        if ( $el == 'item' or $el == 'entry' ) 
+        if ( $this->incontent ) {
+		$opener = array_pop($this->incontent);
+
+		// Don't get bamboozled by namespace voodoo
+		if (strpos($el, ':')) { list($ns, $closer) = split(':', $el); }
+		else { $ns = false; $closer = $el; }
+
+		// Don't get bamboozled by our munging of <atom:content>, either
+		if ($this->feed_type == ATOM and $closer == 'content') {
+			$closer = 'atom_content';
+		}
+
+		// balance tags properly
+		// note:  i don't think this is actually neccessary
+		if ($opener != $closer) {
+			array_push($this->incontent, $opener);
+			$this->append_content("<$el />");
+		} elseif ($this->incontent) { // are we in the content construct still?
+			if ((count($this->incontent) > 1) or !$this->exclude_top) {
+				$this->append_content("</$el>");
+			}
+		} else { // shift the opening of the content construct off the normal stack
+			array_shift( $this->stack );
+		}
+        }
+        elseif ( $el == 'item' or $el == 'entry' ) 
         {
             $this->items[] = $this->current_item;
             $this->current_item = array();
@@ -347,12 +439,7 @@ class MagpieRSS {
 
 	    $this->current_category = 0;
         }
-	elseif ($this->initem and ($el == 'category' or $el == 'dc:subject')) {
-            $this->incategory = false;
-            $this->current_category = $this->current_category + 1;
-            array_shift( $this->stack );
-	}
-        elseif ($this->feed_type == RSS and $this->current_namespace == '' and $el == 'textinput' ) 
+       elseif ($this->feed_type == RSS and $this->current_namespace == '' and $el == 'textinput' ) 
         {
             $this->intextinput = false;
         }
@@ -360,32 +447,17 @@ class MagpieRSS {
         {
             $this->inimage = false;
         }
-        elseif ($this->feed_type == ATOM and in_array($el, $this->_CONTENT_CONSTRUCTS) )
-        {   
-            $this->incontent = false;
-        }
         elseif ($el == 'channel' or $el == 'feed' ) 
         {
             $this->inchannel = false;
         }
-        elseif ($this->feed_type == ATOM and $this->incontent  ) {
-            // balance tags properly
-            // note:  i don't think this is actually neccessary
-            if ( $this->stack[0] == $el ) 
-            {
-                $this->append_content("</$el>");
-            }
-            else {
-                $this->append_content("<$el />");
-            }
-
-            array_shift( $this->stack );
-        }
         else {
-            array_shift( $this->stack );
+		array_shift( $this->stack );
         }
         
-        $this->current_namespace = false;
+	if ( !$this->incontent ) { // Don't munge the namespace after finishing with elements in namespaced content constructs -CWJ
+		$this->current_namespace = false;
+	}
     }
     
     function concat (&$str1, $str2="") {
@@ -395,15 +467,21 @@ class MagpieRSS {
         $str1 .= $str2;
     }
     
-    
-    
     function append_content($text) {
-        if ( $this->initem ) {
-            $this->concat( $this->current_item[ $this->incontent ], $text );
-        }
-        elseif ( $this->inchannel ) {
-            $this->concat( $this->channel[ $this->incontent ], $text );
-        }
+	if ( $this->initem ) {
+		if ($this->current_namespace) {
+			$this->concat( $this->current_item[$this->current_namespace][ reset($this->incontent) ], $text );
+		} else {
+			$this->concat( $this->current_item[ reset($this->incontent) ], $text );
+		}
+	}
+	elseif ( $this->inchannel ) {
+		if ($this->current_namespace) {
+			$this->concat( $this->channel[$this->current_namespace][ reset($this->incontent) ], $text );
+		} else {
+			$this->concat( $this->channel[ reset($this->incontent) ], $text );
+		}
+	}
     }
     
     // smart append - field and namespace aware
@@ -413,17 +491,14 @@ class MagpieRSS {
         }
         if ( $this->current_namespace ) 
         {
-            if ( $this->incategory ) {
-                $this->concat( $this->current_item['categories'][$this->current_category], $text );
-            }
-            elseif ( $this->initem ) {
-                $this->concat(
-                    $this->current_item[ $this->current_namespace ][ $el ], $text );
+            if ( $this->initem ) {
+		    $this->concat(
+		    	$this->current_item[ $this->current_namespace ][ $el ], $text);
             }
             elseif ($this->inchannel) {
-                $this->concat(
-                    $this->channel[ $this->current_namespace][ $el ], $text );
-            }
+		$this->concat(
+		    $this->channel[ $this->current_namespace][ $el ], $text );
+	    }
             elseif ($this->intextinput) {
                 $this->concat(
                     $this->textinput[ $this->current_namespace][ $el ], $text );
@@ -434,12 +509,9 @@ class MagpieRSS {
             }
         }
         else {
-            if ( $this->incategory ) {
-                $this->concat( $this->current_item['categories'][$this->current_category], $text );
-            }
-            elseif ( $this->initem ) {
-                $this->concat(
-                    $this->current_item[ $el ], $text);
+            if ( $this->initem ) {
+		$this->concat(
+		    $this->current_item[ $el ], $text);
             }
             elseif ($this->intextinput) {
                 $this->concat(
@@ -450,50 +522,267 @@ class MagpieRSS {
                     $this->image[ $el ], $text );
             }
             elseif ($this->inchannel) {
-                $this->concat(
-                    $this->channel[ $el ], $text );
+		$this->concat(
+		    $this->channel[ $el ], $text );
             }
             
         }
     }
-    
-    function normalize () {
-        // if atom populate rss fields
-        if ( $this->is_atom() ) {
-            $this->channel['description'] = $this->channel['tagline'];
-            for ( $i = 0; $i < count($this->items); $i++) {
-                $item = $this->items[$i];
-                if ( isset($item['summary']) )
-                    $item['description'] = $item['summary'];
-                if ( isset($item['atom_content']))
-                    $item['content']['encoded'] = $item['atom_content'];
-                
-                $atom_date = (isset($item['issued']) ) ? $item['issued'] : $item['modified'];
-                if ( $atom_date ) {
-                    $epoch = @parse_w3cdtf($item['modified']);
-                    if ($epoch and $epoch > 0) {
-                        $item['date_timestamp'] = $epoch;
-                    }
-                }
 
-                if ( is_array($item['categories']) ) {
-                    $item['category'] = $item['categories'][0];
-                    $item['dc']['subjects'] = $item['categories'];
-                    $item['dc']['subject'] = $item['category'];
-                }
-                
-                $this->items[$i] = $item;
-            }       
+    // smart count - field and namespace aware
+    function element_count ($el, $set = NULL) {
+        if (!$el) {
+            return;
+        }
+        if ( $this->current_namespace ) 
+        {
+            if ( $this->initem ) {
+		    if (!is_null($set)) { $this->current_item[ $this->current_namespace ][ $el.'#' ] = $set; }
+		    $ret = (isset($this->current_item[ $this->current_namespace ][ $el.'#' ]) ?
+		    $this->current_item[ $this->current_namespace ][ $el.'#' ] : 0);
+            }
+            elseif ($this->inchannel) {
+		    if (!is_null($set)) { $this->channel[ $this->current_namespace ][ $el.'#' ] = $set; }
+		    $ret = (isset($this->channel[ $this->current_namespace][ $el.'#' ]) ?
+		    $this->channel[ $this->current_namespace][ $el.'#' ] : 0);
+	    }
+        }
+        else {
+            if ( $this->initem ) {
+		    if (!is_null($set)) { $this->current_item[ $el.'#' ] = $set; }
+		    $ret = (isset($this->current_item[ $el.'#' ]) ?
+		    $this->current_item[ $el.'#' ] : 0);
+            }
+            elseif ($this->inchannel) {
+		    if (!is_null($set)) {$this->channel[ $el.'#' ] = $set; }
+		    $ret = (isset($this->channel[ $el.'#' ]) ?
+		    $this->channel[ $el.'#' ] : 0);
+	    }
+        }
+	return $ret;
+    }
+
+    function normalize_enclosure (&$source, $from, &$dest, $to, $i) {
+	    $id_from = $this->element_id($from, $i);
+	    $id_to = $this->element_id($to, $i);
+	    if (isset($source["{$id_from}@"])) {
+		    foreach (explode(',', $source["{$id_from}@"]) as $attr) {
+			    if ($from=='link_enclosure' and $attr=='href') { // from Atom
+				    $dest["{$id_to}@url"] = $source["{$id_from}@{$attr}"];
+				    $dest["{$id_to}"] = $source["{$id_from}@{$attr}"];
+			    }
+			    elseif ($from=='enclosure' and $attr=='url') { // from RSS
+				    $dest["{$id_to}@href"] = $source["{$id_from}@{$attr}"];
+				    $dest["{$id_to}"] = $source["{$id_from}@{$attr}"];
+			    }
+			    else {
+				    $dest["{$id_to}@{$attr}"] = $source["{$id_from}@{$attr}"];
+			    }
+		    }
+	    }
+    }
+
+    function normalize_atom_person (&$source, $person, &$dest, $to, $i) {
+	    $id = $this->element_id($person, $i);
+	    $id_to = $this->element_id($to, $i);
+
+    	    // Atom 0.3 <=> Atom 1.0
+	    if ($this->feed_version >= 1.0) { $used = 'uri'; $norm = 'url'; }
+	    else { $used = 'url'; $norm = 'uri'; }
+
+	    if (isset($source["{$id}_{$used}"])) {
+		    $dest["{$id_to}_{$norm}"] = $source["{$id}_{$used}"];
+	    }
+
+	    // Atom to RSS 2.0 and Dublin Core
+	    // RSS 2.0 person strings should be valid e-mail addresses if possible.
+	    if (isset($source["{$id}_email"])) {
+		    $rss_author = $source["{$id}_email"];
+	    }
+	    if (isset($source["{$id}_name"])) {
+		    $rss_author = $source["{$id}_name"]
+		    	. (isset($rss_author) ? " <$rss_author>" : '');
+	    }
+	    if (isset($rss_author)) {
+	    	$source[$id] = $rss_author; // goes to top-level author or contributor
+		$dest[$id_to] = $rss_author; // goes to dc:creator or dc:contributor
+	    }
+    }
+
+    // Normalize Atom 1.0 and RSS 2.0 categories to Dublin Core...
+    function normalize_category (&$source, $from, &$dest, $to, $i) {
+	    $cat_id = $this->element_id($from, $i);
+	    $dc_id = $this->element_id($to, $i);
+
+	    // first normalize category elements: Atom 1.0 <=> RSS 2.0
+	    if ( isset($source["{$cat_id}@term"]) ) { // category identifier
+		    $source[$cat_id] = $source["{$cat_id}@term"];
+	    } elseif ( $this->feed_type == RSS ) {
+		    $source["{$cat_id}@term"] = $source[$cat_id];
+	    }
+	    
+	    if ( isset($source["{$cat_id}@scheme"]) ) { // URI to taxonomy
+		    $source["{$cat_id}@domain"] = $source["{$cat_id}@scheme"];
+	    } elseif ( isset($source["{$cat_id}@domain"]) ) {
+		    $source["{$cat_id}@scheme"] = $source["{$cat_id}@domain"];
+	    }
+
+	    // Now put the identifier into dc:subject
+	    $dest[$dc_id] = $source[$cat_id];
+    }
+    
+    // ... or vice versa
+    function normalize_dc_subject (&$source, $from, &$dest, $to, $i) {
+	    $dc_id = $this->element_id($from, $i);
+	    $cat_id = $this->element_id($to, $i);
+
+	    $dest[$cat_id] = $source[$dc_id];		// RSS 2.0
+	    $dest["{$cat_id}@term"] = $source[$dc_id]; 	// Atom 1.0
+    }
+
+    // simplify the logic for normalize(). Makes sure that count of elements and
+    // each of multiple elements is normalized properly. If you need to mess
+    // with things like attributes or change formats or the like, pass it a
+    // callback to handle each element.
+    function normalize_element (&$source, $from, &$dest, $to, $via = NULL) {
+	    if (isset($source[$from]) or isset($source["{$from}#"])) {
+		    if (isset($source["{$from}#"])) {
+		    	$n = $source["{$from}#"];
+		    	$dest["{$to}#"] = $source["{$from}#"];
+		    }
+		    else { $n = 1; }
+
+		    for ($i = 1; $i <= $n; $i++) {
+			    if (isset($via)) { // custom callback for ninja attacks
+				    $this->{$via}($source, $from, $dest, $to, $i);
+			    }
+			    else { // just make it the same
+				    $from_id = $this->element_id($from, $i);
+				    $to_id = $this->element_id($to, $i);
+				    $dest[$to_id] = $source[$from_id];
+			    }
+		    }
+	    }
+    }
+
+    function normalize () {
+        // if atom populate rss fields and normalize 0.3 and 1.0 feeds
+        if ( $this->is_atom() ) {
+		// Atom 1.0 elements <=> Atom 0.3 elements (Thanks, o brilliant wordsmiths of the Atom 1.0 standard!)
+		if ($this->feed_version < 1.0) {
+			$this->normalize_element($this->channel, 'tagline', $this->channel, 'subtitle');
+			$this->normalize_element($this->channel, 'copyright', $this->channel, 'rights');
+			$this->normalize_element($this->channel, 'modified', $this->channel, 'updated');
+		} else {
+			$this->normalize_element($this->channel, 'subtitle', $this->channel, 'tagline');
+			$this->normalize_element($this->channel, 'rights', $this->channel, 'copyright');
+			$this->normalize_element($this->channel, 'updated', $this->channel, 'modified');
+		}
+		$this->normalize_element($this->channel, 'author', $this->channel['dc'], 'creator', 'normalize_atom_person');
+		$this->normalize_element($this->channel, 'contributor', $this->channel['dc'], 'contributor', 'normalize_atom_person');
+
+		// Atom elements to RSS elements
+		$this->normalize_element($this->channel, 'subtitle', $this->channel, 'description');
+		
+		if ( isset($this->channel['logo']) ) {
+			$this->normalize_element($this->channel, 'logo', $this->image, 'url');
+			$this->normalize_element($this->channel, 'link', $this->image, 'link');
+			$this->normalize_element($this->channel, 'title', $this->image, 'title');
+		}
+
+		for ( $i = 0; $i < count($this->items); $i++) {
+			$item = $this->items[$i];
+
+			// Atom 1.0 elements <=> Atom 0.3 elements
+			if ($this->feed_version < 1.0) {
+				$this->normalize_element($item, 'modified', $item, 'updated');
+				$this->normalize_element($item, 'issued', $item, 'published');
+			} else {
+				$this->normalize_element($item, 'updated', $item, 'modified');
+				$this->normalize_element($item, 'published', $item, 'issued');
+			}
+
+			// "If an atom:entry element does not contain
+			// atom:author elements, then the atom:author elements
+			// of the contained atom:source element are considered
+			// to apply. In an Atom Feed Document, the atom:author
+			// elements of the containing atom:feed element are
+			// considered to apply to the entry if there are no
+			// atom:author elements in the locations described
+			// above." <http://atompub.org/2005/08/17/draft-ietf-atompub-format-11.html#rfc.section.4.2.1>
+			if (!isset($item["author#"])) {
+				if (isset($item["source_author#"])) { // from aggregation source
+					$source = $item;
+					$author = "source_author";
+				} elseif (isset($this->channel["author#"])) { // from containing feed
+					$source = $this->channel;
+					$author = "author";
+				}
+
+				$item["author#"] = $source["{$author}#"];
+				for ($au = 1; $au <= $item["author#"]; $au++) {
+					$id_to = $this->element_id('author', $au);
+					$id_from = $this->element_id($author, $au);
+					
+					$item[$id_to] = $source[$id_from];
+					foreach (array('name', 'email', 'uri', 'url') as $what) {
+						if (isset($source["{$id_from}_{$what}"])) {
+							$item["{$id_to}_{$what}"] = $source["{$id_from}_{$what}"];
+						}
+					}
+				}
+			}
+
+			// Atom elements to RSS elements
+			$this->normalize_element($item, 'author', $item['dc'], 'creator', 'normalize_atom_person');
+			$this->normalize_element($item, 'contributor', $item['dc'], 'contributor', 'normalize_atom_person');
+			$this->normalize_element($item, 'summary', $item, 'description');
+			$this->normalize_element($item, 'atom_content', $item['content'], 'encoded');
+			$this->normalize_element($item, 'link_enclosure', $item, 'enclosure', 'normalize_enclosure');
+
+			// Categories
+			if ( isset($item['category#']) ) { // Atom 1.0 categories to dc:subject and RSS 2.0 categories
+				$this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
+			}
+			elseif ( isset($item['dc']['subject#']) ) { // dc:subject to Atom 1.0 and RSS 2.0 categories
+				$this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
+			}
+
+			// Normalized item timestamp
+			$atom_date = (isset($item['published']) ) ? $item['published'] : $item['updated'];
+			if ( $atom_date ) {
+				$epoch = @parse_w3cdtf($atom_date);
+				if ($epoch and $epoch > 0) {
+					$item['date_timestamp'] = $epoch;
+				}
+			}
+
+			$this->items[$i] = $item;
+		}
         }
         elseif ( $this->is_rss() ) {
-            $this->channel['tagline'] = $this->channel['description'];
+		// RSS elements to Atom elements
+		$this->normalize_element($this->channel, 'description', $this->channel, 'tagline'); // Atom 0.3
+		$this->normalize_element($this->channel, 'description', $this->channel, 'subtitle'); // Atom 1.0 (yay wordsmithing!)
+		$this->normalize_element($this->image, 'url', $this->channel, 'logo');
+
             for ( $i = 0; $i < count($this->items); $i++) {
                 $item = $this->items[$i];
-                if ( isset($item['description']))
-                    $item['summary'] = $item['description'];
-                if ( isset($item['content']['encoded'] ) )
-                    $item['atom_content'] = $item['content']['encoded'];
-                
+		
+		// RSS elements to Atom elements
+		$this->normalize_element($item, 'description', $item, 'summary');
+                $this->normalize_element($item['content'], 'encoded', $item, 'atom_content');
+		$this->normalize_element($item, 'enclosure', $item, 'link_enclosure', 'normalize_enclosure');
+
+		// Categories
+		if ( isset($item['category#']) ) { // RSS 2.0 categories to dc:subject and Atom 1.0 categories
+			$this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
+		}
+		elseif ( isset($item['dc']['subject#']) ) { // dc:subject to Atom 1.0 and RSS 2.0 categories
+			$this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
+		}
+
+		// Normalized item timestamp
                 if ( $this->is_rss() == '1.0' and isset($item['dc']['date']) ) {
                     $epoch = @parse_w3cdtf($item['dc']['date']);
                     if ($epoch and $epoch > 0) {
@@ -505,12 +794,6 @@ class MagpieRSS {
                     if ($epoch > 0) {
                         $item['date_timestamp'] = $epoch;
                     }
-                }
-                
-                if ( is_array($item['categories']) ) {
-                    $item['category'] = $item['categories'][0];
-                    $item['dc']['subjects'] = $item['categories'];
-                    $item['dc']['subject'] = $item['category'];
                 }
 
                 $this->items[$i] = $item;
@@ -651,7 +934,7 @@ class MagpieRSS {
 
     function error ($errormsg, $lvl=E_USER_WARNING) {
         // append PHP's error message if track_errors enabled
-        if ( $php_errormsg ) { 
+        if ( isset($php_errormsg) ) { 
             $errormsg .= " ($php_errormsg)";
         }
         if ( MAGPIE_DEBUG ) {
@@ -668,17 +951,71 @@ class MagpieRSS {
             $this->ERROR = $errormsg;
         }
     }
+
+    // magic ID function for multiple elemenets.
+    // can be called as static MagpieRSS::element_id()
+    function element_id ($el, $counter) {
+	    return $el . (($counter > 1) ? '#'.$counter : '');
+    }
 } // end class RSS
 
 function map_attrs($k, $v) {
     return "$k=\"$v\"";
 }
-# ---- cut here ----
+
+// patch to support medieval versions of PHP4.1.x, 
+// courtesy, Ryan Currie, ryan@digibliss.com
+
+if (!function_exists('array_change_key_case')) {
+	define("CASE_UPPER",1);
+	define("CASE_LOWER",0);
+
+
+	function array_change_key_case($array,$case=CASE_LOWER) {
+       if ($case==CASE_LOWER) $cmd='strtolower';
+       elseif ($case==CASE_UPPER) $cmd='strtoupper';
+       foreach($array as $key=>$value) {
+               $output[$cmd($key)]=$value;
+       }
+       return $output;
+	}
+
+}
+
+################################################################################
+## WordPress: Load in Snoopy from wp-includes ##################################
+################################################################################
 
 require_once( dirname(__FILE__) . '/class-snoopy.php');
 
-# -- UPDATED from rss_fetch.inc: fetch_rss, error, debug, magpie_error
-# --- cut here ---
+################################################################################
+## rss_fetch.inc: from MagpieRSS 0.8a ##########################################
+################################################################################
+
+/*=======================================================================*\
+    Function: fetch_rss: 
+    Purpose:  return RSS object for the give url
+              maintain the cache
+    Input:    url of RSS file
+    Output:   parsed RSS object (see rss_parse.inc)
+
+    NOTES ON CACHEING:  
+    If caching is on (MAGPIE_CACHE_ON) fetch_rss will first check the cache.
+    
+    NOTES ON RETRIEVING REMOTE FILES:
+    If conditional gets are on (MAGPIE_CONDITIONAL_GET_ON) fetch_rss will
+    return a cached object, and touch the cache object upon recieving a
+    304.
+    
+    NOTES ON FAILED REQUESTS:
+    If there is an HTTP error while fetching an RSS object, the cached
+    version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
+\*=======================================================================*/
+
+define('MAGPIE_VERSION', '0.7');
+
+$MAGPIE_ERROR = "";
+
 function fetch_rss ($url) {
     // initialize constants
     init();
@@ -733,7 +1070,7 @@ function fetch_rss ($url) {
         if ( $cache_status == 'HIT' ) {
             $rss = $cache->get( $cache_key );
             if ( isset($rss) and $rss ) {
-            	// should be cache age
+                // should be cache age
                 $rss->from_cache = 1;
                 if ( MAGPIE_DEBUG > 1) {
                 debug("MagpieRSS: Cache HIT", E_USER_NOTICE);
@@ -850,10 +1187,7 @@ function magpie_error ($errormsg="") {
     
     return $MAGPIE_ERROR;   
 }
-# --- cut here ---
 
-# UPDATED FROM: rss_fetch.inc: _fetch_remote_file, _response_to_rss, init
-# --- cut here ---
 /*=======================================================================*\
     Function:   _fetch_remote_file
     Purpose:    retrieve an arbitrary remote file
@@ -952,11 +1286,7 @@ function init () {
     }
 
     if ( !defined('MAGPIE_OUTPUT_ENCODING') ) {
-        # WORDPRESS MODIFICATION: use whatever charset the blog is using
-	# --- cut here ---
-	$wp_encoding = get_settings('blog_charset');
-        define('MAGPIE_OUTPUT_ENCODING', ($wp_encoding?$wp_encoding:'ISO-8859-1'));
-	# --- cut here ---
+        define('MAGPIE_OUTPUT_ENCODING', 'ISO-8859-1');
     }
     
     if ( !defined('MAGPIE_INPUT_ENCODING') ) {
@@ -972,11 +1302,8 @@ function init () {
     }
     
     if ( !defined('MAGPIE_USER_AGENT') ) {
-        # WORDPRESS MODIFICATION: send WordPress as user-agent
-	# --- cut here ---
-	$ua = 'WordPress/'. $wp_version . ' (+http://www.wordpress.org';
-	# --- cut here ---
-	
+        $ua = 'MagpieRSS/'. MAGPIE_VERSION . ' (+http://magpierss.sf.net';
+        
         if ( MAGPIE_CACHE_ON ) {
             $ua = $ua . ')';
         }
@@ -996,34 +1323,73 @@ function init () {
         define('MAGPIE_USE_GZIP', true);    
     }
 }
-# --- cut here ---
 
+// NOTE: the following code should really be in Snoopy, or at least
+// somewhere other then rss_fetch!
+
+/*=======================================================================*\
+    HTTP STATUS CODE PREDICATES
+    These functions attempt to classify an HTTP status code
+    based on RFC 2616 and RFC 2518.
+    
+    All of them take an HTTP status code as input, and return true or false
+
+    All this code is adapted from LWP's HTTP::Status.
+\*=======================================================================*/
+
+
+/*=======================================================================*\
+    Function:   is_info
+    Purpose:    return true if Informational status code
+\*=======================================================================*/
 function is_info ($sc) { 
-	return $sc >= 100 && $sc < 200; 
+    return $sc >= 100 && $sc < 200; 
 }
 
+/*=======================================================================*\
+    Function:   is_success
+    Purpose:    return true if Successful status code
+\*=======================================================================*/
 function is_success ($sc) { 
-	return $sc >= 200 && $sc < 300; 
+    return $sc >= 200 && $sc < 300; 
 }
 
+/*=======================================================================*\
+    Function:   is_redirect
+    Purpose:    return true if Redirection status code
+\*=======================================================================*/
 function is_redirect ($sc) { 
-	return $sc >= 300 && $sc < 400; 
+    return $sc >= 300 && $sc < 400; 
 }
 
+/*=======================================================================*\
+    Function:   is_error
+    Purpose:    return true if Error status code
+\*=======================================================================*/
 function is_error ($sc) { 
-	return $sc >= 400 && $sc < 600; 
+    return $sc >= 400 && $sc < 600; 
 }
 
+/*=======================================================================*\
+    Function:   is_client_error
+    Purpose:    return true if Error status code, and its a client error
+\*=======================================================================*/
 function is_client_error ($sc) { 
-	return $sc >= 400 && $sc < 500; 
+    return $sc >= 400 && $sc < 500; 
 }
 
+/*=======================================================================*\
+    Function:   is_client_error
+    Purpose:    return true if Error status code, and its a server error
+\*=======================================================================*/
 function is_server_error ($sc) { 
-	return $sc >= 500 && $sc < 600; 
+    return $sc >= 500 && $sc < 600; 
 }
 
-# WORDPRESS-SPECIFIC: class RSSCache (modified to use WP database)
-# --- cut here ---
+################################################################################
+## rss_cache.inc: from WordPress 1.5 ###########################################
+################################################################################
+
 class RSSCache {
 	var $BASE_CACHE = 'wp-content/cache';	// where the cache files are stored
 	var $MAX_AGE	= 43200;  		// when are files stale, default twelve hours
@@ -1161,52 +1527,74 @@ class RSSCache {
 		}
 	}
 }
-# --- cut here ---
+
+################################################################################
+## rss_utils.inc: from MagpieRSS 0.8a ##########################################
+################################################################################
+
+/*======================================================================*\
+    Function: parse_w3cdtf
+    Purpose:  parse a W3CDTF date into unix epoch
+
+    NOTE: http://www.w3.org/TR/NOTE-datetime
+\*======================================================================*/
 
 function parse_w3cdtf ( $date_str ) {
-	
-	# regex to match wc3dtf
-	$pat = "/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(:(\d{2}))?(?:([-+])(\d{2}):?(\d{2})|(Z))?/";
-	
-	if ( preg_match( $pat, $date_str, $match ) ) {
-		list( $year, $month, $day, $hours, $minutes, $seconds) = 
-			array( $match[1], $match[2], $match[3], $match[4], $match[5], $match[6]);
-		
-		# calc epoch for current date assuming GMT
-		$epoch = gmmktime( $hours, $minutes, $seconds, $month, $day, $year);
-		
-		$offset = 0;
-		if ( $match[10] == 'Z' ) {
-			# zulu time, aka GMT
-		}
-		else {
-			list( $tz_mod, $tz_hour, $tz_min ) =
-				array( $match[8], $match[9], $match[10]);
-			
-			# zero out the variables
-			if ( ! $tz_hour ) { $tz_hour = 0; }
-			if ( ! $tz_min ) { $tz_min = 0; }
-		
-			$offset_secs = (($tz_hour*60)+$tz_min)*60;
-			
-			# is timezone ahead of GMT?  then subtract offset
-			#
-			if ( $tz_mod == '+' ) {
-				$offset_secs = $offset_secs * -1;
-			}
-			
-			$offset = $offset_secs;	
-		}
-		$epoch = $epoch + $offset;
-		return $epoch;
-	}
-	else {
-		return -1;
-	}
+    
+    # regex to match wc3dtf
+    $pat = "/^\s*(\d{4})(-(\d{2})(-(\d{2})(T(\d{2}):(\d{2})(:(\d{2})(\.\d+)?)?(?:([-+])(\d{2}):?(\d{2})|(Z))?)?)?)?\s*\$/";
+    
+    if ( preg_match( $pat, $date_str, $match ) ) {
+        list( $year, $month, $day, $hours, $minutes, $seconds) = 
+            array( $match[1], $match[3], $match[5], $match[7], $match[8], $match[9]);
+
+        # W3C dates can omit the time, the day of the month, or even the month.
+	# Fill in any blanks using information from the present moment. --CWJ
+	$default['hr'] = (int) gmdate('H');
+	$default['day'] = (int) gmdate('d');
+	$default['month'] = (int) gmdate('m');
+
+	if (is_null($hours)) : $hours = $default['hr']; $minutes = 0; $seconds = 0; endif;
+	if (is_null($day)) : $day = $default['day']; endif;
+	if (is_null($month)) : $month = $default['month']; endif;
+
+        # calc epoch for current date assuming GMT
+        $epoch = gmmktime( $hours, $minutes, $seconds, $month, $day, $year);
+        
+        $offset = 0;
+        if ( $match[14] == 'Z' ) {
+            # zulu time, aka GMT
+        }
+        else {
+            list( $tz_mod, $tz_hour, $tz_min ) =
+                array( $match[12], $match[13], $match[14]);
+            
+            # zero out the variables
+            if ( ! $tz_hour ) { $tz_hour = 0; }
+            if ( ! $tz_min ) { $tz_min = 0; }
+        
+            $offset_secs = (($tz_hour*60)+$tz_min)*60;
+            
+            # is timezone ahead of GMT?  then subtract offset
+            #
+            if ( $tz_mod == '+' ) {
+                $offset_secs = $offset_secs * -1;
+            }
+            
+            $offset = $offset_secs; 
+        }
+        $epoch = $epoch + $offset;
+        return $epoch;
+    }
+    else {
+        return -1;
+    }
 }
 
-# WORDPRESS-SPECIFIC: wp_rss (), get_rss ()
-# --- cut here ---
+################################################################################
+## WordPress: wp_rss(), get_rss() ##############################################
+################################################################################
+
 function wp_rss ($url, $num) {
 	//ini_set("display_errors", false); uncomment to suppress php errors thrown if the feed is not returned.
 	$num_items = $num;
@@ -1244,5 +1632,4 @@ function get_rss ($uri, $num = 5) { // Like get posts, but for RSS
 		return false;
 	}
 }
-# --- cut here ---
 ?>

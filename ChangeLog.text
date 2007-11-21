@@ -1,5 +1,173 @@
-Change Log
-==========
+FeedWordPress Change Log
+========================
+
+Changes from 0.96 to 0.97
+-------------------------
+
+*	INSTALLATION PROCEDURE: Some of the changes between 0.96 and 0.97
+	require upgrades to the meta-data stored by FeedWordPress to work
+	properly. Thus, if you are upgrading from 0.96 or earlier to 0.97, most
+	FeedWordPress operations (including updates and template functions)
+	WILL BE DISABLED until you run the upgrade procedure. Fortunately,
+	running the upgrade procedure is easy: just go to either Options -->
+	Syndication or Links --> Syndicated in the WordPress Dashboard and press
+	the button.
+
+*	FEED FORMAT SUPPORT: Support has been added for the Atom 1.0 IETF
+	standard. Several other elements are also newly supported
+	(dcterms:created, dcterms:issued, dcterms:modified, dc:identifier,
+	proper support for the RSS 2.0 guid element, the RSS 2.0 author element,
+	the use of Atom author or Dublin Core dc:creator constructs at the feed
+	level to identify the author of individual items, etc.)
+
+	N.B.: full support of several Atom 1.0 features, such as categories
+	and enclosures, requires you to install the optional rss-functions.php
+	upgrade in your wp-includes directory.
+
+*	BUG FIX: Running `update-feeds.php` from command line or crontab
+	returned "I don't syndicate..." errors. It turns out that WordPress
+	sometimes tramples on the internal PHP superglobals that I depended on
+	to determine whether or not the script was being invoked from the
+	command line. This has been fixed (the variables are now checked
+	*before* WordPress can trample them). Note that `update-feeds.php` has
+	been thoroughly overhauled anyway; see below for details.
+
+*	BUG FIX: Duplicate categories or author names. Fixed two bugs that could
+	create duplicate author and/or category names when the name contained
+	either (a) certain international characters (causing a mismatch between
+	MySQL and PHP's handling of lowercasing text), or (b) characters that
+	have a special meaning in regular expressions (causing MySQL errors when
+	looking for the author or category due to regexp syntax errors). These
+	should now be fixed thanks to careful escaping of names that go into
+	regular expressions and careful matching of lowercasing functions
+	(comparing results from PHP only to other results from PHP, and results
+	from MySQL only to other results from MySQL).
+
+*	BUG FIX: Items dated Decembr 31, 1969 should appear less often. The
+	function for parsing W3C date-time format dates that ships with
+	MagpieRSS can only correctly parse fully-specified dates with a
+	fully-specified time, but valid W3C date-time format dates may omit the
+	time, the day of the month, or even the month. Some feeds in the wild
+	date their items with coarse-grained dates, so the optional
+	`rss-functions.php` upgrade now	includes a more flexible parse_w3cdtf()
+	function that will work with both coarse-grained and fully-specified
+	dates. (If parts of the date or the time are omitted, they are filled in
+	with values based on the current time, so '2005-09-10' will be dated to
+	the current time on that day; '2004' will be dated to this day and time
+	one year ago.
+
+	N.B.: This fix is only available in the optional `rss-functions.php`
+	upgrade.
+
+*	BUG FIX: Evil use of HTTP GET has been undone. The WordPress interface
+	is riddled with	inappropriate (non-idempotent) uses of HTTP GET queries
+	(ordinary links	that make the server do something with significant
+	side-effects, such as deleting a post or a link from the database).
+	FeedWordPress did some of this too, especially in places where it aped
+	the WordPress interface	(e.g. the "Delete" links in Links -->
+	Syndicated). That's bad business, though. I've changed the interface so
+	that all the examples of improper side-effects that I can find now
+	require an HTTP POST to take effect. I think I got pretty much
+	everything; if there's anything that I missed, let me know.
+
+	Further reading: [Sam Ruby 2005-05-06: This Stuff Matters]	(http://www.intertwingly.net/blog/2005/05/06/This-Stuff-Matters)
+
+*	BUG FIX: Categories applied by `cats` setting should no longer prevent
+	category-based filtering from working. In FeedWordPress, you can (1)
+	apply certain categories to all syndicated posts, or all posts from
+	a particular feed; and (2) filter out all posts that don't match one
+	of the categories that are already in the WordPress database (allowing
+	for simple category-based filtering; just load up WordPress with the
+	categories you want to accept, and then tell FeedWordPress not to create
+	new ones). However, the way that (1) and (2) were implemented meant that
+	you couldn't effectively use them together; once you applied a known
+	category to all syndicated posts from a particular feed, it meant that
+	they'd have at least one familiar category (the category or categories
+	you were applying), and that would get all posts past the filter no
+	matter what categories they were originally from.
+	
+	Well, no longer. You can still apply categories to all syndicated posts
+	(using either Syndication --> Options, or the feed-level settings under
+	Links --> Syndicated). But these categories are not applied to the post
+	until *after* it has already passed by the "familiar categories" filter.
+	So now, if you want, you can do category filtering and *then* apply as
+	many categories as you please to all and only posts that pass the filter.
+
+*	BUG FIX: Other minor typos and HTML gaffes were fixed along the way.
+
+*	PERFORMANCE: get_feed_meta() no longer hits the database for information
+	on every call; it now caches link data in memory, so FeedWordPress only
+	goes to the database once for each syndicated link. This may
+	substantially improve performance if your database server resources
+	are tight and your templates make a lot of use of custom settings from
+	get_feed_meta().
+
+*	API CHANGE: Link ID numbers, rather than RSS URIs, are now used to
+	identify the feed from which a post is syndicated when you use template
+	functions such as get_feed_meta(). The practical upshot of this is you
+	can switch feeds, or change the feed address for a particular syndicated
+	site, without breaking your templates for all the posts that were
+	syndicated from the earlier URI.
+
+*	API CHANGE: if you have plugins or templates that make use of the
+	get_feed_meta() function or the $fwp_feedmeta global, note that the
+	data formerly located under the `uri` and `name` fields is now located
+	under the `link/uri` field and the `link/name` field, respectively. Note
+	also that you can access the link ID number for any given feed under the
+	global $fwp_feedmeta['link/id'] (in plugins) or 
+	get_feed_meta('link/id') (in a template in post contexts).
+	
+*	FEATURE: the settings for individual feeds can now be edited using a
+        humane interface (where formerly you had to tweak key-value pairs in the
+	Link Notes section). To edit settings for a feed, pick the feed that you
+	want under Links --> Syndicated and click the Edit link.
+
+*	FEATURE: The "Unsubscribe" button (formerly "Delete") in Links -->
+	Syndicated now offers three options for unsubscribing from a feed: (1)
+	turning off the subscription without deleting the feed data or affecting
+	posts that were syndicated from the feed (this works by setting the Link
+	for the feed as "invisible"); (2) deleting the feed data and all of the
+	posts that were syndicated from the feed; or (3) deleting the feed data
+	and *keeping* the posts that were syndicated from the feed
+	setting the Link to "Invisible" (meaning that it will not be displayed
+	in lists of the site links on the front page, and it won't be checked
+	for updates; (2) deleting the Link and all of the posts that were
+	syndicated from its feed; or (3) deleting the feed data but keeping the
+	posts that were syndicated (which will henceforward be treated as if
+	they were local rather than syndicated posts). (Note that (1) is usually
+	the best option for aggregator sites, unless you want to clean up the
+	results of an error or a test.)
+
+*	FEATURE / BUG FIX: If you have been receiving mysterious "I don't
+	syndicate...", or "(local) HTTP status code was not 200", or "(local)
+	transport error - could not open socket", or "parse error - not well
+	formed" errors, then this update may solve your problems, and if it does
+	*not* solve them, it will at least make the reasons for the problems
+	easier to understand. That's because I've overhauled the way that
+	FeedWordPress goes about updating feeds.
+
+	If you use the command-line PHP scripting method to run scheduled
+	updates, then not much should change for you, except for fewer
+	mysterious errors. If you have done updates by sending periodic HTTP
+	requests to <http://your-blog.com/path/wp-content/update-feeds.php>,
+	then the details have changed somewhat; mostly in such a way as to make
+	things easier on you. See the README file or online documentation on
+	Staying Current for the details.
+
+*	FEATURE: FeedWordPress now features a more sophisticated system for
+	timed updates. Instead of polling *every* subscribed feed for updates
+	*each* time `update-feeds.php` is run, FeedWordPress now keeps track of
+	the last time it polled each feed, and only polls them again after a
+	certain period of time has passed. The amount of time is normally set
+	randomly for each feed, in a period between 30 minutes and 2 hours (so
+	as to stagger updates over time rather than polling all of the feeds at once. However, the length of time between updates can also be set
+	directly by the feed, which brings us to ...
+	
+*	FEATURE: FeedWordPress now respects the settings in the `ttl` and
+	Syndication Module RSS elements. Feeds with these elements set will not
+	be polled any more frequently than they indicate with these feeds unless
+	the user manually forces FeedWordPress to poll the feed (see Links -->
+	Syndicated --> Edit settings).
 
 Changes from 0.95 to 0.96
 -------------------------
