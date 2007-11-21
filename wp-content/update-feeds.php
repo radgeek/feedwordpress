@@ -5,8 +5,7 @@
 # URI: <http://projects.radgeek.com/feedwordpress>
 # Author: Charles Johnson <technophilia@radgeek.com>
 # License: GPL
-# Version: 0.8
-# Last modified: 2005-03-21
+# Version: 2005.04.09
 #
 # USAGE
 # -----
@@ -40,10 +39,8 @@
 require_once ('../wp-config.php');
 require_once (ABSPATH . WPINC . '/class-IXR.php');
 
-# -- CHANGE THESE TO REFLECT YOUR SITE SETTINGS!
-define ('RPC_URI', NULL); // Change this setting to ping a URI of your own devising
-
 # -- Don't change these unless you know what you're doing...
+define ('RPC_URI', NULL); // Change this setting to ping a URI of your own devising
 define ('RPC_MAGIC', 'tag:radgeek.com/projects/feedwordpress/'); // update all
 
 if (is_null(RPC_URI)):

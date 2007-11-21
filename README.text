@@ -2,33 +2,31 @@ FeedWordPress
 =============
 
 * Author: [Charles Johnson](http://www.radgeek.com/contact)
-* Version: 0.9
+* Version: 0.91
 * Project URI: <http://projects.radgeek.com/feedwordpress>
 * License: GPL. See License below for copyright jots and tittles.
 
 Introduction
 ------------
 FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content
-from newsfeeds that you select; if you syndicate several newsfeeds then you can
-WordPress's posts database and templating engine as the back-end of an
-aggregation ("planet") website.
+from newsfeeds that you select into your WordPress blog; if you syndicate
+several newsfeeds then you can WordPress's posts database and templating engine
+as the back-end of an aggregation ("planet") website. I originally developed it
+because I needed a more flexible replacement for [Planet][] to use at
+[Feminist Blogs][].
 
-FeedWordPress is similar in conception to software such as [Planet][]--in fact,
-I started developing it because I needed a more flexible replacement for
-Planet at to run [Feminist Blogs](http://www.feministblogs.org/). Since it
-works on top of WordPress's database and templating system, however, it boasts
-far more flexibility than many other aggregators. It is also designed with ease
-of configuration and use in mind.
+  [Planet]: http://www.planetplanet.org/ "Planet Planet"
+  [Feminist Blogs]: http://www.feministblogs.org/
 
-You'll need a working installation of [WordPress 1.5][] and FTP or SFTP access
-to your web host. The ability to create cron jobs on your web host would be very
-helpful but it's not absolutely necessary. You *don't* need to tweak any
-plain-text configuration files and you *don't* need shell access to your web
-host to make it work. (Although, I should point out, web hosts that *don't*
-offer shell access are *bad web hosts*.)
+FeedWordPress is designed with flexibility, ease of use, and ease of
+configuration in mind. You'll need a working installation of [WordPress 1.5][]
+and FTP or SFTP access to your web host. The ability to create cron jobs on your
+web host would be very helpful but it's not absolutely necessary. You *don't*
+need to tweak any plain-text configuration files and you *don't* need shell
+access to your web host to make it work. (Although, I should point out, web
+hosts that *don't* offer shell access are *bad web hosts*.)
 
   [WordPress 1.5]: http://wordpress.org/development/2005/02/strayhorn/
-  [Planet]: http://www.planetplanet.org/ "Planet Planet"
 
 Installation & Requirements
 ---------------------------
@@ -122,7 +120,7 @@ The URI should be changed out for each feed to point to the appropriate image,
 of course. Then, to use the setting from within a template:
 
 		// In a post context
-		<?php $img = get_feed_meta('face'); if strlen($img) > 0): ?>
+		<?php $img = get_feed_meta('face'); if (strlen($img) > 0): ?>
 		<img src="<?=$img?>" alt="" />
 		<?php endif; ?>
 
@@ -149,14 +147,52 @@ processes posts from that feed. Currently, the special settings are:
 	Link Name field automatically to reflect the title that is reported by a
 	syndicated feed. (So, for example, if one of your contributors changes
 	the title of her weblog, the change will be reflected on your
-	Contributors list after the next update.) To override that behavior for
-	a particular feed (e.g. to force WordPress to use an abbreviated form of
-	the site's title for reasons of space), add a line like this to the Link
-	Notes section:
+	Contributors list after the next update.) To manually set the Link Name
+	and prevent your new name from being overridden by FeedWordPress (so as
+	to, for example, use an abbreviated form of the site's title for reasons
+	of space), change the Link Name to a title of your choosing and then add
+	a line like this to the Link Notes section:
 
 		hardcode name: yes
 	
 	If `hardcode name` is absent, or set to a value other than `yes`,
+	FeedWordPress will take that as a 'no' and follow the default behavior.
+
+-	`hardcode description: (yes|no)`
+
+	A yes/no setting. By default, FeedWordPress updates the value of the
+	Link Description field automatically to reflect the tagline or
+	description that is reported by a syndicated feed. To manually set the
+	Link Description and prevent your new description from being overridden
+	by FeedWordPress (so as to, for example, use an abbreviated form of the
+	site's tagline for reasons of space), change the Link Description to a
+	title of your choosing and then add a line like this to the Link Notes
+	section:
+	
+		hardcode description: yes
+	
+	If `hardcode description` is absent, or set to a value other than `yes`,
+	FeedWordPress will take that as a 'no' and follow the default behavior.
+
+-	`hardcode categories: (yes|no)`
+
+	A yes/no setting. FeedWordPress places each syndicated post in a set of
+	categories within WordPress. It gets that list from two sources:
+	
+	1. Categories that you set explicitly for each feed (see the `cats` setting above)
+	
+	2. Categories that the original author placed the post in on her blog
+	
+	If any of the categories on the list do not exist, they are created automatically.
+	
+	If you want the posts from a particular feed to be placed *only* in the
+	categories that you set manually (see the `cats` setting above), and not
+	in the categories that they are in on the Contributor's blog, then add
+	a line like this to the Link Notes section:
+	
+		hardcode categories: yes
+	
+	If `hardcode categories` is absent, or set to a value other than `yes`,
 	FeedWordPress will take that as a 'no' and follow the default behavior.
 
 -	`post status:` sets the default post status for posts from this feed

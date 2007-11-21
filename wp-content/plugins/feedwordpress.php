@@ -3,15 +3,13 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://projects.radgeek.com/feedwordpress
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 0.9
+Version: 0.91
 Author: Charles Johnson
 Author URI: http://www.radgeek.com/
+License: GPL
+Last modified: 2005-04-09 2:00pm EDT
 */
 
-# Author: Charles Johnson <technophilia@radgeek.com>
-# License: GPL
-# Last modified: 2005-03-25
-#
 # This uses code derived from:
 # -	wp-rss-aggregate.php by Kellan Elliot-McCrea <kellan@protest.net>
 # -	HTTP Navigator 2 by Keyvan Minoukadeh <keyvan@k1m.com>
@@ -27,12 +25,9 @@ Author URI: http://www.radgeek.com/
 # <http://www.zyx.com/blog>, XML-RPC requests should be sent to
 # <http://www.zyx.com/blog/xmlrpc.php>), or see `update-feeds.php`	
 
-# -- Change these as you please
-define ('FEEDWORDPRESS_LOG_UPDATES', true); // Make false if you hate status updates sent to error_log()
-
 # -- Don't change these unless you know what you're doing...
 define ('RPC_MAGIC', 'tag:radgeek.com/projects/feedwordpress/');
-define ('FEEDWORDPRESS_VERSION', '0.9');
+define ('FEEDWORDPRESS_VERSION', '0.91');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
 // Note that the rss-functions.php that comes prepackaged with WordPress is
@@ -40,30 +35,25 @@ define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 // this archive into wp-includes/rss-functions.php
 require_once (ABSPATH . WPINC . '/rss-functions.php');
 
-// Is this being loaded from within WordPress?
-if (!isset($wp_version)):
-	echo "FeedWordPress/".FEEDWORDPRESS_VERSION.": an Atom/RSS aggregator plugin for WordPress 1.5\n";
-	exit;
-endif;
+// Is this being loaded from within WordPress 1.5 or later?
+if (isset($wp_version) and $wp_version >= 1.5):
 
-	# Remove default WordPress auto-paragraph filter.
-	remove_filter('the_content', 'wpautop');
-	remove_filter('the_excerpt', 'wpautop');
-	remove_filter('comment_text', 'wpautop');
+	# Syndicated items should not be folded, crumpled, mutilated, or
+	# spindled by WordPress formatting filters. But we don't want to
+	# interfere with filters for any locally-authored posts.
+	#
+	# What WordPress should really have is a way for upstream filters to
+	# stop downstream filters from running at all. Since it doesn't, and
+	# since a downstream filter can't access the original copy of the text
+	# that is being filtered, what we will do here is (1) save a copy of the
+	# original text upstream, before any other filters run, and then (2)
+	# retrieve that copy downstream, after all the other filters run, if
+	# this is a syndicated post
+	#
+	add_filter('the_content', 'feedwordpress_preserve_syndicated_content', -10000);
+	add_filter('the_content', 'feedwordpress_restore_syndicated_content', 10000);
 
-	# What really should happen here is that we create our own ueber-filter,
-	# to run with the highest possible priority, which would intercept
-	# and check whether or not the post comes from off the wire, and
-	# pre-empty any further formatting filters if it does. Then we could
-	# leave wpautop in peace and not worry about Markdown, Textile, etc.
-	# Sadly, WordPress 1.5 gives you no way to pre-empt downstream filters
-	# (and no way for the furthest downstream filter to recover the original
-	# content, either.)
-
-	# add_filter('the_content', 'feedwordpress_preempt', 10);
-	# add_filter('the_excerpt', 'feedwordpress_preempt', 10);
-	# add_filter('comment_text', 'feedwordpress_preempt', 30);
-
+	# Filter in original permalinks if the user wants that
 	add_filter('post_link', 'syndication_permalink', 1);
 
 	# Admin menu
@@ -76,48 +66,50 @@ endif;
 	remove_action('publish_post', 'generic_ping');
 	add_action('publish_post', 'fwp_catch_ping');
 
-$update_logging = get_settings('feedwordpress_update_logging');
+	$update_logging = get_settings('feedwordpress_update_logging');
 
-# -- Logging status updates to error_log, if you want it
-if ($update_logging == 'yes') :
-	add_action('post_syndicated_item', 'log_feedwordpress_post', 100);
-	add_action('update_syndicated_item', 'log_feedwordpress_update_post', 100);
-	add_action('feedwordpress_update', 'log_feedwordpress_update_feeds', 100);
-	add_action('feedwordpress_check_feed', 'log_feedwordpress_check_feed', 100);
-	add_action('feedwordpress_update_complete', 'log_feedwordpress_update_complete', 100);
-
-	function log_feedwordpress_post ($id) {
-		$post = wp_get_single_post($id);
-		error_log("[".date('Y-m-d H:i:s')."][feedwordpress] posted "
-			."'{$post->post_title}' ({$post->post_date})");
-	}
-
-	function log_feedwordpress_update_post ($id) {
-		$post = wp_get_single_post($id);
-		error_log("[".date('Y-m-d H:i:s')."][feedwordpress] updated "
-			."'{$post->post_title}' ({$post->post_date})"
-			." (as of {$post->post_modified})");
-	}
+	# -- Logging status updates to error_log, if you want it
+	if ($update_logging == 'yes') :
+		add_action('post_syndicated_item', 'log_feedwordpress_post', 100);
+		add_action('update_syndicated_item', 'log_feedwordpress_update_post', 100);
+		add_action('feedwordpress_update', 'log_feedwordpress_update_feeds', 100);
+		add_action('feedwordpress_check_feed', 'log_feedwordpress_check_feed', 100);
+		add_action('feedwordpress_update_complete', 'log_feedwordpress_update_complete', 100);
 	
-	function log_feedwordpress_update_feeds ($uri) {
-		error_log("[".date('Y-m-d H:i:s')."][feedwordpress] update('$uri')");
-	}
+		function log_feedwordpress_post ($id) {
+			$post = wp_get_single_post($id);
+			error_log("[".date('Y-m-d H:i:s')."][feedwordpress] posted "
+				."'{$post->post_title}' ({$post->post_date})");
+		}
 	
-	function log_feedwordpress_check_feed ($feed) {
-		$uri = $feed['url']; $name = $feed['name'];
-		error_log("[".date('Y-m-d H:i:s')."][feedwordpress] Examining $name <$uri>");
-	}
+		function log_feedwordpress_update_post ($id) {
+			$post = wp_get_single_post($id);
+			error_log("[".date('Y-m-d H:i:s')."][feedwordpress] updated "
+				."'{$post->post_title}' ({$post->post_date})"
+				." (as of {$post->post_modified})");
+		}
+		
+		function log_feedwordpress_update_feeds ($uri) {
+			error_log("[".date('Y-m-d H:i:s')."][feedwordpress] update('$uri')");
+		}
+		
+		function log_feedwordpress_check_feed ($feed) {
+			$uri = $feed['uri']; $name = $feed['name'];
+			error_log("[".date('Y-m-d H:i:s')."][feedwordpress] Examining $name <$uri>");
+		}
+	
+		function log_feedwordpress_update_complete ($delta) {
+			$mesg = array();
+			if (isset($delta['new'])) $mesg[] = 'added '.$delta['new'].' new posts';
+			if (isset($delta['updated'])) $mesg[] = 'updated '.$delta['updated'].' existing posts';
+			if (empty($mesg)) $mesg[] = 'nothing changed';
+	
+			error_log("[".date('Y-m-d H:i:s')."][feedwordpress] "
+				.(is_null($delta) ? "I don't syndicate <$uri>"
+				: implode(' and ', $mesg)));
+		}
+	endif;
 
-	function log_feedwordpress_update_complete ($delta) {
-		$mesg = array();
-		if (isset($delta['new'])) $mesg[] = 'added '.$delta['new'].' new posts';
-		if (isset($delta['updated'])) $mesg[] = 'updated '.$delta['updated'].' existing posts';
-		if (empty($mesg)) $mesg[] = 'nothing changed';
-
-		error_log("[".date('Y-m-d H:i:s')."][feedwordpress] "
-			.(is_null($delta) ? "I don't syndicate <$uri>"
-			: implode(' and ', $mesg)));
-	}
 endif;
 
 # -- Template functions for syndication sites
@@ -146,7 +138,7 @@ function get_feed_meta ($key) {
 		$notes = explode("\n", $result);
 		foreach ($notes as $note):
 			list($k, $v) = explode(': ', $note, 2);
-			$meta[$k] = $v;
+			$meta[$k] = trim($v);
 		endforeach;
 		$ret = $meta[$key];
 	endif; /* if */
@@ -161,6 +153,29 @@ function the_syndication_permalink () {
 }
 
 # -- Filters for templates and feeds
+$feedwordpress_the_syndicated_content = NULL;
+
+function feedwordpress_preserve_syndicated_content ($text) {
+	global $feedwordpress_the_syndicated_content;
+
+	if ( is_syndicated() ) :
+		$feedwordpress_the_syndicated_content = $text;
+	else :
+		$feedwordpress_the_syndicated_content = NULL;
+	endif;
+	return $text;
+}
+
+function feedwordpress_restore_syndicated_content ($text) {
+	global $feedwordpress_the_syndicated_content;
+	
+	if ( !is_null($feedwordpress_the_syndicated_content) ) :
+		$text = $feedwordpress_the_syndicated_content;
+	endif;
+
+	return $text;
+}
+
 function syndication_permalink ($permalink = '') {
 	if (get_settings('feedwordpress_munge_permalink') != 'no'):
 		$uri = get_syndication_permalink();
@@ -172,8 +187,8 @@ function syndication_permalink ($permalink = '') {
 
 # -- Admin menu add-ons
 function fwp_add_pages () {
-	add_submenu_page('link-manager.php', 'Syndicated Sites', 'Syndicated', 5, __FILE__, 'fwp_syndication_manage_page');
-	add_options_page('Syndication', 'Syndication', 6, __FILE__, 'fwp_syndication_options_page');
+	add_submenu_page('link-manager.php', 'Syndicated Sites', 'Syndicated', 5, basename(__FILE__), 'fwp_syndication_manage_page');
+	add_options_page('Syndication', 'Syndication', 6, basename(__FILE__), 'fwp_syndication_options_page');
 } // function fwp_add_pages () */
 
 function fwp_syndication_options_page () {
@@ -285,7 +300,7 @@ if ($cont):
 	$links = get_linkobjects(FeedWordPress::link_category_id());
 ?>
 	<div class="wrap">
-	<form action="link-manager.php?page=feedwordpress.php" method="post">
+	<form action="link-manager.php?page=<?=basename(__FILE__)?>" method="post">
 	<h2>Syndicate a new site:</h2>
 	<div>
 	<label for="add-uri">Website or newsfeed:</label>
@@ -296,7 +311,7 @@ if ($cont):
 	</form>
 	</div>
 
-	<form action="link-manager.php?page=feedwordpress.php" method="post">
+	<form action="link-manager.php?page=<?=basename(__FILE__)?>" method="post">
 	<div class="wrap">
 	<h2>Syndicated Sites</h2>
 <?php	$alt_row = true;
@@ -325,7 +340,7 @@ src="../wp-images/smilies/icon_arrow.gif" alt="&rarr;" /></a></td>
 feed assigned</strong></p></td>
 <?		endif; ?>
 <?php		if (($link->user_level <= $user_level)): ?>
-			<td><a href="link-manager.php?page=feedwordpress.php&amp;link_id=<?=$link->link_id?>&amp;action=feedfinder" class="edit"><?=$caption?></a></div></td>
+			<td><a href="link-manager.php?page=<?=basename(__FILE__)?>&amp;link_id=<?=$link->link_id?>&amp;action=feedfinder" class="edit"><?=$caption?></a></div></td>
 			<td><a href="link-manager.php?link_id=<?=$link->link_id?>&amp;action=linkedit" class="edit"><?php _e('Edit')?></a></td>
 			<td><a href="link-manager.php?link_id=<?=$link->link_id?>&amp;action=Delete" onclick="return confirm('You are about to delete this link.\\n  \'Cancel\' to stop, \'OK\' to delete.');" class="delete"><?php _e('Delete'); ?></a></td>
 			<td><input type="checkbox" name="linkcheck[]" value="<?=$link->link_id?>" /></td>
@@ -386,7 +401,7 @@ function fwp_feedfinder_page () {
 				$feed_title = isset($rss->channel['title'])?$rss->channel['title']:$rss->channel['link'];
 				$feed_link = isset($rss->channel['link'])?$rss->channel['link']:'';
 ?>
-				<form action="link-manager.php?page=feedwordpress.php" method="post">
+				<form action="link-manager.php?page=<?=basename(__FILE__)?>" method="post">
 				<fieldset style="clear: both">
 				<legend><?=$rss->feed_type?> <?=$rss->feed_version?> feed</legend>
 
@@ -439,7 +454,7 @@ function fwp_feedfinder_page () {
 ?>
 	</div>
 
-	<form action="link-manager.php?page=feedwordpress.php" method="post">
+	<form action="link-manager.php?page=<?=basename(__FILE__)?>" method="post">
 	<div class="wrap">
 	<h2>Use another feed</h2>
 	<div><label>Feed:</label>
@@ -630,10 +645,17 @@ class FeedWordPress {
 				$notes = explode("\n", $link->link_notes);
 				foreach ($notes as $note):
 					list($key, $value) = explode(": ", $note, 2);
-					if (strlen($key) > 0) $sec[$key] = $value;
+					
+					if (strlen($key) > 0) :
+						$sec[$key] = str_replace (
+							'%newline%',
+							"\n",
+							trim($value) // trim() off the whitespace. Thanks to Ray Lischner for pointing this out.
+						);
+					endif;
 				endforeach;
 
-				$sec['url'] = $link->link_rss;
+				$sec['uri'] = $link->link_rss;
 				$sec['name'] = $link->link_name;
 
 				if (isset($sec['cats'])):
@@ -662,7 +684,7 @@ class FeedWordPress {
 		$delta = NULL;		
 		foreach ($this->feeds as $feed) {
 			if (($uri === $secret)
-			or ($uri === $feed['url'])
+			or ($uri === $feed['uri'])
 			or ($uri === $feed['feed/link'])) {
 				if (is_null($delta)) $delta = array('new' => 0, 'updated' => 0);
 				do_action('feedwordpress_check_feed', array($feed));
@@ -679,7 +701,7 @@ class FeedWordPress {
 	}
 
 	function feed2wp ($wpdb, $f) {
-		$feed = fetch_rss($f['url']);
+		$feed = fetch_rss($f['uri']);
 		$new_count = array('new' => 0, 'updated' => 0);
 
 		$this->update_feed($wpdb, $feed->channel, $f);
@@ -723,43 +745,48 @@ class FeedWordPress {
 		return $matches[1].Relative_URI::resolve($matches[2], $this->_base).$matches[3];
 	} // function FeedWordPress::resolve_relative_uri ()
 	
-	function update_feed ($wpdb, $channel, $f) {
+	function setting_on ($f, $setting) {
 		$affirmo = array ('y', 'yes', 't', 'true', 1);
+		return (isset($f[$setting]) and in_array(strtolower($f[$setting]), $affirmo));
+	}
 	
+	function update_feed ($wpdb, $channel, $f) {
 		$link_id = $f['link_id'];
 
 		if (!isset($channel['id'])) {
-		  $channel['id'] = $f['url'];
+		  $channel['id'] = $f['uri'];
 		}
 
 		$update = array();
-		if (isset($channel['link'])) {
+		if (isset($channel['link'])) :
 			$update[] = "link_url = '".$wpdb->escape($channel['link'])."'";
-		}
-		if (isset($channel['title']) and (!isset($f['hardcode name'])
-		or in_array(trim(strtolower($f['hardcode name'])), $affirmo))) {
+		endif;
+
+		if (!FeedWordPress::setting_on($f, 'hardcode name') and isset($channel['title'])) :
 			$update[] = "link_name = '".$wpdb->escape($channel['title'])."'";
-		}
+		endif;
 
-		if (isset($channel['tagline'])) {
-		  $update[] = "link_description = '".$wpdb->escape($channel['tagline'])."'";
-		} elseif (isset($channel['description'])) {
-		  $update[] = "link_description = '".$wpdb->escape($channel['description'])."'";
-		}
+		if (!FeedWordPress::setting_on($f, 'hardcode description')) :
+			if (isset($channel['tagline'])) :
+				$update[] = "link_description = '".$wpdb->escape($channel['tagline'])."'";
+			elseif (isset($channel['description'])) :
+				$update[] = "link_description = '".$wpdb->escape($channel['description'])."'";
+			endif;
+		endif;
 
-		if (is_array($f['cats'])) {
-		  $f['cats'] = implode(':',$f['cats']);
-		} /* if */
+		if (is_array($f['cats'])) :
+			$f['cats'] = implode(':',$f['cats']);
+		endif;
 
 		$f = array_merge($f, $this->flatten_array($channel));
 
 		# -- A few things we don't want to save in the notes
-		unset($f['link_id']); unset($f['uri']); unset($f['url']);
+		unset($f['link_id']); unset($f['uri']); unset($f['name']);
 
 		$notes = '';
-		foreach ($f as $key => $value) {
-		  $notes .= "${key}: $value\n";
-		}
+		foreach ($f as $key => $value) :
+			$notes .= $key . ": ". str_replace("\n", "%newline%", $value) . "\n";
+		endforeach;
 		$update[] = "link_notes = '".$wpdb->escape($notes)."'";
 
 		$update_set = implode(',', $update);
@@ -823,9 +850,9 @@ class FeedWordPress {
 			endif;
 			
 			if (isset($item['author_url'])):
-				$post['named']['author']['url'] = $item['author_url'];
+				$post['named']['author']['uri'] = $item['author_url'];
 			else:
-				$post['named']['author']['url'] = $channel['link'];
+				$post['named']['author']['uri'] = $channel['link'];
 			endif;
 
 			// ... So far we just have an alphanumeric
@@ -858,7 +885,7 @@ class FeedWordPress {
 					$content
 				);
 			endforeach;
-		
+
 			# Sanitize problematic attributes
 			foreach ($this->strip_attrs as $pair):
 				list($tag,$attr) = $pair;
@@ -868,9 +895,24 @@ class FeedWordPress {
 					$content
 				);
 			endforeach;
-		
+
+			# Identify and sanitize excerpt
+			$excerpt = NULL;
+			if ( isset($item['description']) and $item['description'] ) :
+				$excerpt = $item['description'];
+			elseif ( isset($content) and $content ) :
+				$excerpt = strip_tags($content);
+				if (strlen($excerpt) > 255) :
+					$excerpt = substr($excerpt,0,252).'...';
+				endif;
+			endif;
+
 			$post['post_content'] = $wpdb->escape($content);
-				
+			
+			if (!is_null($excerpt)):
+				$post['post_excerpt'] = $wpdb->escape($excerpt);
+			endif;
+			
 			# This is unneeded if wp_insert_post can be used.
 			# --- cut here ---
 			$post['post_name'] = sanitize_title($post['post_title']);
@@ -889,7 +931,7 @@ class FeedWordPress {
 			else:
 				$post['epoch']['issued'] = time();
 			endif;
-	
+
 			# As far as I know, only atom currently has a reliable way to
 			# specify when something was *modified* last
 			if (isset($item['modified'])):
@@ -897,7 +939,7 @@ class FeedWordPress {
 			else:
 				$post['epoch']['modified'] = $post['epoch']['issued'];
 			endif;
-	
+
 			$post['post_date'] = date('Y-m-d H:i:s', $post['epoch']['issued']);
 			$post['post_modified'] = date('Y-m-d H:i:s', $post['epoch']['modified']);
 			$post['post_date_gmt'] = gmdate('Y-m-d H:i:s', $post['epoch']['issued']);
@@ -917,7 +959,7 @@ class FeedWordPress {
 	
 			if (isset($channel['title'])) $post['syndication_source'] = $channel['title'];
 			if (isset($channel['link'])) $post['syndication_source_uri'] = $channel['link'];
-			$post['syndication_feed'] = $f['url'];
+			$post['syndication_feed'] = $f['uri'];
 	
 			// In case you want to know the external permalink...
 			$post['syndication_permalink'] = $item['link'];
@@ -926,9 +968,12 @@ class FeedWordPress {
 			$post['named']['category'] = $f['cats'];
 
 			// Now add categories from the post, if we have 'em
-			if (is_array($item['categories'])):
+			if (
+			  !FeedWordPress::setting_on($f, 'hardcode categories')
+			  and is_array($item['categories'])
+			):
 				foreach ($item['categories'] as $cat):
-					if ( strpos($f['url'], 'del.icio.us') !== false ):
+					if ( strpos($f['uri'], 'del.icio.us') !== false ):
 						$post['named']['category'] = array_merge($post['named']['category'], explode(' ', $cat));
 					else:
 						$post['named']['category'][] = $cat;
@@ -960,7 +1005,7 @@ class FeedWordPress {
 				$wpdb,
 				$post['named']['author']['name'],
 				$post['named']['author']['email'],
-				$post['named']['author']['url']
+				$post['named']['author']['uri']
 			);
 			
 			# -- Look up, or create, numeric ID for categories
@@ -1003,7 +1048,8 @@ class FeedWordPress {
 				post_author = '".$post['post_author']."',
 				post_date = '".$post['post_date']."',
 				post_date_gmt = '".$post['post_date_gmt']."',
-				post_content = '".$post['post_content']."',
+				post_content = '".$post['post_content']."',"
+				.(isset($post['post_excerpt']) ? "post_excerpt = '".$post['post_excerpt']."'," : "")."
 				post_title = '".$post['post_title']."',
 				post_name = '".$post['post_name']."',
 				post_modified = '".$post['post_modified']."',
@@ -1155,40 +1201,54 @@ class FeedWordPress {
 	
 	// look up (and create) category ids from a list of categories
 	function lookup_categories ($wpdb, $cats) {
-		if ( !count($cats) ) return array();
-		
-		# i'd kill for a decent map function in PHP
-		# but that would require functiosn to be first class object, or at least
-		# coderef support
-		$cat_strs = array();
-		foreach ( $cats as $c ) {
-			$c = $wpdb->escape($c); $c = "'$c'"; 
-			$cat_strs[] = $c;	
-		}
-	
-		$cat_sql = join(',', $cat_strs);
-		$sql = "SELECT cat_ID,cat_name from $wpdb->categories WHERE cat_name IN ($cat_sql)";
-		$results = $wpdb->get_results($sql);
-		
-		$cat_ids 	= array();
-		$cat_found	= array();
-		
-		if (!is_null($results)):
-			foreach ( $results as $row ) {
-				$cat_ids[] = $row->cat_ID;
-				$cat_found[] = strtolower($row->cat_name); // Normalize to avoid case problems
-			}
-		endif;
-	
-		foreach ($cats as $new_cat):
-			$sql =  "INSERT INTO $wpdb->categories (cat_name, category_nicename) 
-				VALUES ('%s', '%s')";
-			if (!in_array(strtolower($new_cat), $cat_found)):
-				$nice_cat = sanitize_title($new_cat);
-				$wpdb->query(sprintf($sql, $wpdb->escape($new_cat), $nice_cat));
-				$cat_ids[] = $wpdb->insert_id;
+		$cat_ids = array ();
+		if ( count($cats) > 0 ) :
+			# i'd kill for a decent map function in PHP
+			# but that would require functions to be first class object,
+			# or at least coderef support
+			$cat_strs = array();
+			$cat_aka = array();
+			foreach ( $cats as $c ) :
+				$esc = $wpdb->escape(trim($c));
+				$cat_strs[] = "'$esc'";
+				$cat_aka[] = "(LOWER(category_description) RLIKE '(^|\n)a.k.a.( |\t)*:?( |\t)*".strtolower($esc)."( |\t|\r)*(\n|\$)')";
+			endforeach;
+
+			$cat_sql = join(',', $cat_strs);
+			$cat_akas = join(' OR ', $cat_aka);
+
+			$sql = "SELECT cat_ID,cat_name,category_description from $wpdb->categories
+				WHERE cat_name IN ($cat_sql)
+				OR ($cat_akas)";
+			$results = $wpdb->get_results($sql);
+			
+			$cat_ids 	= array();
+			$cat_found	= array();
+			
+			if (!is_null($results)):
+				foreach ( $results as $row ) :
+					$cat_ids[] = $row->cat_ID;
+					$cat_found[] = strtolower($row->cat_name); // Normalize to avoid case problems
+					
+					if (preg_match_all('/^a.k.a. \s* :? \s* (.*\S) \s*$/mx',
+					$row->category_description, $aka,
+					PREG_PATTERN_ORDER)) :
+						$cat_found = array_merge($cat_found,
+							array_map('strtolower', $aka[1]));
+					endif;
+				endforeach;
 			endif;
-		endforeach;
+
+			foreach ($cats as $new_cat) :
+				$sql =  "INSERT INTO $wpdb->categories (cat_name, category_nicename) 
+					VALUES ('%s', '%s')";
+				if (!in_array(strtolower($new_cat), $cat_found)):
+					$nice_cat = sanitize_title($new_cat);
+					$wpdb->query(sprintf($sql, $wpdb->escape($new_cat), $nice_cat));
+					$cat_ids[] = $wpdb->insert_id;
+				endif;
+			endforeach;
+		endif;
 		return $cat_ids;
 	} // function FeedWordPress::lookup_categories ()
 	
@@ -1348,24 +1408,23 @@ class FeedFinder {
 		if ($uri) $this->uri = $uri;
 
 		// Is the result not yet cached?
-		if ($this->_cache_uri !== $this->uri) {
-			// Retrieve, with headers, using cURL
-			$ch = curl_init($this->uri);
-			curl_setopt($ch, CURLOPT_HEADER, false);
-			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-			curl_setopt($ch, CURLOPT_HTTPHEADER, array('Connection: close'));
-			curl_setopt($ch, CURLOPT_HTTPHEADER, array('User-Agent: feedfinder/1.2 (compatible; PHP FeedFinder) +http://projects.radgeek.com/feedwordpress'));
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-			$response = curl_exec($ch);
-			curl_close($ch);
+		if ($this->_cache_uri !== $this->uri) :
+		    // Snoopy is an HTTP client in PHP
+		    $client = new Snoopy();
+		    
+		    // Prepare headers and internal settings
+		    $client->rawheaders['Connection'] = 'close';
+		    $client->accept = 'application/atom+xml application/rdf+xml application/rss+xml application/xml text/html */*';
+		    $client->agent = 'feedfinder/1.2 (compatible; PHP FeedFinder) +http://projects.radgeek.com/feedwordpress';
+		    $client->read_timeout = 5;
+		    
+		    // Fetch the HTML or feed
+		    @$client->fetch($this->uri);
+		    $this->_data = $client->results;
 
-			// Split into headers and content
-			$this->_data = $response;
-
-			// Kilroy was here
-			$this->_cache_uri = $this->uri;
-		} /* if */
+		    // Kilroy was here
+		    $this->_cache_uri = $this->uri;
+		endif;
 	} /* FeedFinder::_get () */
 
  	function _link_rel_feeds () {
