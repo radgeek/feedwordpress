@@ -1,0 +1,248 @@
+FeedWordPress
+=============
+
+* Author: [Charles Johnson](http://www.radgeek.com/contact)
+* Version: 0.8
+* Project URI: <http://projects.radgeek.com/feedwordpress>
+* License: GPL. See License below for copyright jots and tittles.
+
+Introduction
+------------
+FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content
+from newsfeeds that you select; if you syndicate several newsfeeds then you can
+WordPress's posts database and templating engine as the back-end of an
+aggregation ("planet") website.
+
+FeedWordPress is similar in conception to software such as [Planet][]--in fact,
+I started developing it because I needed a more flexible replacement for
+Planet at to run [Feminist Blogs](http://www.feministblogs.org/). Since it
+works on top of WordPress's database and templating system, however, it boasts
+far more flexibility than many other aggregators. It is also designed with ease
+of configuration and use in mind.
+
+You'll need a working installation of [WordPress 1.5][] and FTP or SFTP access
+to your web host. The ability to create cron jobs on your web host would be very
+helpful but it's not absolutely necessary. You *don't* need to tweak any
+plain-text configuration files and you *don't* need shell access to your web
+host to make it work. (Although, I should point out, web hosts that *don't*
+offer shell access are *bad web hosts*.)
+
+  [WordPress 1.5]: http://wordpress.org/development/2005/02/strayhorn/
+  [Planet]: http://www.planetplanet.org/ "Planet Planet"
+
+Installation & Requirements
+---------------------------
+You'll need a website with WordPress 1.5 installed and configured and FTP or
+SFTP access to your web space. You'll probably also want to have either (1)
+the ability to create cron jobs on your web host, or (2) a computer of your
+own that has always-on Internet access.
+
+1.	Install `feedwordpress.php` in your WordPress `plugins` directory and
+	`update.php` in your WordPress `wp-content` directory.
+	
+2.	(Optional) Upgrade the copy of MagpieRSS packaged with WordPress by
+	installing the new `rss-functions.php` (archived in
+	`OPTIONAL/wp-includes`) into your WordPress `wp-includes` directory.
+
+3.	Log in to the WordPress Dashboard and activate the FeedWordPress plugin.
+	Go to Options --> Syndication to set up initial settings for the
+	syndication link category ("Contributors") by default and the RPC secret
+	word (blank by default, but you should probably set it to something.)
+
+4.	Set up links for syndication from the WordPress Dashboard using
+	Links --> Syndicated or Links --> Import.
+
+5. 	FeedWordPress is now *ready* to feed syndicated content into WordPress.
+	In order for it to actually receive that content, either (1) have your
+	contributors add WordPress's XML-RPC URI to their blog's list of URIs
+	to ping when they update posts, (2) set up a cron job to check in on all
+	the feeds on a regular basis, or (3) both. If you do (2), you can either
+	set up a job to run `php update-feeds.php` on your web host, or set one
+	up on any computer with always-on Internet access to request
+	`update-feeds.php` over the web.
+	
+	If your copy of WordPress is installed at <http://www.zyx.com/blog>, and
+	you set the secret word for XML-RPC pings to "foo", then your XML-RPC
+	URI will be <http://www.zyx.com/blog/xmlrpc.php>, and the URI to request
+	for `update-feeds.php` to update all feeds will be
+	<http://www.zyx.com/blog/wp-content/update-feeds.php?shibboleth=foo>
+
+For detailed installation instructions, point your web browser to
+<http://projects.radgeek.com/feedwordpress/install>.
+
+Feed Settings
+-------------
+### Feed Settings ###
+
+Once you have your links configured and regular feed updates scheduled, you can
+mostly leave FeedWordPress to run on its own. If you need to add, remove, or
+change information for any contributors, you can do so from the WordPress
+Dashboard under Links --> Syndicated. If you want to distribute the labor of
+adding, updating, and managing feeds, you can use the WordPress login and access
+privileges system. Users with an access level of 5 or greater can add or modify
+syndicated links, and change syndication options.
+
+All the information for a syndicated feed is managed through the WordPress Links
+database. Feeds in the category to be syndicated (by default, "Contributors")
+use several fields of the standard WordPress Link record:
+
+-	The Link URI is used to store a URI to the front page (*not* the feed!)
+	of the syndicated website.
+
+-	The Link Name is used to store the title of the syndicated website.
+
+-	The Short Description is used to store the tagline of the syndicated
+ 	website.
+
+-	The RSS URI is used to store the URI for the feed to be syndicated.
+	
+- 	The Link Notes are used to store a collection of manually-encoded and
+	automatically-generated settings that apply to this feed. The format of
+	settings in Link Notes is:
+	
+		key1: value1
+		key2: value2
+		key3: value3
+		feed/key1: value1
+		feed/key2: value2
+	
+	And so on. Values that are prefixed by 'feed/' are automatically
+	generated from feed data every time the feed syndicated by this link is
+	checked for updates. Values without the prefix are set manually by the
+	user.
+
+Most settings in the Link Notes have no effect on FeedWordPress, but can be
+accessed from templates using the ``get_feed_meta()`` template function in a
+post context. For example, many aggregator sites use a "face" image for each
+feed to visually distinguish posts from different feeds. To implement a face
+feature, you could add a line like this to each feed's Link Notes section:
+
+		face: http://www.zyx.com/mugs/ugly
+
+The URI should be changed out for each feed to point to the appropriate image,
+of course. Then, to use the setting from within a template:
+
+		// In a post context
+		<?php $img = get_feed_meta('face'); if strlen($img) > 0): ?>
+		<img src="<?=$img?>" alt="" />
+		<?php endif; ?>
+
+... which will display the image, if any, whose URI is set in the "face" setting
+for the feed that post comes from. If there is no "face" setting for a
+particular feed, ``get_feed_meta()`` will return an empty string and no image
+will be displayed.
+
+Not all feed settings are only for templates. Some affect how FeedWordPress
+processes posts from that feed. Currently, the special settings are:
+
+-	`cats:` a colon-separated list of default categories for any post coming
+	from this feed. So, for example, a this line in its Notes section:
+
+		cats: computers:web
+
+	... will make FeedWordPress place any posts syndicated from that feed in
+	the "computers" and "web" categories (*in addition to*, not *instead of*
+	any categories that are applied to the post in the feed)
+
+- 	`hardcode name: (yes|no)`
+
+	A yes/no setting. By default, FeedWordPress updates the value of the
+	Link Name field automatically to reflect the title that is reported by a
+	syndicated feed. (So, for example, if one of your contributors changes
+	the title of her weblog, the change will be reflected on your
+	Contributors list after the next update.) To override that behavior for
+	a particular feed (e.g. to force WordPress to use an abbreviated form of
+	the site's title for reasons of space), add a line like this to the Link
+	Notes section:
+
+		hardcode name: yes
+	
+	If `hardcode name` is absent, or set to a value other than `yes`,
+	FeedWordPress will take that as a 'no' and follow the default behavior.
+
+-	`post status:` sets the default post status for posts from this feed
+	This can be 'publish', 'draft', or 'private'. By default, it is set to
+	'publish' (syndicated posts go online immediately).
+
+-	`comment status:` sets the default status for comments on posts
+	syndicated from this feed. By default, all comments on syndicated posts
+	are closed, but you can set it to 'open', 'closed', or 'registered_only'
+	for particular feeds.
+
+-	`ping status:` sets the default status for receiving TrackBack and
+	PingBack pings on posts syndicated from this feed. By default,
+	syndicated posts are closed to pings, but you can set this to 'open' or
+	'closed' for particular feeds.
+
+Template API
+------------
+When activated, FeedWordPress makes the following functions available for use by
+themes/templates:
+
+*	``is_syndicated()``: in a post context, returns ``TRUE`` if the post was
+	syndicated from another website, or ``FALSE`` if it was originally
+	posted here
+
+*	``get_syndication_permalink()``: in a post context, returns the URI of
+	the permalink for this post *on the website it was syndicated from*
+	
+*	``the_syndication_permalink()``: in a post context, outputs the value
+	returned by ``get_syndication_permalink()``
+
+*	``get_syndication_source_link()``: in a post context, returns the URI of
+	the front page (*not* the feed) of the website this post was syndicated
+	from
+	
+*	``the_syndication_source_link()``: in a post context, outputs the URI
+	returned by ``get_syndication_source_link()``
+	
+*	``get_syndication_source()``: in a post context, returns the
+	human-readable title of the website that a syndicated post was
+	syndicated from
+
+*	``the_syndication_source()``: in a post context, outputs the value
+	returned by ``get_syndication_source()``
+	
+*	``get_syndication_feed():`` in a post context, returns the URI of the
+	feed (*not* the front page) that this post was syndicated from
+
+*	``the_syndication_feed()``: in a post context, outputs the value
+	returned by ``get_syndication_feed()``
+
+*	``get_feed_meta($key)``: in a post context, returns the value, if any,
+	of the feed setting ``$key`` for the feed that this post was syndicated
+	from
+
+By default, FeedWordPress also places a filter on the standard functions
+``get_permalink()`` and ``the_permalink()`` that substitutes the URI returned by
+``get_syndication_permalink()`` for the URI generated by WordPress. This means
+that by default the permalinks listed on your website and in your newsfeed will
+link to the location of the posts on the source website, *not* to their location
+on your website. You can switch this behavior on or off at Options -->
+Syndication in the WordPress Dashboard.
+
+License
+-------
+The FeedWordPress plugin is copyright (c) 2005 by Charles Johnson. It uses code
+derived or translated from:
+
+-	[wp-rss-aggregate.php][] by [Kellan Elliot-McCrea](kellan@protest.net)
+-	[HTTP Navigator 2][] by [Keyvan Minoukadeh](keyvan@k1m.com)
+-	[Ultra-Liberal Feed Finder][] by [Mark Pilgrim](mark@diveintomark.org)
+
+according to the terms of the [GNU General Public License][].
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the [GNU General Public License][] as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+  [wp-rss-aggregate.php]: http://laughingmeme.org/archives/002203.html
+  [HTTP Navigator 2]: http://www.keyvan.net/2004/11/16/http-navigator/
+  [Ultra-Liberal Feed Finder]: http://diveintomark.org/projects/feed_finder/
+  [GNU General Public License]: http://www.gnu.org/copyleft/gpl.html
+
