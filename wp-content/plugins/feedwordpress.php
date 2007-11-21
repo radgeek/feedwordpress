@@ -3,11 +3,11 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://projects.radgeek.com/feedwordpress
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 0.91
+Version: 0.95
 Author: Charles Johnson
 Author URI: http://www.radgeek.com/
 License: GPL
-Last modified: 2005-04-09 2:00pm EDT
+Last modified: 2005-04-20 10:58pm EDT
 */
 
 # This uses code derived from:
@@ -27,7 +27,7 @@ Last modified: 2005-04-09 2:00pm EDT
 
 # -- Don't change these unless you know what you're doing...
 define ('RPC_MAGIC', 'tag:radgeek.com/projects/feedwordpress/');
-define ('FEEDWORDPRESS_VERSION', '0.91');
+define ('FEEDWORDPRESS_VERSION', '0.95');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
 // Note that the rss-functions.php that comes prepackaged with WordPress is
@@ -138,7 +138,7 @@ function get_feed_meta ($key) {
 		$notes = explode("\n", $result);
 		foreach ($notes as $note):
 			list($k, $v) = explode(': ', $note, 2);
-			$meta[$k] = trim($v);
+			$meta[$k] = stripcslashes(trim($v));
 		endforeach;
 		$ret = $meta[$key];
 	endif; /* if */
@@ -188,7 +188,7 @@ function syndication_permalink ($permalink = '') {
 # -- Admin menu add-ons
 function fwp_add_pages () {
 	add_submenu_page('link-manager.php', 'Syndicated Sites', 'Syndicated', 5, basename(__FILE__), 'fwp_syndication_manage_page');
-	add_options_page('Syndication', 'Syndication', 6, basename(__FILE__), 'fwp_syndication_options_page');
+	add_options_page('Syndication Options', 'Syndication', 6, basename(__FILE__), 'fwp_syndication_options_page');
 } // function fwp_add_pages () */
 
 function fwp_syndication_options_page () {
@@ -205,6 +205,20 @@ function fwp_syndication_options_page () {
 			update_option('feedwordpress_cat_id', $_REQUEST['syndication_category']);
 			update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
 			update_option('feedwordpress_update_logging', $_REQUEST['update_logging']);
+			update_option('feedwordpress_unfamiliar_author', $_REQUEST['unfamiliar_author']);
+			update_option('feedwordpress_unfamiliar_category', $_REQUEST['unfamiliar_category']);
+			
+			if (isset($_REQUEST['hardcode_name']) and ($_REQUEST['hardcode_name'] == 'no')) :
+				update_option('feedwordpress_hardcode_name', 'no');
+			else :
+				update_option('feedwordpress_hardcode_name', 'yes');
+			endif;
+			
+			if (isset($_REQUEST['hardcode_description']) and ($_REQUEST['hardcode_description'] == 'no')) :
+				update_option('feedwordpress_hardcode_description', 'no');
+			else :
+				update_option('feedwordpress_hardcode_description', 'yes');
+			endif;
 ?>
 <div class="updated">
 <p><?php _e('Options saved.')?></p>
@@ -217,6 +231,20 @@ function fwp_syndication_options_page () {
 	$rpc_secret = FeedWordPress::rpc_secret();
 	$munge_permalink = get_settings('feedwordpress_munge_permalink');
 	$update_logging = get_settings('feedwordpress_update_logging');
+
+	$hardcode_name = get_settings('feedwordpress_hardcode_name');
+	$hardcode_description = get_settings('feedwordpress_hardcode_description');
+
+	$unfamiliar_author = array ('create' => '','default' => '','filter' => '');
+	$ua = FeedWordPress::on_unfamiliar('author');
+	if (is_string($ua) and array_key_exists($ua, $unfamiliar_author)) :
+		$unfamiliar_author[$ua] = ' checked="checked"';
+	endif;
+	$unfamiliar_category = array ('create'=>'','default'=>'','filter'=>'');
+	$uc = FeedWordPress::on_unfamiliar('category');
+	if (is_string($uc) and array_key_exists($uc, $unfamiliar_category)) :
+		$unfamiliar_category[$uc] = ' checked="checked"';
+	endif;
 	$results = $wpdb->get_results("SELECT cat_id, cat_name, auto_toggle FROM $wpdb->linkcategories ORDER BY cat_id");
 ?>
 <div class="wrap">
@@ -255,6 +283,30 @@ function fwp_syndication_options_page () {
 		echo "\n</select>\n";
 ?></td>
 </tr>
+
+<tr><th width="33%" scope="row" style="vertical-align:top">Update live from feed:</th>
+<td width="67%"><ul style="margin:0;list-style:none">
+<li><input type="checkbox" name="hardcode_name" value="no"<?=(($hardcode_name=='yes')?'':' checked="checked"')?>/> Contributor name (feed title)</li>
+<li><input type="checkbox" name="hardcode_description" value="no"<?=(($hardcode_description=='yes')?'':' checked="checked"')?>/> Contributor description (feed tagline)</li>
+</ul></td></tr>
+
+<tr><th width="33%" scope="row" style="vertical-align:top">Unfamiliar authors:</th>
+<td width="67%"><ul style="margin: 0;list-style:none">
+<li><label><input type="radio" name="unfamiliar_author" value="create"<?=$unfamiliar_author['create']?>/> create a new author account</label></li>
+<li><label><input type="radio" name="unfamiliar_author" value="default"<?=$unfamiliar_author['default']?> /> attribute the post to the default author</label></li>
+<li><label><input type="radio" name="unfamiliar_author" value="filter"<?=$unfamiliar_author['filter']?> /> don't syndicate the post</label></li>
+</ul></td></tr>
+<tr><th width="33%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
+<td width="67%"><ul style="margin: 0;list-style:none">
+<li><label><input type="radio" name="unfamiliar_category" value="create"<?=$unfamiliar_category['create']?>/> create any categories the post is in</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="default"<?=$unfamiliar_category['default']?>/> don't create new categories</li>
+<li><label><input type="radio" name="unfamiliar_category" value="filter"<?=$unfamiliar_category['filter']?>/> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
+</ul>
+
+</ul></li>
+</ul></td></tr>
+
+</select></td></tr>
 </table>
 <div class="submit"><input type="submit" name="action" value="<?=$caption?>" /></div>
 </fieldset>
@@ -647,16 +699,27 @@ class FeedWordPress {
 					list($key, $value) = explode(": ", $note, 2);
 					
 					if (strlen($key) > 0) :
-						$sec[$key] = str_replace (
-							'%newline%',
-							"\n",
-							trim($value) // trim() off the whitespace. Thanks to Ray Lischner for pointing this out.
+						// Unescape and trim() off the
+						// whitespace. Thanks to Ray
+						// Lischner for pointing out the
+						// need to trim.
+						$sec[$key] = stripcslashes (
+							trim($value)
 						);
 					endif;
 				endforeach;
 
 				$sec['uri'] = $link->link_rss;
 				$sec['name'] = $link->link_name;
+
+				// `hardcode categories` is deprecated in favor
+				// of `unfamiliar categories`
+				if (
+					FeedWordPress::affirmative($sec, 'hardcode categories')
+					and !isset($sec['unfamiliar categories'])
+				) :
+					$sec['unfamiliar categories'] = 'default';
+				endif;
 
 				if (isset($sec['cats'])):
 					$sec['cats'] = explode(':',$sec['cats']);
@@ -729,14 +792,14 @@ class FeedWordPress {
 	// $a['feed/b/c/d'] with value 'e'.
 	function flatten_array ($arr, $prefix = 'feed/', $separator = '/') {
 		$ret = array ();
-		if (is_array($arr)):
-			foreach ($arr as $key => $value) {
-				if (is_scalar($value)) {
+		if (is_array($arr)) :
+			foreach ($arr as $key => $value) :
+				if (is_scalar($value)) :
 					$ret[$prefix.$key] = $value;
-				} else {
+				else :
 					$ret = array_merge($ret, $this->flatten_array($value, $prefix.$key.$separator, $separator));
-				} /* if */
-			} /* foreach */
+				endif;
+			endforeach;
 		endif;
 		return $ret;
 	} // function FeedWordPress::flatten_array ()
@@ -745,7 +808,28 @@ class FeedWordPress {
 		return $matches[1].Relative_URI::resolve($matches[2], $this->_base).$matches[3];
 	} // function FeedWordPress::resolve_relative_uri ()
 	
-	function setting_on ($f, $setting) {
+	function hardcode ($what, $f) {
+		$default = get_settings("feedwordpress_hardcode_$what");
+		if ( $default === 'yes' ) :
+			// If the default is to hardcode, then we want the
+			// negation of negative(): TRUE by default and FALSE if
+			// the setting is explicitly "no"
+			$ret = !FeedWordPress::negative($f, "hardcode $what");
+		else :
+			// If the default is NOT to hardcode, then we want
+			// affirmative(): FALSE by default and TRUE if the
+			// setting is explicitly "yes"
+			$ret = FeedWordPress::affirmative($f, "hardcode $what");
+		endif;
+		return $ret;
+	}
+
+	function negative ($f, $setting) {
+		$nego = array ('n', 'no', 'f', 'false');
+		return (isset($f[$setting]) and in_array(strtolower($f[$setting]), $nego));
+	}
+
+	function affirmative ($f, $setting) {
 		$affirmo = array ('y', 'yes', 't', 'true', 1);
 		return (isset($f[$setting]) and in_array(strtolower($f[$setting]), $affirmo));
 	}
@@ -753,20 +837,20 @@ class FeedWordPress {
 	function update_feed ($wpdb, $channel, $f) {
 		$link_id = $f['link_id'];
 
-		if (!isset($channel['id'])) {
-		  $channel['id'] = $f['uri'];
-		}
+		if (!isset($channel['id'])) :
+			$channel['id'] = $f['uri'];
+		endif;
 
 		$update = array();
 		if (isset($channel['link'])) :
 			$update[] = "link_url = '".$wpdb->escape($channel['link'])."'";
 		endif;
 
-		if (!FeedWordPress::setting_on($f, 'hardcode name') and isset($channel['title'])) :
+		if (!FeedWordPress::hardcode('name', $f) and isset($channel['title'])) :
 			$update[] = "link_name = '".$wpdb->escape($channel['title'])."'";
 		endif;
 
-		if (!FeedWordPress::setting_on($f, 'hardcode description')) :
+		if (!FeedWordPress::hardcode('description', $f)) :
 			if (isset($channel['tagline'])) :
 				$update[] = "link_description = '".$wpdb->escape($channel['tagline'])."'";
 			elseif (isset($channel['description'])) :
@@ -782,16 +866,17 @@ class FeedWordPress {
 
 		# -- A few things we don't want to save in the notes
 		unset($f['link_id']); unset($f['uri']); unset($f['name']);
+		unset($f['hardcode categories']); // Deprecated
 
 		$notes = '';
 		foreach ($f as $key => $value) :
-			$notes .= $key . ": ". str_replace("\n", "%newline%", $value) . "\n";
+			$notes .= $key . ": ". addcslashes($value, "\0..\37") . "\n";
 		endforeach;
 		$update[] = "link_notes = '".$wpdb->escape($notes)."'";
 
 		$update_set = implode(',', $update);
 		
-		// if we've already have this feed, update
+		// Update the properties of the link from the feed information
 		$result = $wpdb->query("
 			UPDATE $wpdb->links
 			SET $update_set
@@ -960,18 +1045,19 @@ class FeedWordPress {
 			if (isset($channel['title'])) $post['syndication_source'] = $channel['title'];
 			if (isset($channel['link'])) $post['syndication_source_uri'] = $channel['link'];
 			$post['syndication_feed'] = $f['uri'];
-	
+
 			// In case you want to know the external permalink...
 			$post['syndication_permalink'] = $item['link'];
+
+			// Feed-by-feed options for author and category creation
+			$post['named']['unfamiliar']['author'] = $f['unfamiliar author'];
+			$post['named']['unfamiliar']['category'] = $f['unfamiliar categories'];
 
 			// Categories: start with default categories
 			$post['named']['category'] = $f['cats'];
 
 			// Now add categories from the post, if we have 'em
-			if (
-			  !FeedWordPress::setting_on($f, 'hardcode categories')
-			  and is_array($item['categories'])
-			):
+			if ( is_array($item['categories']) ) :
 				foreach ($item['categories'] as $cat):
 					if ( strpos($f['uri'], 'del.icio.us') !== false ):
 						$post['named']['category'] = array_merge($post['named']['category'], explode(' ', $cat));
@@ -991,11 +1077,11 @@ class FeedWordPress {
 		FROM $wpdb->posts WHERE guid='$guid'
 		");
 
-		if (!$result):
+		if (!$result) :
 			$freshness = 2; // New content
-		elseif ($post['epoch']['modified'] > $result->modified):
+		elseif ($post['epoch']['modified'] > $result->modified) :
 			$freshness = 1; // Updated content
-		else:
+		else :
 			$freshness = 0;
 		endif;
 
@@ -1005,21 +1091,32 @@ class FeedWordPress {
 				$wpdb,
 				$post['named']['author']['name'],
 				$post['named']['author']['email'],
-				$post['named']['author']['uri']
+				$post['named']['author']['uri'],
+				FeedWordPress::on_unfamiliar('author', $post['named']['unfamiliar']['author'])
 			);
+
+			if (is_null($post['post_author'])) :
+				$freshness = 0;
+			else :
+				# -- Look up, or create, numeric ID for categories
+				$post['post_category'] = $this->lookup_categories (
+					$wpdb,
+					$post['named']['category'],
+					FeedWordPress::on_unfamiliar('category', $post['named']['unfamiliar']['category'])
+				);
+				if (is_null($post['post_category'])) :
+					$freshness = 0;
+				endif;
+			endif;
 			
-			# -- Look up, or create, numeric ID for categories
-			$post['post_category'] = $this->lookup_categories (
-				$wpdb,
-				$post['named']['category']
-			);
-		
 			unset($post['named']);
 		endif;
 		
-		$post = apply_filters('syndicated_post', $post);
-		if (is_null($post)) $freshness = 0;
-
+		if ($freshness > 0) :
+			$post = apply_filters('syndicated_post', $post);
+			if (is_null($post)) $freshness = 0;
+		endif;
+		
 		if ($freshness == 2) :
 			// The item has not yet been added. So let's add it.
 
@@ -1104,7 +1201,7 @@ class FeedWordPress {
 			do_action('update_syndicated_item', $postId);
 
 			$ret = 'updated';			
-		else:
+		else :
 			$ret = false;
 		endif;
 		
@@ -1166,7 +1263,7 @@ class FeedWordPress {
 
 	// FeedWordPress::author_to_id (): get the ID for an author name from
 	// the feed. Create the author if necessary.
-	function author_to_id ($wpdb, $author, $email, $url) {
+	function author_to_id ($wpdb, $author, $email, $url, $unfamiliar_author = 'create') {
 		// Never can be too careful...
 		$nice_author = sanitize_title($author);
 		$author = $wpdb->escape($author);
@@ -1174,80 +1271,118 @@ class FeedWordPress {
 		$url = $wpdb->escape($url);
 	
 		$id = $wpdb->get_var(
-				"SELECT ID from $wpdb->users
-				 WHERE
-					user_login = '$author' OR
-					user_firstname = '$author' OR
-					user_nickname = '$author' OR
-					user_description = '$author' OR
-					user_nicename = '$nice_author'");
+		"SELECT ID from $wpdb->users
+		 WHERE
+		 	user_login = '$author' OR
+			user_firstname = '$author' OR
+			user_nickname = '$author' OR
+			user_nicename = '$nice_author' OR
+			user_description = '$author' OR
+			(LOWER(user_description) RLIKE
+				'(^|\n)a.k.a.( |\t)*:?( |\t)*".strtolower($author)."( |\t|\r)*(\n|\$)')
+		");
 	
-		if (is_null($id)):
-			$wpdb->query (
-				"INSERT INTO $wpdb->users
-				 SET
-					ID='0',
-					user_login='$author',
-					user_firstname='$author',
-					user_nickname='$author',
-					user_nicename='$nice_author',
-					user_description='$author',
-					user_email='$email',
-					user_url='$url'");
-			$id = $wpdb->insert_id;
+		if (is_null($id)) :
+			if ($unfamiliar_author === 'create') :
+				$wpdb->query (
+					"INSERT INTO $wpdb->users
+					 SET
+						ID='0',
+						user_login='$author',
+						user_firstname='$author',
+						user_nickname='$author',
+						user_nicename='$nice_author',
+						user_description='$author',
+						user_email='$email',
+						user_url='$url'");
+				$id = $wpdb->insert_id;
+			elseif ($unfamiliar_author === 'default') :
+				$id = 1;
+			endif;
 		endif;
 		return $id;	
 	} // function FeedWordPress::author_to_id ()
-	
+
 	// look up (and create) category ids from a list of categories
-	function lookup_categories ($wpdb, $cats) {
+	function lookup_categories ($wpdb, $cats, $unfamiliar_category = 'create') {
+		// Normalize whitespace because (1) trailing whitespace can
+		// cause PHP and MySQL not to see eye to eye on VARCHAR
+		// comparisons for some versions of MySQL (cf.
+		// <http://dev.mysql.com/doc/mysql/en/char.html>), and (2)
+		// because I doubt most people want to make a semantic
+		// distinction between 'Computers' and 'Computers  '
+		$cats = array_map('trim', $cats);
+
 		$cat_ids = array ();
+
 		if ( count($cats) > 0 ) :
 			# i'd kill for a decent map function in PHP
 			# but that would require functions to be first class object,
 			# or at least coderef support
-			$cat_strs = array();
-			$cat_aka = array();
+			$cat_str = array ();
+			$cat_aka = array ();
 			foreach ( $cats as $c ) :
-				$esc = $wpdb->escape(trim($c));
-				$cat_strs[] = "'$esc'";
+				$esc = $wpdb->escape($c);
+				$cat_str[] = "'$esc'";
 				$cat_aka[] = "(LOWER(category_description) RLIKE '(^|\n)a.k.a.( |\t)*:?( |\t)*".strtolower($esc)."( |\t|\r)*(\n|\$)')";
 			endforeach;
 
-			$cat_sql = join(',', $cat_strs);
-			$cat_akas = join(' OR ', $cat_aka);
+			$match_cat_name = 'cat_name IN ('.join(',', $cat_str).')';
+			$match_cat_alias = join(' OR ', $cat_aka);
 
-			$sql = "SELECT cat_ID,cat_name,category_description from $wpdb->categories
-				WHERE cat_name IN ($cat_sql)
-				OR ($cat_akas)";
-			$results = $wpdb->get_results($sql);
+			// Normalizing case with LOWER() avoids conflicts in
+			// VARCHAR comparison between PHP (which has
+			// case-sensitive comparisons) and MySQL (which has
+			// case-insensitive comparisons for the field types used
+			// by WordPress)
+			$results = $wpdb->get_results(
+			"SELECT
+				cat_ID,
+				LOWER(TRIM(cat_name)) AS cat_name,
+				LOWER(category_description) AS category_description
+			FROM $wpdb->categories
+			WHERE ($match_cat_name) OR ($match_cat_alias)"
+			);
 			
-			$cat_ids 	= array();
-			$cat_found	= array();
+			$cat_ids	= array();
+			$found		= array();
 			
 			if (!is_null($results)):
 				foreach ( $results as $row ) :
+					// Add existing ID to list of numerical
+					// IDs to eventually place post in
 					$cat_ids[] = $row->cat_ID;
-					$cat_found[] = strtolower($row->cat_name); // Normalize to avoid case problems
 					
+					// Add name to list of categories not to
+					// create afresh.
+					$found[] = $row->cat_name;
+
+					// Add name of any aliases to list of
+					// categories not to create afresh.
 					if (preg_match_all('/^a.k.a. \s* :? \s* (.*\S) \s*$/mx',
 					$row->category_description, $aka,
 					PREG_PATTERN_ORDER)) :
-						$cat_found = array_merge($cat_found,
-							array_map('strtolower', $aka[1]));
+						$found = array_merge ($found, $aka[1]);
 					endif;
 				endforeach;
 			endif;
 
 			foreach ($cats as $new_cat) :
-				$sql =  "INSERT INTO $wpdb->categories (cat_name, category_nicename) 
-					VALUES ('%s', '%s')";
-				if (!in_array(strtolower($new_cat), $cat_found)):
+				if (($unfamiliar_category==='create') and !in_array(strtolower($new_cat), $found)) :
 					$nice_cat = sanitize_title($new_cat);
-					$wpdb->query(sprintf($sql, $wpdb->escape($new_cat), $nice_cat));
+					$wpdb->query(sprintf("
+						INSERT INTO $wpdb->categories
+						SET
+							cat_name='%s',
+							category_nicename='%s'
+					", $wpdb->escape($new_cat), $nice_cat));
 					$cat_ids[] = $wpdb->insert_id;
 				endif;
 			endforeach;
+			
+			if ((count($cat_ids) == 0) and ($unfamiliar_category === 'filter')) :
+				$cat_ids = NULL; // Drop the post
+			endif;
 		endif;
 		return $cat_ids;
 	} // function FeedWordPress::lookup_categories ()
@@ -1255,7 +1390,21 @@ class FeedWordPress {
 	function rpc_secret () {
 		return get_settings('feedwordpress_rpc_secret');
 	} // function FeedWordPress::rpc_secret ()
-                                                                
+
+	function on_unfamiliar ($what = 'author', $override = NULL) {
+		$set = array('create', 'default', 'filter');
+
+		$ret = strtolower($override);
+		if (!in_array($ret, $set)) :
+			$ret = get_settings('feedwordpress_unfamiliar_'.$what);
+			if (!in_array($ret, $set)) :
+				$ret = 'create';
+			endif;
+		endif;
+
+		return $ret;
+	} // function FeedWordPress::on_unfamiliar()
+
 	function link_category_id () {
 		global $wpdb;
 

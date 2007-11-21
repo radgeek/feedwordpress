@@ -2,7 +2,7 @@ FeedWordPress
 =============
 
 * Author: [Charles Johnson](http://www.radgeek.com/contact)
-* Version: 0.91
+* Version: 0.95
 * Project URI: <http://projects.radgeek.com/feedwordpress>
 * License: GPL. See License below for copyright jots and tittles.
 
@@ -68,38 +68,75 @@ own that has always-on Internet access.
 For detailed installation instructions, point your web browser to
 <http://projects.radgeek.com/feedwordpress/install>.
 
-Feed Settings
--------------
+Basic Concepts
+--------------
+FeedWordPress is written as a plugin for [WordPress 1.5][]. It is designed to
+store all the data it needs within the WordPress database and to make that data
+easy to manage from within the WordPress Dashboard.
 
-Once you have your links configured and regular feed updates scheduled, you can
-mostly leave FeedWordPress to run on its own. If you need to add, remove, or
-change information for any contributors, you can do so from the WordPress
-Dashboard under Links --> Syndicated. If you want to distribute the labor of
-adding, updating, and managing feeds, you can use the WordPress login and access
-privileges system. Users with an access level of 5 or greater can add or modify
-syndicated links, and change syndication options.
+### Contributors / Newsfeeds ###
 
-All the information for a syndicated feed is managed through the WordPress Links
-database. Feeds in the category to be syndicated (by default, "Contributors")
-use several fields of the standard WordPress Link record:
+FeedWordPress uses the WordPress Links database to keep a list of the feeds from
+which it will syndicate content. WordPress allows you to place links in
+categories; FeedWordPress will treat all and only the links in one category
+(by default, this is a category named "Contributors"; you can change the
+category that FeedWordPress will use using Options --> Syndication).
 
--	The Link URI is used to store a URI to the front page (*not* the feed!)
-	of the syndicated website.
+From WordPress's perspective, the list of Contributors are normal links, and
+they can be manipulated like other links through the WordPress Dashboard. If
+you need to add, remove, or change information for any contributors, you can
+do so easily under Links --> Syndicated. If you want to distribute the labor of
+adding, updating, and managing feeds, you can use the WordPress login and
+access privileges system. Users with an access level of 5 or greater can add,
+delete, and modify Contributors; users with an access level of 6 or greater can
+change syndication options.
 
--	The Link Name is used to store the title of the syndicated website.
+When FeedWordPress looks for new posts, it does so by retrieving one or all of
+the links from the Contributors category (depending on whether it has been told
+to scan for new posts on one or all of the feeds).
 
--	The Short Description is used to store the tagline of the syndicated
- 	website.
+__Feed settings:__ All of the information for a syndicated feed is stored in
+the WordPress Links database. Feeds in the category to be syndicated (by
+default, "Contributors") use several fields of the standard WordPress Link
+record:
 
 -	The RSS URI is used to store the URI for the feed to be syndicated.
-	
+	(Note that this is *not* the same as the Link URI. The Link URI points
+	to the human-readable *front page* of the website that the feed
+	syndicates.)
+
+-	The Link URI is used to store a URI to the human-readable front page
+	(*not* the feed!) of the syndicated website. FeedWordPress automatically
+	updates this URI using the URI that is reported by the newsfeed whenever
+	it checks the feed for new posts, so if the page moves this will be
+	reflected automatically on your Contributors links list.
+
+-	The Link Name is used to store the title of the syndicated website.
+	By default, FeedWordPress automatically updates the name of the link
+	whenever it checks for new posts, using the title that the
+	newsfeed reports (so that if a Contributor changes the title of her
+	website, this is reflected automatically on your Contributors links
+	list).  This behavior can be turned off for all feeds through the
+	settings in Options --> Syndication. The default behavior can be
+	overridden for specific feeds using the feed setting
+	`hardcode name`.
+
+-	The Short Description is used to store the tagline of the syndicated
+ 	website. By default, FeedWordPress automatically updates the description
+	whenever it checks for new posts, using the tagline or description that
+	the newsfeed reports (so that if a Contributor changes the tagline of
+	her website, this is reflected automatically on your Contributors links
+	list). his behavior can be turned off for all feeds through the
+	settings in Options --> Syndication. The default behavior can be
+	overridden for specific feeds using the feed setting
+	`hardcode description`.
+
 - 	The Link Notes are used to store a collection of manually-encoded and
 	automatically-generated settings that apply to this feed. The format of
 	settings in Link Notes is:
 	
 		key1: value1
 		key2: value2
-		key3: value3
 		feed/key1: value1
 		feed/key2: value2
 	
@@ -108,13 +145,27 @@ use several fields of the standard WordPress Link record:
 	checked for updates. Values without the prefix are set manually by the
 	user.
 
-Most settings in the Link Notes have no effect on FeedWordPress, but can be
-accessed from templates using the ``get_feed_meta()`` template function in a
-post context. For example, many aggregator sites use a "face" image for each
-feed to visually distinguish posts from different feeds. To implement a face
-feature, you could add a line like this to each feed's Link Notes section:
+The Link Notes section can be used to add, remove, and change custom feed
+settings. For example, if you want to *add* the feed setting for
+`unfamiliar author` with the value `filter`, you can do so by going to Links -->
+Syndicated, clicking the "Edit" link for the feed that you wish to add this
+setting for, and then adding the following, on a line by itself, to the Link
+Notes section:
 
-		face: http://www.zyx.com/mugs/ugly
+	unfamiliar author: filter
+
+To remove the setting, follow the same procedure, but find the line for the
+feed setting that you want to remove and remove it. To change the value, simply
+change the text that follows after the colon.
+
+Most settings in the Link Notes have no effect on FeedWordPress, but you can use
+them to store information for templates to retrieve using the `get_feed_meta()`
+template function in a post context (see Template API below). For example, many
+aggregator sites use a "face" image for each feed to visually distinguish posts
+from different feeds. To implement a face feature, you could add something
+like this to each feed's Link Notes, on a line by itself:
+
+	face: http://www.zyx.com/mugs/ugly
 
 The URI should be changed out for each feed to point to the appropriate image,
 of course. Then, to use the setting from within a template:
@@ -130,7 +181,176 @@ particular feed, ``get_feed_meta()`` will return an empty string and no image
 will be displayed.
 
 Not all feed settings are only for templates. Some affect how FeedWordPress
-processes posts from that feed. Currently, the special settings are:
+processes posts from that feed. Currently, the settings with special effects
+on FeedWordPress are `cats`, `hardcode name`, `hardcode description`,
+`hardcode categories`, `post status`, `comment status`, `ping status`,
+`unfamiliar author`, and `unfamiliar categories`. For descriptions of their
+effects, see Special Feed Settings below.
+
+### Syndicated Posts ###
+
+Whenever FeedWordPress updates, it scans one or more of the feeds in its
+Contributors list and adds any new posts that it finds to the WordPress
+database. Syndicated posts are displayed on your WordPress pages like any other
+posts: they can be listed in archives by category, author, or date; they can be
+found with the search box; and they are included in the newsfeed of your blog.
+
+In your WordPress templates (Presentation --> Theme Editor) you can access
+special information about syndicated posts using functions provided by
+FeedWordPress, such as `is_syndicated()`, `the_syndication_source()`,
+`the_syndication_source_link()`, and `get_feed_meta()`. For example, here is
+the template code that I use (in a post context) to display both the author's
+name and the original source of the post in the templates for [Feminist Blogs][]:
+
+	<cite class="feed">from <?php the_author_posts_link()?><?php
+	if (is_syndicated() and (get_the_author() !== get_syndication_source())):
+		echo ' @ <a href="';  the_syndication_source_link(); echo '">';
+		the_syndication_source();
+		echo '</a>';
+	endif; ?></cite>
+
+For more information on template functions, see Template API below.
+
+### Categories ###
+
+WordPress allows for posts to be placed in *categories*. Each syndicated post
+that FeedWordPress adds to the WordPress database is placed into a set of
+categories. FeedWordPress gets the list of category names to use from two
+sources:
+
+1.	Categories (or "tags") that the original author placed the post in on
+	her blog
+
+2.	Categories that you set explicitly for each feed using the `cats`
+	feed setting. For example, if you wanted all the posts from Alas, A Blog
+	to be placed in the "Pacific Northwest" category and the "Cartoonists"
+	category (in addition to any categories that they were placed in on
+	Alas, A Blog), you could do this by going to Links --> Syndicated,
+	clicking the "Edit" link for Alas, A Blog, and adding the following line
+	to the Link Notes section:
+	
+		cats: Pacific Northwest:Cartoonists
+
+	(The colon separates one category name from the next.)
+
+Given the list of category names, FeedWordPress looks for categories in the
+WordPress database with the same name as either (1) the category name, or
+(2) one of the "aliases" listed in the category description.
+
+__Aliases:__ Different often authors use slightly different names for
+categories that mean the same thing (contributors to Feminist Blogs, for
+example, used categories including "Feminism", "feministy stuff",
+"Women's Issues", "Gender Issues", "Gender Equality", and so on). If you want
+FeedWordPress to treat one category name as a synonym for another, you can
+do so by creating an "alias" for the category. For example, to make
+FeedWordPress treat posts that are placed in the category "feministy stuff" as
+if they had been placed in the category "Feminism", go to Manage --> Categories,
+find the category "Feminism" and click the "Edit" link for it, and then add
+the following to the Description field, on a line by itself:
+
+	a.k.a.: feministy stuff
+
+You can add as many aliases as you like. You can also add any other text that
+you like to the Description without interfering with FeedWordPress's ability to
+use the aliases. Each alias must be on a line by itself.
+
+__Unfamiliar categories:__ By default, if one of the category names that a
+newsfeed provides is unfamiliar -- that is, if there is not yet any category
+with that name (or with that name as an alias) in your WordPress database --
+then by default FeedWordPress will *automatically create* a new category with
+that name and place the current post in it. The default behavior can be changed,
+using either the global settings in Options --> Syndication or the
+`unfamiliar categories` feed setting (see Feed Settings above), so that unfamiliar
+categories will not be added to the database. If you choose to disable the
+creation of new categories, you can also choose whether or not FeedWordPress
+should syndicate posts that do not match *any* of the categories that are
+currently in the database.
+
+One of the uses of this feature is filtering posts by category: if you want to
+your blog to syndicate only the posts in one particular category from a feed
+that has several categories, you could do so by creating a category by that
+name, adding the new feed(s), and then adding the following line to the Link
+Notes section of the feed(s) that you want to filter:
+
+	unfamiliar categories: filter
+
+Since only posts in categories that are in your database will be included, and
+only the category or categories that you wanted posts from has been added to
+your database, this will filter out all the posts that aren't in the category
+or categories that you defined ahead of time. (Similarly, you could set up
+FeedWordPress so that *all* the feeds are filtered by author by creating the set
+of users named after the authors you want to syndicate, and then setting the
+default behavior for *all* feeds at Options --> Syndication).
+
+If you need a category filter with more complex logic, you can always create a
+`syndicated_item` filter in PHP (see Plugin API below) that manipulates the
+`['categories']` array of a syndicated item.
+
+### Authors ###
+
+Most newsfeeds include information about the author of the items on them.
+(If a feed doesn't, then FeedWordPress will create an author's name based on
+the title of the feed from which the item was taken.) This information is used
+to determine the WordPress user that the post will be attributed to. Given the
+name of the author, FeedWordPress looks for authors in the WordPress database
+with the same name as either (1) their login, (2) their first name, (3) their
+nickname, (4) their full name, or (5) one of the "aliases" listed in the
+user's profile.
+
+__Aliases:__ If there is an author who posts under more than one name (for
+example, one of our contributors at [Feminist Blogs][] posts on several
+different blogs, sometimes using her full name and sometimes using only her
+first name), then you can ensure that FeedWordPress will attribute those posts
+to the same author by creating "aliases" for the author. For example, to make
+FeedWordPress treat posts by "Joseph Cardinal Ratzinger" and posts by "Pope
+Benedict XVI" as having the same author, go to Users --> Authors & Users, click
+on the "Edit" link for Pope Benedict XVI, and add a line like this to the
+Profile text:
+
+		a.k.a.: Joseph Cardinal Ratzinger
+
+You can add as many aliases as you like. You can also add any other text that
+you like to the Profile without interfering with FeedWordPress's ability to use
+the aliases. Each alias must be on a line by itself.
+
+__Unfamiliar authors:__ By default, if the author named by the newsfeed is
+unfamiliar -- that is, if there is no-one with that name registered in the
+WordPress author's database -- then by default FeedWordPress will automatically
+create a new user account with the given name and attribute the post to the new
+user. The default behavior can be changed, using either the global settings in
+Options --> Syndication or the `unfamiliar author` feed setting (see Feed
+Settings above), so that posts by unfamiliar authors will either be attributed
+to a default author (instead of creating a new user account to attribute them
+to), or filtered out and not syndicated at all.
+
+One of the uses of this feature is filtering posts by author: if you want to
+your blog to syndicate only the posts by one particular author from a feed that
+has several authors, you could do so by creating a user account with that
+author's name, adding the new feed(s), and then adding the following line to the
+Link Notes section of the feed(s) that you want to filter:
+
+	unfamiliar author: filter
+
+Since only posts by authors that are in your database will be included, and only
+the author that you wanted posts from has been added to your database, this will
+filter out posts by anyone else on the feeds with that setting. (Similarly, you
+could set up FeedWordPress so that *all* the feeds are filtered by author by
+creating the set of users named after the authors you want to syndicate, and
+then setting the default behavior for *all* feeds at Options --> Syndication).
+
+If you need an author filter with more complex logic than this allows, you can
+always create a `syndicated_item` filter in PHP (see Plugin API below) that
+manipulates the `['author_name']` or `['dc']['creator']` elements of a
+syndicated item.
+
+Special Feed Settings
+---------------------
+Most feed settings (see Feed Settings above) have no effect on FeedWordPress
+itself, but can be useful because they can be accessed from templates using the
+`get_feed_meta()` template function in a post context (see Feed Settings above
+for an example). However, you can use some feed settings to affect how
+FeedWordPress will process posts from that particular feed. Currently, these
+special settings are:
 
 -	`cats:` a colon-separated list of default categories for any post coming
 	from this feed. So, for example, a this line in its Notes section:
@@ -138,62 +358,77 @@ processes posts from that feed. Currently, the special settings are:
 		cats: computers:web
 
 	... will make FeedWordPress place any posts syndicated from that feed in
-	the "computers" and "web" categories (*in addition to*, not *instead of*
-	any categories that are applied to the post in the feed)
+	the "computers" and "web" categories. Note that by default,
+	FeedWordPress will place them in those categories *in addition to* any
+	categories that the author of the post put them in on her own website.
+	If you want to place posts from a feed *only* in the categories you
+	explicitly set, then you should use the `cats` setting together with
+	the `unfamiliar categories` setting. (See Categories above and
+	`unfamiliar categories` below for the nitty-gritty.)
 
 - 	`hardcode name: (yes|no)`
 
-	A yes/no setting. By default, FeedWordPress updates the value of the
-	Link Name field automatically to reflect the title that is reported by a
-	syndicated feed. (So, for example, if one of your contributors changes
-	the title of her weblog, the change will be reflected on your
-	Contributors list after the next update.) To manually set the Link Name
-	and prevent your new name from being overridden by FeedWordPress (so as
-	to, for example, use an abbreviated form of the site's title for reasons
-	of space), change the Link Name to a title of your choosing and then add
-	a line like this to the Link Notes section:
+	By default, FeedWordPress updates the value of the Link Name field
+	automatically to reflect the title that is reported by a syndicated
+	feed--so that if one of your contributors changes the title of her
+	website, the change will be reflected on your Contributors list after
+	the next update. If you want to stop this behavior (so that you can
+	set the title of a Contributor link manually -- e.g. so that you can use
+	an abbreviated form for reasons of space), you can change the default
+	behavior for *all* feeds using the settings in Options --> Syndication.
+	If you want to override the default behavior for only *one* feed, you
+	can use the `hardcode name` feed setting. If FeedWordPress updates the
+	title of all feeds by default, but you wish to use a manually-set title
+	for one particular feed, you can add a line like this to the Link Notes
+	section of the feed that you want to manually set the title for:
 
 		hardcode name: yes
 	
-	If `hardcode name` is absent, or set to a value other than `yes`,
-	FeedWordPress will take that as a 'no' and follow the default behavior.
+	Similarly, if FeedWordPress uses your manually-entered titles for all
+	feeds by default, but you wish to use an automatically updated title for
+	one particular feed, you can add a line like this to the Link Notes
+	section of the feed that you want to manually set the title for:
+	
+		hardcode name: no
+	
+	If `hardcode name` is absent, or set to a value other than `yes` or
+	`no`, FeedWordPress will follow the default behavior set under
+	Options --> Syndication.
 
 -	`hardcode description: (yes|no)`
 
-	A yes/no setting. By default, FeedWordPress updates the value of the
-	Link Description field automatically to reflect the tagline or
-	description that is reported by a syndicated feed. To manually set the
-	Link Description and prevent your new description from being overridden
-	by FeedWordPress (so as to, for example, use an abbreviated form of the
-	site's tagline for reasons of space), change the Link Description to a
-	title of your choosing and then add a line like this to the Link Notes
-	section:
-	
+	By default, FeedWordPress updates the value of the Link Description
+	field automatically to reflect the tagline or description that is
+	reported by a syndicated feed--so that if one of your contributors
+	changes the tagline for her website, the change will be reflected on
+	your Contributors list after the next update. If you want to stop this
+	behavior (so that you can set the taglien of a Contributor link manually
+	-- e.g. so that you can use it to provide information of another sort or
+	use an abbreviated form for reasons of space), you can change the
+	default behavior for *all* feeds using the settings in Options -->
+	Syndication. If you want to override the default behavior for only *one*
+	feed, you can use the `hardcode description` feed setting. If
+	FeedWordPress updates the description of all feeds by default, but you
+	wish to use a manually-set description for one particular feed, you can
+	add a line like this to the Link Notes section of that particular feed:
+
 		hardcode description: yes
 	
-	If `hardcode description` is absent, or set to a value other than `yes`,
-	FeedWordPress will take that as a 'no' and follow the default behavior.
+	Similarly, if FeedWordPress uses your manually-entered descriptions for
+	all feeds by default, but you wish to use an automatically updated
+	description for one particular feed, you can add a line like this to the
+	Link Notes section of that particular feed:
+	
+		hardcode description: no
+	
+	If `hardcode description` is absent, or set to a value other than `yes`
+	or `no`, FeedWordPress will follow the default behavior set under
+	Options --> Syndication.
 
 -	`hardcode categories: (yes|no)`
 
-	A yes/no setting. FeedWordPress places each syndicated post in a set of
-	categories within WordPress. It gets that list from two sources:
-	
-	1. Categories that you set explicitly for each feed (see the `cats` setting above)
-	
-	2. Categories that the original author placed the post in on her blog
-	
-	If any of the categories on the list do not exist, they are created automatically.
-	
-	If you want the posts from a particular feed to be placed *only* in the
-	categories that you set manually (see the `cats` setting above), and not
-	in the categories that they are in on the Contributor's blog, then add
-	a line like this to the Link Notes section:
-	
-		hardcode categories: yes
-	
-	If `hardcode categories` is absent, or set to a value other than `yes`,
-	FeedWordPress will take that as a 'no' and follow the default behavior.
+	**This setting has been deprecated.** If set to `yes` it is now treated
+	as equivalent  to `unfamiliar categories: default`. (See below.)
 
 -	`post status:` sets the default post status for posts from this feed
 	This can be 'publish', 'draft', or 'private'. By default, it is set to
@@ -208,6 +443,79 @@ processes posts from that feed. Currently, the special settings are:
 	PingBack pings on posts syndicated from this feed. By default,
 	syndicated posts are closed to pings, but you can set this to 'open' or
 	'closed' for particular feeds.
+
+-	`unfamiliar authors: (create|default|filter)`
+
+	By default, FeedWordPress creates new author accounts whenever it finds
+	a new post that is by an author whose name is not already in the
+	WordPress database, and uses that account for this post and any future
+	posts by an author of that name. FeedWordPress also allows you to
+	attribute posts by unfamiliar authors to a *default* user account
+	(currently, this means the System Administrator account), *instead of*
+	creating a new author, or simply not to syndicate posts by unfamiliar
+	authors (thus only syndicating posts by authors who are already in the
+	database).
+
+	Which of these FeedWordPress does by default can be set using the
+	settings in Options --> Syndicated. You can also override the default
+	behavior for specific feeds by adding the `unfamiliar author` feed
+	setting to the Link Notes section of a feed. For example, to ensure that
+	FeedWordPress filters out posts by unfamiliar authors for one particular
+	feed, add the setting:
+	
+		unfamiliar author: filter
+	
+	To ensure that FeedWordPress assigns posts by unfamiliar authors to the
+	default user account instead of creating a new user account, add the
+	setting:
+	
+		unfamiliar author: default
+	
+	If you changed the default behavior under Options --> Syndicated but
+	want to ensure that FeedWordPress creates new author accounts for
+	unfamiliar authors on one specific feed, add the setting:
+	
+		unfamiliar author: create
+	
+	If the setting is anything other than `create`, `default`, or `filter`,
+	FeedWordPress will ignore the setting and follow the default behavior
+	that you specified under Options --> Syndication.
+
+-	`unfamiliar categories: (create|default|filter)`
+
+	By default, FeedWordPress creates categories whenever it finds a new
+	post that is placed in categories whose names are not already in the
+	WordPress database. FeedWordPress allows you to change this behavior,
+	so that it will *not* create new category names. It also allows you to
+	choose whether or not posts must match *at least one* familiar category
+	to be syndicated at all.
+
+	Which of these FeedWordPress does by default can be set using the
+	settings in Options --> Syndicated. You can also override the default
+	behavior for specific feeds by adding the `unfamiliar categories` feed
+	setting to the Link Notes section of a feed. For example, to ensure
+	that, when adding new posts from *one particular feed*, FeedWordPress
+	does *not* create new categories, and filters out any posts that don't
+	match *at least one* of the categories that you have already defined,
+	add the setting:
+	
+		unfamiliar categories: filter
+	
+	To ensure that FeedWordPress does *not* create new categories, but
+	*will* still syndicate categories even if they don't match any of the
+	pre-defined categories, add the following to the feed settings:
+	
+		unfamiliar categories: default
+	
+	If you changed the default behavior under Options --> Syndicated but
+	want to ensure that FeedWordPress creates new categories for posts
+	from one particular feed, add the setting:
+	
+		unfamiliar categories: create
+
+	If the setting is anything other than `create`, `default`, or `filter`,
+	FeedWordPress will ignore the setting and follow the default behavior
+	that you specified under Options --> Syndication.
 
 Template API
 ------------
@@ -266,7 +574,7 @@ The hooks are the action ``feedwordpress_update``, the action
 filter ``syndicated_item``, the filter ``syndicated_post``, the action
 ``post_syndicated_item``, and the action ``update_syndicated_item``.
 
-For more information, see <http://projects.radgeek.com/feedwordpress/use>.
+For more information, see <http://projects.radgeek.com/feedwordpress/api>.
 
 License
 -------
