@@ -4,7 +4,7 @@
  * Author:	Kellan Elliot-McCrea <kellan@protest.net>
  *		WordPress development team <http://www.wordpress.org/>
  *		Charles Johnson <technophilia@radgeek.com>
- * Version:	0.7wp
+ * Version:	0.7wp (2005.05.07)
  * License:	GPL
  *
  * Provenance:
@@ -34,8 +34,28 @@
  * 4.	There are two WordPress-specific functions, get_rss() and wp_rss()
  *
  * 5.	New cases added to MagpieRSS::feed_start_element(),
- * 	MagpieRSS::feed_end_element(), and MagpieRSS::normalize() to handle
- *	multiple categories correctly.
+ * 	MagpieRSS::feed_end_element(), and MagpieRSS::normalize() to handle:
+ *
+ * 	(a) Multiple categories
+ *	(b) RSS 2.0 and Atom 0.6+ enclosures
+ *
+ * 	Categories are stored in $item['category'], $item['categories'],
+ *	$item['dc']['subject'], and $item['dc']['subjects'] (the singular keys
+ * 	point to string values for the first category used; the plural keys
+ *	point to an array of all the categories the item is in)
+ *
+ *	Enclosures are stored in the array $item['enclosure'] as suggested
+ *	at <http://magpie.laughingmeme.org/blog/?p=101>. So the URL of the first
+ *	enclosure is $item['enclosure'][0]['url']; the length is
+ *	$item['enclosure'][0]['length']; and the type is
+ * 	$item['enclosure'][0]['type']
+ *
+ *	Note that these are hacked-in solutions for inherited problems with
+ *	MagpieRSS as of version 0.7. They are not guaranteed to be
+ *	forward-compatible when/if Kellan solves these problems in the official
+ *	Magpie branch in the future. If you have filters (for example) that
+ *	depend on either categories or enclosures working as they currently do,
+ *	keep an eye on the ChangeLog in future releases.
  */
 
 define('RSS', 'RSS');
@@ -232,6 +252,15 @@ class MagpieRSS {
             $this->inimage = true;
         }
         
+	# -- Handle RSS 2 enclosures. Suggested by <http://magpie.laughingmeme.org/blog/?p=101>
+        elseif (
+            $this->feed_type == RSS and
+            $el == 'enclosure' )
+        {
+            $this->current_item[$el][] = $attrs;
+            $this->incontent = $el;
+        }
+
         # handle atom content constructs
         elseif ( $this->feed_type == ATOM and in_array($el, $this->_CONTENT_CONSTRUCTS) )
         {
@@ -265,10 +294,22 @@ class MagpieRSS {
         //
         elseif ($this->feed_type == ATOM and $el == 'link' ) 
         {
-            if ( isset($attrs['rel']) and $attrs['rel'] == 'alternate' ) 
+	    # -- CWJ: Treat <link> elements without explicit rel as rel="alternate"
+            if ( !isset($attrs['rel']) or isset($attrs['rel']) and $attrs['rel'] == 'alternate' ) 
             {
                 $link_el = 'link';
             }
+	    # -- CWJ: support Atom 0.6+ enclosures
+	    elseif ( isset($attrs['rel']) and $attrs['rel'] == 'enclosure' )
+	    {
+		    $link_el = 'link_' . $attrs['rel'];
+		    
+		    # -- CWJ: Normalize to RSS 2.0 enclosure handling
+		    $n = count($this->current_item[$attrs['rel']]);
+		    $this->current_item[$attrs['rel']][$n] = $attrs;
+		    $this->current_item[$attrs['rel']][$n]['url'] =
+		    	$this->current_item[$attrs['rel']][$n]['href'];
+	    }
             else {
                 $link_el = 'link_' . $attrs['rel'];
             }

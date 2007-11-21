@@ -22,18 +22,18 @@
 #
 # 		cd <your-wordpress>/wp-content ; php update-feeds.php
 #
-#	or to send an HTTP GET request to the appropriate URI:
+#	or to send an HTTP POST request to the appropriate URI:
 #
-# 		curl http://xyz.com/wp-content/update-feeds.php?shibboleth=foo
+# 		curl http://xyz.com/wp-content/update-feeds.php -d shibboleth=foo
 #
 # 4.	If you want to update *one* of the feeds rather than *all* of them, then
 # 	pass the URI and title as command-line arguments:
 #
 # 		$ php update-feeds.php http://www.radgeek.com "Geekery Today"
 #
-# 	or in the GET query:
+# 	or in the POST request:
 #
-# 		$ curl http://www.xyz.com/wp-content/update-feeds.php?uri=http://www.radgeek.com\&title=Geekery+Today\&shibboleth=yourshibboleth
+# 		$ curl http://www.xyz.com/wp-content/update-feeds.php -d uri=http://www.radgeek.com\&title=Geekery+Today\&shibboleth=foo
 #
 
 require_once ('../wp-config.php');

@@ -1,109 +1,150 @@
 Change Log
 ==========
 
+Changes from 0.95 to 0.96
+-------------------------
+
+*	FEATURE: support has been added for enclosures in RSS 2.0 and Atom
+	0.6+ newsfeeds. WordPress already supports adding enclosures to an
+	item; FeedWordPress merely gets the information on the enclosure
+	from the feed it is syndicating and plugs that information directly
+	into the WordPress database so that (among other things) that post
+	will have its enclosure listed in your blog's RSS 2 newsfeed.
+
+	Note that enclosure support requires using the optional MagpieRSS
+	upgrade (i.e., replacing your `wp-includes/rss-functions.php` with `OPTIONAL/wp-includes/rss-functions.php` from the FWP archive)
+
+*	FEATURE: for completeness's sake, there is now a feed setting,
+	`hardcode url`, that allows you to set the URI for the front page
+	of a contributor's website manually (that is, prevent it from being
+	automatically updated from the feed channel link on each update). To
+	set the URI manually, put a line like this in the Link Notes section
+	of a feed:
+	
+		hardcode url: yes
+	
+	You can also instruct FeedWordPress to use hardcoded URIs by default
+	on all feeds using Options --> Syndication
+
+*	FEATURE: by default, when FeedWordPress finds new syndicated posts,
+	it (1) publishes them immediately, (2) turns comments off, and (3)
+	turns trackback / pingback pings off. You can now alter all three
+	default behaviors (e.g., to allow pings on syndicated posts, or to
+	send newly-syndicated posts to the draft pile for moderation) using
+	Options --> Syndication
+
+
 Changes from 0.91 to 0.95
 -------------------------
 
-*	BUG FIX: Fixed an obscure bug in the handling of categories: categories
-	with trailing whitespace could cause categories with duplicate names to
-	be created. This no longer happens. While I was at it I tightened up the
-	operation of FeedWordPress::lookup_categories() a bit in general.
+*	BUG FIX: Fixed an obscure bug in the handling of categories:
+	categories with trailing whitespace could cause categories with
+	duplicate names to be created. This no longer happens. While I was
+	at it I tightened up the operation of
+	FeedWordPress::lookup_categories() a bit in general.
 
 *	FEATURE DEPRECATED: the feed setting `hardcode categories` is now
-	deprecated in favor of `unknown categories` (see below), which allows
-	you to strip off any syndication categories not already in your database
-	using `unknown categories: default` or `unknown categories: filter`. If
-	you have `hardcode categories: yes` set on a feed, this will be treated
-	as `unknown categories: default` (i.e., no new categories will be added,
-	but if a post doesn't match any of the categories it will be added in
-	the default category--usually "Uncategorized" or "General").
+	deprecated in favor of `unknown categories` (see below), which
+	allows you to strip off any syndication categories not already in
+	your database using `unknown categories: default` or `unknown
+	categories: filter`. If you have `hardcode categories: yes` set on a
+	feed, this will be treated as `unknown categories: default` (i.e.,
+	no new categories will be added, but if a post doesn't match any of
+	the categories it will be added in the default category--usually
+	"Uncategorized" or "General").
 
 *	FEATURE: You can now set global defaults as to whether or not
-	FeedWordPress will update the Link Name and Link Description settings
-	for feeds automatically from the feed title and feed tagline. (By
-	default, it does, as it has in past versions.) Whether this behavior is
-	turned on or off, you can still override the default behavior using
-	feed settings of `hardcode name: yes`, `hardcode name: no`,
-	`hardcode description: yes`, or `hardcode description: no`.
+	FeedWordPress will update the Link Name and Link Description
+	settings for feeds automatically from the feed title and feed
+	tagline. (By default, it does, as it has in past versions.) Whether
+	this behavior is turned on or off, you can still override the
+	default behavior using feed settings of `hardcode name: yes`,
+	`hardcode name: no`, `hardcode description: yes`, or `hardcode
+	description: no`.
 
-*	FEATURE: Users can now provide one or several "aliases" for an author,
-	just as they can for a category. For example, to make FeedWordPress
-	treat posts by "Joseph Cardinal Ratzinger" and "Pope Benedict XVI" as
-	by the same author, edit the user profile for Pope Benedict XVI and add
-	a line like this to the "User profile" field:
+*	FEATURE: Users can now provide one or several "aliases" for an
+	author, just as they can for a category. For example, to make
+	FeedWordPress treat posts by "Joseph Cardinal Ratzinger" and "Pope
+	Benedict XVI" as by the same author, edit the user profile for Pope
+	Benedict XVI and add a line like this to the "User profile" field:
 	
 		a.k.a.: Joseph Cardinal Ratzinger
 	
-	You can add several aliases, each on a line by itself. You can also add
-	any other text you like to the Profile without interfering with the
-	aliases.
+	You can add several aliases, each on a line by itself. You can also
+	add any other text you like to the Profile without interfering with
+	the aliases.
 	
-*	FEATURE: Users can now choose how to handle syndicated posts that are
-	in unfamiliar categories or by unfamiliar authors (i.e., categories or
-	authors whose names are not yet in the WordPress database). By default,
-	FeedWordPress will (as before) create a new category (or new author) and
-	use it for the current post and any future posts. This behavior can be
-	changed, either for all feeds or for one or another particular feed.
+*	FEATURE: Users can now choose how to handle syndicated posts that
+	are in unfamiliar categories or by unfamiliar authors (i.e.,
+	categories or authors whose names are not yet in the WordPress
+	database). By default, FeedWordPress will (as before) create a new
+	category (or new author) and use it for the current post and any
+	future posts. This behavior can be changed, either for all feeds or
+	for one or another particular feed.
 	
 	There are now three different options for an unfamiliar author: (1)
 	FeedWordPress can create a new author account and attribute the
-	syndicated post to the new account; (2) FeedWordPress can attribute the
-	post to an author if the author's name is familiar, and to a default
-	author (currently, this means the Site Administrator account) if it is
-	not; (3) FeedWordPress can drop posts by unfamiliar authors and 
-	syndicate only posts by authors who are already in the database.
+	syndicated post to the new account; (2) FeedWordPress can attribute
+	the post to an author if the author's name is familiar, and to a
+	default author (currently, this means the Site Administrator
+	account) if it is not; (3) FeedWordPress can drop posts by
+	unfamiliar authors and syndicate only posts by authors who are
+	already in the database.
 	
-	There are, similarly, two different options for an unfamiliar category:
-	(1) FeedWordPress can create new categories and place the syndicated
-	post in them; (2) FeedWordPress can drop the unfamiliar categories and
-	place syndicated posts only in categories that it is already familiar
-	with. In addition, FeedWordPress 0.95 lets you choose whether posts that
-	are in *no* familiar categories should be syndicated (and placed in the
-	default category for the blog) or simply dropped.
+	There are, similarly, two different options for an unfamiliar
+	category: (1) FeedWordPress can create new categories and place the
+	syndicated post in them; (2) FeedWordPress can drop the unfamiliar
+	categories and place syndicated posts only in categories that it is
+	already familiar with. In addition, FeedWordPress 0.95 lets you
+	choose whether posts that are in *no* familiar categories should be
+	syndicated (and placed in the default category for the blog) or
+	simply dropped.
 	
-	You can set the default behavior for both authors and categories using
-	the settings in Options --> Syndication. You can also set different
-	behavior for specific feeds by adding the `unfamiliar author` and / or
-	`unfamiliar categories` settings to the Link Notes section of a feed:
+	You can set the default behavior for both authors and categories
+	using the settings in Options --> Syndication. You can also set
+	different behavior for specific feeds by adding the `unfamiliar
+	author` and / or `unfamiliar categories` settings to the Link Notes
+	section of a feed:
 	
 		unfamiliar author: (create|default|filter)
 		unfamiliar categories: (create|default|filter)
 	
-	A setting of `unfamiliar author: create` will make FeedWordPress create
-	new authors to match unfamiliar author names *for this feed alone*. A
-	setting of `unfamiliar author: default` will make it assign posts from
-	unfamiliar authors to the default user account. A setting of
-	`unfamiliar author: filter` will cause all posts (from this feed alone)
-	to be dropped unless they are by an author already listed in the
-	database. Similiarly, `unfamiliar categories: create` will make
-	FeedWordPress create new categories to match unfamiliar category names
-	*for this feed alone*; `unfamiliar categories: default` will cause it
-	to drop any unfamiliar category names; and
+	A setting of `unfamiliar author: create` will make FeedWordPress
+	create new authors to match unfamiliar author names *for this feed
+	alone*. A setting of `unfamiliar author: default` will make it
+	assign posts from unfamiliar authors to the default user account. A
+	setting of `unfamiliar author: filter` will cause all posts (from
+	this feed alone) to be dropped unless they are by an author already
+	listed in the database. Similiarly, `unfamiliar categories: create`
+	will make FeedWordPress create new categories to match unfamiliar
+	category names *for this feed alone*; `unfamiliar categories:
+	default` will cause it to drop any unfamiliar category names; and
 	`unfamiliar categories: filter` will cause it to *both* drop any
-	unfamiliar category names *and* to only syndicate posts that are placed
-	in one or more familiar categories.
+	unfamiliar category names *and* to only syndicate posts that are
+	placed in one or more familiar categories.
 	
-	These two new features allow users to do some coarse-grained filtering
-	without having to write a PHP filter. Specifically, they offer an easy
-	way for you to filter feeds by category or by author. Suppose, for
-	example, that you only wanted to syndicate posts that your contributors
-	place in the "Llamas" category. You could do so by setting up your
-	installation of WordPress so that the only category in the database is
-	"Llamas," and then use Options --> Syndication to set "Unfamiliar
-	categories" to "don't create new categories and don't syndicate posts
-	unless they match at least one familiar category". Now, when you update,
-	only posts in the "Llamas" category will be syndicated by FeedWordPress.
+	These two new features allow users to do some coarse-grained
+	filtering without having to write a PHP filter. Specifically, they
+	offer an easy way for you to filter feeds by category or by author.
+	Suppose, for example, that you only wanted to syndicate posts that
+	your contributors place in the "Llamas" category. You could do so by
+	setting up your installation of WordPress so that the only category
+	in the database is "Llamas," and then use Options --> Syndication to
+	set "Unfamiliar categories" to "don't create new categories and
+	don't syndicate posts unless they match at least one familiar
+	category". Now, when you update, only posts in the "Llamas" category
+	will be syndicated by FeedWordPress.
 	
 	Similarly, if you wanted to filter one particular feed so that only
 	posts by (for example) the author "Earl J. Llama" were syndicated to
-	your site, you could do so by creating a user account for Earl J. Llama,
-	then adding the following line to the settings for the feed in Link
-	Notes:
+	your site, you could do so by creating a user account for Earl J.
+	Llama, then adding the following line to the settings for the feed
+	in Link Notes:
 	
 		unfamiliar author: filter
 	
-	This will cause any posts from this feed that are not authored by Earl
-	J. Llama to be discarded, and only the posts by Earl J. Llama will be
-	syndicated. (If the setting is used on one specific feed, it will not
-	affect how posts from other feeds are syndicated.)
+	This will cause any posts from this feed that are not authored by
+	Earl J. Llama to be discarded, and only the posts by Earl J. Llama
+	will be syndicated. (If the setting is used on one specific feed, it
+	will not affect how posts from other feeds are syndicated.)
 

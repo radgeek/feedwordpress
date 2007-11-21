@@ -3,11 +3,11 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://projects.radgeek.com/feedwordpress
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 0.95
+Version: 0.96
 Author: Charles Johnson
 Author URI: http://www.radgeek.com/
 License: GPL
-Last modified: 2005-04-20 10:58pm EDT
+Last modified: 2005-05-08 1:54pm EDT
 */
 
 # This uses code derived from:
@@ -27,7 +27,7 @@ Last modified: 2005-04-20 10:58pm EDT
 
 # -- Don't change these unless you know what you're doing...
 define ('RPC_MAGIC', 'tag:radgeek.com/projects/feedwordpress/');
-define ('FEEDWORDPRESS_VERSION', '0.95');
+define ('FEEDWORDPRESS_VERSION', '0.96');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
 // Note that the rss-functions.php that comes prepackaged with WordPress is
@@ -134,12 +134,8 @@ function get_feed_meta ($key) {
 		SELECT link_notes FROM $wpdb->links
 		WHERE link_rss = '".$wpdb->escape($feed)."'"
 		);
-		
-		$notes = explode("\n", $result);
-		foreach ($notes as $note):
-			list($k, $v) = explode(': ', $note, 2);
-			$meta[$k] = stripcslashes(trim($v));
-		endforeach;
+
+		$meta = FeedWordPress::notes_to_settings($result);
 		$ret = $meta[$key];
 	endif; /* if */
 	return $ret;
@@ -207,6 +203,19 @@ function fwp_syndication_options_page () {
 			update_option('feedwordpress_update_logging', $_REQUEST['update_logging']);
 			update_option('feedwordpress_unfamiliar_author', $_REQUEST['unfamiliar_author']);
 			update_option('feedwordpress_unfamiliar_category', $_REQUEST['unfamiliar_category']);
+			update_option('feedwordpress_syndicated_post_status', $_REQUEST['post_status']);
+
+			if (isset($_REQUEST['comment_status']) and ($_REQUEST['comment_status'] == 'open')) :
+				update_option('feedwordpress_syndicated_comment_status', 'open');
+			else :
+				update_option('feedwordpress_syndicated_comment_status', 'closed');
+			endif;
+
+			if (isset($_REQUEST['ping_status']) and ($_REQUEST['ping_status'] == 'open')) :
+				update_option('feedwordpress_syndicated_ping_status', 'open');
+			else :
+				update_option('feedwordpress_syndicated_ping_status', 'closed');
+			endif;
 			
 			if (isset($_REQUEST['hardcode_name']) and ($_REQUEST['hardcode_name'] == 'no')) :
 				update_option('feedwordpress_hardcode_name', 'no');
@@ -218,6 +227,12 @@ function fwp_syndication_options_page () {
 				update_option('feedwordpress_hardcode_description', 'no');
 			else :
 				update_option('feedwordpress_hardcode_description', 'yes');
+			endif;
+
+			if (isset($_REQUEST['hardcode_url']) and ($_REQUEST['hardcode_url'] == 'no')) :
+				update_option('feedwordpress_hardcode_url', 'no');
+			else :
+				update_option('feedwordpress_hardcode_url', 'yes');
 			endif;
 ?>
 <div class="updated">
@@ -234,6 +249,11 @@ function fwp_syndication_options_page () {
 
 	$hardcode_name = get_settings('feedwordpress_hardcode_name');
 	$hardcode_description = get_settings('feedwordpress_hardcode_description');
+	$hardcode_url = get_settings('feedwordpress_hardcode_url');
+
+	$post_status = FeedWordPress::syndicated_status('post', array(), 'publish');
+	$comment_status = FeedWordPress::syndicated_status('comment', array(), 'closed');
+	$ping_status = FeedWordPress::syndicated_status('ping', array(), 'closed');
 
 	$unfamiliar_author = array ('create' => '','default' => '','filter' => '');
 	$ua = FeedWordPress::on_unfamiliar('author');
@@ -251,21 +271,7 @@ function fwp_syndication_options_page () {
 <h2>Syndication Options</h2>
 <form action="" method="post">
 <fieldset class="options">
-<legend>Template Options</legend>
-<table class="editform" width="100%" cellspacing="2" cellpadding="5">
-<tr>
-<th width="33%" scope="row">Permalinks for syndicated posts point to:</th>
-<td width="67%"><select name="munge_permalink" size="1">
-<option value="yes"<?=($munge_permalink=='yes')?' selected="selected"':''?>>source website</option>
-<option value="no"<?=($munge_permalink=='no')?' selected="selected"':''?>>this website</option>
-</select></td>
-</tr>
-</table>
-<div class="submit"><input type="submit" name="action" value="<?=$caption?>" /></div>
-</fieldset>
-
-<fieldset class="options">
-<legend>Syndication Options</legend>
+<legend>Syndicated Feeds</legend>
 <table class="editform" width="100%" cellspacing="2" cellpadding="5">
 <tr>
 <th width="33%" scope="row">Syndicate links in category:</th>
@@ -288,6 +294,35 @@ function fwp_syndication_options_page () {
 <td width="67%"><ul style="margin:0;list-style:none">
 <li><input type="checkbox" name="hardcode_name" value="no"<?=(($hardcode_name=='yes')?'':' checked="checked"')?>/> Contributor name (feed title)</li>
 <li><input type="checkbox" name="hardcode_description" value="no"<?=(($hardcode_description=='yes')?'':' checked="checked"')?>/> Contributor description (feed tagline)</li>
+<li><input type="checkbox" name="hardcode_url" value="no"<?=(($hardcode_url=='yes')?'':' checked="checked"')?>/> Homepage (feed link)</li>
+</ul></td></tr>
+</table>
+</fieldset>
+
+<fieldset class="options">
+<legend>Syndicated Posts</egend>
+<table class="editform" width="100%" cellspacing="2" cellpadding="5">
+<tr><th width="33%" scope="row">Permalinks point to:</th>
+<td width="67%"><select name="munge_permalink" size="1">
+<option value="yes"<?=($munge_permalink=='yes')?' selected="selected"':''?>>original website</option>
+<option value="no"<?=($munge_permalink=='no')?' selected="selected"':''?>>this website</option>
+</select></td></tr>
+
+<tr><th width="33%" scope="row">Publication:</th>
+<td width="67%"><ul style="list-style:none">
+<li><label><input type="radio" name="post_status" value="publish"<?=($post_status=='publish')?' checked="checked"':''?> /> Publish syndicated posts immediately</label></li>
+<li><label><input type="radio" name="post_status" value="draft"<?=($post_status=='draft')?' checked="checked"':''?> /> Hold syndicated posts as drafts</label></li>
+<li><label><input type="radio" name="post_status" value="private"<?=($post_status=='private')?' checked="checked"':''?> /> Hold syndicated posts as private posts</label></li>
+</ul></td></tr>
+
+<tr><th width="33%" scope="row">Comments:</th>
+<td width="67%"><ul style="list-style:none">
+<li><input type="checkbox" name="comment_status" value="open"<?=($comment_status=='open')?' checked="checked"':''?> /> Allow comments on syndicated posts</label></li>
+</ul></td></tr>
+
+<tr><th width="33%" scope="row">Trackback and Pingback:</th>
+<td width="67%"><ul style="list-style:none">
+<li><input type="checkbox" name="ping_status" value="open"<?=($ping_status=='open')?' checked="checked"':''?> /> Accept pings on syndicated posts</li>
 </ul></td></tr>
 
 <tr><th width="33%" scope="row" style="vertical-align:top">Unfamiliar authors:</th>
@@ -301,9 +336,6 @@ function fwp_syndication_options_page () {
 <li><label><input type="radio" name="unfamiliar_category" value="create"<?=$unfamiliar_category['create']?>/> create any categories the post is in</label></li>
 <li><label><input type="radio" name="unfamiliar_category" value="default"<?=$unfamiliar_category['default']?>/> don't create new categories</li>
 <li><label><input type="radio" name="unfamiliar_category" value="filter"<?=$unfamiliar_category['filter']?>/> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
-</ul>
-
-</ul></li>
 </ul></td></tr>
 
 </select></td></tr>
@@ -340,9 +372,9 @@ function fwp_syndication_manage_page () {
 <?php $cont = true;
 if (isset($_REQUEST['action'])):
 	//die("ACTION: '".$_REQUEST['action']."'");
-	if ($_REQUEST['action'] == 'feedfinder'): $cont = fwp_feedfinder_page();
-	elseif ($_REQUEST['action'] == 'switchfeed'): $cont = fwp_switchfeed_page();
-	elseif ($_REQUEST['action'] == 'Delete Checked'): $cont = fwp_multidelete_page();
+	if ($_REQUEST['action'] == 'feedfinder') : $cont = fwp_feedfinder_page();
+	elseif ($_REQUEST['action'] == 'switchfeed') : $cont = fwp_switchfeed_page();
+	elseif ($_REQUEST['action'] == 'Delete Checked') : $cont = fwp_multidelete_page();
 	endif;
 endif;
 
@@ -691,24 +723,8 @@ class FeedWordPress {
 	
 		$feeds = array ();
 		if ($result): foreach ($result as $link):
-			$sec = array ();
-
 			if (strlen($link->link_rss) > 0):
-				$notes = explode("\n", $link->link_notes);
-				foreach ($notes as $note):
-					list($key, $value) = explode(": ", $note, 2);
-					
-					if (strlen($key) > 0) :
-						// Unescape and trim() off the
-						// whitespace. Thanks to Ray
-						// Lischner for pointing out the
-						// need to trim.
-						$sec[$key] = stripcslashes (
-							trim($value)
-						);
-					endif;
-				endforeach;
-
+				$sec = FeedWordPress::notes_to_settings($link->link_notes);
 				$sec['uri'] = $link->link_rss;
 				$sec['name'] = $link->link_name;
 
@@ -731,7 +747,24 @@ class FeedWordPress {
 		endforeach; endif;
 		
 		$this->feeds = $feeds;
-	} // function acquire_feeds ()
+	} // FeedWordPress::FeedWordPress ()
+
+	function notes_to_settings ($link_notes) {
+		$notes = explode("\n", $link_notes);
+		
+		$sec = array ();
+		foreach ($notes as $note):
+			list($key, $value) = explode(": ", $note, 2);
+
+			if (strlen($key) > 0) :
+				// Unescape and trim() off the whitespace.
+				// Thanks to Ray Lischner for pointing out the
+				// need to trim off whitespace.
+				$sec[$key] = stripcslashes (trim($value));
+			endif;
+		endforeach;
+		return $sec;
+	} // FeedWordPress::notes_to_settings ()
 
 	function update ($uri) {
 		global $wpdb;
@@ -824,6 +857,18 @@ class FeedWordPress {
 		return $ret;
 	}
 
+	function syndicated_status ($what, $f, $default) {
+		global $wpdb;
+
+		$ret = get_settings("feedwordpress_syndicated_{$what}_status");
+		if ( isset($f["$what status"]) ) :
+			$ret = $f["$what status"];
+		elseif (!$ret) :
+			$ret = $default;
+		endif;
+		return $wpdb->escape(trim(strtolower($ret)));
+	}
+
 	function negative ($f, $setting) {
 		$nego = array ('n', 'no', 'f', 'false');
 		return (isset($f[$setting]) and in_array(strtolower($f[$setting]), $nego));
@@ -842,7 +887,7 @@ class FeedWordPress {
 		endif;
 
 		$update = array();
-		if (isset($channel['link'])) :
+		if (!FeedWordPress::hardcode('url', $f) and isset($channel['link'])) :
 			$update[] = "link_url = '".$wpdb->escape($channel['link'])."'";
 		endif;
 
@@ -911,6 +956,7 @@ class FeedWordPress {
 		// Cf.: <http://mosquito.wordpress.org/view.php?id=901>
 		global $fwp_channel, $fwp_feedmeta;
 		$fwp_channel = $channel; $fwp_feedmeta = $f;
+		
 		$item = apply_filters('syndicated_item', $item);
 		
 		// Filters can halt further processing by returning NULL
@@ -960,7 +1006,7 @@ class FeedWordPress {
 			#	in the feed, and if it's in the content itself we'd have
 			#	to do yet more XML parsing to do things right. For now
 			#	this will have to do.
-	
+
 			$this->_base = $item['link']; // Reset the base for resolving relative URIs
 			foreach ($this->uri_attrs as $pair):
 				list($tag,$attr) = $pair;
@@ -1002,7 +1048,7 @@ class FeedWordPress {
 			# --- cut here ---
 			$post['post_name'] = sanitize_title($post['post_title']);
 			# --- cut here ---
-			
+
 			# RSS is a fucking mess. Figure out whether we have a date in
 			# dc:date, <issued>, <pubDate>, etc., and get it into Unix epoch
 			# format for reformatting. If you can't find anything, use the
@@ -1029,25 +1075,36 @@ class FeedWordPress {
 			$post['post_modified'] = date('Y-m-d H:i:s', $post['epoch']['modified']);
 			$post['post_date_gmt'] = gmdate('Y-m-d H:i:s', $post['epoch']['issued']);
 			$post['post_modified_gmt'] = gmdate('Y-m-d H:i:s', $post['epoch']['modified']);
-			
-			# Use feed-level preferences or a sensible default.
-			$post['post_status'] = (isset($f['post status']) ? $wpdb->escape(trim(strtolower($f['post status']))) : 'publish');
-			$post['comment_status'] = (isset($f['comment status']) ? $wpdb->escape(trim(strtolower($f['comment status']))) : 'closed');
-			$post['ping_status'] = (isset($f['ping status']) ? $wpdb->escape(trim(strtolower($f['ping status']))) : 'closed');
-	
+
+			# Use feed-level preferences or the global default.
+			$post['post_status'] = FeedWordPress::syndicated_status('post', $f, 'publish');
+			$post['comment_status'] = FeedWordPress::syndicated_status('comment', $f, 'closed');
+			$post['ping_status'] = FeedWordPress::syndicated_status('ping', $f, 'closed');
+
 			// Unique ID (hopefully a unique tag: URI); failing that, the permalink
 			if (isset($item['id'])):
 				$post['guid'] = $wpdb->escape($item['id']);
 			else:
 				$post['guid'] = $wpdb->escape($item['link']);
 			endif;
-	
-			if (isset($channel['title'])) $post['syndication_source'] = $channel['title'];
-			if (isset($channel['link'])) $post['syndication_source_uri'] = $channel['link'];
-			$post['syndication_feed'] = $f['uri'];
+
+			// RSS 2.0 / Atom 0.6+ enclosure support
+			if ( isset($item['enclosure']) and is_array($item['enclosure']) ) :
+				foreach ( $item['enclosure'] as $enclosure ) :
+					$post['meta']['enclosure'][] =
+						$enclosure['url']."\n".
+						$enclosure['length']."\n".
+						$enclosure['type'];
+				endforeach;
+			endif;
+
+			// In case you want to point back to the blog this was syndicated from
+			if (isset($channel['title'])) $post['meta']['syndication_source'] = $channel['title'];
+			if (isset($channel['link'])) $post['meta']['syndication_source_uri'] = $channel['link'];
+			$post['meta']['syndication_feed'] = $f['uri'];
 
 			// In case you want to know the external permalink...
-			$post['syndication_permalink'] = $item['link'];
+			$post['meta']['syndication_permalink'] = $item['link'];
 
 			// Feed-by-feed options for author and category creation
 			$post['named']['unfamiliar']['author'] = $f['unfamiliar author'];
@@ -1234,31 +1291,42 @@ class FeedWordPress {
 	} // function FeedWordPress::add_to_category ()
 	# --- cut here ---
 
-	// FeedWordPress::add_rss_meta: adds feed meta-data to user-defined keys
-	// for each entry. Interesting feed meta-data is tagged in the $post
-	// array using the prefix 'syndication_'. This should be used for
-	// anything that the WordPress user might want to access about a post's
-	// original source that isn't provided for by standard WP meta-data
-	// (i.e., beyond author, title, timestamp, and categories)
+	// FeedWordPress::add_rss_meta: adds interesting meta-data to each entry
+	// using the space for custom keys. The set of keys and values to add is
+	// specified by the keys and values of $post['meta']. This is used to
+	// store anything that the WordPress user might want to access from a
+	// template concerning the post's original source that isn't provided
+	// for by standard WP meta-data (i.e., any interesting data about the
+	// syndicated post other than author, title, timestamp, categories, and
+	// guid). It's also used to hook into WordPress's support for
+	// enclosures.
 	function add_rss_meta ($wpdb, $postId, $post) {
-		foreach ($post as $key => $value):
-			if (strpos($key, "syndication_") === 0):
-				$value = $wpdb->escape($value);
+		if ( is_array($post) and isset($post['meta']) and is_array($post['meta']) ) :
+			foreach ( $post['meta'] as $key => $values ) :
 
+				$key = $wpdb->escape($key);
+
+				// If this is an update, clear out the old
+				// values to avoid duplication.
 				$result = $wpdb->query("
 				DELETE FROM $wpdb->postmeta
 				WHERE post_id='$postId' AND meta_key='$key'
 				");
 
-				$result = $wpdb->query("
-				INSERT INTO $wpdb->postmeta
-				SET
-					post_id='$postId',
-					meta_key='$key',
-					meta_value='$value'
-				");
-			endif;
-		endforeach;
+				// Allow for either a single value or an array
+				if (!is_array($values)) $values = array($values);
+				foreach ( $values as $value ) :
+					$value = $wpdb->escape($value);
+					$result = $wpdb->query("
+					INSERT INTO $wpdb->postmeta
+					SET
+						post_id='$postId',
+						meta_key='$key',
+						meta_value='$value'
+					");
+				endforeach;
+			endforeach;
+		endif;
 	} /* FeedWordPress::add_rss_meta () */
 
 	// FeedWordPress::author_to_id (): get the ID for an author name from
