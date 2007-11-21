@@ -4,7 +4,7 @@
  * Author:	Kellan Elliot-McCrea <kellan@protest.net>
  *		WordPress development team <http://www.wordpress.org/>
  *		Charles Johnson <technophilia@radgeek.com>
- * Version:	0.8wp (2005.10.14)
+ * Version:	0.8wp (2007.02.15)
  * License:	GPL
  *
  * Provenance:
@@ -126,27 +126,92 @@ class MagpieRSS {
     var $WARNING = "";
     
     // define some constants
-    
+    var $_XMLNS_FAMILIAR = array (
+    	'http://www.w3.org/2005/Atom' => 'atom' /* 1.0 */,
+	'http://purl.org/atom/ns#' => 'atom' /* pre-1.0 */,
+	'http://purl.org/rss/1.0/' => 'rss' /* 1.0 */,
+	'http://backend.userland.com/RSS2' => 'rss' /* 2.0 */,
+	'http://www.w3.org/1999/02/22-rdf-syntax-ns#' => 'rdf', 
+	'http://www.w3.org/1999/xhtml' => 'xhtml',
+	'http://purl.org/dc/elements/1.1/' => 'dc',
+	'http://purl.org/dc/terms/' => 'dcterms',
+	'http://purl.org/rss/1.0/modules/content/' => 'content',
+	'http://purl.org/rss/1.0/modules/syndication/' => 'sy',
+	'http://purl.org/rss/1.0/modules/taxonomy/' => 'taxo',
+	'http://purl.org/rss/1.0/modules/dc/' => 'dc',
+	'http://wellformedweb.org/CommentAPI/' => 'wfw',
+	'http://webns.net/mvcb/' => 'admin',
+	'http://purl.org/rss/1.0/modules/annotate/' => 'annotate',
+	'http://xmlns.com/foaf/0.1/' => 'foaf',
+	'http://madskills.com/public/xml/rss/module/trackback/' => 'trackback',
+	'http://web.resource.org/cc/' => 'cc'
+    );
+
+    var $_XMLBASE_RESOLVE = array (
+    	// Atom 0.3 and 1.0 xml:base support
+	'atom' => array (
+		'link' => array ('href' => true),
+		'content' => array ('src' => true, '*xml' => true, '*html' => true),
+		'summary' => array ('*xml' => true, '*html' => true),
+		'title' => array ('*xml' => true, '*html' => true),
+		'rights' => array ('*xml' => true, '*html' => true),
+		'subtitle' => array ('*xml' => true, '*html' => true),
+		'info' => array('*xml' => true, '*html' => true),
+		'tagline' => array('*xml' => true, '*html' => true),
+		'copyright' => array ('*xml' => true, '*html' => true),
+		'generator' => array ('uri' => true, 'url' => true),
+		'uri' => array ('*content' => true),
+		'url' => array ('*content' => true),
+		'icon' => array ('*content' => true),
+		'logo' => array ('*content' => true),
+	),
+	
+	// for inline namespaced XHTML
+	'xhtml' => array (
+		'a' => array ('href' => true),
+		'applet' => array('codebase' => true),
+		'area' => array('href' => true),
+		'blockquote' => array('cite' => true),
+		'body' => array('background' => true),
+		'del' => array('cite' => true),
+		'form' => array('action' => true),
+		'frame' => array('longdesc' => true, 'src' => true),
+		'iframe' => array('longdesc' => true, 'iframe' => true, 'src' => true),
+		'head' => array('profile' => true),
+		'img' => array('longdesc' => true, 'src' => true, 'usemap' => true),
+		'input' => array('src' => true, 'usemap' => true),
+		'ins' => array('cite' => true),
+		'link' => array('href' => true),
+		'object' => array('classid' => true, 'codebase' => true, 'data' => true, 'usemap' => true),
+		'q' => array('cite' => true),
+		'script' => array('src' => true),
+	),
+    );
+
     var $_ATOM_CONTENT_CONSTRUCTS = array(
-    	'content', 'summary', 'title', /* common */
-	'info', 'tagline', 'copyright', /* Atom 0.3 */
-    	'rights', 'subtitle', /* Atom 1.0 */
-	);
+        'content', 'summary', 'title', /* common */
+    'info', 'tagline', 'copyright', /* Atom 0.3 */
+        'rights', 'subtitle', /* Atom 1.0 */
+    );
     var $_XHTML_CONTENT_CONSTRUCTS = array('body', 'div');
     var $_KNOWN_ENCODINGS    = array('UTF-8', 'US-ASCII', 'ISO-8859-1');
 
     // parser variables, useless if you're not a parser, treat as private
-    var $stack              = array(); // parser stack
+    var $stack    = array('element' => array (), 'xmlns' => array (), 'xml:base' => array ()); // stack of XML data
+
     var $inchannel          = false;
     var $initem             = false;
-    
+
     var $incontent          = array(); // non-empty if in namespaced XML content field
-    var $exclude_top	    = false; // true when Atom 1.0 type="xhtml"
+    var $xml_escape	    = false; // true when accepting namespaced XML
+    var $exclude_top        = false; // true when Atom 1.0 type="xhtml"
 
     var $intextinput        = false;
     var $inimage            = false;
+    var $root_namespaces    = array();
     var $current_namespace  = false;
-    
+    var $working_namespace_table = array();
+
     /**
      *  Set up XML parser, parse source, and return populated RSS object..
      *   
@@ -176,7 +241,7 @@ class MagpieRSS {
      *
      */
     function MagpieRSS ($source, $output_encoding='ISO-8859-1', 
-                        $input_encoding=null, $detect_encoding=true) 
+                        $input_encoding=null, $detect_encoding=true, $base_uri=null) 
     {   
         # if PHP xml isn't compiled in, die
         #
@@ -207,7 +272,9 @@ class MagpieRSS {
                 'feed_start_element', 'feed_end_element' );
                         
         xml_set_character_data_handler( $this->parser, 'feed_cdata' ); 
-	
+
+	$this->stack['xml:base'] = array($base_uri);
+
         $status = xml_parse( $this->parser, $source );
         
         if (! $status ) {
@@ -227,20 +294,51 @@ class MagpieRSS {
         $this->normalize();
     }
     
-    function feed_start_element($p, $element, &$attrs) {
-        $el = $element = strtolower($element);
-        $attrs = array_change_key_case($attrs, CASE_LOWER);
-        
-        // check for a namespace, and split if found
-        if ( empty($this->incontent) ) { // Don't munge content tags
-		$ns = false;
-		if ( strpos( $element, ':' ) ) {
-		    list($ns, $el) = split( ':', $element, 2); 
-		}
-		if ( $ns and $ns != 'rdf' ) {
-		    $this->current_namespace = $ns;
+    function feed_start_element($p, $element, &$attributes) {
+        $el = strtolower($element);
+
+	$namespaces = end($this->stack['xmlns']);
+	$baseuri = end($this->stack['xml:base']);
+
+ 	if (isset($attributes['xml:base'])) {
+		$baseuri = Relative_URI::resolve($attributes['xml:base'], $baseuri);
+	}
+	array_push($this->stack['xml:base'], $baseuri);
+
+	// scan for xml namespace declarations. ugly ugly ugly.
+	// theoretically we could use xml_set_start_namespace_decl_handler and
+	// xml_set_end_namespace_decl_handler to handle this more elegantly, but
+	// support for these is buggy
+	foreach ($attributes as $attr => $value) {
+		if ( preg_match('/^xmlns(\:([A-Z_a-z].*))?$/', $attr, $match) ) {
+			$ns = (isset($match[2]) ? $match[2] : '');
+			$namespaces[$ns] = $value;
 		}
 	}
+
+	array_push($this->stack['xmlns'], $namespaces);
+
+        // check for a namespace, and split if found
+        // Don't munge content tags
+	$ns = $this->namespace($element);
+	if ( empty($this->incontent) ) {
+		$el = strtolower($ns['element']);
+		$this->current_namespace = $ns['effective'];
+	}
+
+	$nsc = $ns['canonical']; $nse = $ns['element'];
+ 	if ( isset($this->_XMLBASE_RESOLVE[$nsc][$nse]) ) {
+		if (isset($this->_XMLBASE_RESOLVE[$nsc][$nse]['*xml'])) {
+			$attributes['xml:base'] = $baseuri;
+		}
+		foreach ($attributes as $key => $value) {
+			if (isset($this->_XMLBASE_RESOLVE[$nsc][$nse][strtolower($key)])) {
+				$attributes[$key] = Relative_URI::resolve($attributes[$key], $baseuri);
+			}
+		}
+	}
+
+        $attrs = array_change_key_case($attributes, CASE_LOWER);
 
         # if feed type isn't set, then this is first element of feed
         # identify feed from root element
@@ -248,46 +346,62 @@ class MagpieRSS {
         if (!isset($this->feed_type) ) {
             if ( $el == 'rdf' ) {
                 $this->feed_type = RSS;
+		$this->root_namespaces = array('rss', 'rdf');
                 $this->feed_version = '1.0';
             }
             elseif ( $el == 'rss' ) {
                 $this->feed_type = RSS;
+		$this->root_namespaces = array('rss');
                 $this->feed_version = $attrs['version'];
             }
             elseif ( $el == 'feed' ) {
                 $this->feed_type = ATOM;
-		if ($attrs['xmlns'] == 'http://www.w3.org/2005/Atom') { // Atom 1.0
+		$this->root_namespaces = array('atom');
+                if ($ns['uri'] == 'http://www.w3.org/2005/Atom') { // Atom 1.0
+			$this->root_namespaces = array('atom');
 			$this->feed_version = '1.0';
-		}
-		else { // Atom 0.3, probably.
-			$this->feed_version = $attrs['version'];
-		}
+                }
+                else { // Atom 0.3, probably.
+                    $this->feed_version = $attrs['version'];
+                }
                 $this->inchannel = true;
             }
             return;
         }
-    
+
         // if we're inside a namespaced content construct, treat tags as text
         if ( !empty($this->incontent) ) 
         {
-		if ((count($this->incontent) > 1) or !$this->exclude_top) {
-			// if tags are inlined, then flatten
-			$attrs_str = join(' ', 
-				array_map('map_attrs', 
-				array_keys($attrs), 
-				array_values($attrs) ) );
-				if (strlen($attrs_str) > 0) $attrs_str = ' '.$attrs_str;
-	    
-				$this->append_content( "<{$element}{$attrs_str}>"  );
-		}
-		array_push($this->incontent, $el); // stack for parsing content XML
+            if ((count($this->incontent) > 1) or !$this->exclude_top) {
+		  if ($ns['effective']=='xhtml') {
+			  $tag = $ns['element'];
+		  }
+		  else {
+			  $tag = $element;
+			  $xmlns = 'xmlns';
+			  if (strlen($ns['prefix'])>0) {
+				  $xmlns = $xmlns . ':' . $ns['prefix'];
+			  }
+			  $attributes[$xmlns] = $ns['uri']; // make sure it's visible
+		  }
+
+                 // if tags are inlined, then flatten
+                $attrs_str = join(' ', 
+                    array_map(array($this, 'map_attrs'), 
+                    array_keys($attributes), 
+                    array_values($attributes) )
+                  );
+                
+                  if (strlen($attrs_str) > 0) { $attrs_str = ' '.$attrs_str; }
+               $this->append_content( "<{$tag}{$attrs_str}>"  );
+            }
+            array_push($this->incontent, $ns); // stack for parsing content XML
         }
-	
-	elseif ( $el == 'channel' ) 
-        {
+
+        elseif ( $el == 'channel' )  {
             $this->inchannel = true;
         }
-	
+    
         elseif ($el == 'item' or $el == 'entry' ) 
         {
             $this->initem = true;
@@ -316,328 +430,378 @@ class MagpieRSS {
         
         // set stack[0] to current element
         else {
-		// Atom support many links per containing element.
-		// Magpie treats link elements of type rel='alternate'
-		// as being equivalent to RSS's simple link element.
+            // Atom support many links per containing element.
+            // Magpie treats link elements of type rel='alternate'
+            // as being equivalent to RSS's simple link element.
 
-		$atom_link = false;
-		if ($this->feed_type == ATOM and $el == 'link') {
-			$atom_link = true;
-			if (isset($attrs['rel']) and $attrs['rel'] != 'alternate') {
-				$el = $el . "_" . $attrs['rel'];  // pseudo-element names for Atom link elements
-			}
-		}
-		# handle atom content constructs
-		elseif ( $this->feed_type == ATOM and in_array($el, $this->_ATOM_CONTENT_CONSTRUCTS) )
-		{
-			// avoid clashing w/ RSS mod_content
-			if ($el == 'content' ) {
-				$el = 'atom_content';
-			}
+            $atom_link = false;
+            if ($this->feed_type == ATOM and $el == 'link') {
+                $atom_link = true;
+                if (isset($attrs['rel']) and $attrs['rel'] != 'alternate') {
+                    $el = $el . "_" . $attrs['rel'];  // pseudo-element names for Atom link elements
+                }
+            }
+            # handle atom content constructs
+            elseif ( $this->feed_type == ATOM and in_array($el, $this->_ATOM_CONTENT_CONSTRUCTS) )
+            {
+                // avoid clashing w/ RSS mod_content
+                if ($el == 'content' ) {
+                    $el = 'atom_content';
+                }
 
-			// assume that everything accepts namespaced XML
-			// (that will pass through some non-validating feeds;
-			// but so what? this isn't a validating parser)
-			$this->incontent = array();
-			array_push($this->incontent, $el); // start a stack
-
-			if (
-				isset($attrs['type'])
-				and trim(strtolower($attrs['type']))=='xhtml'
-			) {
-				$this->exclude_top = true;
-			} else {
-				$this->exclude_top = false;
-			}
-		}
-		# Handle inline XHTML body elements --CWJ
-		elseif (
-			($this->current_namespace=='xhtml' or (isset($attrs['xmlns']) and $attrs['xmlns'] == 'http://www.w3.org/1999/xhtml'))
-			and in_array($el, $this->_XHTML_CONTENT_CONSTRUCTS) )
-		{
-			$this->current_namespace = 'xhtml';
-			$this->incontent = array();
-			array_push($this->incontent, $el); // start a stack
-			$this->exclude_top = false;
-		}
-
-		array_unshift($this->stack, $el);
-		$elpath = join('_', array_reverse($this->stack));
+                // assume that everything accepts namespaced XML
+                // (that will pass through some non-validating feeds;
+                // but so what? this isn't a validating parser)
+                $this->incontent = array();
+                array_push($this->incontent, $ns); // start a stack
 		
-		$n = $this->element_count($elpath);
-		$this->element_count($elpath, $n+1);
-		
-		if ($n > 0) {
-		    array_shift($this->stack);
-		    array_unshift($this->stack, $el.'#'.($n+1));
-		    $elpath = join('_', array_reverse($this->stack));
-		}
+		$this->xml_escape = $this->accepts_namespaced_xml($attrs);
 
-		// this makes the baby Jesus cry, but we can't do it in normalize()
-		// because we've made the element name for Atom links unpredictable
-		// by tacking on the relation to the end. -CWJ
-		if ($atom_link and isset($attrs['href'])) {
-			$this->append($elpath, $attrs['href']);
-		}
-		
-		// add attributes
-		if (count($attrs) > 0) {
-			$this->append($elpath.'@', join(',', array_keys($attrs)));
-			foreach ($attrs as $attr => $value) {
-				$this->append($elpath.'@'.$attr, $value);
-			}
-		}
+                if ( isset($attrs['type']) and trim(strtolower($attrs['type']))=='xhtml') {
+                    $this->exclude_top = true;
+                } else {
+                    $this->exclude_top = false;
+                }
+            }
+            # Handle inline XHTML body elements --CWJ
+            elseif ($ns['effective']=='xhtml' and in_array($el, $this->_XHTML_CONTENT_CONSTRUCTS)) {
+                $this->current_namespace = 'xhtml';
+                $this->incontent = array();
+                array_push($this->incontent, $ns); // start a stack
+
+		$this->xml_escape = true;
+                $this->exclude_top = false;
+            }
+            
+            array_unshift($this->stack['element'], $el);
+            $elpath = join('_', array_reverse($this->stack['element']));
+            
+            $n = $this->element_count($elpath);
+            $this->element_count($elpath, $n+1);
+            
+            if ($n > 0) {
+                array_shift($this->stack['element']);
+                array_unshift($this->stack['element'], $el.'#'.($n+1));
+                $elpath = join('_', array_reverse($this->stack['element']));
+            }
+            
+            // this makes the baby Jesus cry, but we can't do it in normalize()
+            // because we've made the element name for Atom links unpredictable
+            // by tacking on the relation to the end. -CWJ
+            if ($atom_link and isset($attrs['href'])) {
+                $this->append($elpath, $attrs['href']);
+            }
+        
+            // add attributes
+            if (count($attrs) > 0) {
+                $this->append($elpath.'@', join(',', array_keys($attrs)));
+                foreach ($attrs as $attr => $value) {
+                    $this->append($elpath.'@'.$attr, $value);
+                }
+            }
         }
     }
-    
 
-    
     function feed_cdata ($p, $text) {
-        
         if ($this->incontent) {
-            $this->append_content( $text );
-        }
-        else {
-            $current_el = join('_', array_reverse($this->stack));
+		if ($this->xml_escape) { $text = htmlspecialchars($text, ENT_COMPAT, $this->encoding); }
+		$this->append_content( $text );
+        } else {
+            $current_el = join('_', array_reverse($this->stack['element']));
             $this->append($current_el, $text);
         }
     }
     
     function feed_end_element ($p, $el) {
-        $el = strtolower($el);
+	    $closer = $this->namespace($el);
 
-        if ( $this->incontent ) {
-		$opener = array_pop($this->incontent);
+	    if ( $this->incontent ) {
+		    $opener = array_pop($this->incontent);
 
-		// Don't get bamboozled by namespace voodoo
-		if (strpos($el, ':')) { list($ns, $closer) = split(':', $el); }
-		else { $ns = false; $closer = $el; }
-
-		// Don't get bamboozled by our munging of <atom:content>, either
-		if ($this->feed_type == ATOM and $closer == 'content') {
-			$closer = 'atom_content';
-		}
-
-		// balance tags properly
-		// note:  i don't think this is actually neccessary
-		if ($opener != $closer) {
-			array_push($this->incontent, $opener);
-			$this->append_content("<$el />");
-		} elseif ($this->incontent) { // are we in the content construct still?
-			if ((count($this->incontent) > 1) or !$this->exclude_top) {
-				$this->append_content("</$el>");
-			}
-		} else { // shift the opening of the content construct off the normal stack
-			array_shift( $this->stack );
-		}
-        }
-        elseif ( $el == 'item' or $el == 'entry' ) 
-        {
-            $this->items[] = $this->current_item;
-            $this->current_item = array();
-            $this->initem = false;
-
-	    $this->current_category = 0;
-        }
-       elseif ($this->feed_type == RSS and $this->current_namespace == '' and $el == 'textinput' ) 
-        {
-            $this->intextinput = false;
-        }
-        elseif ($this->feed_type == RSS and $this->current_namespace == '' and $el == 'image' ) 
-        {
-            $this->inimage = false;
-        }
-        elseif ($el == 'channel' or $el == 'feed' ) 
-        {
-            $this->inchannel = false;
-        }
-        else {
-		array_shift( $this->stack );
-        }
+		    // balance tags properly
+		    // note:  i don't think this is actually neccessary
+		    if ($opener != $closer) {
+			    array_push($this->incontent, $opener);
+			    $this->append_content("<$el />");
+		    } elseif ($this->incontent) { // are we in the content construct still?
+			    if ((count($this->incontent) > 1) or !$this->exclude_top) {
+				  if ($closer['effective']=='xhtml') {
+					  $tag = $closer['element'];
+				  }
+				  else {
+					  $tag = $el;
+				  }
+				  $this->append_content("</$tag>");
+			    }
+		    } else { // if we're done with the content construct, shift the opening of the content construct off the normal stack
+			    array_shift( $this->stack['element'] );
+		    }
+	    }
+	    elseif ($closer['effective'] == '') {
+		    $el = strtolower($closer['element']);
+		    if ( $el == 'item' or $el == 'entry' )  {
+			    $this->items[] = $this->current_item;
+			    $this->current_item = array();
+			    $this->initem = false;
+			    $this->current_category = 0;
+		    }
+		    elseif ($this->feed_type == RSS and $el == 'textinput' ) {
+			    $this->intextinput = false;
+		    }
+		    elseif ($this->feed_type == RSS and $el == 'image' ) {
+			    $this->inimage = false;
+		    }
+		    elseif ($el == 'channel' or $el == 'feed' ) {
+			    $this->inchannel = false;
+		    } else {
+			    $nsc = $closer['canonical']; $nse = $closer['element'];
+			    if (isset($this->_XMLBASE_RESOLVE[$nsc][$nse]['*content'])) {
+				    // Resolve relative URI in content of tag
+				    $this->dereference_current_element();
+			    }
+			    array_shift( $this->stack['element'] );
+		    }
+	    } else {
+		    $nsc = $closer['canonical']; $nse = strtolower($closer['element']);
+		    if (isset($this->_XMLBASE_RESOLVE[$nsc][$nse]['*content'])) {
+			    // Resolve relative URI in content of tag
+			    $this->dereference_current_element();
+		    }
+		    array_shift( $this->stack['element'] );
+	    }
         
-	if ( !$this->incontent ) { // Don't munge the namespace after finishing with elements in namespaced content constructs -CWJ
-		$this->current_namespace = false;
-	}
+	    if ( !$this->incontent ) { // Don't munge the namespace after finishing with elements in namespaced content constructs -CWJ
+		    $this->current_namespace = false;
+	    }
+	    array_pop($this->stack['xmlns']);
+	    array_pop($this->stack['xml:base']);
     }
     
+	// Namespace handling functions
+	function namespace ($element) {
+		$namespaces = end($this->stack['xmlns']);
+		$ns = '';
+		if ( strpos( $element, ':' ) ) {
+			list($ns, $element) = split( ':', $element, 2);
+		}
+		
+		$uri = (isset($namespaces[$ns]) ? $namespaces[$ns] : null);
+
+		if (!is_null($uri)) {
+			$canonical = (
+				isset($this->_XMLNS_FAMILIAR[$uri])
+				? $this->_XMLNS_FAMILIAR[$uri]
+				: $uri
+			);
+		} else {
+			$canonical = $ns;
+		}
+
+		if (in_array($canonical, $this->root_namespaces)) {
+			$effective = '';
+		} else {
+			$effective = $canonical;
+		}
+
+		return array('effective' => $effective, 'canonical' => $canonical, 'prefix' => $ns, 'uri' => $uri, 'element' => $element);
+	}
+
+	// Utility functions for accessing data structure
+	
+	// for smart, namespace-aware methods...
+    	function magpie_data ($el, $method, $text = NULL) {
+		$ret = NULL;
+		if ($el) {
+			if (is_array($method)) {
+				$el = $this->{$method['key']}($el);
+				$method = $method['value'];
+			}
+
+			if ( $this->current_namespace ) {
+				if ( $this->initem ) {
+					$ret = $this->{$method} (
+						$this->current_item[ $this->current_namespace ][ $el ],
+						$text
+					);
+				}
+				elseif ($this->inchannel) {
+					$ret = $this->{$method} (
+						$this->channel[ $this->current_namespace][ $el ],
+						$text
+					);
+				}
+				elseif ($this->intextinput) {
+					$ret = $this->{$method} (
+						$this->textinput[ $this->current_namespace][ $el ],
+						$text
+					);
+				}
+				elseif ($this->inimage) {
+					$ret = $this->{$method} (
+					$this->image[ $this->current_namespace ][ $el ], $text );
+				}
+			}
+			else {
+				if ( $this->initem ) {
+					$ret = $this->{$method} (
+					$this->current_item[ $el ], $text);
+				}
+				elseif ($this->intextinput) {
+					$ret = $this->{$method} (
+					$this->textinput[ $el ], $text );
+				}
+				elseif ($this->inimage) {
+					$ret = $this->{$method} (
+					$this->image[ $el ], $text );
+				}
+				elseif ($this->inchannel) {
+					$ret = $this->{$method} (
+					$this->channel[ $el ], $text );
+				}
+			}
+		}
+		return $ret;
+	}
+	
     function concat (&$str1, $str2="") {
         if (!isset($str1) ) {
             $str1="";
         }
         $str1 .= $str2;
     }
-    
+
+        function retrieve_value (&$el, $text /*ignore*/) {
+	    return $el;
+	}
+	function replace_value (&$el, $text) {
+		$el = $text;
+	}
+        function counter_key ($el) {
+	    return $el.'#';
+	}
+
+
     function append_content($text) {
-	if ( $this->initem ) {
-		if ($this->current_namespace) {
-			$this->concat( $this->current_item[$this->current_namespace][ reset($this->incontent) ], $text );
+	    $construct = reset($this->incontent);
+	    $ns = $construct['effective'];
+	    $tag = $construct['element'];
+	    if ($construct['canonical'] == 'atom' and $tag == 'content') {
+		    $tag = 'atom_content';
+	    }
+
+	    if ( $this->initem ) {
+		if ($ns) {
+		    $this->concat( $this->current_item[$ns][$tag], $text );
 		} else {
-			$this->concat( $this->current_item[ reset($this->incontent) ], $text );
+		    $this->concat( $this->current_item[$tag], $text );
 		}
-	}
-	elseif ( $this->inchannel ) {
+	    }
+	    elseif ( $this->inchannel ) {
 		if ($this->current_namespace) {
-			$this->concat( $this->channel[$this->current_namespace][ reset($this->incontent) ], $text );
+		    $this->concat( $this->channel[$ns][$tag], $text );
 		} else {
-			$this->concat( $this->channel[ reset($this->incontent) ], $text );
+		    $this->concat( $this->channel[$tag], $text );
 		}
-	}
+	    }
     }
     
     // smart append - field and namespace aware
     function append($el, $text) {
-        if (!$el) {
-            return;
-        }
-        if ( $this->current_namespace ) 
-        {
-            if ( $this->initem ) {
-		    $this->concat(
-		    	$this->current_item[ $this->current_namespace ][ $el ], $text);
-            }
-            elseif ($this->inchannel) {
-		$this->concat(
-		    $this->channel[ $this->current_namespace][ $el ], $text );
-	    }
-            elseif ($this->intextinput) {
-                $this->concat(
-                    $this->textinput[ $this->current_namespace][ $el ], $text );
-            }
-            elseif ($this->inimage) {
-                $this->concat(
-                    $this->image[ $this->current_namespace ][ $el ], $text );
-            }
-        }
-        else {
-            if ( $this->initem ) {
-		$this->concat(
-		    $this->current_item[ $el ], $text);
-            }
-            elseif ($this->intextinput) {
-                $this->concat(
-                    $this->textinput[ $el ], $text );
-            }
-            elseif ($this->inimage) {
-                $this->concat(
-                    $this->image[ $el ], $text );
-            }
-            elseif ($this->inchannel) {
-		$this->concat(
-		    $this->channel[ $el ], $text );
-            }
-            
-        }
+	$this->magpie_data($el, 'concat', $text);
     }
+
+	function dereference_current_element () {
+		$el = join('_', array_reverse($this->stack['element']));
+		$base = end($this->stack['xml:base']);
+		$uri = $this->magpie_data($el, 'retrieve_value');
+		$this->magpie_data($el, 'replace_value', Relative_URI::resolve($uri, $base));
+	}
 
     // smart count - field and namespace aware
     function element_count ($el, $set = NULL) {
-        if (!$el) {
-            return;
-        }
-        if ( $this->current_namespace ) 
-        {
-            if ( $this->initem ) {
-		    if (!is_null($set)) { $this->current_item[ $this->current_namespace ][ $el.'#' ] = $set; }
-		    $ret = (isset($this->current_item[ $this->current_namespace ][ $el.'#' ]) ?
-		    $this->current_item[ $this->current_namespace ][ $el.'#' ] : 0);
-            }
-            elseif ($this->inchannel) {
-		    if (!is_null($set)) { $this->channel[ $this->current_namespace ][ $el.'#' ] = $set; }
-		    $ret = (isset($this->channel[ $this->current_namespace][ $el.'#' ]) ?
-		    $this->channel[ $this->current_namespace][ $el.'#' ] : 0);
-	    }
-        }
-        else {
-            if ( $this->initem ) {
-		    if (!is_null($set)) { $this->current_item[ $el.'#' ] = $set; }
-		    $ret = (isset($this->current_item[ $el.'#' ]) ?
-		    $this->current_item[ $el.'#' ] : 0);
-            }
-            elseif ($this->inchannel) {
-		    if (!is_null($set)) {$this->channel[ $el.'#' ] = $set; }
-		    $ret = (isset($this->channel[ $el.'#' ]) ?
-		    $this->channel[ $el.'#' ] : 0);
-	    }
-        }
-	return $ret;
+	if (!is_null($set)) {
+		$ret = $this->magpie_data($el, array('key' => 'counter_key', 'value' => 'replace_value'), $set);
+	}
+	$ret = $this->magpie_data($el, array('key' => 'counter_key', 'value' => 'retrieve_value'));
+	return ($ret ? $ret : 0);
     }
 
     function normalize_enclosure (&$source, $from, &$dest, $to, $i) {
-	    $id_from = $this->element_id($from, $i);
-	    $id_to = $this->element_id($to, $i);
-	    if (isset($source["{$id_from}@"])) {
-		    foreach (explode(',', $source["{$id_from}@"]) as $attr) {
-			    if ($from=='link_enclosure' and $attr=='href') { // from Atom
-				    $dest["{$id_to}@url"] = $source["{$id_from}@{$attr}"];
-				    $dest["{$id_to}"] = $source["{$id_from}@{$attr}"];
-			    }
-			    elseif ($from=='enclosure' and $attr=='url') { // from RSS
-				    $dest["{$id_to}@href"] = $source["{$id_from}@{$attr}"];
-				    $dest["{$id_to}"] = $source["{$id_from}@{$attr}"];
-			    }
-			    else {
-				    $dest["{$id_to}@{$attr}"] = $source["{$id_from}@{$attr}"];
-			    }
-		    }
-	    }
+        $id_from = $this->element_id($from, $i);
+        $id_to = $this->element_id($to, $i);
+        if (isset($source["{$id_from}@"])) {
+            foreach (explode(',', $source["{$id_from}@"]) as $attr) {
+                if ($from=='link_enclosure' and $attr=='href') { // from Atom
+                    $dest["{$id_to}@url"] = $source["{$id_from}@{$attr}"];
+                    $dest["{$id_to}"] = $source["{$id_from}@{$attr}"];
+                }
+                elseif ($from=='enclosure' and $attr=='url') { // from RSS
+                    $dest["{$id_to}@href"] = $source["{$id_from}@{$attr}"];
+                    $dest["{$id_to}"] = $source["{$id_from}@{$attr}"];
+                }
+                else {
+                    $dest["{$id_to}@{$attr}"] = $source["{$id_from}@{$attr}"];
+                }
+            }
+        }
     }
 
     function normalize_atom_person (&$source, $person, &$dest, $to, $i) {
-	    $id = $this->element_id($person, $i);
-	    $id_to = $this->element_id($to, $i);
+        $id = $this->element_id($person, $i);
+        $id_to = $this->element_id($to, $i);
 
-    	    // Atom 0.3 <=> Atom 1.0
-	    if ($this->feed_version >= 1.0) { $used = 'uri'; $norm = 'url'; }
-	    else { $used = 'url'; $norm = 'uri'; }
+            // Atom 0.3 <=> Atom 1.0
+        if ($this->feed_version >= 1.0) { $used = 'uri'; $norm = 'url'; }
+        else { $used = 'url'; $norm = 'uri'; }
 
-	    if (isset($source["{$id}_{$used}"])) {
-		    $dest["{$id_to}_{$norm}"] = $source["{$id}_{$used}"];
-	    }
+        if (isset($source["{$id}_{$used}"])) {
+            $dest["{$id_to}_{$norm}"] = $source["{$id}_{$used}"];
+        }
 
-	    // Atom to RSS 2.0 and Dublin Core
-	    // RSS 2.0 person strings should be valid e-mail addresses if possible.
-	    if (isset($source["{$id}_email"])) {
-		    $rss_author = $source["{$id}_email"];
-	    }
-	    if (isset($source["{$id}_name"])) {
-		    $rss_author = $source["{$id}_name"]
-		    	. (isset($rss_author) ? " <$rss_author>" : '');
-	    }
-	    if (isset($rss_author)) {
-	    	$source[$id] = $rss_author; // goes to top-level author or contributor
-		$dest[$id_to] = $rss_author; // goes to dc:creator or dc:contributor
-	    }
+        // Atom to RSS 2.0 and Dublin Core
+        // RSS 2.0 person strings should be valid e-mail addresses if possible.
+        if (isset($source["{$id}_email"])) {
+            $rss_author = $source["{$id}_email"];
+        }
+        if (isset($source["{$id}_name"])) {
+            $rss_author = $source["{$id}_name"]
+                . (isset($rss_author) ? " <$rss_author>" : '');
+        }
+        if (isset($rss_author)) {
+            $source[$id] = $rss_author; // goes to top-level author or contributor
+        $dest[$id_to] = $rss_author; // goes to dc:creator or dc:contributor
+        }
     }
 
     // Normalize Atom 1.0 and RSS 2.0 categories to Dublin Core...
     function normalize_category (&$source, $from, &$dest, $to, $i) {
-	    $cat_id = $this->element_id($from, $i);
-	    $dc_id = $this->element_id($to, $i);
+        $cat_id = $this->element_id($from, $i);
+        $dc_id = $this->element_id($to, $i);
 
-	    // first normalize category elements: Atom 1.0 <=> RSS 2.0
-	    if ( isset($source["{$cat_id}@term"]) ) { // category identifier
-		    $source[$cat_id] = $source["{$cat_id}@term"];
-	    } elseif ( $this->feed_type == RSS ) {
-		    $source["{$cat_id}@term"] = $source[$cat_id];
-	    }
-	    
-	    if ( isset($source["{$cat_id}@scheme"]) ) { // URI to taxonomy
-		    $source["{$cat_id}@domain"] = $source["{$cat_id}@scheme"];
-	    } elseif ( isset($source["{$cat_id}@domain"]) ) {
-		    $source["{$cat_id}@scheme"] = $source["{$cat_id}@domain"];
-	    }
+        // first normalize category elements: Atom 1.0 <=> RSS 2.0
+        if ( isset($source["{$cat_id}@term"]) ) { // category identifier
+            $source[$cat_id] = $source["{$cat_id}@term"];
+        } elseif ( $this->feed_type == RSS ) {
+            $source["{$cat_id}@term"] = $source[$cat_id];
+        }
+        
+        if ( isset($source["{$cat_id}@scheme"]) ) { // URI to taxonomy
+            $source["{$cat_id}@domain"] = $source["{$cat_id}@scheme"];
+        } elseif ( isset($source["{$cat_id}@domain"]) ) {
+            $source["{$cat_id}@scheme"] = $source["{$cat_id}@domain"];
+        }
 
-	    // Now put the identifier into dc:subject
-	    $dest[$dc_id] = $source[$cat_id];
+        // Now put the identifier into dc:subject
+        $dest[$dc_id] = $source[$cat_id];
     }
     
     // ... or vice versa
     function normalize_dc_subject (&$source, $from, &$dest, $to, $i) {
-	    $dc_id = $this->element_id($from, $i);
-	    $cat_id = $this->element_id($to, $i);
+        $dc_id = $this->element_id($from, $i);
+        $cat_id = $this->element_id($to, $i);
 
-	    $dest[$cat_id] = $source[$dc_id];		// RSS 2.0
-	    $dest["{$cat_id}@term"] = $source[$dc_id]; 	// Atom 1.0
+        $dest[$cat_id] = $source[$dc_id];       // RSS 2.0
+        $dest["{$cat_id}@term"] = $source[$dc_id];  // Atom 1.0
     }
 
     // simplify the logic for normalize(). Makes sure that count of elements and
@@ -645,120 +809,124 @@ class MagpieRSS {
     // with things like attributes or change formats or the like, pass it a
     // callback to handle each element.
     function normalize_element (&$source, $from, &$dest, $to, $via = NULL) {
-	    if (isset($source[$from]) or isset($source["{$from}#"])) {
-		    if (isset($source["{$from}#"])) {
-		    	$n = $source["{$from}#"];
-		    	$dest["{$to}#"] = $source["{$from}#"];
-		    }
-		    else { $n = 1; }
+        if (isset($source[$from]) or isset($source["{$from}#"])) {
+            if (isset($source["{$from}#"])) {
+                $n = $source["{$from}#"];
+                $dest["{$to}#"] = $source["{$from}#"];
+            }
+            else { $n = 1; }
 
-		    for ($i = 1; $i <= $n; $i++) {
-			    if (isset($via)) { // custom callback for ninja attacks
-				    $this->{$via}($source, $from, $dest, $to, $i);
-			    }
-			    else { // just make it the same
-				    $from_id = $this->element_id($from, $i);
-				    $to_id = $this->element_id($to, $i);
-				    $dest[$to_id] = $source[$from_id];
-			    }
-		    }
-	    }
+            for ($i = 1; $i <= $n; $i++) {
+                if (isset($via)) { // custom callback for ninja attacks
+                    $this->{$via}($source, $from, $dest, $to, $i);
+                }
+                else { // just make it the same
+                    $from_id = $this->element_id($from, $i);
+                    $to_id = $this->element_id($to, $i);
+                    $dest[$to_id] = $source[$from_id];
+                }
+            }
+        }
     }
 
     function normalize () {
         // if atom populate rss fields and normalize 0.3 and 1.0 feeds
         if ( $this->is_atom() ) {
-		// Atom 1.0 elements <=> Atom 0.3 elements (Thanks, o brilliant wordsmiths of the Atom 1.0 standard!)
-		if ($this->feed_version < 1.0) {
-			$this->normalize_element($this->channel, 'tagline', $this->channel, 'subtitle');
-			$this->normalize_element($this->channel, 'copyright', $this->channel, 'rights');
-			$this->normalize_element($this->channel, 'modified', $this->channel, 'updated');
+        // Atom 1.0 elements <=> Atom 0.3 elements (Thanks, o brilliant wordsmiths of the Atom 1.0 standard!)
+        if ($this->feed_version < 1.0) {
+            $this->normalize_element($this->channel, 'tagline', $this->channel, 'subtitle');
+            $this->normalize_element($this->channel, 'copyright', $this->channel, 'rights');
+            $this->normalize_element($this->channel, 'modified', $this->channel, 'updated');
+        } else {
+            $this->normalize_element($this->channel, 'subtitle', $this->channel, 'tagline');
+            $this->normalize_element($this->channel, 'rights', $this->channel, 'copyright');
+            $this->normalize_element($this->channel, 'updated', $this->channel, 'modified');
+        }
+        $this->normalize_element($this->channel, 'author', $this->channel['dc'], 'creator', 'normalize_atom_person');
+        $this->normalize_element($this->channel, 'contributor', $this->channel['dc'], 'contributor', 'normalize_atom_person');
+
+        // Atom elements to RSS elements
+        $this->normalize_element($this->channel, 'subtitle', $this->channel, 'description');
+        
+        if ( isset($this->channel['logo']) ) {
+            $this->normalize_element($this->channel, 'logo', $this->image, 'url');
+            $this->normalize_element($this->channel, 'link', $this->image, 'link');
+            $this->normalize_element($this->channel, 'title', $this->image, 'title');
+        }
+
+        for ( $i = 0; $i < count($this->items); $i++) {
+            $item = $this->items[$i];
+
+            // Atom 1.0 elements <=> Atom 0.3 elements
+            if ($this->feed_version < 1.0) {
+                $this->normalize_element($item, 'modified', $item, 'updated');
+                $this->normalize_element($item, 'issued', $item, 'published');
+            } else {
+                $this->normalize_element($item, 'updated', $item, 'modified');
+                $this->normalize_element($item, 'published', $item, 'issued');
+            }
+
+            // "If an atom:entry element does not contain
+            // atom:author elements, then the atom:author elements
+            // of the contained atom:source element are considered
+            // to apply. In an Atom Feed Document, the atom:author
+            // elements of the containing atom:feed element are
+            // considered to apply to the entry if there are no
+            // atom:author elements in the locations described
+            // above." <http://atompub.org/2005/08/17/draft-ietf-atompub-format-11.html#rfc.section.4.2.1>
+            if (!isset($item["author#"])) {
+                if (isset($item["source_author#"])) { // from aggregation source
+                    $source = $item;
+                    $author = "source_author";
+                } elseif (isset($this->channel["author#"])) { // from containing feed
+                    $source = $this->channel;
+                    $author = "author";
 		} else {
-			$this->normalize_element($this->channel, 'subtitle', $this->channel, 'tagline');
-			$this->normalize_element($this->channel, 'rights', $this->channel, 'copyright');
-			$this->normalize_element($this->channel, 'updated', $this->channel, 'modified');
-		}
-		$this->normalize_element($this->channel, 'author', $this->channel['dc'], 'creator', 'normalize_atom_person');
-		$this->normalize_element($this->channel, 'contributor', $this->channel['dc'], 'contributor', 'normalize_atom_person');
+			$author = null;
+                }
 
-		// Atom elements to RSS elements
-		$this->normalize_element($this->channel, 'subtitle', $this->channel, 'description');
-		
-		if ( isset($this->channel['logo']) ) {
-			$this->normalize_element($this->channel, 'logo', $this->image, 'url');
-			$this->normalize_element($this->channel, 'link', $this->image, 'link');
-			$this->normalize_element($this->channel, 'title', $this->image, 'title');
-		}
-
-		for ( $i = 0; $i < count($this->items); $i++) {
-			$item = $this->items[$i];
-
-			// Atom 1.0 elements <=> Atom 0.3 elements
-			if ($this->feed_version < 1.0) {
-				$this->normalize_element($item, 'modified', $item, 'updated');
-				$this->normalize_element($item, 'issued', $item, 'published');
-			} else {
-				$this->normalize_element($item, 'updated', $item, 'modified');
-				$this->normalize_element($item, 'published', $item, 'issued');
-			}
-
-			// "If an atom:entry element does not contain
-			// atom:author elements, then the atom:author elements
-			// of the contained atom:source element are considered
-			// to apply. In an Atom Feed Document, the atom:author
-			// elements of the containing atom:feed element are
-			// considered to apply to the entry if there are no
-			// atom:author elements in the locations described
-			// above." <http://atompub.org/2005/08/17/draft-ietf-atompub-format-11.html#rfc.section.4.2.1>
-			if (!isset($item["author#"])) {
-				if (isset($item["source_author#"])) { // from aggregation source
-					$source = $item;
-					$author = "source_author";
-				} elseif (isset($this->channel["author#"])) { // from containing feed
-					$source = $this->channel;
-					$author = "author";
+		if (!is_null($author)) {
+			$item["author#"] = $source["{$author}#"];
+			for ($au = 1; $au <= $item["author#"]; $au++) {
+			    $id_to = $this->element_id('author', $au);
+			    $id_from = $this->element_id($author, $au);
+			    
+			    $item[$id_to] = $source[$id_from];
+			    foreach (array('name', 'email', 'uri', 'url') as $what) {
+				if (isset($source["{$id_from}_{$what}"])) {
+				    $item["{$id_to}_{$what}"] = $source["{$id_from}_{$what}"];
 				}
-
-				$item["author#"] = $source["{$author}#"];
-				for ($au = 1; $au <= $item["author#"]; $au++) {
-					$id_to = $this->element_id('author', $au);
-					$id_from = $this->element_id($author, $au);
-					
-					$item[$id_to] = $source[$id_from];
-					foreach (array('name', 'email', 'uri', 'url') as $what) {
-						if (isset($source["{$id_from}_{$what}"])) {
-							$item["{$id_to}_{$what}"] = $source["{$id_from}_{$what}"];
-						}
-					}
-				}
+			    }
 			}
-
-			// Atom elements to RSS elements
-			$this->normalize_element($item, 'author', $item['dc'], 'creator', 'normalize_atom_person');
-			$this->normalize_element($item, 'contributor', $item['dc'], 'contributor', 'normalize_atom_person');
-			$this->normalize_element($item, 'summary', $item, 'description');
-			$this->normalize_element($item, 'atom_content', $item['content'], 'encoded');
-			$this->normalize_element($item, 'link_enclosure', $item, 'enclosure', 'normalize_enclosure');
-
-			// Categories
-			if ( isset($item['category#']) ) { // Atom 1.0 categories to dc:subject and RSS 2.0 categories
-				$this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
-			}
-			elseif ( isset($item['dc']['subject#']) ) { // dc:subject to Atom 1.0 and RSS 2.0 categories
-				$this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
-			}
-
-			// Normalized item timestamp
-			$atom_date = (isset($item['published']) ) ? $item['published'] : $item['updated'];
-			if ( $atom_date ) {
-				$epoch = @parse_w3cdtf($atom_date);
-				if ($epoch and $epoch > 0) {
-					$item['date_timestamp'] = $epoch;
-				}
-			}
-
-			$this->items[$i] = $item;
 		}
+            }
+
+            // Atom elements to RSS elements
+            $this->normalize_element($item, 'author', $item['dc'], 'creator', 'normalize_atom_person');
+            $this->normalize_element($item, 'contributor', $item['dc'], 'contributor', 'normalize_atom_person');
+            $this->normalize_element($item, 'summary', $item, 'description');
+            $this->normalize_element($item, 'atom_content', $item['content'], 'encoded');
+            $this->normalize_element($item, 'link_enclosure', $item, 'enclosure', 'normalize_enclosure');
+
+            // Categories
+            if ( isset($item['category#']) ) { // Atom 1.0 categories to dc:subject and RSS 2.0 categories
+                $this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
+            }
+            elseif ( isset($item['dc']['subject#']) ) { // dc:subject to Atom 1.0 and RSS 2.0 categories
+                $this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
+            }
+
+            // Normalized item timestamp
+            $atom_date = (isset($item['published']) ) ? $item['published'] : $item['updated'];
+            if ( $atom_date ) {
+                $epoch = @parse_w3cdtf($atom_date);
+                if ($epoch and $epoch > 0) {
+                    $item['date_timestamp'] = $epoch;
+                }
+            }
+
+            $this->items[$i] = $item;
+        }
         }
         elseif ( $this->is_rss() ) {
 		// RSS elements to Atom elements
@@ -766,38 +934,37 @@ class MagpieRSS {
 		$this->normalize_element($this->channel, 'description', $this->channel, 'subtitle'); // Atom 1.0 (yay wordsmithing!)
 		$this->normalize_element($this->image, 'url', $this->channel, 'logo');
 
-            for ( $i = 0; $i < count($this->items); $i++) {
-                $item = $this->items[$i];
-		
-		// RSS elements to Atom elements
-		$this->normalize_element($item, 'description', $item, 'summary');
-                $this->normalize_element($item['content'], 'encoded', $item, 'atom_content');
-		$this->normalize_element($item, 'enclosure', $item, 'link_enclosure', 'normalize_enclosure');
+		for ( $i = 0; $i < count($this->items); $i++) {
+			$item = $this->items[$i];
+        
+			// RSS elements to Atom elements
+			$this->normalize_element($item, 'description', $item, 'summary');
+			$this->normalize_element($item, 'enclosure', $item, 'link_enclosure', 'normalize_enclosure');
+			
+			// Categories
+			if ( isset($item['category#']) ) { // RSS 2.0 categories to dc:subject and Atom 1.0 categories
+			    $this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
+			}
+			elseif ( isset($item['dc']['subject#']) ) { // dc:subject to Atom 1.0 and RSS 2.0 categories
+			    $this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
+			}
 
-		// Categories
-		if ( isset($item['category#']) ) { // RSS 2.0 categories to dc:subject and Atom 1.0 categories
-			$this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
+			// Normalized item timestamp
+			if ( $this->is_rss() == '1.0' and isset($item['dc']['date']) ) {
+			    $epoch = @parse_w3cdtf($item['dc']['date']);
+			    if ($epoch and $epoch > 0) {
+				$item['date_timestamp'] = $epoch;
+			    }
+			}
+			elseif ( isset($item['pubdate']) ) {
+			    $epoch = @strtotime($item['pubdate']);
+			    if ($epoch > 0) {
+				$item['date_timestamp'] = $epoch;
+			    }
+			}
+			
+			$this->items[$i] = $item;
 		}
-		elseif ( isset($item['dc']['subject#']) ) { // dc:subject to Atom 1.0 and RSS 2.0 categories
-			$this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
-		}
-
-		// Normalized item timestamp
-                if ( $this->is_rss() == '1.0' and isset($item['dc']['date']) ) {
-                    $epoch = @parse_w3cdtf($item['dc']['date']);
-                    if ($epoch and $epoch > 0) {
-                        $item['date_timestamp'] = $epoch;
-                    }
-                }
-                elseif ( isset($item['pubdate']) ) {
-                    $epoch = @strtotime($item['pubdate']);
-                    if ($epoch > 0) {
-                        $item['date_timestamp'] = $epoch;
-                    }
-                }
-
-                $this->items[$i] = $item;
-            }
         }
     }
     
@@ -835,7 +1002,7 @@ class MagpieRSS {
             $this->encoding = $out_enc;
             xml_parser_set_option($parser, XML_OPTION_TARGET_ENCODING, $out_enc);
         }
-        
+	xml_parser_set_option($parser, XML_OPTION_CASE_FOLDING, false);
         return array($parser, $source);
     }
     
@@ -955,30 +1122,52 @@ class MagpieRSS {
     // magic ID function for multiple elemenets.
     // can be called as static MagpieRSS::element_id()
     function element_id ($el, $counter) {
-	    return $el . (($counter > 1) ? '#'.$counter : '');
+        return $el . (($counter > 1) ? '#'.$counter : '');
     }
+
+    	function map_attrs($k, $v) {
+	    return $k.'="'.htmlspecialchars($v, ENT_COMPAT, $this->encoding).'"';
+	}
+	
+	function accepts_namespaced_xml ($attrs) {
+		$mode = (isset($attrs['mode']) ? trim(strtolower($attrs['mode'])) : 'xml');
+		$type = (isset($attrs['type']) ? trim(strtolower($attrs['type'])) : null);
+		if ($this->feed_type == ATOM and $this->feed_version < 1.0) {
+			if ($mode=='xml' and preg_match(':[/+](html|xml)$:i', $type)) {
+				$ret = true;
+			} else {
+				$ret = false;
+			}
+		} elseif ($this->feed_type == ATOM and $this->feed_version >= 1.0) {
+			if ($type=='xhtml' or preg_match(':[/+]xml$:i', $type)) {
+				$ret = true;
+			} else {
+				$ret = false;
+			}
+		} else {
+			$ret = false; // Don't munge unless you're sure
+		}
+		return $ret;
+	}
 } // end class RSS
 
-function map_attrs($k, $v) {
-    return "$k=\"$v\"";
-}
 
 // patch to support medieval versions of PHP4.1.x, 
 // courtesy, Ryan Currie, ryan@digibliss.com
 
 if (!function_exists('array_change_key_case')) {
-	define("CASE_UPPER",1);
-	define("CASE_LOWER",0);
+    define("CASE_UPPER",1);
+    define("CASE_LOWER",0);
 
 
-	function array_change_key_case($array,$case=CASE_LOWER) {
+    function array_change_key_case($array,$case=CASE_LOWER) {
        if ($case==CASE_LOWER) $cmd='strtolower';
        elseif ($case==CASE_UPPER) $cmd='strtoupper';
        foreach($array as $key=>$value) {
                $output[$cmd($key)]=$value;
        }
        return $output;
-	}
+    }
 
 }
 
@@ -1012,7 +1201,7 @@ require_once( dirname(__FILE__) . '/class-snoopy.php');
     version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
 \*=======================================================================*/
 
-define('MAGPIE_VERSION', '0.7');
+define('MAGPIE_VERSION', '0.85');
 
 $MAGPIE_ERROR = "";
 
@@ -1030,7 +1219,7 @@ function fetch_rss ($url) {
         // fetch file, and parse it
         $resp = _fetch_remote_file( $url );
         if ( is_success( $resp->status ) ) {
-            return _response_to_rss( $resp );
+            return _response_to_rss( $resp, $url );
         }
         else {
             error("Failed to fetch $url and cache is off");
@@ -1103,7 +1292,7 @@ function fetch_rss ($url) {
                 return $rss;
             }
             elseif ( is_success( $resp->status ) ) {
-                $rss = _response_to_rss( $resp );
+                $rss = _response_to_rss( $resp, $url );
                 if ( $rss ) {
                     if (MAGPIE_DEBUG > 1) {
                         debug("Fetch successful");
@@ -1216,12 +1405,13 @@ function _fetch_remote_file ($url, $headers = "" ) {
     Input:      an HTTP response object (see Snoopy)
     Output:     parsed RSS object (see rss_parse)
 \*=======================================================================*/
-function _response_to_rss ($resp) {
-    $rss = new MagpieRSS( $resp->results, MAGPIE_OUTPUT_ENCODING, MAGPIE_INPUT_ENCODING, MAGPIE_DETECT_ENCODING );
+function _response_to_rss ($resp, $url = null) {
+    $rss = new MagpieRSS( $resp->results, MAGPIE_OUTPUT_ENCODING, MAGPIE_INPUT_ENCODING, MAGPIE_DETECT_ENCODING, $url );
     
     // if RSS parsed successfully       
     if ( $rss and !$rss->ERROR) {
-        
+	    $rss->http_status = $resp->status;
+
         // find Etag, and Last-Modified
         foreach($resp->headers as $h) {
             // 2003-03-02 - Nicola Asuni (www.tecnick.com) - fixed bug "Undefined offset: 1"
@@ -1233,6 +1423,8 @@ function _response_to_rss ($resp) {
                 $val = "";
             }
             
+	    $rss->header[$field] = $val;
+
             if ( $field == 'ETag' ) {
                 $rss->etag = $val;
             }
