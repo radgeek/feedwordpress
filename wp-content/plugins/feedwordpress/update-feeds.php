@@ -5,62 +5,19 @@
 # URI: <http://projects.radgeek.com/feedwordpress>
 # Author: Charles Johnson <technophilia@radgeek.com>
 # License: GPL
-# Version: 2005.11.06
+# Version: 2007.09.16
 #
 # USAGE
 # -----
-# update-feeds.php is a useful script for instructing the FeedWordPress plugin
-# to scan for fresh content on the feeds that it syndicates. This is handy if
-# you want your syndication site to actually syndicate content, and you can't
-# rely on all your contributors to send you an XML-RPC ping when they update.
-# 
-# 1. 	Install FeedWordPress and activate the FeedWordPress plugin. (See
-# 	<http://projects.radgeek.com/feedwordpress/install> if you need a guide
-# 	for the perplexed.)
+# update-feeds.php implements a Dashboard page for the FeedWordPress plugin
+# which allows you to manually instruct FeedWordPress to check for new posts on
+# the feeds it syndicates. This script depends on WordPress and the
+# FeedWordPress plugin and should not be invoked directly. Instead, you
+# should log in to the WordPress Dashboard and go to Syndication --> Update
 #
-# 2.	If you want to manually update one or more of your feeds, you can do
-#	so by pointing your web browser to the URI
-# 	<http://xyz.com/wp-content/update-feeds.php>, where `http://xyz.com/` is
-#	replaced by the URI to your installation of WordPress. Log in as any
-#	user in your WordPress database and use the form to update.
-#
-# 3.	To keep content up-to-date automatically, set up a cron job to run
-#	update-feeds.php locally:
-#
-# 		cd /path/to/wordpress/wp-content ; php update-feeds.php
-#
-#	where `/path/to/wordpress` is replaced by the filesystem path to your
-#	installation of WordPress; or, if you don't have, or don't want to use,
-#	command-line PHP, you can send an HTTP POST request to the appropriate
-#	URI:
-#
-# 		curl --user user:pass http://xyz.com/wp-content/update-feeds.php -d update=quiet
-#
-#	`user` and `pass` should be replaced by the username and password of
-#	a user in your WordPress database (you can create a dummy user for
-#	updates if you want; that's what I do). `http://xyz.com/` should be
-#	replaced by the URI to your installation of WordPress.
-#
-#	Don't be afraid to run this cron job frequently. FeedWordPress staggers
-#	updates over time rather than checking all of the feeds every time the
-#	cron job runs, so even if the cron job runs every 10 minutes, each feed
-#	will, on average only be polled for updates once an hour or so (or less
-#	frequently if the feed author requests less frequent updates using
-#	the RSS <ttl> element or the syndication module elements).
-#
-# 4.	If you want to update *one* of the feeds rather than *all* of them, then
-# 	pass the URI and title as command-line arguments:
-#
-# 		$ php update-feeds.php http://radgeek.com
-#
-# 	or in the POST request:
-#
-# 		$ curl --user login:password http://xyz.com/wp-content/update-feeds.php -d uri=http://www.radgeek.com\&update=quiet
-#
-// Help us to pick out errors, if any.
-ini_set('error_reporting', E_ALL & ~E_NOTICE);
-ini_set('display_errors', true);
-define('MAGPIE_DEBUG', true);
+# If you are interested in setting up automatic updates rather than using the
+# checking for new posts manually, see the instructions for automatic updates
+# in README.text.
 
 if (isset($_POST['update'])) :
 	$fwp_update_invoke = 'post';

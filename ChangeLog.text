@@ -1,9 +1,77 @@
 FeedWordPress Change Log
 ========================
 
+Changes from 0.99b1 to 0.99b2
+-----------------------------
+Version 0.99b2 is the second beta release for the upcoming FeedWordPress 0.99
+relase.
+
+*	POTENTIAL BUGFIX: Eliminated a potential bug in the regular expressions
+	for e-mail addresses (used in parsing RSS `author` elements).
+
+*	BUGFIX: removed some temporary debugging code from the first beta that
+	should not have been left in for a public release. If you got weird
+	messages relating to HTTP headers already being output, or the phrase
+	"UPDATES OFF" where it shouldn't be, this should now be fixed.
+
+*	BUGFIX: An error in the links for editing links and performing other
+	maintenance tasks (which resulted in the error message "Cannot load
+	feedwordpress.php") should now be fixed.
+
+*	BUGFIX: Bugs caused by checking for FeedWordPress updates before all
+	the needed PHP modules had been loaded have now been fixed.
+
+Changes from 0.981 to 0.99b1
+----------------------------
+Version 0.99b1 is the first beta release for the upcoming FeedWordPress 0.99
+release.
+
+*	WORDPRESS 2.2 COMPATIBILITY--I HOPE! This version has been tested 
+	against the latest release of WordPress 2.2, and I have found no
+	compatability problems. If you encounter any problems, please contact
+	me with a detailed description of the issue.
+
+*	AUTOMATIC UPDATES (WITHOUT CRON): FeedWordPress now allows you to
+	automatically schedule checks for new posts without using external task
+	scheduling tools such as cron. In order to enable automatic updates, go
+	to **Syndication --> Options** and set "Check for new posts" to
+	"automatically." For details, see "Automatic Feed Updates" in
+	README.text.
+
+	An important side-effect of the changes to the update system is that if
+	you were previously using the cron job and the `update-feeds.php` script
+	to schedule updates, you need to change your cron set-up. The old
+	`update-feeds.php` script no longer exists. Instead, if you wish to use
+	a cron job to guarantee updates on a particular schedule, you should
+	have the cron job fetch the front page of your blog (for example, by
+	using `curl http://www.zyx.com/blog/ > /dev/null`) instead of activating
+	the `update-feeds.php` script. If automatic updates have been enabled,
+	fetching the front page will automatically trigger the update process.
+
+*	INTERFACE REORGANIZATION: All FeedWordPress functions are now located
+	under a top-level "Syndication" menu in the WordPress Dashboard. To
+	manage the list of syndicated sites, you should now use the main
+	page under **Syndication**. To change global settings for FeedWordPress,
+	you should use **Syndication --> Options**. To manually check for new
+	posts on one or more of your syndicated sites, you should use
+	**Syndication --> Update**.
+
+*	FILE STRUCTURE REORGANIZATION: Due to a combination of changing styles
+	for FeedWordPress plugins and lingering bugs in the FeedWordPress admin
+	menu code, the code for FeedWordPress is now contained in three
+	different PHP files, which should be installed together in a
+	subdirectory of your plugins directory named `feedwordpress`. (See
+	README.text for installation and upgrade instructions relating to the
+	change.)
+
+*	MINOR BUGFIXES AND INTERNAL CHANGES: The internal architecture of
+	FeedWordPress has been significantly changed to make the code more
+	modular and clean; hopefully this should help reduce the number of
+	compatibility updates that are needed, and make them easier and quicker
+	when they are needed.
+
 Changes from 0.98 to 0.981
 --------------------------
-
 Version 0.981 is a narrowly targeted bugfix and compatibility release, whose
 main purpose is to resolve a major outstanding problem: the incompatibility
 between version 0.98 of WordPress and the recently released WordPress 2.1.

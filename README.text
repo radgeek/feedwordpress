@@ -2,7 +2,7 @@ FeedWordPress
 =============
 
 * Author: [Charles Johnson](http://radgeek.com/contact)
-* Version: 0.981
+* Version: 0.99b2
 * Project URI: <http://projects.radgeek.com/feedwordpress>
 * License: GPL 2. See License below for copyright jots and tittles.
 
@@ -20,13 +20,14 @@ originally developed it because I needed a more flexible replacement for
 
 FeedWordPress is designed with flexibility, ease of use, and ease of
 configuration in mind. You'll need a working installation of WordPress (version
-[2.1][], [2.0][] or [1.5][]), and also FTP or SFTP access to your web host. The
-ability to create cron jobs on your web host would be very helpful but it's not
-absolutely necessary. You *don't* need to tweak any plain-text configuration
-files and you *don't* need shell access to your web host to make it work.
-(Although, I should point out, web hosts that *don't* offer shell access are
-*bad web hosts*.)
+[2.2][], [2.1][], [2.0][] or [1.5][]), and also FTP or SFTP access to your web
+host. The ability to create cron jobs on your web host would be very helpful but
+it's not absolutely necessary. You *don't* need to tweak any plain-text
+configuration files and you *don't* need shell access to your web host to make
+it work. (Although, I should point out, web hosts that *don't* offer shell
+access are *bad web hosts*.)
 
+  [2.2]: http://wordpress.org/development/2007/09/wordpress-223/
   [2.1]: http://wordpress.org/development/2007/01/ella-21/
   [2.0]: http://wordpress.org/development/2005/12/wp2/
   [1.5]: http://wordpress.org/development/2005/02/strayhorn/
@@ -35,61 +36,69 @@ Installation
 ------------
 ### Requirements ###
 
-To use version 0.981 of FeedWordPress, you will need:
+To use version 0.99b2 of FeedWordPress, you will need:
 
-1.	an installed and configured copy of WordPress 2.1, 2.0.x, or 1.5.x.
-	(FeedWordPress currently *will not work* with older versions of
+1.	an installed and configured copy of WordPress 2.2.x, 2.1.x, 2.0.x, or
+	1.5.x. (FeedWordPress currently *will not work* with older versions of
 	WordPress, or with WordPress MU.)
 
 2.	FTP or SFTP access to your web host
-
-And you'll probably also want to have either:
-
-1.	the ability to create cron jobs on your web host, or at least
-
-2.	a computer of your own and always-on Internet access
 
 ### Installation ###
 
 #### Upgrades ####
 
-To *upgrade* an existing installation of FeedWordPress to version 0.981:
+To *upgrade* an existing installation of FeedWordPress to version 0.99b2:
 
 1.	Download the FeedWordPress archive in zip or gzipped tar format and
-	extract the files on your computer. Replace your existing FeedWordPress
-	files with the new files. Be sure to upgrade `rss.php` and
-	`rss-functions.php` if you use the optional MagpieRSS upgrade, or don't
-	use it yet but do want to syndicate Atom 1.0 feeds.
+	extract the files on your computer. 
 
-2.	If you are upgrading from version 0.96 or earlier, **immediately** log
+2.	If you are upgrading from version 0.98 or earlier, then you need to
+	create a new directory named `feedwordpress` in the `wp-content/plugins`
+	directory of your WordPress installation, and you also need to *delete*
+	your existing `wp-content/update-feeds.php` and
+	`wp-content/plugins/feedwordpress.php` files. The file structure for
+	FeedWordPress has changed and the files from your old version will not
+	be overwritten, which could cause conflicts if you leave them in place.
+
+3.	Upload the new PHP files to `wp-content/plugins/feedwordpress`,
+	overwriting any existing FeedWordPress files that are there. Also be
+	sure to upgrade `wp-includes/rss.php` and
+	`wp-includes/rss-functions.php` if you use the optional MagpieRSS
+	upgrade, or don't use it yet but do want to syndicate Atom 1.0 feeds.
+
+3.	If you are upgrading from version 0.96 or earlier, **immediately** log
 	in to the WordPress Dashboard, and go to Options --> Syndicated. Follow
 	the directions to launch the database upgrade procedure. The new
 	versions of FeedWordPress incorporate some long-needed improvements, but
 	old meta-data needs to be updated to prevent duplicate posts and other
 	possible maladies. If you're upgrading an existing installation, updates
 	and FeedWordPress template functions *will not work* until you've done
-	the upgrade.
+	the upgrade. Then take a coffee break while the upgrade runs. It should,
+	hopefully, finish within a few minutes even on relatively large
+	databases.
 
-3.	Take a coffee break while the upgrade runs. It should, hopefully, finish
-	within a few minutes even on relatively large databases.
-
-4.	`update-feeds.php` has been overhauled to improve performance and ease
-	of use, and also to make errors easier to detect and eliminate. The
-	overhaul doesn't require any changes to your set up *if* you used
-	XML-RPC pings, or command-line PHP, to do scheduled updates. It *does*
-	affect you if you used curl or some other tool to send HTTP requests to
-	`update-feeds.php`: your old cron job will probably not work anymore.
-	See [Setting Up Feed Updates][] below to get scheduled updates back on
-	track.
+4.	If you are upgrading from version 0.98 or earlier, note that the old
+	`update-feeds.php` has been eliminated in favor of a (hopefully) more
+	humane method for automatic updating. If you used a cron job for
+	scheduled updates, it will not work anymore, but there is another,
+	simpler method which will. See [Setting Up Feed Updates][] below to get
+	scheduled updates back on track.
 
 5.	Enjoy your new installation of FeedWordPress.
 
 #### New Installations ####
 
-1.	Install `feedwordpress.php` in your WordPress `plugins` directory
-	and `update-feeds.php` in your WordPress `wp-content` directory.
-	
-2.	(Optional) Upgrade the copy of MagpieRSS packaged with WordPress by
+1.	Download the FeedWordPress archive in zip or gzipped tar format and
+	extract the files on your computer. 
+
+2.	Create a new directory named `feedwordpress` in the `wp-content/plugins`
+	directory of your WordPress installation. Use an FTP or SFTP client to
+	upload the contents of the `wp-content/plugins/feedwordpress` directory
+	in the FeedWordPress archive to the new directory that you just created
+	on your web host.
+
+3.	(Optional) Upgrade the copy of MagpieRSS packaged with WordPress by
 	installing the new `rss.php` and `rss-functions.php` (archived in
 	`OPTIONAL/wp-includes`) into your WordPress `wp-includes` directory.
 	Upgrading MagpieRSS is necessary if you want to take advantage of
@@ -101,107 +110,91 @@ To *upgrade* an existing installation of FeedWordPress to version 0.981:
 	your installation of PHP is up-to-date and that you keep a copy of
 	the old MagpieRSS around to compare results.)
 
-3.	Log in to the WordPress Dashboard and activate the FeedWordPress
+4.	Log in to the WordPress Dashboard and activate the FeedWordPress
 	plugin. 
 
-4.	While you're at the Dashboard, once the plugin is activated, you can
-	go to Options --> Syndication and set (1) the link category that
+5.	While you're at the Dashboard, once the plugin is activated, you can
+	go to **Syndication --> Options** and set (1) the link category that
 	FeedWordPress will syndicate links from (by default, "Contributors"),
-	and (2) a "secret word" for your RPC-XML updating interface. This
-	provides some light security by keeping passing ruffians from saying
-	"Update all the feeds" at will to your FeedWordPress installation.
+	and (2) whether FeedWordPress will use automatic updates or only
+	manual updates.
 
-5.	Go to Blogroll --> Syndicated or Links --> Syndicated to set up the list
-	of sites that you want FeedWordPress to syndicate onto your blog. (If
-	you have the feeds you want to aggregate in a service such as Bloglines,
-	you may prefer to export them to an OPML file and use WordPress's Links
-	--> Import to import them into the contributors category.)
+5.	Go to the main **Syndication** page to set up the list of sites that
+	you want FeedWordPress to syndicate onto your blog. (If you have the
+	feeds you want to aggregate in a service such as Bloglines,
+	you may prefer to export them to an OPML file and use WordPress's
+	**Blogroll --> Import Links** to import them into the contributors
+	category.)
 
 #### Setting Up Feed Updates ####
 
-FeedWordPress is now ready to accept posts from its syndication sources.
-Unfortunately, it doesn't yet know *when* to go get them. (**This may be true
-even if you are upgrading an existing installation of FeedWordPress:** your old
-cron job will still work if you used command-line PHP or blogging software pings
-to do updates, but it will need to be fixed if you used curl or another tool to
-send HTTP requests to `update-feeds.php`.)
+FeedWordPress is now ready to accept posts from its syndication sources. The
+next thing to do is to make sure it knows *when* to go get them.
 
-You can load in syndicated posts for the first time by pointing your web browser
-to `update-feeds.php`. If you have WordPress installed at, say,
-<http://www.zyx.com/blog> then you should point your browser to
-<http://www.zyx.com/blog/wp-content/update-feeds.php> and log in as any user in
-the user database. (You may want to create a new "dummy" user for doing
-scheduled updates, using **Users --> Authors & Users --> Add New User**. Tell
-FeedWordPress to update all feeds, and you'll get the first wave of posts
-imported into the database.
+**N.B.:** If you are upgrading from version 0.981 or earlier of FeedWordPress,
+the system for checking for new posts has been overhauled, hopefully making it
+more humane, and also easier to use for people who do not have access to task
+scheduling tools such as `cron`. You will need to re-read this section and
+change your set-up accordingly.
 
-Congratulations! You should now have an aggregator site full of delicious
-syndicated content hot off of the newswires. Now you just need a way to *keep*
-the content freshly updated. Unless you enjoy manually browsing to
-`update-feeds.php` every hour on the hour, you'll probably want to do this by
-setting up your site for automated updates.
+FeedWordPress allows you to choose whether it will check for new posts
+automatically, or only when you manually request for it to check. By default,
+FeedWordPress opts for the **manual** option -- so that you can get your feeds
+set up properly before FeedWordPress begins importing new posts. If you want
+to use automatically scheduled updates, remember to enable them in
+**Syndication --> Options** after you finish setting up FeedWordPress.
 
-You can pull that off in one of two ways, or by a mixture of both:
-	
-1.	**The Blogging Software Ping Method:** You can get all of your
-	contributors to add you to the list of URIs that they notify of updates:
-	while FeedWordPress is activated, it will accept XML-RPC "recently
-	updated" pings in the standard format accepted by Weblogs.com,
-	Ping-O-Matic, Technorati, and other services. Most blogging software
-	allows users to	add a URI to the list of URIs that get pinged on each
-	update. (See, for example, Options --> Writing --> Update Services in
-	WordPress, or Configuration --> Preferences --> Publicity / Remote
-	Interfaces / TrackBack in Movable Type.)
-	
-	If you can get a contributor to add your XML-RPC URI to her
-	services-to-ping list (if you have WordPress installed at
-	<http://www.zyx.com/blog>, say, the URI to add should be
-	<http://www.zyx.com/blog/xmlrpc.php>), then whenever she updates her
-	blog, her blogging software will ping your FeedWordPress installation,
-	and FeedWordPress will look up her feed to grab the new posts off of
-	it.
+##### Manual Feed Updates #####
 
-2.	**The Scheduled Update Job Method:** You may very well not be able to
-	get all your contributors to add your site to their blogging software's
-	ping list, and even if you do you may want to have a back-up option to
-	catch updates later even if the ping fails to go through on one
-	particular occasion. You'll need to create a scheduled job to
-	periodically check for updates on *all* the feeds. You'll need either
-	(a) the ability to create cron jobs on your web host or (b) access to
-	another computer with a reliable, always-on Internet connection.
-	
-	If you *can* create a crontab on your web host, then the best thing to
-	do is to create a cron job that will run update-feeds.php through the
-	PHP command-line interface. For example, if you have WordPress installed
-	in `~/www/wp` (where ~ is your home directory), you might insert the
-	following line into your crontab:
-	
-		25 * * * * cd $HOME/www/wp/wp-content ; php -q update-feeds.php
+To manually check for new posts, log in to the WordPress Dashboard and go to
+**Syndication --> Update**. You can use the drop-down selection box to choose
+whether WordPress should check all feeds for new posts, or a specific feed. When
+you make your selection and press the "Update" button, FeedWordPress will
+check the selected feed or feeds for new posts, and import any new content
+available on that feed or those feeds.
 
-	If you *don't* have access to (a), you can still save the day using
-	another computer with always-on Internet access that sends a POST
-	request to the `update-feeds.php` URI on a regular schedule. So, for
-	example, if you have WordPress installed at <http://www.zyx.com/blog>,
-	and you have a dummy user in your WordPress database with the login name
-	'login' and the password 'pass', then you could add the following line
-	to the crontab on a home Linux box:
-	
-		25 * * * * curl --user login:pass http://www.zyx.com/blog/wp-content/update-feeds.php -d update=quiet
+##### Automatic Feed Updates #####
 
-	The `-d update=quiet` switch ensures that (1) `update-feeds.php` will
-	receive an HTTP POST request rather than an HTTP GET request (which
-	is important, since it won't take any actions with side-effects -- such
-	as checking for new posts -- unless it receives an HTTP POST); it also
-	tells it to suppress the HTML output that it would generate for normal
-	web browsers, and only to output text if it encounters errors (this will
-	keep the number of e-mails you receive from the Cron Daemon to a
-	minimum).
+If you choose an automatic update schedule, then FeedWordPress will
+automatically check for new posts based on a schedule you determine. When
+automatic updates are enabled, FeedWordPress will check for new posts when
+(1) at least ten minutes have passed since the last update, and (2) a viewer
+visits your FeedWordPress-enabled blog. (If you want the interval of time to
+be shorter or longer, you can change the interval in the Dashboard under
+**Syndication --> Options**.)
 
-	If you are using Windows XP and have a version of curl (such as the
-	version included in [Cygwin][]), you can create a Scheduled Task to
-	similar effect.
+Note that this is not quite the same thing as precisely scheduled updating.
+If you get at least one viewer every ten minutes, then FeedWordPress will be
+regularly checking for new posts on schedule; if not, not. But for a relatively
+active aggregator blog this is probably close enough for government work.
 
-  [Cygwin]: http://www.cygwin.com/
+However, if you want to ensure regular updates, and you have access to a
+task-scheduling tool such as `cron`, you can use it to schedule regular
+checks for updates on a fixed schedule. For example, using `cron`, you can
+easily ensure that FeedWordPress checks for new posts regularly by adding the
+following line to your crontab, substituting the actual address of your
+WordPress installation for "http://www.zyx.com/blog/":
+
+	*/15 * * * * curl http://www.zyx.com/blog/ > /dev/null
+
+If you don't have direct access to `cron` or a similar scheduling tool, you
+can use online tools such as [WebCron](http://www.webcron.org/?lang=en) to
+schedule a regular fetch of your blog's front page to much the same effect.
+
+##### Feed Updates using XML-RPC #####
+
+FeedWordPress also allows syndicated blogs to notify you of updates using the
+XML-RPC "recently updated" pings (in the standard format accepted by
+Weblogs.com, Ping-O-Matic, Technorati, and other blogging services). Most
+blogging software allows users to add a URI to the list of URIs that get pinged
+with each new update -- see, for example, **Options --> Writing --> Update
+Services** in WordPress, or **Configuration --> Preferences --> Publicity /
+Remote Interfaces / TrackBack** in Movable Type. If you can get a contributor
+to add your XML-RPC URI to her list of update services to ping, then whenever
+she updates her blog, her blogging software will notify your FeedWordPress
+installation, and FeedWordPress will look up her feed to grab the new posts off
+of it. (If you have WordPress installed at <http://www.zyx.com/blog>, say, the
+URI for her to ping should be <http://www.zyx.com/blog/xmlrpc.php>).
 
 Basic Concepts
 --------------

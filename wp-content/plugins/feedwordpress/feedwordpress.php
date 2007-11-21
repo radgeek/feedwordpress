@@ -3,11 +3,11 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://projects.radgeek.com/feedwordpress
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 0.99b1
+Version: 0.99b2
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
-Last modified: 2007-02-17 4:23pm EST
+Last modified: 2007-09-16 11:13 PDT
 */
 
 # This uses code derived from:
@@ -30,12 +30,21 @@ define ('FEEDWORDPRESS_VERSION', '0.99a');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
+define ('FEEDWORDPRESS_DEBUG', true);
+
 define ('FEEDWORDPRESS_CAT_SEPARATOR_PATTERN', '/[:\n]/');
 define ('FEEDWORDPRESS_CAT_SEPARATOR', "\n");
 
 define ('FEEDVALIDATOR_URI', 'http://feedvalidator.org/check.cgi');
 
 define ('FEEDWORDPRESS_FRESHNESS_INTERVAL', 10*60); // Every ten minutes
+
+if (FEEDWORDPRESS_DEBUG) :
+	// Help us to pick out errors, if any.
+	ini_set('error_reporting', E_ALL & ~E_NOTICE);
+	ini_set('display_errors', true);
+	define('MAGPIE_DEBUG', true);
+endif;
 
 // Note that the rss-functions.php that comes prepackaged with WordPress is
 // old & busted. For the new hotness, drop a copy of rss.php from
@@ -50,14 +59,22 @@ endif;
 if (isset($wp_db_version)) :
 	if ($wp_db_version >= 4772) : // WordPress 2.1 and up
 		require_once (ABSPATH . WPINC . '/registration.php'); 		// for wp_insert_user
-		require_once (ABSPATH . WPINC . '/pluggable.php'); 		// for get_userdata (for wp_insert_user)
 		require_once (ABSPATH . 'wp-admin/admin-db.php'); 		// for wp_insert_category 
 	elseif ($wp_db_version >= 3308) : // WordPress 2.0
 		require_once (ABSPATH . WPINC . '/registration-functions.php');	// for wp_insert_user
-		require_once (ABSPATH . WPINC . '/pluggable-functions.php');	// for get_userdata (for wp_insert_user)
 		require_once (ABSPATH . 'wp-admin/admin-db.php');		// for wp_insert_category
 	endif;
 endif;
+
+// undo !@#$ing magic quotes
+if (is_array($_POST)) : foreach ($_POST as $key => $value) :
+	if (get_magic_quotes_gpc() and is_string($value)) :
+		$fwp_post[$key] = stripslashes($value);
+	else :
+		$fwp_post[$key] = $value;
+	endif;
+endforeach; endif;
+				
 
 // Is this being loaded from within WordPress 1.5 or later?
 if (isset($wp_version) and $wp_version >= 1.5):
@@ -106,15 +123,19 @@ if (isset($wp_version) and $wp_version >= 1.5):
 		endif;
 		
 		# Cron-less auto-update. Hooray!
-		if (FeedWordPress::stale()) :
-			$feedwordpress =& new FeedWordPress;
-			$feedwordpress->update();
-		endif;
+		add_action('init', 'feedwordpress_auto_update');
 	else :
 		# Hook in the menus, which will just point to the upgrade interface
 		add_action('admin_menu', 'fwp_add_pages');
 	endif; // if (!FeedWordPress::needs_upgrade())
 endif;
+
+function feedwordpress_auto_update () {
+	if (FeedWordPress::stale()) :
+		$feedwordpress =& new FeedWordPress;
+		$feedwordpress->update();
+	endif;
+} /* feedwordpress_auto_update () */
 
 ################################################################################
 ## LOGGING FUNCTIONS: log status updates to error_log if you want it ###########
@@ -272,7 +293,7 @@ function syndication_permalink ($permalink = '') {
 ################################################################################
 
 function fwp_upgrade_page () {
-	if (isset($_POST['action']) and $_POST['action']=='Upgrade') :
+	if (isset($GLOBALS['fwp_post']['action']) and $GLOBALS['fwp_post']['action']=='Upgrade') :
 		$ver = get_option('feedwordpress_version');
 		if (get_option('feedwordpress_version') != FEEDWORDPRESS_VERSION) :
 			echo "<div class=\"wrap\">\n";
@@ -395,7 +416,7 @@ if ($cont):
 	$links = FeedWordPress::syndicated_links();
 ?>
 	<div class="wrap">
-	<form action="admin.php?page=<?php echo basename(__FILE__); ?>" method="post">
+	<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
 	<h2>Syndicate a new site:</h2>
 	<div>
 	<label for="add-uri">Website or newsfeed:</label>
@@ -406,7 +427,7 @@ if ($cont):
 	</form>
 	</div>
 
-	<form action="admin.php?page=<?php echo basename(__FILE__); ?>" method="post">
+	<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
 	<div class="wrap">
 	<h2>Syndicated Sites</h2>
 <?php	$alt_row = true;
@@ -422,7 +443,7 @@ if ($cont):
 <?php		foreach ($links as $link):
 			$alt_row = !$alt_row; ?>
 <tr<?php echo ($alt_row?' class="alternate"':''); ?>>
-<td><a href="<?php echo wp_specialchars($link->link_url); ?>"><?php echo wp_specialchars($link->link_name); ?></a></td>
+<td><a href="<?php echo wp_specialchars($link->link_url, 'both'); ?>"><?php echo wp_specialchars($link->link_name, 'both'); ?></a></td>
 <?php 
 			if (strlen($link->link_rss) > 0):
 				$caption='Switch Feed';
@@ -437,7 +458,7 @@ if ($cont):
 				if (strlen($display_uri) > 32) : $display_uri = substr($display_uri, 0, 32).'&#8230;'; endif;
 ?>
 				<td>
-				<strong><a href="<?php echo $link->link_rss; ?>"><?php echo wp_specialchars($display_uri); ?></a></strong></td>
+				<strong><a href="<?php echo $link->link_rss; ?>"><?php echo wp_specialchars($display_uri, 'both'); ?></a></strong></td>
 <?php
 			else:
 				$caption='Find Feed';
@@ -447,9 +468,9 @@ if ($cont):
 <?php
 			endif;
 ?>
-			<td><a href="admin.php?page=<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit" class="edit"><?php _e('Edit')?></a></td>
-			<td><a href="admin.php?page=<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder" class="edit"><?php echo $caption; ?></a></td>
-			<td><a href="admin.php?page=<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=Unsubscribe" class="delete"><?php _e('Unsubscribe'); ?></a></td>
+			<td><a href="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit" class="edit"><?php _e('Edit')?></a></td>
+			<td><a href="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder" class="edit"><?php echo $caption; ?></a></td>
+			<td><a href="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=Unsubscribe" class="delete"><?php _e('Unsubscribe'); ?></a></td>
 			<td><input type="checkbox" name="link_ids[]" value="<?php echo $link->link_id; ?>" /></td>
 <?php
 			echo "\n\t</tr>";
@@ -481,10 +502,12 @@ function fwp_feedfinder_page () {
 
 	if (isset($_REQUEST['link_id']) and ($_REQUEST['link_id']!=0)):
 		$link_id = $_REQUEST['link_id'];
+		if (!is_numeric($link_id)) : FeedWordPress::critical_bug('fwp_feedfinder_page::link_id', $link_id, __LINE__); endif;
+		
 		$link = $wpdb->get_row("SELECT * FROM $wpdb->links WHERE link_id='".$wpdb->escape($link_id)."'");
 		if (is_object($link)):
 			if (is_null($lookup)) $lookup = $link->link_url;
-			$name = wp_specialchars($link->link_name);
+			$name = wp_specialchars($link->link_name, 'both');
 		else:
 			die (__("Cheatin' uh ?"));
 		endif;
@@ -505,17 +528,17 @@ function fwp_feedfinder_page () {
 				$feed_title = isset($rss->channel['title'])?$rss->channel['title']:$rss->channel['link'];
 				$feed_link = isset($rss->channel['link'])?$rss->channel['link']:'';
 ?>
-				<form action="admin.php?page=<?php echo basename(__FILE__); ?>" method="post">
+				<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
 				<fieldset style="clear: both">
 				<legend><?php echo $rss->feed_type; ?> <?php echo $rss->feed_version; ?> feed</legend>
 
 				<?php if ($link_id===0): ?>
-					<input type="hidden" name="feed_title" value="<?php echo wp_specialchars($feed_title); ?>" />
-					<input type="hidden" name="feed_link" value="<?php echo wp_specialchars($feed_link); ?>" />
+					<input type="hidden" name="feed_title" value="<?php echo wp_specialchars($feed_title, 'both'); ?>" />
+					<input type="hidden" name="feed_link" value="<?php echo wp_specialchars($feed_link, 'both'); ?>" />
 				<?php endif; ?>
 
 				<input type="hidden" name="link_id" value="<?php echo $link_id; ?>" />
-				<input type="hidden" name="feed" value="<?php echo wp_specialchars($f); ?>" />
+				<input type="hidden" name="feed" value="<?php echo wp_specialchars($f, 'both'); ?>" />
 				<input type="hidden" name="action" value="switchfeed" />
 
 				<div>
@@ -540,9 +563,9 @@ function fwp_feedfinder_page () {
 				<h3>Feed Information</h3>
 				<ul>
 				<li><strong>Website:</strong> <a href="<?php echo $feed_link; ?>"><?php echo is_null($feed_title)?'<em>Unknown</em>':$feed_title; ?></a></li>
-				<li><strong>Feed URI:</strong> <a href="<?php echo wp_specialchars($f); ?>"><?php echo wp_specialchars($f); ?></a> <a title="Check feed &lt;<?php echo wp_specialchars($f); ?>&gt; for validity" href="http://feedvalidator.org/check.cgi?url=<?php echo urlencode($f); ?>"><img src="../wp-images/smilies/icon_arrow.gif" alt="(&rarr;)" /></a></li>
-				<li><strong>Encoding:</strong> <?php echo isset($rss->encoding)?wp_specialchars($rss->encoding):"<em>Unknown</em>"; ?></li>
-				<li><strong>Description:</strong> <?php echo isset($rss->channel['description'])?wp_specialchars($rss->channel['description']):"<em>Unknown</em>"; ?></li>
+				<li><strong>Feed URI:</strong> <a href="<?php echo wp_specialchars($f, 'both'); ?>"><?php echo wp_specialchars($f, 'both'); ?></a> <a title="Check feed &lt;<?php echo wp_specialchars($f, 'both'); ?>&gt; for validity" href="http://feedvalidator.org/check.cgi?url=<?php echo urlencode($f); ?>"><img src="../wp-images/smilies/icon_arrow.gif" alt="(&rarr;)" /></a></li>
+				<li><strong>Encoding:</strong> <?php echo isset($rss->encoding)?wp_specialchars($rss->encoding, 'both'):"<em>Unknown</em>"; ?></li>
+				<li><strong>Description:</strong> <?php echo isset($rss->channel['description'])?wp_specialchars($rss->channel['description'], 'both'):"<em>Unknown</em>"; ?></li>
 				</ul>
 				<div class="submit"><input type="submit" name="Use" value="&laquo; Use this feed" /></div>
 				<div class="submit"><input type="submit" name="Cancel" value="&laquo; Cancel" /></div>
@@ -558,7 +581,7 @@ function fwp_feedfinder_page () {
 ?>
 	</div>
 
-	<form action="admin.php?page=<?php echo basename(__FILE__); ?>" method="post">
+	<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
 	<div class="wrap">
 	<h2>Use another feed</h2>
 	<div><label>Feed:</label>
@@ -582,10 +605,10 @@ function fwp_switchfeed_page () {
 		elseif (isset($_REQUEST['link_id']) and ($_REQUEST['link_id']==0)):
 			$link_id = FeedWordPress::syndicate_link($_REQUEST['feed_title'], $_REQUEST['feed_link'], $_REQUEST['feed']);
 			if ($link_id): ?>
-<div class="updated"><p><a href="<?php echo $_REQUEST['feed_link']; ?>"><?php echo wp_specialchars($_REQUEST['feed_title']); ?></a>
-has been added as a contributing site, using the newsfeed at &lt;<a href="<?php echo $_REQUEST['feed']; ?>"><?php echo wp_specialchars($_REQUEST['feed']); ?></a>&gt;.</p></div>
+<div class="updated"><p><a href="<?php echo $_REQUEST['feed_link']; ?>"><?php echo wp_specialchars($_REQUEST['feed_title'], 'both'); ?></a>
+has been added as a contributing site, using the newsfeed at &lt;<a href="<?php echo $_REQUEST['feed']; ?>"><?php echo wp_specialchars($_REQUEST['feed'], 'both'); ?></a>&gt;.</p></div>
 <?php			else: ?>
-<div class="updated"><p>There was a problem adding the newsfeed. [SQL: <?php echo wp_specialchars(mysql_error()); ?>]</p></div>
+<div class="updated"><p>There was a problem adding the newsfeed. [SQL: <?php echo wp_specialchars(mysql_error(), 'both'); ?>]</p></div>
 <?php			endif;
 		elseif (isset($_REQUEST['link_id'])):
 			// Update link_rss
@@ -602,8 +625,8 @@ has been added as a contributing site, using the newsfeed at &lt;<a href="<?php 
 				WHERE link_id = '".$wpdb->escape($_REQUEST['link_id'])."'
 				");
 			?> 
-<div class="updated"><p>Feed for <a href="<?php echo $result->link_url; ?>"><?php echo wp_specialchars($result->link_name); ?></a>
-updated to &lt;<a href="<?php echo $_REQUEST['feed']; ?>"><?php echo wp_specialchars($_REQUEST['feed']); ?></a>&gt;.</p></div>
+<div class="updated"><p>Feed for <a href="<?php echo $result->link_url; ?>"><?php echo wp_specialchars($result->link_name, 'both'); ?></a>
+updated to &lt;<a href="<?php echo $_REQUEST['feed']; ?>"><?php echo wp_specialchars($_REQUEST['feed'], 'both'); ?></a>&gt;.</p></div>
 			<?php else: ?>
 <div class="updated"><p>Nothing was changed.</p></div>
 			<?php endif;
@@ -642,7 +665,7 @@ function fwp_linkedit_page () {
 		$link =& new SyndicatedLink($link_id);
 
 		if ($link->found()) :
-			if (isset($_POST['save'])) :
+			if (isset($GLOBALS['fwp_post']['save'])) :
 				$alter = array ();
 				
 				$meta = $link->settings;
@@ -651,7 +674,7 @@ function fwp_linkedit_page () {
 				endif;
 
 				// custom feed settings first
-				foreach ($_POST['notes'] as $mn) :
+				foreach ($GLOBALS['fwp_post']['notes'] as $mn) :
 					$mn['key0'] = trim($mn['key0']);
 					$mn['key1'] = trim($mn['key1']);
 					if (preg_match("\007^(("
@@ -672,34 +695,34 @@ function fwp_linkedit_page () {
 				
 				// now stuff through the web form
 				// hardcoded feed info
-				if (isset($_POST['hardcode_name'])) :
-					$meta['hardcode name'] = $_POST['hardcode_name'];
+				if (isset($GLOBALS['fwp_post']['hardcode_name'])) :
+					$meta['hardcode name'] = $GLOBALS['fwp_post']['hardcode_name'];
 					if (FeedWordPress::affirmative($meta, 'hardcode name')) :
-						$alter[] = "link_name = '".$wpdb->escape($_POST['name'])."'";
+						$alter[] = "link_name = '".$wpdb->escape($GLOBALS['fwp_post']['name'])."'";
 					endif;
 				endif;
-				if (isset($_POST['hardcode_description'])) :
-					$meta['hardcode description'] = $_POST['hardcode_description'];
+				if (isset($GLOBALS['fwp_post']['hardcode_description'])) :
+					$meta['hardcode description'] = $GLOBALS['fwp_post']['hardcode_description'];
 					if (FeedWordPress::affirmative($meta, 'hardcode description')) :
-						$alter[] = "link_description = '".$wpdb->escape($_POST['description'])."'";
+						$alter[] = "link_description = '".$wpdb->escape($GLOBALS['fwp_post']['description'])."'";
 					endif;
 				endif;
-				if (isset($_POST['hardcode_url'])) :
-					$meta['hardcode url'] = $_POST['hardcode_url'];
+				if (isset($GLOBALS['fwp_post']['hardcode_url'])) :
+					$meta['hardcode url'] = $GLOBALS['fwp_post']['hardcode_url'];
 					if (FeedWordPress::affirmative($meta, 'hardcode url')) :
-						$alter[] = "link_url = '".$wpdb->escape($_POST['linkurl'])."'";
+						$alter[] = "link_url = '".$wpdb->escape($GLOBALS['fwp_post']['linkurl'])."'";
 					endif;
 				endif;
 				
 				// Update scheduling
-				if (isset($_POST['update_schedule'])) :
-					$meta['update/hold'] = $_POST['update_schedule'];
+				if (isset($GLOBALS['fwp_post']['update_schedule'])) :
+					$meta['update/hold'] = $GLOBALS['fwp_post']['update_schedule'];
 				endif;
 
 				// Categories
-				if (isset($_POST['post_category'])) :
+				if (isset($GLOBALS['fwp_post']['post_category'])) :
 					$meta['cats'] = array();
-					foreach ($_POST['post_category'] as $cat_id) :
+					foreach ($GLOBALS['fwp_post']['post_category'] as $cat_id) :
 						$meta['cats'][] = '{#'.$cat_id.'}';
 					endforeach;
 				else :
@@ -709,11 +732,11 @@ function fwp_linkedit_page () {
 				// Post status, comment status, ping status
 				foreach (array('post', 'comment', 'ping') as $what) :
 					$sfield = "feed_{$what}_status";
-					if (isset($_POST[$sfield])) :
-						if ($_POST[$sfield]=='site-default') :
+					if (isset($GLOBALS['fwp_post'][$sfield])) :
+						if ($GLOBALS['fwp_post'][$sfield]=='site-default') :
 							unset($meta["{$what} status"]);
 						else :
-							$meta["{$what} status"] = $_POST[$sfield];
+							$meta["{$what} status"] = $GLOBALS['fwp_post'][$sfield];
 						endif;
 					endif;
 				endforeach;
@@ -721,11 +744,11 @@ function fwp_linkedit_page () {
 				// Unfamiliar author, unfamiliar categories
 				foreach (array("author", "category") as $what) :
 					$sfield = "unfamiliar_{$what}";
-					if (isset($_POST[$sfield])) :
-						if ($_POST[$sfield]=='site-default') :
+					if (isset($GLOBALS['fwp_post'][$sfield])) :
+						if ($GLOBALS['fwp_post'][$sfield]=='site-default') :
 							unset($meta["unfamiliar {$what}"]);
 						else :
-							$meta["unfamiliar {$what}"] = $_POST[$sfield];
+							$meta["unfamiliar {$what}"] = $GLOBALS['fwp_post'][$sfield];
 						endif;
 					endif;
 				endforeach;
@@ -762,12 +785,12 @@ function fwp_linkedit_page () {
 			$link_image = $db_link->link_image;
 			$link_target = $db_link->link_target;
 			$link_category = $db_link->link_category;
-			$link_description = wp_specialchars($db_link->link_description);
+			$link_description = wp_specialchars($db_link->link_description, 'both');
 			$link_visible = $db_link->link_visible;
 			$link_rating = $db_link->link_rating;
 			$link_rel = $db_link->link_rel;
-			$link_notes = wp_specialchars($db_link->link_notes);
-			$link_rss_uri = wp_specialchars($db_link->link_rss);
+			$link_notes = wp_specialchars($db_link->link_notes, 'both');
+			$link_rss_uri = wp_specialchars($db_link->link_rss, 'both');
 			
 			$meta = $link->settings;
 			$post_status_global = get_option('feedwordpress_syndicated_post_status');
@@ -839,7 +862,7 @@ function fwp_linkedit_page () {
 <div class="updated"><p>Syndicated feed settings updated.</p></div>
 <?php endif; ?>
 
-<form action="admin.php?page=<?php echo basename(__FILE__); ?>" method="post">
+<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
 <div class="wrap">
 <input type="hidden" name="link_id" value="<?php echo $link_id; ?>" />
 <input type="hidden" name="action" value="linkedit" />
@@ -850,9 +873,9 @@ function fwp_linkedit_page () {
 <table class="editform" width="100%" cellspacing="2" cellpadding="5">
 <tr>
 <th scope="row" width="20%"><?php _e('Feed URI:') ?></th>
-<td width="60%"><a href="<?php echo wp_specialchars($link_rss_uri); ?>"><?php echo $link_rss_uri; ?></a>
+<td width="60%"><a href="<?php echo wp_specialchars($link_rss_uri, 'both'); ?>"><?php echo $link_rss_uri; ?></a>
 <a href="<?php echo FEEDVALIDATOR_URI; ?>?url=<?php echo urlencode($link_rss_uri); ?>"
-title="Check feed &lt;<?php echo wp_specialchars($link_rss_uri); ?>&gt; for validity"><img src="../wp-images/smilies/icon_arrow.gif" alt="&rarr;" /></a>
+title="Check feed &lt;<?php echo wp_specialchars($link_rss_uri, 'both'); ?>&gt; for validity"><img src="../wp-images/smilies/icon_arrow.gif" alt="&rarr;" /></a>
 </td>
 <td width="20%"><input type="submit" name="feedfinder" value="switch &rarr;" style="font-size:smaller" /></td>
 </tr>
@@ -950,7 +973,7 @@ flip_hardcode('url');
 <tr><th width="20%" scope="row" style="vertical-align:top">Publication:</th>
 <td width="80%" style="vertical-align:top"><ul style="margin:0; list-style:none">
 <li><label><input type="radio" name="feed_post_status" value="site-default"
-<?php echo $status['post']['site-default']; ?> /> Use site-wide setting from <a href="options-general.php?page=<?php echo basename(__FILE__); ?>">Syndication Options</a>
+<?php echo $status['post']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
 (currently: <strong><?php echo ($post_status_global ? $post_status_global : 'publish'); ?></strong>)</label></li>
 <li><label><input type="radio" name="feed_post_status" value="publish"
 <?php echo $status['post']['publish']; ?> /> Publish posts from this feed immediately</label></li>
@@ -964,7 +987,7 @@ flip_hardcode('url');
 <tr><th width="20%" scope="row" style="vertical-align:top">Comments:</th>
 <td width="80%"><ul style="margin:0; list-style:none">
 <li><label><input type="radio" name="feed_comment_status" value="site-default"
-<?php echo $status['comment']['site-default']; ?> /> Use site-wide setting from <a href="options-general.php?page=<?php echo basename(__FILE__); ?>">Syndication Options</a>
+<?php echo $status['comment']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
 (currently: <strong><?php echo ($comment_status_global ? $comment_status_global : 'closed'); ?>)</strong></label></li>
 <li><label><input type="radio" name="feed_comment_status" value="open"
 <?php echo $status['comment']['open']; ?> /> Allow comments on syndicated posts from this feed</label></li>
@@ -976,7 +999,7 @@ flip_hardcode('url');
 <tr><th width="20%" scope="row" style="vertical-align:top">Trackback and Pingback:</th>
 <td width="80%"><ul style="margin:0; list-style:none">
 <li><label><input type="radio" name="feed_ping_status" value="site-default"
-<?php echo $status['ping']['site-default']; ?> /> Use site-wide setting from <a href="options-general.php?page=<?php echo basename(__FILE__); ?>">Syndication Options</a>
+<?php echo $status['ping']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
 (currently: <strong><?php echo ($ping_status_global ? $ping_status_global : 'closed'); ?>)</strong></label></li>
 <li><label><input type="radio" name="feed_ping_status" value="open"
 <?php echo $status['ping']['open']; ?> /> Accept pings on syndicated posts from this feed</label></li>
@@ -997,7 +1020,7 @@ flip_hardcode('url');
 <tr>
 <th width="20%" scope="row" style="vertical-align:top">Unfamiliar authors:</th>
 <td width="80%"><ul style="margin: 0; list-style:none">
-<li><label><input type="radio" name="unfamiliar_author" value="site-default"<?php echo $unfamiliar['author']['site-default']; ?> /> use site-wide setting from <a href="options-general.php?page=<?php echo basename(__FILE__); ?>">Syndication Options</a>
+<li><label><input type="radio" name="unfamiliar_author" value="site-default"<?php echo $unfamiliar['author']['site-default']; ?> /> use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
 (currently <strong><?php echo FeedWordPress::on_unfamiliar('author');; ?></strong>)</label></li>
 <li><label><input type="radio" name="unfamiliar_author" value="create"<?php echo $unfamiliar['author']['create']; ?>/> create a new author account</label></li>
 <li><label><input type="radio" name="unfamiliar_author" value="default"<?php echo $unfamiliar['author']['default']; ?> /> attribute the post to the default author</label></li>
@@ -1008,7 +1031,7 @@ flip_hardcode('url');
 <tr>
 <th width="20%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
 <td width="80%"><ul style="margin: 0; list-style:none">
-<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use site-wide setting from <a href="options-general.php?page=<?php echo basename(__FILE__); ?>">Syndication Options</a>
+<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
 (currently <strong><?php echo FeedWordPress::on_unfamiliar('category');; ?></strong>)</label></li>
 <li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar['category']['create']; ?> /> create any categories the post is in</label></li>
 <li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories</label></li>
@@ -1037,9 +1060,9 @@ flip_hardcode('url');
 		if (!preg_match("\007^((".implode(')|(', $special_settings)."))$\007i", $key)) :
 ?>
 			<tr style="vertical-align:top">
-			<th width="30%" scope="row"><input type="hidden" name="notes[<?php echo $i; ?>][key0]" value="<?php echo wp_specialchars($key); ?>" />
-			<input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo $i; ?>][key1]" value="<?php echo wp_specialchars($key); ?>" /></th>
-			<td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo wp_specialchars($value); ?></textarea></td>
+			<th width="30%" scope="row"><input type="hidden" name="notes[<?php echo $i; ?>][key0]" value="<?php echo wp_specialchars($key, 'both'); ?>" />
+			<input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo $i; ?>][key1]" value="<?php echo wp_specialchars($key, 'both'); ?>" /></th>
+			<td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo wp_specialchars($value, 'both'); ?></textarea></td>
 			<td width="10%"><select name="notes[<?php echo $i; ?>][action]">
 			<option value="update">save changes</option>
 			<option value="delete">delete this setting</option>
@@ -1078,8 +1101,8 @@ function fwp_multidelete_page () {
 
 	if (!current_user_can('manage_links')):
 		die (__("Cheatin' uh ?"));
-	elseif (isset($_POST['confirm']) and $_POST['confirm']=='Delete'):
-		foreach ($_POST['link_action'] as $link_id => $what) :
+	elseif (isset($GLOBALS['fwp_post']['confirm']) and $GLOBALS['fwp_post']['confirm']=='Delete'):
+		foreach ($GLOBALS['fwp_post']['link_action'] as $link_id => $what) :
 			$do_it[$what][] = $link_id;
 		endforeach;
 
@@ -1159,7 +1182,7 @@ function fwp_multidelete_page () {
 			WHERE link_id IN (".implode(",",$link_ids).")
 			");
 ?>
-<form action="admin.php?page=<?php echo basename(__FILE__); ?>" method="post">
+<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
 <div class="wrap">
 <input type="hidden" name="action" value="Unsubscribe" />
 <input type="hidden" name="confirm" value="Delete" />
@@ -1168,8 +1191,8 @@ function fwp_multidelete_page () {
 <?php	foreach ($targets as $link) :
 		$link_url = wp_specialchars($link->link_url, 1);
 		$link_name = wp_specialchars($link->link_name, 1);
-		$link_description = wp_specialchars($link->link_description);
-		$link_rss = wp_specialchars($link->link_rss);
+		$link_description = wp_specialchars($link->link_description, 'both');
+		$link_rss = wp_specialchars($link->link_rss, 'both');
 ?>
 <fieldset>
 <legend><?php echo $link_name; ?></legend>
@@ -1409,7 +1432,7 @@ class FeedWordPress {
 				FeedWordPress::critical_bug('FeedWordPress::stale::last', $last, __LINE__);
 			endif;
 		else :
-			$ret = false; echo "UPDATES OFF!";
+			$ret = false;
 		endif;
 		return $ret;
 	}
@@ -3119,10 +3142,10 @@ class Relative_URI
 // take your best guess at the realname and e-mail, given a string
 define('FWP_REGEX_EMAIL_ADDY', '([^@"(<\s]+@[^"@(<\s]+\.[^"@(<\s]+)');
 define('FWP_REGEX_EMAIL_NAME', '("([^"]*)"|([^"<(]+\S))');
-define('FWP_REGEX_EMAIL_POSTFIX_NAME', "/^\s*".FWP_REGEX_EMAIL_ADDY."\s+\(".FWP_REGEX_EMAIL_NAME."\)\s*$/");
-define('FWP_REGEX_EMAIL_PREFIX_NAME', "/^\s*".FWP_REGEX_EMAIL_NAME."\s*<".FWP_REGEX_EMAIL_ADDY.">\s*$/");
-define('FWP_REGEX_EMAIL_JUST_ADDY', "/^\s*".FWP_REGEX_EMAIL_ADDY."\s*$/");
-define('FWP_REGEX_EMAIL_JUST_NAME', "/^\s*".FWP_REGEX_EMAIL_NAME."\s*$/");
+define('FWP_REGEX_EMAIL_POSTFIX_NAME', '/^\s*'.FWP_REGEX_EMAIL_ADDY."\s+\(".FWP_REGEX_EMAIL_NAME.'\)\s*$/');
+define('FWP_REGEX_EMAIL_PREFIX_NAME', '/^\s*'.FWP_REGEX_EMAIL_NAME.'\s*<'.FWP_REGEX_EMAIL_ADDY.'>\s*$/');
+define('FWP_REGEX_EMAIL_JUST_ADDY', '/^\s*'.FWP_REGEX_EMAIL_ADDY.'\s*$/');
+define('FWP_REGEX_EMAIL_JUST_NAME', '/^\s*'.FWP_REGEX_EMAIL_NAME.'\s*$/');
 
 function parse_email_with_realname ($email) {
 	if (preg_match(FWP_REGEX_EMAIL_POSTFIX_NAME, $email, $matches)) :
