@@ -911,7 +911,11 @@ function init () {
     }
 
     if ( !defined('MAGPIE_OUTPUT_ENCODING') ) {
-        define('MAGPIE_OUTPUT_ENCODING', 'ISO-8859-1');
+        # WORDPRESS MODIFICATION: use whatever charset the blog is using
+	# --- cut here ---
+	$wp_encoding = get_settings('blog_charset');
+        define('MAGPIE_OUTPUT_ENCODING', ($wp_encoding?$wp_encoding:'ISO-8859-1'));
+	# --- cut here ---
     }
     
     if ( !defined('MAGPIE_INPUT_ENCODING') ) {

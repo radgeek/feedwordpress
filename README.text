@@ -2,7 +2,7 @@ FeedWordPress
 =============
 
 * Author: [Charles Johnson](http://www.radgeek.com/contact)
-* Version: 0.8
+* Version: 0.9
 * Project URI: <http://projects.radgeek.com/feedwordpress>
 * License: GPL. See License below for copyright jots and tittles.
 
@@ -72,7 +72,6 @@ For detailed installation instructions, point your web browser to
 
 Feed Settings
 -------------
-### Feed Settings ###
 
 Once you have your links configured and regular feed updates scheduled, you can
 mostly leave FeedWordPress to run on its own. If you need to add, remove, or
@@ -220,6 +219,18 @@ that by default the permalinks listed on your website and in your newsfeed will
 link to the location of the posts on the source website, *not* to their location
 on your website. You can switch this behavior on or off at Options -->
 Syndication in the WordPress Dashboard.
+
+### Plugin API ###
+
+FeedWordPress creates five hooks through the WordPress plugin architecture that
+you can plug in to using PHP WordPress plugins, to supplement ordinary
+FeedWordPress behavior, or to filter posts according to criteria that you set.
+The hooks are the action ``feedwordpress_update``, the action
+``feedwordpress_check_feed``, the action ``feedwordpress_update_complete``,  the
+filter ``syndicated_item``, the filter ``syndicated_post``, the action
+``post_syndicated_item``, and the action ``update_syndicated_item``.
+
+For more information, see <http://projects.radgeek.com/feedwordpress/use>.
 
 License
 -------
