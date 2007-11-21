@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://projects.radgeek.com/feedwordpress
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 0.99b2
+Version: 0.99
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -26,11 +26,12 @@ Last modified: 2007-09-16 11:13 PDT
 # <http://www.zyx.com/blog/xmlrpc.php>), or see `update-feeds.php`	
 
 # -- Don't change these unless you know what you're doing...
-define ('FEEDWORDPRESS_VERSION', '0.99a');
+
+define ('FEEDWORDPRESS_VERSION', '0.99');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
-define ('FEEDWORDPRESS_DEBUG', true);
+define ('FEEDWORDPRESS_DEBUG', false);
 
 define ('FEEDWORDPRESS_CAT_SEPARATOR_PATTERN', '/[:\n]/');
 define ('FEEDWORDPRESS_CAT_SEPARATOR', "\n");
@@ -39,11 +40,22 @@ define ('FEEDVALIDATOR_URI', 'http://feedvalidator.org/check.cgi');
 
 define ('FEEDWORDPRESS_FRESHNESS_INTERVAL', 10*60); // Every ten minutes
 
+define ('FWP_SCHEMA_20', 3308); // Database schema # for WP 2.0
+define ('FWP_SCHEMA_21', 4772); // Database schema # for WP 2.1
+define ('FWP_SCHEMA_23', 5495); // Database schema # for WP 2.3
+
 if (FEEDWORDPRESS_DEBUG) :
 	// Help us to pick out errors, if any.
 	ini_set('error_reporting', E_ALL & ~E_NOTICE);
 	ini_set('display_errors', true);
 	define('MAGPIE_DEBUG', true);
+	
+	 // When testing we don't want cache issues to interfere. But this is
+	 // a VERY BAD SETTING for a production server. Webmasters will eat your 
+	 // face for breakfast if you use it, and the baby Jesus will cry. So
+	 // make sure FEEDWORDPRESS_DEBUG is FALSE for any site that will be
+	 // used for more than testing purposes!
+	define('MAGPIE_CACHE_AGE', 1);
 endif;
 
 // Note that the rss-functions.php that comes prepackaged with WordPress is
@@ -57,7 +69,9 @@ else :
 endif;
 
 if (isset($wp_db_version)) :
-	if ($wp_db_version >= 4772) : // WordPress 2.1 and up
+	if ($wp_db_version >= FWP_SCHEMA_23) :
+		require_once (ABSPATH . WPINC . '/registration.php'); 		// for wp_insert_user
+	elseif ($wp_db_version >= FWP_SCHEMA_21) : // WordPress 2.1 and 2.2, but not 2.3
 		require_once (ABSPATH . WPINC . '/registration.php'); 		// for wp_insert_user
 		require_once (ABSPATH . 'wp-admin/admin-db.php'); 		// for wp_insert_category 
 	elseif ($wp_db_version >= 3308) : // WordPress 2.0
@@ -66,15 +80,14 @@ if (isset($wp_db_version)) :
 	endif;
 endif;
 
-// undo !@#$ing magic quotes
-if (is_array($_POST)) : foreach ($_POST as $key => $value) :
-	if (get_magic_quotes_gpc() and is_string($value)) :
-		$fwp_post[$key] = stripslashes($value);
-	else :
-		$fwp_post[$key] = $value;
-	endif;
-endforeach; endif;
-				
+if (function_exists('wp_enqueue_script')) :
+	wp_enqueue_script( 'ajaxcat' );
+endif;
+
+// Magic quotes are just about the stupidest thing ever.
+if (is_array($_POST)) :
+	$fwp_post = stripslashes_deep($_POST);
+endif;
 
 // Is this being loaded from within WordPress 1.5 or later?
 if (isset($wp_version) and $wp_version >= 1.5):
@@ -107,8 +120,12 @@ if (isset($wp_version) and $wp_version >= 1.5):
 		add_filter('xmlrpc_methods', 'feedwordpress_xmlrpc_hook');
 	
 		# Outbound XML-RPC ping reform
-		remove_action('publish_post', 'generic_ping');
-		add_action('publish_post', 'fwp_catch_ping');
+		remove_action('publish_post', 'generic_ping'); // WP 1.5.x
+		remove_action('do_pings', 'do_all_pings', 10, 1); // WP 2.1, 2.2
+		remove_action('publish_post', '_publish_post_hook', 5, 1); // WP 2.3
+
+		add_action('publish_post', 'fwp_publish_post_hook', 5, 1);
+		add_action('do_pings', 'fwp_do_pings', 10, 1);
 		add_action('feedwordpress_update', 'fwp_hold_pings');
 		add_action('feedwordpress_update_complete', 'fwp_release_pings');
 
@@ -358,7 +375,6 @@ function fwp_add_pages () {
 	add_menu_page('Syndicated Sites', 'Syndication', $manage_links, 'feedwordpress/'.basename(__FILE__), 'fwp_syndication_manage_page');
 	add_submenu_page('feedwordpress/'.basename(__FILE__), 'Syndication Options', 'Options', $manage_options, 'feedwordpress/syndication-options.php');
 	add_options_page('Syndication Options', 'Syndication', $manage_options, 'feedwordpress/syndication-options.php');
-	add_submenu_page('feedwordpress/'.basename(__FILE__), 'Update Feeds', 'Update', $manage_links, 'feedwordpress/update-feeds.php');
 } // function fwp_add_pages () */
 
 function fwp_category_box ($checked, $object) {
@@ -392,6 +408,12 @@ function fwp_category_box ($checked, $object) {
 	endif;
 }
 
+function update_feeds_mention ($feed) {
+	echo "<li>Updating <cite>".$feed['link/name']."</cite> from &lt;<a href=\""
+		.$feed['link/uri']."\">".$feed['link/uri']."</a>&gt; ...</li>\n";
+	flush();
+}
+
 function fwp_syndication_manage_page () {
 	global $wpdb;
 
@@ -406,7 +428,7 @@ if (isset($_REQUEST['action'])):
 	if ($_REQUEST['action'] == 'feedfinder') : $cont = fwp_feedfinder_page();
 	elseif ($_REQUEST['action'] == 'switchfeed') : $cont = fwp_switchfeed_page();
 	elseif ($_REQUEST['action'] == 'linkedit') : $cont = fwp_linkedit_page();
-	elseif ($_REQUEST['action'] == 'Unsubscribe from Checked' or $_REQUEST['action'] == 'Unsubscribe') : $cont = fwp_multidelete_page();
+	elseif ($_REQUEST['action'] == 'Unsubscribe from Checked Links' or $_REQUEST['action'] == 'Unsubscribe') : $cont = fwp_multidelete_page();
 	endif;
 endif;
 
@@ -414,18 +436,72 @@ if ($cont):
 ?>
 <?php
 	$links = FeedWordPress::syndicated_links();
-?>
+
+	if (isset($_POST['update']) or isset($_POST['action']) or isset($_POST['update_uri'])) :
+		$fwp_update_invoke = 'post';
+	else :
+		$fwp_update_invoke = 'get';
+	endif;
+
+	$update_set = array();
+	if (isset($_POST['link_ids']) and is_array($_POST['link_ids']) and ($_POST['action']=='Update Checked Links')) :
+		$targets = $wpdb->get_results("
+			SELECT * FROM $wpdb->links
+			WHERE link_id IN (".implode(",",$_POST['link_ids']).")
+			");
+		if (is_array($targets)) :
+			foreach ($targets as $target) :
+				$update_set[] = $target->link_rss;
+			endforeach;
+		else : // This should never happen
+			FeedWordPress::critical_bug('fwp_syndication_manage_page::targets', $targets, __LINE__);
+		endif;
+	elseif (isset($_POST['update_uri'])) :
+		$update_set[] = $_POST['update_uri'];
+	endif;
+
+	if ($fwp_update_invoke != 'get' and count($update_set) > 0) : // Only do things with side-effects for HTTP POST or command line
+		$feedwordpress =& new FeedWordPress;
+		add_action('feedwordpress_check_feed', 'update_feeds_mention');
+		
+		echo "<div class=\"updated\">\n";
+		echo "<ul>\n";
+		foreach ($update_set as $uri) :
+			if ($uri == '*') : $uri = NULL; endif;
+			$delta = $feedwordpress->update($uri);
+		endforeach;
+		echo "</ul>\n";
+
+		if (is_null($delta)) :
+			echo "<p><strong>Error:</strong> I don't syndicate <a href=\"$uri\">$uri</a></p>\n";
+		else :
+			$mesg = array();
+			if (isset($delta['new'])) : $mesg[] = ' '.$delta['new'].' new posts were syndicated'; endif;
+			if (isset($delta['updated'])) : $mesg[] = ' '.$delta['updated'].' existing posts were updated'; endif;
+			echo "<p>Update complete.".implode(' and', $mesg)."</p>";
+			echo "\n"; flush();
+		endif;
+		echo "</div> <!-- class=\"updated\" -->\n";
+	endif;
+
+	?>
 	<div class="wrap">
-	<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
-	<h2>Syndicate a new site:</h2>
-	<div>
-	<label for="add-uri">Website or newsfeed:</label>
-	<input type="text" name="lookup" id="add-uri" value="URI" size="64" />
-	<input type="hidden" name="action" value="feedfinder" />
-	</div>
-	<div class="submit"><input type="submit" value="Syndicate &raquo;" /></div>
+	<form action="" method="POST">
+	<h2>Update feeds now</h2>
+	<p>Check currently scheduled feeds for new and updated posts.</p>
+
+<?php 	if (!get_option('feedwordpress_automatic_updates')) : ?>
+	<p><strong>Note:</strong> Automatic updates are currently turned
+	<strong>off</strong>. New posts from your feeds will not be syndicated
+	until you manually check for them here. You can turn on automatic
+	updates under <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication
+	Options</a>.</p>
+<?php 	endif; ?>
+	
+
+	<div class="submit"><input type="hidden" name="update_uri" value="*" /><input type="submit" name="update" value="Update" /></div>
 	</form>
-	</div>
+	</div> <!-- class="wrap" -->
 
 	<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
 	<div class="wrap">
@@ -482,15 +558,24 @@ if ($cont):
 
 <?php	endif; ?>
 	</table>
-	</div>
-	
-	<div class="wrap">
-	<h2>Manage Multiple Links</h2>
-	<div class="submit">
-	<input type="submit" class="delete" name="action" value="Unsubscribe from Checked" />
-	</div>
-	</div>
+
+	<br/><hr/>
+	<div class="submit"><input type="submit" class="delete" name="action" value="Unsubscribe from Checked Links" />
+	<input type="submit" name="action" value="Update Checked Links" /></div>
+	</div> <!-- class="wrap" -->
 	</form>
+
+	<div class="wrap">
+	<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
+	<h2>Add a new syndicated site:</h2>
+	<div>
+	<label for="add-uri">Website or newsfeed:</label>
+	<input type="text" name="lookup" id="add-uri" value="URI" size="64" />
+	<input type="hidden" name="action" value="feedfinder" />
+	</div>
+	<div class="submit"><input type="submit" value="Syndicate &raquo;" /></div>
+	</form>
+	</div> <!-- class="wrap" -->
 <?php
 endif;
 }
@@ -642,6 +727,7 @@ function fwp_linkedit_page () {
 
 	$special_settings = array ( /* Regular expression syntax is OK here */
 		'cats',
+		'cat_split',
 		'hardcode name',
 		'hardcode url',
 		'hardcode description',
@@ -753,13 +839,21 @@ function fwp_linkedit_page () {
 					endif;
 				endforeach;
 				
+				if (isset($GLOBALS['fwp_post']['cat_split'])) :
+					if (strlen(trim($GLOBALS['fwp_post']['cat_split'])) > 0) :
+						$meta['cat_split'] = trim($GLOBALS['fwp_post']['cat_split']);
+					else :
+						unset($meta['cat_split']);
+					endif;
+				endif;
+
 				if (is_array($meta['cats'])) :
 					$meta['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $meta['cats']);
 				endif;
 		
 				$notes = '';
 				foreach ($meta as $key => $value) :
-					$notes .= $key . ": ". addcslashes($value, "\0..\37") . "\n";
+					$notes .= $key . ": ". addcslashes($value, "\0..\37".'\\') . "\n";
 				endforeach;
 				$alter[] = "link_notes = '".$wpdb->escape($notes)."'";
 
@@ -782,13 +876,7 @@ function fwp_linkedit_page () {
 			$db_link = $link->link;
 			$link_url = wp_specialchars($db_link->link_url, 1);
 			$link_name = wp_specialchars($db_link->link_name, 1);
-			$link_image = $db_link->link_image;
-			$link_target = $db_link->link_target;
-			$link_category = $db_link->link_category;
 			$link_description = wp_specialchars($db_link->link_description, 'both');
-			$link_visible = $db_link->link_visible;
-			$link_rating = $db_link->link_rating;
-			$link_rel = $db_link->link_rel;
 			$link_notes = wp_specialchars($db_link->link_notes, 'both');
 			$link_rss_uri = wp_specialchars($db_link->link_rss, 'both');
 			
@@ -969,9 +1057,9 @@ flip_hardcode('url');
 
 <?php fwp_category_box($dogs, 'all syndicated posts from this feed'); ?>
 
-<table class="editform" width="80%" cellspacing="2" cellpadding="5">
-<tr><th width="20%" scope="row" style="vertical-align:top">Publication:</th>
-<td width="80%" style="vertical-align:top"><ul style="margin:0; list-style:none">
+<table class="editform" width="75%" cellspacing="2" cellpadding="5">
+<tr><th width="27%" scope="row" style="vertical-align:top">Publication:</th>
+<td width="73%" style="vertical-align:top"><ul style="margin:0; list-style:none">
 <li><label><input type="radio" name="feed_post_status" value="site-default"
 <?php echo $status['post']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
 (currently: <strong><?php echo ($post_status_global ? $post_status_global : 'publish'); ?></strong>)</label></li>
@@ -984,8 +1072,8 @@ flip_hardcode('url');
 </ul></td>
 </tr>
 
-<tr><th width="20%" scope="row" style="vertical-align:top">Comments:</th>
-<td width="80%"><ul style="margin:0; list-style:none">
+<tr><th width="27%" scope="row" style="vertical-align:top">Comments:</th>
+<td width="73%"><ul style="margin:0; list-style:none">
 <li><label><input type="radio" name="feed_comment_status" value="site-default"
 <?php echo $status['comment']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
 (currently: <strong><?php echo ($comment_status_global ? $comment_status_global : 'closed'); ?>)</strong></label></li>
@@ -996,8 +1084,8 @@ flip_hardcode('url');
 </ul></td>
 </tr>
 
-<tr><th width="20%" scope="row" style="vertical-align:top">Trackback and Pingback:</th>
-<td width="80%"><ul style="margin:0; list-style:none">
+<tr><th width="27%" scope="row" style="vertical-align:top">Trackback and Pingback:</th>
+<td width="73%"><ul style="margin:0; list-style:none">
 <li><label><input type="radio" name="feed_ping_status" value="site-default"
 <?php echo $status['ping']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
 (currently: <strong><?php echo ($ping_status_global ? $ping_status_global : 'closed'); ?>)</strong></label></li>
@@ -1037,7 +1125,20 @@ flip_hardcode('url');
 <li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories</label></li>
 <li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar['category']['filter']; ?> /> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
 </ul></td>
-</tr></table>
+</tr>
+
+<tr>
+<th width="20%" scope="row" style="vertical-align:top">Multiple categories:</th>
+<td width="80%"> 
+<input type="text" size="20" id="cat_split" name="cat_split" value="<?php if (isset($meta['cat_split'])) : echo htmlspecialchars($meta['cat_split']); endif; ?>" /><br/>
+Enter a <a href="http://us.php.net/manual/en/reference.pcre.pattern.syntax.php">Perl-compatible regular expression</a> here if the feed provides multiple
+categories in a single category element. The regular expression should match
+the characters used to separate one category from the next. If the feed uses
+spaces (like <a href="http://del.icio.us/">del.icio.us</a>), use the pattern "\s".
+If the feed does not provide multiple categories in a single element, leave this
+blank.</td>
+</tr>
+</table>
 </fieldset>
 
 <p class="submit">
@@ -1255,17 +1356,43 @@ function fwp_hold_pings () {
 function fwp_release_pings () {
 	global $fwp_held_ping;
 	if ($fwp_held_ping):
-		generic_ping($fwp_held_ping);
+		if (function_exists('wp_schedule_single_event')) :
+			wp_schedule_single_event(time(), 'do_pings');
+		else :
+			generic_ping($fwp_held_ping);
+		endif;
 	endif;
 	$fwp_held_ping = NULL;	// NULL: not holding pings anymore
 }
 
-function fwp_catch_ping ($post_id = 0) {
-	global $fwp_held_ping;
-	if (!is_null($fwp_held_ping) and $post_id):
+function fwp_do_pings () {
+	if (!is_null($fwp_held_ping) and $post_id) : // Defer until we're done updating
 		$fwp_held_ping = $post_id;
-	else:
+	elseif (function_exists('do_all_pings')) :
+		do_all_pings();
+	else :
 		generic_ping($fwp_held_ping);
+	endif;
+}
+
+function fwp_publish_post_hook ($post_id) {
+	global $fwp_held_ping;
+
+	if (!is_null($fwp_held_ping)) : // Syndicated post. Don't mark with _pingme
+		if ( defined('XMLRPC_REQUEST') )
+			do_action('xmlrpc_publish_post', $post_id);
+		if ( defined('APP_REQUEST') )
+			do_action('app_publish_post', $post_id);
+		
+		if ( defined('WP_IMPORTING') )
+			return;
+
+		// Defer sending out pings until we finish updating
+		$fwp_held_ping = $post_id;
+	else :
+		if (function_exists('_publish_post_hook')) : // WordPress 2.3
+			_publish_post_hook($post_id);
+		endif;
 	endif;
 }
 
@@ -1442,7 +1569,10 @@ class FeedWordPress {
 
 		// Get the category ID#
 		$cat_id = FeedWordPress::link_category_id();
-
+		
+		// WordPress gets cranky if there's no homepage URI
+		if (!isset($uri) or strlen($uri)<1) : $uri = $rss; endif;
+		
 		if (function_exists('wp_insert_link')) { // WordPress 2.x
 			$link_id = wp_insert_link(array(
 				"link_name" => $name,
@@ -1480,49 +1610,13 @@ class FeedWordPress {
 
 	function syndicated_links () {
 		$contributors = FeedWordPress::link_category_id();
-		if (function_exists('get_bookmarks')) {
+		if (function_exists('get_bookmarks')) :
 			$links = get_bookmarks(array("category" => $contributors));
-		} else {
+		else: 
 			$links = get_linkobjects($contributors); // deprecated as of WP 2.1
-		} // if
+		endif;
 		return $links;
-	} // function syndicated_links()
-
-	function link_category_named ($name) {
-		global $wp_db_version, $wpdb;
-		
-		if (!isset($wp_db_version) or $wp_db_version < 4772) {
-			// WordPress 1.5 and 2.0.x have segregated post and link categories
-			$ct = $wpdb->linkcategories;
-		} else {
-			// WordPress 2.1 has a unified category table for both
-			$ct = $wpdb->categories; 
-		}
-		return $wpdb->get_var("SELECT cat_id FROM $ct WHERE cat_name='$name'");				
-	}
-
-	function create_link_category ($name) {
-		global $wp_db_version, $wpdb;
-
-		if (!isset($wp_db_version) or $wp_db_version < 4772) {
-			$result = $wpdb->query("
-			INSERT INTO $wpdb->linkcategories
-			SET
-				cat_id = 0,
-				cat_name='$name',
-				show_images='N',
-				show_description='N',
-				show_rating='N',
-				show_updated='N',
-				sort_order='name'
-			");
-			$cat_id = $wpdb->insert_id;
-		} else {
-			// Why the fuck is this API function only available in a wp-admin module?
-			$cat_id = wp_insert_category(array('cat_name' => $name));
-		}
-		return $cat_id;
-	}
+	} // function FeedWordPress::syndicated_links()
 
 	function link_category_id () {
 		global $wpdb, $wp_db_version;
@@ -1530,41 +1624,60 @@ class FeedWordPress {
 		$cat_id = get_option('feedwordpress_cat_id');
 		
 		// If we don't yet *have* the category, we'll have to create it
-		if ($cat_id === false) {
+		if ($cat_id === false) :
 			$cat = $wpdb->escape(DEFAULT_SYNDICATION_CATEGORY);
 			
 			// Look for something with the right name...
-			$cat_id = FeedWordPress::link_category_named($cat);
+			// -----------------------------------------
+
+			// WordPress 2.3 introduces a new taxonomy/term API
+			if (function_exists('is_term')) :
+				$cat_id = is_term($cat, 'link_category');
+			// WordPress 2.1 and 2.2 use a common table for both link and post categories
+			elseif (isset($wp_db_version) and ($wp_db_version >= FWP_SCHEMA_21 and $wp_db_version < FWP_SCHEMA_23) ) :
+				$cat_id = $wpdb->get_var("SELECT cat_id FROM {$wpdb->categories} WHERE cat_name='$cat'");
+			// WordPress 1.5 and 2.0.x have a separate table for link categories
+			elseif (!isset($wp_db_version) or $wp_db_version < FWP_SCHEMA_21) :
+				$cat_id = $wpdb->get_var("SELECT cat_id FROM {$wpdb->linkcategories} WHERE cat_name='$cat'");
+			// This should never happen.
+			else :
+				FeedWordPress::critical_bug('FeedWordPress::link_category_id::wp_db_version', $wp_db_version, __LINE__);
+			endif;
 
 			// If you still can't find anything, make it for yourself.
-			if (!$cat_id) {
-				$cat_id = FeedWordPress::create_link_category($cat);
-			}
+			// -------------------------------------------------------
+			if (!$cat_id) :
+				// WordPress 2.3+ term/taxonomy API
+				if (function_exists('wp_insert_term')) :
+					$term = wp_insert_term($cat, 'link_category');
+					$cat_id = $term['term_id'];
+				// WordPress 2.1, 2.2 category API. By the way, why the fuck is this API function only available in a wp-admin module?
+				elseif (function_exists('wp_insert_category')) : 
+					$cat_id = wp_insert_category(array('cat_name' => $cat));
+				// WordPress 1.5 and 2.0.x
+				elseif (!isset($wp_db_version) or $wp_db_version < FWP_SCHEMA_21) :
+					$result = $wpdb->query("
+					INSERT INTO $wpdb->linkcategories
+					SET
+						cat_id = 0,
+						cat_name='$cat',
+						show_images='N',
+						show_description='N',
+						show_rating='N',
+						show_updated='N',
+						sort_order='name'
+					");
+					$cat_id = $wpdb->insert_id;
+				// This should never happen.
+				else :
+					FeedWordPress::critical_bug('FeedWordPress::link_category_id::wp_db_version', $wp_db_version, __LINE__);
+				endif;
+			endif;
 
 			update_option('feedwordpress_cat_id', $cat_id);
-		}
+		endif;
 		return $cat_id;
-	}
-
-	function link_category () {
-		global $wpdb, $wp_db_version;
-
-		$cat_id = FeedWordPress::link_category_id();
-
-		// Get the ID# for the category name...
-		if (!isset($wp_db_version) or $wp_db_version < 4772) {
-			// WordPress 1.5 and 2.0.x
-			$cat_name = $wpdb->get_var("
-			SELECT cat_name FROM $wpdb->linkcategories
-			WHERE cat_id='$cat_id'
-			");
-		} else {
-			// WordPress 2.1
-			$category = get_category($cat_id);
-			$cat_name = $category->cat_name;
-		}
-		return $cat_name;
-	}
+	} // function FeedWordPress::link_category_id()
 
 	# Upgrades and maintenance...
 	function needs_upgrade () {
@@ -1716,16 +1829,23 @@ class SyndicatedPost {
 		# Cf.: <http://mosquito.wordpress.org/view.php?id=901>
 		global $fwp_channel, $fwp_feedmeta;
 		$fwp_channel = $feed; $fwp_feedmeta = $feedmeta;
-		
-		$this->item = apply_filters('syndicated_item', $item);
+
 		$this->feed = $feed;
 		$this->feedmeta = $feedmeta;
+
+		$this->item = $item;
+		$this->item = apply_filters('syndicated_item', $this->item, $this);
 
 		# Filters can halt further processing by returning NULL
 		if (is_null($this->item)) :
 			$this->post = NULL;
 		else :
-			$this->post['post_title'] = $wpdb->escape($this->item['title']);
+			# Note that nothing is run through $wpdb->escape() here.
+			# That's deliberate. The escaping is done at the point
+			# of insertion, not here, to avoid double-escaping and
+			# to avoid screwing with syndicated_post filters
+
+			$this->post['post_title'] = $this->item['title'];
 
 			// This just gives usan alphanumeric representation of
 			// the author. We will look up (or create) the numeric
@@ -1771,35 +1891,37 @@ class SyndicatedPost {
 				endif;
 			endif;
 
-			$this->post['post_content'] = $wpdb->escape($content);
+			$this->post['post_content'] = $content;
 			
 			if (!is_null($excerpt)):
-				$this->post['post_excerpt'] = $wpdb->escape($excerpt);
+				$this->post['post_excerpt'] = $excerpt;
 			endif;
 			
-			# This is unneeded if wp_insert_post can be used.
-			# --- cut here ---
-			$this->post['post_name'] = sanitize_title($this->post['post_title']);
-			# --- cut here ---
+			// This is unnecessary if we use wp_insert_post
+			if (!$this->use_api('wp_insert_post')) :
+				$this->post['post_name'] = sanitize_title($this->post['post_title']);
+			endif;
 
 			$this->post['epoch']['issued'] = $this->published();
 			$this->post['epoch']['created'] = $this->created();
 			$this->post['epoch']['modified'] = $this->updated();
 
-			$this->post['post_date'] = date('Y-m-d H:i:s', $this->published());
-			$this->post['post_modified'] = date('Y-m-d H:i:s', $this->updated());
+			// Dealing with timestamps in WordPress is so fucking fucked.
+			$offset = (int) get_option('gmt_offset') * 60 * 60;
+			$this->post['post_date'] = gmdate('Y-m-d H:i:s', $this->published() + $offset);
+			$this->post['post_modified'] = gmdate('Y-m-d H:i:s', $this->updated() + $offset);
 			$this->post['post_date_gmt'] = gmdate('Y-m-d H:i:s', $this->published());
 			$this->post['post_modified_gmt'] = gmdate('Y-m-d H:i:s', $this->updated());
 
-			# Use feed-level preferences or the global default.
+			// Use feed-level preferences or the global default.
 			$this->post['post_status'] = $this->link->syndicated_status('post', 'publish');
 			$this->post['comment_status'] = $this->link->syndicated_status('comment', 'closed');
 			$this->post['ping_status'] = $this->link->syndicated_status('ping', 'closed');
 
-			# Unique ID (hopefully a unique tag: URI); failing that, the permalink
-			$this->post['guid'] = $wpdb->escape($this->guid());
+			// Unique ID (hopefully a unique tag: URI); failing that, the permalink
+			$this->post['guid'] = $this->guid();
 
-			# RSS 2.0 / Atom 1.0 enclosure support
+			// RSS 2.0 / Atom 1.0 enclosure support
 			if ( isset($this->item['enclosure#']) ) :
 				for ($i = 1; $i <= $this->item['enclosure#']; $i++) :
 					$eid = (($i > 1) ? "#{$id}" : "");
@@ -1810,7 +1932,7 @@ class SyndicatedPost {
 				endfor;
 			endif;
 
-			# In case you want to point back to the blog this was syndicated from
+			// In case you want to point back to the blog this was syndicated from
 			if (isset($this->feed->channel['title'])) :
 				$this->post['meta']['syndication_source'] = $this->feed->channel['title'];
 			endif;
@@ -1818,7 +1940,7 @@ class SyndicatedPost {
 				$this->post['meta']['syndication_source_uri'] = $this->feed->channel['link'];
 			endif;
 			
-			# Store information on human-readable and machine-readable comment URIs
+			// Store information on human-readable and machine-readable comment URIs
 			if (isset($this->item['comments'])) :
 				$this->post['meta']['rss:comments'] = $this->item['comments'];
 			endif;
@@ -1826,18 +1948,18 @@ class SyndicatedPost {
 				$this->post['meta']['wfw:commentRSS'] = $this->item['wfw']['commentrss'];
 			endif;
 
-			# Store information to identify the feed that this came from
+			// Store information to identify the feed that this came from
 			$this->post['meta']['syndication_feed'] = $this->feedmeta['link/uri'];
 			$this->post['meta']['syndication_feed_id'] = $this->feedmeta['link/id'];
 
-			# In case you want to know the external permalink...
+			// In case you want to know the external permalink...
 			$this->post['meta']['syndication_permalink'] = $this->item['link'];
 
-			# Feed-by-feed options for author and category creation
+			// Feed-by-feed options for author and category creation
 			$this->post['named']['unfamiliar']['author'] = $this->feedmeta['unfamiliar author'];
 			$this->post['named']['unfamiliar']['category'] = $this->feedmeta['unfamiliar categories'];
 
-			# Categories: start with default categories
+			// Categories: start with default categories, if any
 			$fc = get_option("feedwordpress_syndication_cats");
 			if ($fc) :
 				$this->post['named']['preset/category'] = explode("\n", $fc);
@@ -1849,16 +1971,17 @@ class SyndicatedPost {
 				$this->post['named']['preset/category'] = array_merge($this->post['named']['preset/category'], $this->feedmeta['cats']);
 			endif;
 
-			# Now add categories from the post, if we have 'em
+			// Now add categories from the post, if we have 'em
 			$this->post['named']['category'] = array();
 			if ( isset($this->item['category#']) ) :
 				for ($i = 1; $i <= $this->item['category#']; $i++) :
 					$cat_idx = (($i > 1) ? "#{$i}" : "");
 					$cat = $this->item["category{$cat_idx}"];
 
-					if ( strpos($this->feedmeta['link/uri'], 'del.icio.us') !== false ):
-						$this->post['named']['category'] = array_merge($this->post['named']['category'], explode(' ', $cat));
-					else:
+					if ( isset($this->feedmeta['cat_split']) and strlen($this->feedmeta['cat_split']) > 0) :
+						$pcre = "\007".$this->feedmeta['cat_split']."\007";
+						$this->post['named']['category'] = array_merge($this->post['named']['category'], preg_split($pcre, $cat, -1 /*=no limit*/, PREG_SPLIT_NO_EMPTY));
+					else :
 						$this->post['named']['category'][] = $cat;
 					endif;
 				endfor;
@@ -1873,25 +1996,27 @@ class SyndicatedPost {
 	function freshness () {
 		global $wpdb;
 
-		if ($this->filtered()) :
+		if ($this->filtered()) : // This should never happen.
 			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__);
 		endif;
 		
 		if (is_null($this->_freshness)) :
-			$guid = $this->guid();
+			$guid = $wpdb->escape($this->guid());
 
 			$result = $wpdb->get_row("
-			SELECT id, guid, UNIX_TIMESTAMP(post_modified) AS updated
+			SELECT id, guid, post_modified_gmt
 			FROM $wpdb->posts WHERE guid='$guid'
 			");
 
+			preg_match('/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+)/', $result->post_modified_gmt, $backref);
+			$updated = gmmktime($backref[4], $backref[5], $backref[6], $backref[2], $backref[3], $backref[1]);
 			if (!$result) :
 				$this->_freshness = 2; // New content
-			elseif ($this->updated() > $result->updated) :
+			elseif ($this->updated() > $updated) :
 				$this->_freshness = 1; // Updated content
 				$this->_wp_id = $result->id;
 			else :
-				$this->_freshness = 0;
+				$this->_freshness = 0; // Same old, same old
 				$this->_wp_id = $result->id;
 			endif;
 		endif;
@@ -1899,7 +2024,7 @@ class SyndicatedPost {
 	}
 
 	function wp_id () {
-		if ($this->filtered()) :
+		if ($this->filtered()) : // This should never happen.
 			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__);
 		endif;
 		
@@ -1956,7 +2081,7 @@ class SyndicatedPost {
 		
 		if (!$this->filtered() and $freshness > 0) :
 			unset($this->post['named']);
-			$this->post = apply_filters('syndicated_post', $this->post);
+			$this->post = apply_filters('syndicated_post', $this->post, $this);
 		endif;
 		
 		if (!$this->filtered() and $freshness == 2) :
@@ -1981,85 +2106,149 @@ class SyndicatedPost {
 	} // function SyndicatedPost::store ()
 	
 	function insert_new () {
-		global $wpdb;
+		global $wpdb, $wp_db_version;
 		
-		$guid = $this->post['guid'];
+		// Why the fuck doesn't wp_insert_post already do this?
+		foreach ($this->post as $key => $value) :
+			if (is_string($value)) :
+				$dbpost[$key] = $wpdb->escape($value);
+			else :
+				$dbpost[$key] = $value;
+			endif;
+		endforeach;
 
-		# The right way to do this would be to use:
-		#
-		#	$postId = wp_insert_post($post);
-		# 	$result = $wpdb->query("
-		#		UPDATE $wpdb->posts
-		# 		SET
-		# 			guid='$guid'
-		# 		WHERE post_id='$postId'
-		# 	");
-		#
-		# in place of everything in the cut below. Alas,
-		# wp_insert_post seems to be a memory hog; using it
-		# to insert several posts in one session makes php
-		# segfault after inserting 50-100 posts. This can get
-		# pretty annoying, especially if you are trying to
-		# update your feeds for the first time.
-		#
-		# --- cut here ---
-		$result = $wpdb->query("
-		INSERT INTO $wpdb->posts
-		SET
-			guid = '$guid',
-			post_author = '".$this->post['post_author']."',
-			post_date = '".$this->post['post_date']."',
-			post_date_gmt = '".$this->post['post_date_gmt']."',
-			post_content = '".$this->post['post_content']."',"
-			.(isset($this->post['post_excerpt']) ? "post_excerpt = '".$this->post['post_excerpt']."'," : "")."
-			post_title = '".$this->post['post_title']."',
-			post_name = '".$this->post['post_name']."',
-			post_modified = '".$this->post['post_modified']."',
-			post_modified_gmt = '".$this->post['post_modified_gmt']."',
-			comment_status = '".$this->post['comment_status']."',
-			ping_status = '".$this->post['ping_status']."',
-			post_status = '".$this->post['post_status']."'
-		");
-		$this->_wp_id = $wpdb->insert_id;
-		wp_set_post_cats('', $this->wp_id(), $this->post['post_category']);
+		if ($this->use_api('wp_insert_post')) :
+			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
+			$this->_wp_id = wp_insert_post($dbpost);
+			
+			// This should never happen.
+			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
+				FeedWordPress::critical_bug('SyndicatedPost::_wp_id', $this->_wp_id, __LINE__);
+			endif;
+	
+			// Unfortunately, as of WordPress 2.3, wp_insert_post()
+			// *still* offers no way to use a guid of your choice,
+			// and munges your post modified timestamp, too.
+			$result = $wpdb->query("
+				UPDATE $wpdb->posts
+				SET
+					guid='{$dbpost['guid']}',
+					post_modified='{$dbpost['post_modified']}',
+					post_modified_gmt='{$dbpost['post_modified_gmt']}'
+				WHERE ID='{$this->_wp_id}'
+			");
+		else :
+			# The right way to do this is the above. But, alas,
+			# in earlier versions of WordPress, wp_insert_post has
+			# too much behavior (mainly related to pings) that can't
+			# be overridden. In WordPress 1.5, it's enough of a
+			# resource hog to make PHP segfault after inserting
+			# 50-100 posts. This can get pretty annoying, especially
+			# if you are trying to update your feeds for the first
+			# time.
 
-		// Since we are not going through official channels, we need to
-		// manually tell WordPress that we've published a new post.
-		// We need to make sure to do this in order for FeedWordPress
-		// to play well  with the staticize-reloaded plugin (something
-		// that a large aggregator website is going to *want* to be
-		// able to use).
-		do_action('publish_post', $postId);
-		# --- cut here ---
+			$result = $wpdb->query("
+			INSERT INTO $wpdb->posts
+			SET
+				guid = '{$dbpost['guid']}',
+				post_author = '{$dbpost['post_author']}',
+				post_date = '{$dbpost['post_date']}',
+				post_date_gmt = '{$dbpost['post_date_gmt']}',
+				post_content = '{$dbpost['post_content']}',"
+				.(isset($dbpost['post_excerpt']) ? "post_excerpt = '{$dbpost['post_excerpt']}'," : "")."
+				post_title = '{$dbpost['post_title']}',
+				post_name = '{$dbpost['post_name']}',
+				post_modified = '{$dbpost['post_modified']}',
+				post_modified_gmt = '{$dbpost['post_modified_gmt']}',
+				comment_status = '{$dbpost['comment_status']}',
+				ping_status = '{$dbpost['ping_status']}',
+				post_status = '{$dbpost['post_status']}'
+			");
+			$this->_wp_id = $wpdb->insert_id;
+
+			// This should never happen.
+			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
+				FeedWordPress::critical_bug('SyndicatedPost::_wp_id', $this->_wp_id, __LINE__);
+			endif;
+
+			// WordPress 1.5.x - 2.0.x
+			wp_set_post_cats('1', $this->wp_id(), $this->post['post_category']);
+	
+			// Since we are not going through official channels, we need to
+			// manually tell WordPress that we've published a new post.
+			// We need to make sure to do this in order for FeedWordPress
+			// to play well  with the staticize-reloaded plugin (something
+			// that a large aggregator website is going to *want* to be
+			// able to use).
+			do_action('publish_post', $this->_wp_id);
+		endif;
 	} /* SyndicatedPost::insert_new() */
 
 	function update_existing () {
 		global $wpdb;
-		
-		$guid = $this->post['guid'];
-		$postId = $this->post['ID'];
 
-		$result = $wpdb->query("
-		UPDATE $wpdb->posts
-		SET
-			post_author = '".$this->post['post_author']."',
-			post_content = '".$this->post['post_content']."',"
-			.(isset($this->post['post_excerpt']) ? "post_excerpt = '".$this->post['post_excerpt']."'," : "")."
-			post_title = '".$this->post['post_title']."',
-			post_name = '".$this->post['post_name']."',
-			post_modified = '".$this->post['post_modified']."',
-			post_modified_gmt = '".$this->post['post_modified_gmt']."'
-		WHERE guid='$guid'
-		");
-		wp_set_post_cats('', $this->wp_id(), $this->post['post_category']);
+		// Why the fuck doesn't wp_insert_post already do this?
+		$dbpost = array();
+		foreach ($this->post as $key => $value) :
+			if (is_string($value)) :
+				$dbpost[$key] = $wpdb->escape($value);
+			else :
+				$dbpost[$key] = $value;
+			endif;
+		endforeach;
 
-		// Since we are not going through official channels, we need to
-		// manually tell WordPress that we've published a new post.
-		// We need to make sure to do this in order for FeedWordPress
-		// to play well  with the staticize-reloaded plugin (something
-		// that a large aggregator website is going to *want* to be
-		// able to use).
-		do_action('edit_post', $postId);
+		if ($this->use_api('wp_insert_post')) :
+			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
+			$this->_wp_id = wp_insert_post($dbpost);
+
+			// This should never happen.
+			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
+				FeedWordPress::critical_bug('SyndicatedPost::_wp_id', $this->_wp_id, __LINE__);
+			endif;
+
+			// Unfortunately, as of WordPress 2.3, wp_insert_post()
+			// munges your post modified timestamp.
+			$result = $wpdb->query("
+				UPDATE $wpdb->posts
+				SET
+					post_modified='{$dbpost['post_modified']}',
+					post_modified_gmt='{$dbpost['post_modified_gmt']}'
+				WHERE ID='{$this->_wp_id}'
+			");
+		else :
+
+			$result = $wpdb->query("
+			UPDATE $wpdb->posts
+			SET
+				post_author = '{$dbpost['post_author']}',
+				post_content = '{$dbpost['post_content']}',"
+				.(isset($dbpost['post_excerpt']) ? "post_excerpt = '{$dbpost['post_excerpt']}'," : "")."
+				post_title = '{$dbpost['post_title']}',
+				post_name = '{$dbpost['post_name']}',
+				post_modified = '{$dbpost['post_modified']}',
+				post_modified_gmt = '{$dbpost['post_modified_gmt']}'
+			WHERE guid='{$dbpost['guid']}'
+			");
+	
+			// WordPress 2.1.x and up
+			if (function_exists('wp_set_post_categories')) :
+				wp_set_post_categories($this->wp_id(), $this->post['post_category']);
+			// WordPress 1.5.x - 2.0.x
+			elseif (function_exists('wp_set_post_cats')) :
+				wp_set_post_cats('1', $this->wp_id(), $this->post['post_category']);
+			// This should never happen.
+			else :
+				FeedWordPress::critical_bug('SyndicatedPost::insert_new::wp_version', $GLOBALS['wp_version'], __LINE__); 	
+			endif;
+	
+			// Since we are not going through official channels, we need to
+			// manually tell WordPress that we've published a new post.
+			// We need to make sure to do this in order for FeedWordPress
+			// to play well  with the staticize-reloaded plugin (something
+			// that a large aggregator website is going to *want* to be
+			// able to use).
+			do_action('edit_post', $this->post['ID']);
+		endif;
 	} /* SyndicatedPost::update_existing() */
 
 	// SyndicatedPost::add_rss_meta: adds interesting meta-data to each entry
@@ -2075,6 +2264,16 @@ class SyndicatedPost {
 		global $wpdb;
 		if ( is_array($this->post) and isset($this->post['meta']) and is_array($this->post['meta']) ) :
 			$postId = $this->wp_id();
+			
+			// Aggregated posts should NOT send out pingbacks.
+			// WordPress 2.1-2.2 claim you can tell them not to
+			// using $post_pingback, but they don't listen, so we
+			// make sure here.
+			$result = $wpdb->query("
+			DELETE FROM $wpdb->postmeta
+			WHERE post_id='$postId' AND meta_key='_pingme'
+			");
+
 			foreach ( $this->post['meta'] as $key => $values ) :
 
 				$key = $wpdb->escape($key);
@@ -2137,7 +2336,7 @@ class SyndicatedPost {
 				(
 					LOWER(user_description)
 					RLIKE CONCAT(
-						'(^|\\n)a.k.a.( |\\t)*:?( |\\t)*',
+						'(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*',
 						LCASE('$reg_author'),
 						'( |\\t|\\r)*(\\n|\$)'
 					)
@@ -2167,7 +2366,7 @@ class SyndicatedPost {
 						meta_key = 'description'
 						AND LCASE(meta_value)
 						RLIKE CONCAT(
-							'(^|\\n)a.k.a.( |\\t)*:?( |\\t)*',
+							'(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*',
 							LCASE('$reg_author'),
 							'( |\\t|\\r)*(\\n|\$)'
 						)
@@ -2212,114 +2411,106 @@ class SyndicatedPost {
 			endif;
 		endif;
 		return $id;	
-	} // function FeedWordPress::author_id ()
+	} // function SyndicatedPost::author_id ()
 
 	// look up (and create) category ids from a list of categories
 	function category_ids ($cats, $unfamiliar_category = 'create') {
 		global $wpdb;
 
-		// Normalize whitespace because (1) trailing whitespace can
-		// cause PHP and MySQL not to see eye to eye on VARCHAR
-		// comparisons for some versions of MySQL (cf.
+		// We need to normalize whitespace because (1) trailing
+		// whitespace can cause PHP and MySQL not to see eye to eye on
+		// VARCHAR comparisons for some versions of MySQL (cf.
 		// <http://dev.mysql.com/doc/mysql/en/char.html>), and (2)
 		// because I doubt most people want to make a semantic
 		// distinction between 'Computers' and 'Computers  '
 		$cats = array_map('trim', $cats);
 
 		$cat_ids = array ();
-
-		if ( count($cats) > 0 ) :
-			# i'd kill for a decent map function in PHP
-			# but that would require functions to be first class object,
-			# or at least coderef support
-			$cat_str = array ();
-			$cat_aka = array ();
-			foreach ( $cats as $c ) :
-				// {#id} gives a numerical ID in the database
-				// so we don't need to look those up
-				if (!preg_match('/{#([0-9]+)}/', $c)) :
-					$resc = $wpdb->escape(preg_quote($c));
-					$esc = $wpdb->escape($c);
-					$cat_str[] = "'$esc'";
-					$cat_aka[] = "(LOWER(category_description)
-					RLIKE CONCAT('(^|\n)a.k.a.( |\t)*:?( |\t)*', LOWER('{$resc}'), '( |\t|\r)*(\n|\$)'))";
+		foreach ($cats as $cat_name) :
+			if (preg_match('/{#([0-9]+)}/', $cat_name, $backref)) :
+				$cat_id = (int) $backref[1];
+				if (function_exists('is_term') and is_term($cat_id, 'category')) :
+					$cat_ids[] = $cat_id;
+				elseif (get_category($cat_id)) :
+					$cat_ids[] = $cat_id;
 				endif;
-			endforeach;
-
-			// Do we have any that we need to look up?
-			if (count($cat_str) > 0) :
-				$match_cat_name = 'cat_name IN ('.join(',', $cat_str).')';
-				$match_cat_alias = join(' OR ', $cat_aka);
-
-				$results = $wpdb->get_results(
-				"SELECT
-					cat_ID,
-					cat_name,
-					category_description
-				FROM $wpdb->categories
-				WHERE ($match_cat_name) OR ($match_cat_alias)"
-				);
 			else :
-				$results = NULL;
-			endif;
-
-			$cat_ids	= array();
-			$found		= array();
-
-			if (!is_null($results)):
-				foreach ( $results as $row ) :
-					// Add existing ID to list of numerical
-					// IDs to eventually place post in
-					$cat_ids[] = $row->cat_ID;
-					
-					// Add name to list of categories not to
-					// create afresh. Normalizing case with
-					// strtolower() avoids mismatches in
-					// VARCHAR comparison between PHP (which
-					// has case-sensitive comparisons) and
-					// MySQL (which has case-insensitive
-					// comparisons for the field types used
-					// by WordPress)
-					$found[] = strtolower(trim($row->cat_name));
-
-					// Add name of any aliases to list of
-					// categories not to create afresh.
-					if (preg_match_all('/^a.k.a. \s* :? \s* (.*\S) \s*$/mx',
-					$row->category_description, $aka,
-					PREG_PATTERN_ORDER)) :
-						$found = array_merge (
-							$found,
-							array_map('strtolower',
-							array_map('trim',
-								$aka[1]
-							))
-						);
+				$esc = $wpdb->escape($cat_name);
+				$resc = $wpdb->escape(preg_quote($cat_name));
+				
+				// WordPress 2.3+
+				if (function_exists('is_term')) :
+					$cat_id = is_term($cat_name, 'category');
+					if ($cat_id) :
+						$cat_ids[] = $cat_id['term_id'];
+					// There must be a better way to do this...
+					elseif ($results = $wpdb->get_results(
+						"SELECT	term_id
+						FROM $wpdb->term_taxonomy
+						WHERE
+							LOWER(description) RLIKE
+							CONCAT('(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*', LOWER('{$resc}'), '( |\\t|\\r)*(\\n|\$)')"
+					)) :
+						foreach ($results AS $term) :
+							$cat_ids[] = (int) $term->term_id;
+						endforeach;
+					elseif ('create'===$unfamiliar_category) :
+						$term = wp_insert_term($cat_name, 'category');
+						$cat_ids[] = $term['term_id'];
 					endif;
-				endforeach;
-			endif;
-
-			foreach ($cats as $new_cat) :
-				$backref = array();
-				if (preg_match('/{#([0-9]+)}/', $new_cat, $backref)) :
-					$cat_ids[] = $backref[1];
-				elseif (($unfamiliar_category==='create') and !in_array(strtolower($new_cat), $found)) :
-					$nice_cat = sanitize_title($new_cat);
-					$wpdb->query(sprintf("
-						INSERT INTO $wpdb->categories
-						SET
-							cat_name='%s',
-							category_nicename='%s'
-					", $wpdb->escape($new_cat), $nice_cat));
-					$cat_ids[] = $wpdb->insert_id;
+				
+				// WordPress 1.5.x - 2.2.x
+				else :
+					$results = $wpdb->get_results(
+					"SELECT cat_ID
+					FROM $wpdb->categories
+					WHERE
+					  (LOWER(cat_name) = LOWER('$esc'))
+					  OR (LOWER(category_description)
+					  RLIKE CONCAT('(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*', LOWER('{$resc}'), '( |\\t|\\r)*(\\n|\$)'))
+					");
+					if ($results) :
+						foreach  ($results as $term) :
+							$cat_ids[] = (int) $term->cat_ID;
+						endforeach;
+					elseif ('create'===$unfamiliar_category) :
+						if (function_exists('wp_insert_category')) :
+							$cat_id = wp_insert_category(array('cat_name' => $cat_name));
+						// And into the database we go.
+						else :
+							$nice_kitty = sanitize_title($cat_name);
+							$wpdb->query(sprintf("
+								INSERT INTO $wpdb->categories
+								SET
+								  cat_name='%s',
+								  category_nicename='%s'
+								", $wpdb->escape($cat_name), $nice_kitty
+							));
+							$cat_id = $wpdb->insert_id;
+						endif;
+						$cat_ids[] = $cat_id;
+					endif;
 				endif;
-			endforeach;
-			
-			if ((count($cat_ids) == 0) and ($unfamiliar_category === 'filter')) :
-				$cat_ids = NULL; // Drop the post
 			endif;
+		endforeach;
+
+		if ((count($cat_ids) == 0) and ($unfamiliar_category === 'filter')) :
+			$cat_ids = NULL; // Drop the post
+		else :
+			$cat_ids = array_unique($cat_ids);
 		endif;
 		return $cat_ids;
-	} // function FeedWordPress::category_ids ()
+	} // function SyndicatedPost::category_ids ()
+
+	function use_api ($tag) {
+		global $wp_db_version;
+		if ('wp_insert_post'==$tag) :
+			// Before 2.2, wp_insert_post does too much of the wrong stuff to use it
+			// In 1.5 it was such a resource hog it would make PHP segfault on big updates
+			$ret = (isset($wp_db_version) and $wp_db_version > FWP_SCHEMA_21);
+		endif;
+		return $ret;		
+	} // function SyndicatedPost::use_api ()
 
 	#### EXTRACT DATA FROM FEED ITEM ####
 
@@ -2563,6 +2754,11 @@ class SyndicatedLink {
 				$this->settings['unfamiliar categories'] = 'default';
 			endif;
 			
+			// Set this up automagically for del.icio.us
+			if (!isset($this->settings['cat_split']) and false !== strpos($this->link->link_rss, 'del.icio.us')) : 
+				$this->settings['cat_split'] = '\s'; // Whitespace separates multiple tags in del.icio.us RSS feeds
+			endif;
+
 			if (isset($this->settings['cats'])):
 				$this->settings['cats'] = preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, $this->settings['cats']);
 			endif;
@@ -2649,7 +2845,7 @@ class SyndicatedLink {
 	
 			$notes = '';
 			foreach ($to_notes as $key => $value) :
-				$notes .= $key . ": ". addcslashes($value, "\0..\37") . "\n";
+				$notes .= $key . ": ". addcslashes($value, "\0..\37".'\\') . "\n";
 			endforeach;
 			$update[] = "link_notes = '".$wpdb->escape($notes)."'";
 	
@@ -2841,7 +3037,6 @@ class FeedFinder {
 				$ret = array($this->uri);
 			} else {
 				// Assume that we have HTML or XHTML (even if we don't, who's it gonna hurt?)
-				
 				// Autodiscovery is the preferred method
 				$href = $this->_link_rel_feeds();
 				
@@ -2874,6 +3069,7 @@ class FeedFinder {
 
 	function is_feed ($uri = NULL) {
 		$data = $this->data($uri);
+
 		return (
 			preg_match (
 				"\007(".implode('|',$this->_feed_markers).")\007i",
@@ -2922,7 +3118,7 @@ class FeedFinder {
 				} /* if */
 			} /* if */
 		} /* for */
-		return $href;    
+		return $href;
 	}
 
 	function _a_href_feeds ($obvious = TRUE) {
@@ -2947,7 +3143,6 @@ class FeedFinder {
 		// search through the HTML, save all <link> tags
 		// and store each link's attributes in an associative array
 		preg_match_all('/<'.$tag.'\s+(.*?)\s*\/?>/si', $html, $matches);
-
 		$links = $matches[1];
 		$ret = array();
 		$link_count = count($links);
@@ -2973,170 +3168,175 @@ class FeedFinder {
 # for FeedWordPress's purposes. The class has been stripped down to a single
 # public method: Relative_URI::resolve($url, $base), which resolves the URI in
 # $url relative to the URI in $base
+#
+# The upgraded MagpieRSS also uses this class. So if we have it loaded
+# in, don't load it again.
+if (!class_exists('Relative_URI')) {
 
-class Relative_URI
-{
-	// Resolve relative URI in $url against the base URI in $base. If $base
-	// is not supplied, then we use the REQUEST_URI of this script.
-	//
-	// I'm hoping this method reflects RFC 2396 Section 5.2
-	function resolve ($url, $base = NULL)
+	class Relative_URI
 	{
-		if (is_null($base)):
-			$base = 'http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
-		endif;
-
-		$base = Relative_URI::_encode(trim($base));
-		$uri_parts = Relative_URI::_parse_url($base);
-
-		$url = Relative_URI::_encode(trim($url));
-		$parts = Relative_URI::_parse_url($url);
-
-		$uri_parts['fragment'] = (isset($parts['fragment']) ? $parts['fragment'] : null);
-		$uri_parts['query'] = (isset($parts['query']) ? $parts['query'] : null);
-
-		// if path is empty, and scheme, host, and query are undefined,
-		// the URL is referring the base URL
-		
-		if (($parts['path'] == '') && !isset($parts['scheme']) && !isset($parts['host']) && !isset($parts['query'])) {
-			// If the URI is empty or only a fragment, return the base URI
-			return $base . (isset($parts['fragment']) ? '#'.$parts['fragment'] : '');
-		} elseif (isset($parts['scheme'])) {
-			// If the scheme is set, then the URI is absolute.
-			return $url;
-		} elseif (isset($parts['host'])) {
-			$uri_parts['host'] = $parts['host'];
-			$uri_parts['path'] = $parts['path'];
-		} else {
-			// We have a relative path but not a host.
-
-			// start ugly fix:
-			// prepend slash to path if base host is set, base path is not set, and url path is not absolute
-			if ($uri_parts['host'] && ($uri_parts['path'] == '')
-			&& (strlen($parts['path']) > 0)
-			&& (substr($parts['path'], 0, 1) != '/')) {
-				$parts['path'] = '/'.$parts['path'];
-			} // end ugly fix
+		// Resolve relative URI in $url against the base URI in $base. If $base
+		// is not supplied, then we use the REQUEST_URI of this script.
+		//
+		// I'm hoping this method reflects RFC 2396 Section 5.2
+		function resolve ($url, $base = NULL)
+		{
+			if (is_null($base)):
+				$base = 'http://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+			endif;
+	
+			$base = Relative_URI::_encode(trim($base));
+			$uri_parts = Relative_URI::_parse_url($base);
+	
+			$url = Relative_URI::_encode(trim($url));
+			$parts = Relative_URI::_parse_url($url);
+	
+			$uri_parts['fragment'] = (isset($parts['fragment']) ? $parts['fragment'] : null);
+			$uri_parts['query'] = (isset($parts['query']) ? $parts['query'] : null);
+	
+			// if path is empty, and scheme, host, and query are undefined,
+			// the URL is referring the base URL
 			
-			if (substr($parts['path'], 0, 1) == '/') {
+			if (($parts['path'] == '') && !isset($parts['scheme']) && !isset($parts['host']) && !isset($parts['query'])) {
+				// If the URI is empty or only a fragment, return the base URI
+				return $base . (isset($parts['fragment']) ? '#'.$parts['fragment'] : '');
+			} elseif (isset($parts['scheme'])) {
+				// If the scheme is set, then the URI is absolute.
+				return $url;
+			} elseif (isset($parts['host'])) {
+				$uri_parts['host'] = $parts['host'];
 				$uri_parts['path'] = $parts['path'];
 			} else {
-				// copy base path excluding any characters after the last (right-most) slash character
-				$buffer = substr($uri_parts['path'], 0, (int)strrpos($uri_parts['path'], '/')+1);
-				// append relative path
-				$buffer .= $parts['path'];
-				// remove "./" where "." is a complete path segment.
-				$buffer = str_replace('/./', '/', $buffer);
-				if (substr($buffer, 0, 2) == './') {
-				    $buffer = substr($buffer, 2);
-				}
-				// if buffer ends with "." as a complete path segment, remove it
-				if (substr($buffer, -2) == '/.') {
-				    $buffer = substr($buffer, 0, -1);
-				}
-				// remove "<segment>/../" where <segment> is a complete path segment not equal to ".."
-				$search_finished = false;
-				$segment = explode('/', $buffer);
-				while (!$search_finished) {
-				    for ($x=0; $x+1 < count($segment);) {
-					if (($segment[$x] != '') && ($segment[$x] != '..') && ($segment[$x+1] == '..')) {
-					    if ($x+2 == count($segment)) $segment[] = '';
-					    unset($segment[$x], $segment[$x+1]);
-					    $segment = array_values($segment);
-					    continue 2;
-					} else {
-					    $x++;
+				// We have a relative path but not a host.
+	
+				// start ugly fix:
+				// prepend slash to path if base host is set, base path is not set, and url path is not absolute
+				if ($uri_parts['host'] && ($uri_parts['path'] == '')
+				&& (strlen($parts['path']) > 0)
+				&& (substr($parts['path'], 0, 1) != '/')) {
+					$parts['path'] = '/'.$parts['path'];
+				} // end ugly fix
+				
+				if (substr($parts['path'], 0, 1) == '/') {
+					$uri_parts['path'] = $parts['path'];
+				} else {
+					// copy base path excluding any characters after the last (right-most) slash character
+					$buffer = substr($uri_parts['path'], 0, (int)strrpos($uri_parts['path'], '/')+1);
+					// append relative path
+					$buffer .= $parts['path'];
+					// remove "./" where "." is a complete path segment.
+					$buffer = str_replace('/./', '/', $buffer);
+					if (substr($buffer, 0, 2) == './') {
+					    $buffer = substr($buffer, 2);
 					}
-				    }
-				    $search_finished = true;
+					// if buffer ends with "." as a complete path segment, remove it
+					if (substr($buffer, -2) == '/.') {
+					    $buffer = substr($buffer, 0, -1);
+					}
+					// remove "<segment>/../" where <segment> is a complete path segment not equal to ".."
+					$search_finished = false;
+					$segment = explode('/', $buffer);
+					while (!$search_finished) {
+					    for ($x=0; $x+1 < count($segment);) {
+						if (($segment[$x] != '') && ($segment[$x] != '..') && ($segment[$x+1] == '..')) {
+						    if ($x+2 == count($segment)) $segment[] = '';
+						    unset($segment[$x], $segment[$x+1]);
+						    $segment = array_values($segment);
+						    continue 2;
+						} else {
+						    $x++;
+						}
+					    }
+					    $search_finished = true;
+					}
+					$buffer = (count($segment) == 1) ? '/' : implode('/', $segment);
+					$uri_parts['path'] = $buffer;
+	
 				}
-				$buffer = (count($segment) == 1) ? '/' : implode('/', $segment);
-				$uri_parts['path'] = $buffer;
-
 			}
+	
+			// If we've gotten to this point, we can try to put the pieces
+			// back together.
+			$ret = '';
+			if (isset($uri_parts['scheme'])) $ret .= $uri_parts['scheme'].':';
+			if (isset($uri_parts['user'])) {
+				$ret .= $uri_parts['user'];
+				if (isset($uri_parts['pass'])) $ret .= ':'.$uri_parts['parts'];
+				$ret .= '@';
+			}
+			if (isset($uri_parts['host'])) {
+				$ret .= '//'.$uri_parts['host'];
+				if (isset($uri_parts['port'])) $ret .= ':'.$uri_parts['port'];
+			}
+			$ret .= $uri_parts['path'];
+			if (isset($uri_parts['query'])) $ret .= '?'.$uri_parts['query'];
+			if (isset($uri_parts['fragment'])) $ret .= '#'.$uri_parts['fragment'];
+	
+			return $ret;
+	    }
+	
+	    /**
+	    * Parse URL
+	    *
+	    * Regular expression grabbed from RFC 2396 Appendix B. 
+	    * This is a replacement for PHPs builtin parse_url().
+	    * @param string $url
+	    * @access private
+	    * @return array
+	    */
+	    function _parse_url($url)
+	    {
+		// I'm using this pattern instead of parse_url() as there's a few strings where parse_url() 
+		// generates a warning.
+		if (preg_match('!^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?!', $url, $match)) {
+		    $parts = array();
+		    if ($match[1] != '') $parts['scheme'] = $match[2];
+		    if ($match[3] != '') $parts['auth'] = $match[4];
+		    // parse auth
+		    if (isset($parts['auth'])) {
+			// store user info
+			if (($at_pos = strpos($parts['auth'], '@')) !== false) {
+			    $userinfo = explode(':', substr($parts['auth'], 0, $at_pos), 2);
+			    $parts['user'] = $userinfo[0];
+			    if (isset($userinfo[1])) $parts['pass'] = $userinfo[1];
+			    $parts['auth'] = substr($parts['auth'], $at_pos+1);
+			}
+			// get port number
+			if ($port_pos = strrpos($parts['auth'], ':')) {
+			    $parts['host'] = substr($parts['auth'], 0, $port_pos);
+			    $parts['port'] = (int)substr($parts['auth'], $port_pos+1);
+			    if ($parts['port'] < 1) $parts['port'] = null;
+			} else {
+			    $parts['host'] = $parts['auth'];
+			}
+		    }
+		    unset($parts['auth']);
+		    $parts['path'] = $match[5];
+		    if (isset($match[6]) && ($match[6] != '')) $parts['query'] = $match[7];
+		    if (isset($match[8]) && ($match[8] != '')) $parts['fragment'] = $match[9];
+		    return $parts;
 		}
-
-		// If we've gotten to this point, we can try to put the pieces
-		// back together.
-		$ret = '';
-		if (isset($uri_parts['scheme'])) $ret .= $uri_parts['scheme'].':';
-		if (isset($uri_parts['user'])) {
-			$ret .= $uri_parts['user'];
-			if (isset($uri_parts['pass'])) $ret .= ':'.$uri_parts['parts'];
-			$ret .= '@';
+		// shouldn't reach here
+		return array('path'=>'');
+	    }
+	
+	    function _encode($string)
+	    {
+		static $replace = array();
+		if (!count($replace)) {
+		    $find = array(32, 34, 60, 62, 123, 124, 125, 91, 92, 93, 94, 96, 127);
+		    $find = array_merge(range(0, 31), $find);
+		    $find = array_map('chr', $find);
+		    foreach ($find as $char) {
+			$replace[$char] = '%'.bin2hex($char);
+		    }
 		}
-		if (isset($uri_parts['host'])) {
-			$ret .= '//'.$uri_parts['host'];
-			if (isset($uri_parts['port'])) $ret .= ':'.$uri_parts['port'];
-		}
-		$ret .= $uri_parts['path'];
-		if (isset($uri_parts['query'])) $ret .= '?'.$uri_parts['query'];
-		if (isset($uri_parts['fragment'])) $ret .= '#'.$uri_parts['fragment'];
-
-		return $ret;
-    }
-
-    /**
-    * Parse URL
-    *
-    * Regular expression grabbed from RFC 2396 Appendix B. 
-    * This is a replacement for PHPs builtin parse_url().
-    * @param string $url
-    * @access private
-    * @return array
-    */
-    function _parse_url($url)
-    {
-        // I'm using this pattern instead of parse_url() as there's a few strings where parse_url() 
-        // generates a warning.
-        if (preg_match('!^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?!', $url, $match)) {
-            $parts = array();
-            if ($match[1] != '') $parts['scheme'] = $match[2];
-            if ($match[3] != '') $parts['auth'] = $match[4];
-            // parse auth
-            if (isset($parts['auth'])) {
-                // store user info
-                if (($at_pos = strpos($parts['auth'], '@')) !== false) {
-                    $userinfo = explode(':', substr($parts['auth'], 0, $at_pos), 2);
-                    $parts['user'] = $userinfo[0];
-                    if (isset($userinfo[1])) $parts['pass'] = $userinfo[1];
-                    $parts['auth'] = substr($parts['auth'], $at_pos+1);
-                }
-                // get port number
-                if ($port_pos = strrpos($parts['auth'], ':')) {
-                    $parts['host'] = substr($parts['auth'], 0, $port_pos);
-                    $parts['port'] = (int)substr($parts['auth'], $port_pos+1);
-                    if ($parts['port'] < 1) $parts['port'] = null;
-                } else {
-                    $parts['host'] = $parts['auth'];
-                }
-            }
-            unset($parts['auth']);
-            $parts['path'] = $match[5];
-            if (isset($match[6]) && ($match[6] != '')) $parts['query'] = $match[7];
-            if (isset($match[8]) && ($match[8] != '')) $parts['fragment'] = $match[9];
-            return $parts;
-        }
-        // shouldn't reach here
-        return array('path'=>'');
-    }
-
-    function _encode($string)
-    {
-        static $replace = array();
-        if (!count($replace)) {
-            $find = array(32, 34, 60, 62, 123, 124, 125, 91, 92, 93, 94, 96, 127);
-            $find = array_merge(range(0, 31), $find);
-            $find = array_map('chr', $find);
-            foreach ($find as $char) {
-                $replace[$char] = '%'.bin2hex($char);
-            }
-        }
-        // escape control characters and a few other characters
-        $encoded = strtr($string, $replace);
-        // remove any character outside the hex range: 21 - 7E (see www.asciitable.com)
-        return preg_replace('/[^\x21-\x7e]/', '', $encoded);
-    }
+		// escape control characters and a few other characters
+		$encoded = strtr($string, $replace);
+		// remove any character outside the hex range: 21 - 7E (see www.asciitable.com)
+		return preg_replace('/[^\x21-\x7e]/', '', $encoded);
+	    }
+	} // class Relative_URI
 }
 
 // take your best guess at the realname and e-mail, given a string
@@ -3164,5 +3364,4 @@ function parse_email_with_realname ($email) {
 	endif;
 	return $ret;
 }
-
 ?>

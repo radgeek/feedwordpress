@@ -2,7 +2,7 @@ FeedWordPress
 =============
 
 * Author: [Charles Johnson](http://radgeek.com/contact)
-* Version: 0.99b2
+* Version: 0.99
 * Project URI: <http://projects.radgeek.com/feedwordpress>
 * License: GPL 2. See License below for copyright jots and tittles.
 
@@ -20,27 +20,28 @@ originally developed it because I needed a more flexible replacement for
 
 FeedWordPress is designed with flexibility, ease of use, and ease of
 configuration in mind. You'll need a working installation of WordPress (version
-[2.2][], [2.1][], [2.0][] or [1.5][]), and also FTP or SFTP access to your web
-host. The ability to create cron jobs on your web host would be very helpful but
-it's not absolutely necessary. You *don't* need to tweak any plain-text
-configuration files and you *don't* need shell access to your web host to make
-it work. (Although, I should point out, web hosts that *don't* offer shell
-access are *bad web hosts*.)
+[2.3][], [2.2][], [2.1][], [2.0][] or [1.5][]), and also FTP or SFTP access to
+your web host. The ability to create cron jobs on your web host would be very
+helpful but it's not absolutely necessary. You *don't* need to tweak any
+plain-text configuration files and you *don't* need shell access to your web
+host to make it work. (Although, I should point out, web hosts that *don't*
+offer shell access are *bad web hosts*.)
 
-  [2.2]: http://wordpress.org/development/2007/09/wordpress-223/
-  [2.1]: http://wordpress.org/development/2007/01/ella-21/
-  [2.0]: http://wordpress.org/development/2005/12/wp2/
-  [1.5]: http://wordpress.org/development/2005/02/strayhorn/
+  [2.3]: http://codex.wordpress.org/Version_2.3
+  [2.2]: http://codex.wordpress.org/Version_2.2
+  [2.1]: http://codex.wordpress.org/Version_2.1
+  [2.0]: http://codex.wordpress.org/Version_2.0
+  [1.5]: http://codex.wordpress.org/Version_1.5
 
 Installation
 ------------
 ### Requirements ###
 
-To use version 0.99b2 of FeedWordPress, you will need:
+To use version 0.99 of FeedWordPress, you will need:
 
-1.	an installed and configured copy of WordPress 2.2.x, 2.1.x, 2.0.x, or
-	1.5.x. (FeedWordPress currently *will not work* with older versions of
-	WordPress, or with WordPress MU.)
+1. 	an installed and configured copy of WordPress 2.3.x, 2.2.x, 2.1.x,
+	2.0.x, or 1.5.x. (FeedWordPress currently *will not work* with older
+	versions of WordPress, or with WordPress MU.)
 
 2.	FTP or SFTP access to your web host
 
@@ -48,7 +49,7 @@ To use version 0.99b2 of FeedWordPress, you will need:
 
 #### Upgrades ####
 
-To *upgrade* an existing installation of FeedWordPress to version 0.99b2:
+To *upgrade* an existing installation of FeedWordPress to version 0.99:
 
 1.	Download the FeedWordPress archive in zip or gzipped tar format and
 	extract the files on your computer. 
@@ -146,12 +147,12 @@ to use automatically scheduled updates, remember to enable them in
 
 ##### Manual Feed Updates #####
 
-To manually check for new posts, log in to the WordPress Dashboard and go to
-**Syndication --> Update**. You can use the drop-down selection box to choose
-whether WordPress should check all feeds for new posts, or a specific feed. When
-you make your selection and press the "Update" button, FeedWordPress will
-check the selected feed or feeds for new posts, and import any new content
-available on that feed or those feeds.
+To manually check for new posts, log in to the WordPress Dashboard and go to the
+main page under **Syndication**. You can use the "Update feeds now" button to
+check for new posts on feeds that are due for a scheduled update, or use the
+checkboxes and "Update Checked Feeds" button to force FeedWordPress to check one
+or more specific feeds for new posts. FeedWordPress will check the selected
+feed or feeds for new posts, and import any new content available.
 
 ##### Automatic Feed Updates #####
 
@@ -478,8 +479,8 @@ For more information, see <http://projects.radgeek.com/feedwordpress/api>.
 
 License
 -------
-The FeedWordPress plugin is copyright (c) 2005 by Charles Johnson. It uses code
-derived or translated from:
+The FeedWordPress plugin is copyright (c) 2005-2007 by Charles Johnson. It uses
+code derived or translated from:
 
 -	[wp-rss-aggregate.php][] by [Kellan Elliot-McCrea](kellan@protest.net)
 -       [MagpieRSS][] by [Kellan Elliot-McCrea](kellan@protest.net)

@@ -1,37 +1,17 @@
 FeedWordPress Change Log
 ========================
 
-Changes from 0.99b1 to 0.99b2
------------------------------
-Version 0.99b2 is the second beta release for the upcoming FeedWordPress 0.99
-relase.
+Changes from 0.981 to 0.99
+--------------------------
+Version 0.99 adds several significant new features, fixes some bugs, and
+provides compatability with WordPress 2.2.x and 2.3.x.
 
-*	POTENTIAL BUGFIX: Eliminated a potential bug in the regular expressions
-	for e-mail addresses (used in parsing RSS `author` elements).
+*	WORDPRESS 2.2 AND 2.3 COMPATIBILITY: FeedWordPress should now be
+	compatible with WordPress version 2.2 and the upcoming WordPress
+	version 2.3. In particular, it has been tested extensively against
+	WordPress 2.2.3 and WordPress 2.3 Release Candidate 1.
 
-*	BUGFIX: removed some temporary debugging code from the first beta that
-	should not have been left in for a public release. If you got weird
-	messages relating to HTTP headers already being output, or the phrase
-	"UPDATES OFF" where it shouldn't be, this should now be fixed.
-
-*	BUGFIX: An error in the links for editing links and performing other
-	maintenance tasks (which resulted in the error message "Cannot load
-	feedwordpress.php") should now be fixed.
-
-*	BUGFIX: Bugs caused by checking for FeedWordPress updates before all
-	the needed PHP modules had been loaded have now been fixed.
-
-Changes from 0.981 to 0.99b1
-----------------------------
-Version 0.99b1 is the first beta release for the upcoming FeedWordPress 0.99
-release.
-
-*	WORDPRESS 2.2 COMPATIBILITY--I HOPE! This version has been tested 
-	against the latest release of WordPress 2.2, and I have found no
-	compatability problems. If you encounter any problems, please contact
-	me with a detailed description of the issue.
-
-*	AUTOMATIC UPDATES (WITHOUT CRON): FeedWordPress now allows you to
+*	AUTOMATIC UPDATES WITHOUT CRON: FeedWordPress now allows you to
 	automatically schedule checks for new posts without using external task
 	scheduling tools such as cron. In order to enable automatic updates, go
 	to **Syndication --> Options** and set "Check for new posts" to
@@ -50,21 +30,88 @@ release.
 
 *	INTERFACE REORGANIZATION: All FeedWordPress functions are now located
 	under a top-level "Syndication" menu in the WordPress Dashboard. To
-	manage the list of syndicated sites, you should now use the main
-	page under **Syndication**. To change global settings for FeedWordPress,
-	you should use **Syndication --> Options**. To manually check for new
-	posts on one or more of your syndicated sites, you should use
-	**Syndication --> Update**.
+	manage the list of syndicated sites, manually check for new posts on
+	one or more feeds, or syndicate a new site, you should use the main page
+	under **Syndication**. To change global settings for FeedWordPress,
+	you should use **Syndication --> Options**.
 
 *	FILE STRUCTURE REORGANIZATION: Due to a combination of changing styles
 	for FeedWordPress plugins and lingering bugs in the FeedWordPress admin
-	menu code, the code for FeedWordPress is now contained in three
-	different PHP files, which should be installed together in a
-	subdirectory of your plugins directory named `feedwordpress`. (See
-	README.text for installation and upgrade instructions relating to the
-	change.)
+	menu code, the code for FeedWordPress is now contained in two different
+	PHP files, which should be installed together in a subdirectory of your
+	plugins directory named `feedwordpress`. (See README.text for
+	installation and upgrade instructions relating to the change.)
 
-*	MINOR BUGFIXES AND INTERNAL CHANGES: The internal architecture of
+*	MULTIPLE CATEGORIES SETTING: Some feeds use non-standard methods to
+	indicate multiple categories within a single category element. (The most
+	popular site to do this is del.icio.us, which separates tags with a
+	space.) FeedWordPress now allows you to set an optional setting, for any
+	feed which does this, indicating the character or characters used to
+	divide multiple	categories, using a Perl-compatible regular expression.
+	(In the case of del.icio.us feeds, FeedWordPress will automatically use
+	\s for the pattern without your having to do any further configuration.)
+	To turn this setting on, simply use the "Edit" link for the feed that
+	you want to turn it on for.
+
+*	REGULAR EXPRESSION BUG FIXED: Eliminated a minor bug in the regular
+	expressions for e-mail addresses (used in parsing RSS `author`
+	elements), which could produce unsightly error messages for some users
+	parsing RSS 2.0 feeds.
+
+*	DATE / UPDATE BUG FIXED: A bug in date handling was eliminated that may
+	have caused problems if any of (1) WordPress, or (2) PHP, or (3) your
+	web server, or (4) your MySQL server, has been set to use a different
+	time zone from the one that any of the others is set to use. If
+	FeedWordPress has not been properly updating updated posts, or has been
+	updating posts when there shouldn't be any changes for the update, this
+	release may solve that problem.
+
+*	GOOGLE READER BUGS FIXED: A couple of bugs that made it difficult for
+	FeedWordPress to interact with Google Reader public feeds have been
+	fixed. Firstly, if you encountered an error message reading "There was a
+	problem adding the newsfeed. [SQL: ]" when you tried to add the feed,
+	the cause of this error has been fixed. Secondly, if you succeeded in
+	getting FeedWordPress to check a Google Reader feed, only to find that
+	the title of posts had junk squashed on to the end of them, that bug
+	has been fixed too. To fix this bug, you must install the newest version
+	of the optional MagpieRSS upgrade.
+
+*	FILTER PARAMETERS: Due to an old, old bug in WordPress 1.5.0 (which was
+	what was available back when I first wrote the filter interface),
+	FeedWordPress has traditionally only passed one parameter to
+	syndicated_item and syndicated_post filters functions -- an array
+	containing either the Magpie representation of a syndicated item from
+	the feed, or the database representation of a post about to be inserted
+	into the WordPress database. If you needed information about the feed
+	that the item came from, this was accessible only through a pair of
+	global variables, $fwp_channel and $fwp_feedmeta.
+
+	Since it's been a pretty long time since WordPress 1.5.0 was in
+	widespread usage, I have gone ahead and added an optional second
+	parameter to the invocation of the syndicated_item and syndicated_post
+	filters. If you have written a filter for FeedWordPress that uses either
+	of these hooks, you can now register that filter to accept 2 parameters.
+	If you do so, the second parameter will be a SyndicatedPost object,
+	which, among other things, allows you to access information about the
+	feed from which an item is syndicated using the $post->feed and the
+	$post->feedmeta elements (where $post is the name of the second
+	parameter).
+	
+	NOTE THAT THE OLD GLOBAL VARIABLES ARE STILL AVAILABLE, for the time
+	being at least, so existing filters will not break with the upgrade.
+	They should be considered deprecated, however, and may be eliminated in
+	the future.
+
+*	FILTER CHANGE / BUGFIX: the array that is passed as the first argument
+	syndicated_post filters no longer is no longer backslash-escaped for
+	MySQL when filters are called. This was originally a bug, or an
+	oversight; the contents of the array should only be escaped for the
+	database *after* they have gone through all filters. IF YOU HAVE WRITTEN
+	ANY syndicated_post FILTERS THAT PRESUME THE OLD BEHAVIOR OF PASSING IN
+	STRINGS THAT ARE ALREADY BACKSLASH-ESCAPED, UPDATE YOUR FILTERS
+	ACCORDINGLY.
+
+*	OTHER MINOR BUGFIXES AND INTERNAL CHANGES: The internal architecture of
 	FeedWordPress has been significantly changed to make the code more
 	modular and clean; hopefully this should help reduce the number of
 	compatibility updates that are needed, and make them easier and quicker

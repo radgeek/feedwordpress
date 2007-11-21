@@ -145,7 +145,7 @@ function fwp_syndication_options_page () {
 <legend>Syndicated Feeds</legend>
 <table class="editform" width="100%" cellspacing="2" cellpadding="5">
 <tr>
-<th width="33%" scope="row">Syndicate links in category:</th>
+<th width="33%" scope="row">Syndicated Link category:</th>
 <td width="67%"><?php
 		echo "\n<select name=\"syndication_category\" size=\"1\">";
 		foreach ($results as $row) {
@@ -173,13 +173,14 @@ function fwp_syndication_options_page () {
 </td>
 </tr>
 
-<tr><th width="33%" scope="row" style="vertical-align:top">Update automatically from feed:</th>
-<td width="67%"><ul style="margin:0;list-style:none">
-<li><input type="checkbox" name="hardcode_name" value="no"<?php echo (($hardcode_name=='yes')?'':' checked="checked"');?>/> Contributor name (feed title)</li>
-<li><input type="checkbox" name="hardcode_description" value="no"<?php echo (($hardcode_description=='yes')?'':' checked="checked"');?>/> Contributor description (feed tagline)</li>
-<li><input type="checkbox" name="hardcode_url" value="no"<?php echo (($hardcode_url=='yes')?'':' checked="checked"');?>/> Homepage (feed link)</li>
+<tr><th width="33%" scope="row" style="vertical-align:top">Feed information:</th>
+<td width="67%"><ul style="margin:0;padding:0;list-style:none">
+<li><input type="checkbox" name="hardcode_name" value="no"<?php echo (($hardcode_name=='yes')?'':' checked="checked"');?>/> Update the contributor title when the feed title changes</li>
+<li><input type="checkbox" name="hardcode_description" value="no"<?php echo (($hardcode_description=='yes')?'':' checked="checked"');?>/> Update when contributor description if the feed tagline changes</li>
+<li><input type="checkbox" name="hardcode_url" value="no"<?php echo (($hardcode_url=='yes')?'':' checked="checked"');?>/> Update the contributor homepage when the feed link changes</li>
 </ul></td></tr>
 </table>
+<div class="submit"><input type="submit" name="action" value="<?php echo $caption; ?>" /></div>
 </fieldset>
 
 <fieldset class="options">
@@ -188,40 +189,41 @@ function fwp_syndication_options_page () {
 <?php fwp_category_box($dogs, '<em>all syndicated posts</em>'); ?>
 
 <table class="editform" width="75%" cellspacing="2" cellpadding="5">
-<tr style="vertical-align: top"><th width="33%" scope="row">Publication:</th>
-<td width="67%"><ul style="margin: 0; padding: 0; list-style:none">
+<tr style="vertical-align: top"><th width="44%" scope="row">Publication:</th>
+<td width="56%"><ul style="margin: 0; padding: 0; list-style:none">
 <li><label><input type="radio" name="post_status" value="publish"<?php echo (!$post_status or $post_status=='publish')?' checked="checked"':''; ?> /> Publish syndicated posts immediately</label></li>
 <li><label><input type="radio" name="post_status" value="draft"<?php echo ($post_status=='draft')?' checked="checked"':''; ?> /> Hold syndicated posts as drafts</label></li>
 <li><label><input type="radio" name="post_status" value="private"<?php echo ($post_status=='private')?' checked="checked"':''; ?> /> Hold syndicated posts as private posts</label></li>
 </ul></td></tr>
 
-<tr style="vertical-align: top"><th width="33%" scope="row">Comments:</th>
-<td width="67%"><ul style="margin: 0; padding: 0; list-style:none">
+<tr style="vertical-align: top"><th width="44%" scope="row">Comments:</th>
+<td width="56%"><ul style="margin: 0; padding: 0; list-style:none">
 <li><label><input type="radio" name="comment_status" value="open"<?php echo ($comment_status=='open')?' checked="checked"':''; ?> /> Allow comments on syndicated posts</label></li>
 <li><label><input type="radio" name="comment_status" value="closed"<?php echo ($comment_status!='open')?' checked="checked"':''; ?> /> Don't allow comments on syndicated posts</label></li>
 </ul></td></tr>
 
-<tr style="vertical-align: top"><th width="33%" scope="row">Trackback and Pingback:</th>
-<td width="67%"><ul style="margin:0; padding: 0; list-style:none">
+<tr style="vertical-align: top"><th width="44%" scope="row">Trackback and Pingback:</th>
+<td width="56%"><ul style="margin:0; padding: 0; list-style:none">
 <li><label><input type="radio" name="ping_status" value="open"<?php echo ($ping_status=='open')?' checked="checked"':''; ?> /> Accept pings on syndicated posts</label></li>
 <li><label><input type="radio" name="ping_status" value="closed"<?php echo ($ping_status!='open')?' checked="checked"':''; ?> /> Don't accept pings on syndicated posts</label></li>
 </ul></td></tr>
 
-<tr style="vertical-align: top"><th width="33%" scope="row" style="vertical-align:top">Unfamiliar authors:</th>
-<td width="67%"><ul style="margin: 0; padding: 0; list-style:none">
+<tr style="vertical-align: top"><th width="44%" scope="row" style="vertical-align:top">Unfamiliar authors:</th>
+<td width="56%"><ul style="margin: 0; padding: 0; list-style:none">
 <li><label><input type="radio" name="unfamiliar_author" value="create"<?php echo $unfamiliar_author['create']; ?>/> create a new author account</label></li>
 <li><label><input type="radio" name="unfamiliar_author" value="default"<?php echo $unfamiliar_author['default']; ?> /> attribute the post to the default author</label></li>
 <li><label><input type="radio" name="unfamiliar_author" value="filter"<?php echo $unfamiliar_author['filter']; ?> /> don't syndicate the post</label></li>
 </ul></td></tr>
-<tr style="vertical-align: top"><th width="33%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
-<td width="67%"><ul style="margin: 0; padding:0; list-style:none">
+
+<tr style="vertical-align: top"><th width="44%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
+<td width="56%"><ul style="margin: 0; padding:0; list-style:none">
 <li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar_category['create']; ?>/> create any categories the post is in</label></li>
 <li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar_category['default']; ?>/> don't create new categories</li>
 <li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar_category['filter']; ?>/> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
 </ul></td></tr>
 
-<tr style="vertical-align: top"><th width="33%" scope="row">Permalinks point to:</th>
-<td width="67%"><select name="munge_permalink" size="1">
+<tr style="vertical-align: top"><th width="44%" scope="row">Permalinks point to:</th>
+<td width="56%"><select name="munge_permalink" size="1">
 <option value="yes"<?php echo ($munge_permalink=='yes')?' selected="selected"':''; ?>>original website</option>
 <option value="no"<?php echo ($munge_permalink=='no')?' selected="selected"':''; ?>>this website</option>
 </select></td></tr>
