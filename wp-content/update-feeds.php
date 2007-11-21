@@ -119,7 +119,7 @@ if ($update_feeds_invoke != 'cmd') :  // We're acessing this from HTTP GET or HT
 		if ($update_feeds_display=='text/html') :
 			auth_redirect(); // try authentication cookies; if all else fails, redirect to wp-login.php
 		else :
-			echo "update-feeds (".date('Y-m-d H:i:s')."): ERROR: Could not log in as '$login'/pass='$pass']\n";
+			echo "update-feeds (".date('Y-m-d H:i:s')."): ERROR: Could not log in as '$login' (password: '$pass')\n";
 			die;
 		endif;
 	endif;

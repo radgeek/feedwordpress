@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://projects.radgeek.com/feedwordpress
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 0.97
+Version: 0.98
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -27,7 +27,7 @@ Last modified: 2005-09-28 4:40pm EDT
 
 # -- Don't change these unless you know what you're doing...
 define ('RPC_MAGIC', 'tag:radgeek.com/projects/feedwordpress/');
-define ('FEEDWORDPRESS_VERSION', '0.97');
+define ('FEEDWORDPRESS_VERSION', '0.98');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
 define ('FEEDWORDPRESS_CAT_SEPARATOR_PATTERN', '/[:\n]/');
@@ -39,6 +39,10 @@ define ('FEEDVALIDATOR_URI', 'http://feedvalidator.org/check.cgi');
 // old & busted. For the new hotness, drop a copy of rss-functions.php from
 // this archive into wp-includes/rss-functions.php
 require_once (ABSPATH . WPINC . '/rss-functions.php');
+
+if (isset($wp_db_version) and $wp_db_version >= 2966) :
+	require_once (ABSPATH . WPINC . '/registration-functions.php');
+endif;
 
 // Is this being loaded from within WordPress 1.5 or later?
 if (isset($wp_version) and $wp_version >= 1.5):
@@ -2194,86 +2198,16 @@ class FeedWordPress {
 		
 		if ($freshness == 2) :
 			// The item has not yet been added. So let's add it.
-
-			# The right way to do this would be to use:
-			#
-			#	$postId = wp_insert_post($post);
-			# 	$result = $wpdb->query("
-			#		UPDATE $wpdb->posts
-			# 		SET
-			# 			guid='$guid'
-			# 		WHERE post_id='$postId'
-			# 	");
-			#
-			# in place of everything in the cut below. Alas,
-			# wp_insert_post seems to be a memory hog; using it
-			# to insert several posts in one session makes php
-			# segfault after inserting 50-100 posts. This can get
-			# pretty annoying, especially if you are trying to
-			# update your feeds for the first time.
-			#
-			# --- cut here ---
-			$result = $wpdb->query("
-			INSERT INTO $wpdb->posts
-			SET
-				guid = '$guid',
-				post_author = '".$post['post_author']."',
-				post_date = '".$post['post_date']."',
-				post_date_gmt = '".$post['post_date_gmt']."',
-				post_content = '".$post['post_content']."',"
-				.(isset($post['post_excerpt']) ? "post_excerpt = '".$post['post_excerpt']."'," : "")."
-				post_title = '".$post['post_title']."',
-				post_name = '".$post['post_name']."',
-				post_modified = '".$post['post_modified']."',
-				post_modified_gmt = '".$post['post_modified_gmt']."',
-				comment_status = '".$post['comment_status']."',
-				ping_status = '".$post['ping_status']."',
-				post_status = '".$post['post_status']."'
-			");
-			$postId = $wpdb->insert_id;
-			$this->add_to_category($wpdb, $postId, $post['post_category']);
-
-			// Since we are not going through official channels, we need to
-			// manually tell WordPress that we've published a new post.
-			// We need to make sure to do this in order for FeedWordPress
-			// to play well  with the staticize-reloaded plugin (something
-			// that a large aggregator website is going to *want* to be
-			// able to use).
-			do_action('publish_post', $postId);
-			# --- cut here ---
-
+			$postId = $this->insert_new_post($post);
 			$this->add_rss_meta($wpdb, $postId, $post);
-
 			do_action('post_syndicated_item', $postId);
 
 			$ret = 'new';
 		elseif ($freshness == 1) :
-			$postId = $result->id; $modified = $result->modified;
-
-			$result = $wpdb->query("
-			UPDATE $wpdb->posts
-			SET
-				post_author = '".$post['post_author']."',
-				post_content = '".$post['post_content']."',
-				post_title = '".$post['post_title']."',
-				post_name = '".$post['post_name']."',
-				post_modified = '".$post['post_modified']."',
-				post_modified_gmt = '".$post['post_modified_gmt']."'
-			WHERE guid='$guid'
-			");
-			$this->add_to_category($wpdb, $postId, $post['post_category']);
-
-			// Since we are not going through official channels, we need to
-			// manually tell WordPress that we've published a new post.
-			// We need to make sure to do this in order for FeedWordPress
-			// to play well  with the staticize-reloaded plugin (something
-			// that a large aggregator website is going to *want* to be
-			// able to use).
-			do_action('edit_post', $postId);
-
-			$this->add_rss_meta($wpdb, $postId, $post);
-
-			do_action('update_syndicated_item', $postId);
+			$post['ID'] = $result->id; $modified = $result->modified;
+			$this->update_existing_post($post);
+			$this->add_rss_meta($wpdb, $post['ID'], $post);
+			do_action('update_syndicated_item', $post['ID']);
 
 			$ret = 'updated';			
 		else :
@@ -2282,30 +2216,103 @@ class FeedWordPress {
 		
 		return $ret;
 	} // function FeedWordPress::add_post ()
-	
+
+	function insert_new_post ($post) {
+		global $wpdb;
+		
+		$guid = $post['guid'];
+
+		# The right way to do this would be to use:
+		#
+		#	$postId = wp_insert_post($post);
+		# 	$result = $wpdb->query("
+		#		UPDATE $wpdb->posts
+		# 		SET
+		# 			guid='$guid'
+		# 		WHERE post_id='$postId'
+		# 	");
+		#
+		# in place of everything in the cut below. Alas,
+		# wp_insert_post seems to be a memory hog; using it
+		# to insert several posts in one session makes php
+		# segfault after inserting 50-100 posts. This can get
+		# pretty annoying, especially if you are trying to
+		# update your feeds for the first time.
+		#
+		# --- cut here ---
+		$result = $wpdb->query("
+		INSERT INTO $wpdb->posts
+		SET
+			guid = '$guid',
+			post_author = '".$post['post_author']."',
+			post_date = '".$post['post_date']."',
+			post_date_gmt = '".$post['post_date_gmt']."',
+			post_content = '".$post['post_content']."',"
+			.(isset($post['post_excerpt']) ? "post_excerpt = '".$post['post_excerpt']."'," : "")."
+			post_title = '".$post['post_title']."',
+			post_name = '".$post['post_name']."',
+			post_modified = '".$post['post_modified']."',
+			post_modified_gmt = '".$post['post_modified_gmt']."',
+			comment_status = '".$post['comment_status']."',
+			ping_status = '".$post['ping_status']."',
+			post_status = '".$post['post_status']."'
+		");
+		$postId = $wpdb->insert_id;
+		$this->add_to_category($wpdb, $postId, $post['post_category']);
+
+		// Since we are not going through official channels, we need to
+		// manually tell WordPress that we've published a new post.
+		// We need to make sure to do this in order for FeedWordPress
+		// to play well  with the staticize-reloaded plugin (something
+		// that a large aggregator website is going to *want* to be
+		// able to use).
+		do_action('publish_post', $postId);
+		# --- cut here ---
+		
+		return $postId;
+	} /* FeedWordPress::insert_new_post() */
+
+	function update_existing_post ($post) {
+		global $wpdb;
+		
+		$guid = $post['guid'];
+		$postId = $post['ID'];
+
+		$result = $wpdb->query("
+		UPDATE $wpdb->posts
+		SET
+			post_author = '".$post['post_author']."',
+			post_content = '".$post['post_content']."',
+			post_title = '".$post['post_title']."',
+			post_name = '".$post['post_name']."',
+			post_modified = '".$post['post_modified']."',
+			post_modified_gmt = '".$post['post_modified_gmt']."'
+		WHERE guid='$guid'
+		");
+		$this->add_to_category($wpdb, $postId, $post['post_category']);
+
+		// Since we are not going through official channels, we need to
+		// manually tell WordPress that we've published a new post.
+		// We need to make sure to do this in order for FeedWordPress
+		// to play well  with the staticize-reloaded plugin (something
+		// that a large aggregator website is going to *want* to be
+		// able to use).
+		do_action('edit_post', $postId);
+	} /* FeedWordPress::update_existing_post() */
+
 	# function FeedWordPress::add_to_category ()
 	#
 	# If there is a way to properly hook in to wp_insert_post, then this
 	# function will no longer be needed. In the meantime, here it is.
 	# --- cut here ---
 	function add_to_category($wpdb, $postId, $post_categories) {
+		global $wp_db_version; // test for WordPress 2.0 database schema
+
 		// Default to category 1 ("Uncategorized"), if nothing else
 		if (!$post_categories) $post_categories[] = 1;
 
-		// Clean the slate (in case we're updating)
-		$results = $wpdb->query("
-		DELETE FROM $wpdb->post2cat
-		WHERE post_id = $postId
-		");
-
-		foreach ($post_categories as $post_category):
-			$results = $wpdb->query("
-			INSERT INTO $wpdb->post2cat
-			SET
-				post_id = $postId,
-				category_id = $post_category
-			");
-		endforeach;
+		// Now pass the buck to the WordPress API...
+		wp_set_post_cats('', $postId, $post_categories);
 	} // function FeedWordPress::add_to_category ()
 	# --- cut here ---
 
@@ -2350,6 +2357,8 @@ class FeedWordPress {
 	// FeedWordPress::author_to_id (): get the ID for an author name from
 	// the feed. Create the author if necessary.
 	function author_to_id ($wpdb, $author, $email, $url, $unfamiliar_author = 'create') {
+		global $wp_db_version; // test for WordPress 2.0 database schema
+
 		// Never can be too careful...
 		$nice_author = sanitize_title($author);
 		$reg_author = $wpdb->escape(preg_quote($author));
@@ -2357,38 +2366,94 @@ class FeedWordPress {
 		$email = $wpdb->escape($email);
 		$url = $wpdb->escape($url);
 
-		$id = $wpdb->get_var(
-		"SELECT ID from $wpdb->users
-		 WHERE
-		 	TRIM(LCASE(user_login)) = TRIM(LCASE('$author')) OR
-			TRIM(LCASE(user_firstname)) = TRIM(LCASE('$author')) OR
-			TRIM(LCASE(user_nickname)) = TRIM(LCASE('$author')) OR
-			TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author')) OR
-			TRIM(LCASE(user_description)) = TRIM(LCASE('$author')) OR
-			(
-				LOWER(user_description)
-				RLIKE CONCAT(
-					'(^|\\n)a.k.a.( |\\t)*:?( |\\t)*',
-					LCASE('$reg_author'),
-					'( |\\t|\\r)*(\\n|\$)'
+		// Look for an existing author record that fits...
+		if (!isset($wp_db_version)) :
+			#-- WordPress 1.5.x
+			$id = $wpdb->get_var(
+			"SELECT ID from $wpdb->users
+			 WHERE
+				TRIM(LCASE(user_login)) = TRIM(LCASE('$author')) OR
+				(
+					LENGTH(TRIM(LCASE(user_email))) > 0
+					AND TRIM(LCASE(user_email)) = TRIM(LCASE('$email'))
+				) OR
+				TRIM(LCASE(user_firstname)) = TRIM(LCASE('$author')) OR
+				TRIM(LCASE(user_nickname)) = TRIM(LCASE('$author')) OR
+				TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author')) OR
+				TRIM(LCASE(user_description)) = TRIM(LCASE('$author')) OR
+				(
+					LOWER(user_description)
+					RLIKE CONCAT(
+						'(^|\\n)a.k.a.( |\\t)*:?( |\\t)*',
+						LCASE('$reg_author'),
+						'( |\\t|\\r)*(\\n|\$)'
+					)
 				)
-			)
-		");
+			");
+		elseif ($wp_db_version >= 2966) :
+			#-- WordPress 2.0+
+			
+			# First try the user core data table.
+			$id = $wpdb->get_var(
+			"SELECT ID FROM $wpdb->users
+			WHERE
+				TRIM(LCASE(user_login)) = TRIM(LCASE('$author'))
+				OR (
+					LENGTH(TRIM(LCASE(user_email))) > 0
+					AND TRIM(LCASE(user_email)) = TRIM(LCASE('$email'))
+				)
+				OR TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author'))
+			");
 
+			if (is_null($id)) : # Then look for aliases in the user meta data table
+				$id = $wpdb->get_var(
+				"SELECT user_id FROM $wpdb->usermeta
+				WHERE
+					(meta_key = 'description' AND TRIM(LCASE(meta_value)) = TRIM(LCASE('$author')))
+					OR (
+						meta_key = 'description'
+						AND LCASE(meta_value)
+						RLIKE CONCAT(
+							'(^|\\n)a.k.a.( |\\t)*:?( |\\t)*',
+							LCASE('$reg_author'),
+							'( |\\t|\\r)*(\\n|\$)'
+						)
+					)
+				");
+			endif;
+		endif;
+
+		// ... if you don't find one, then do what you need to do
 		if (is_null($id)) :
 			if ($unfamiliar_author === 'create') :
-				$wpdb->query (
-					"INSERT INTO $wpdb->users
-					 SET
-						ID='0',
-						user_login='$author',
-						user_firstname='$author',
-						user_nickname='$author',
-						user_nicename='$nice_author',
-						user_description='$author',
-						user_email='$email',
-						user_url='$url'");
-				$id = $wpdb->insert_id;
+				if (!isset($wp_db_version)) :
+					#-- WordPress 1.5.x
+					$wpdb->query (
+						"INSERT INTO $wpdb->users
+						 SET
+							ID='0',
+							user_login='$author',
+							user_firstname='$author',
+							user_nickname='$author',
+							user_nicename='$nice_author',
+							user_description='$author',
+							user_email='$email',
+							user_url='$url'");
+					$id = $wpdb->insert_id;
+				elseif ($wp_db_version >= 2966) :
+					#-- WordPress 2.0+
+					$userdata = array();
+					
+					#-- user table data
+					$userdata['ID'] = NULL; // new user
+					$userdata['user_login'] = $author;
+					$userdata['user_pass'] = FeedWordPress::rpc_secret();
+					$userdata['user_email'] = $email;
+					$userdata['user_url'] = $url;
+					$userdata['display_name'] = $author;
+
+					$id = wp_insert_user($userdata);
+				endif;
 			elseif ($unfamiliar_author === 'default') :
 				$id = 1;
 			endif;
@@ -2564,7 +2629,7 @@ class FeedWordPress {
 
 		switch ($from) :
 		case 0.96: // account for changes to syndication custom values and guid
-			echo "<p>Upgrading database from {$from} to 0.97...</p>\n";
+			echo "<p>Upgrading database from {$from} to 0.97+...</p>\n";
 
 			$cat_id = FeedWordPress::link_category_id();
 			

@@ -1,6 +1,29 @@
 FeedWordPress Change Log
 ========================
 
+Changes from 0.97 to 0.98
+--------------------------
+
+*	WORDPRESS 2.0 COMPATIBILITY: This is a narrowly-targeted release to
+	solve a major outstanding problem. FeedWordPress is now compatible with
+	both WordPress 1.5 and WordPress 2.0. Incompatibilities that caused
+	fatal SQL errors, and a more subtle bug with off-kilter counts of posts
+	under a given category, have been resolved. FeedWordPress tests for
+	database schema using the global $wp_db_version variable (if null, then
+	we presume that we're dealing with WordPress 1.5).
+
+	NOTE: I have **not** fully tested FeedWordPress with WordPress 2.0.
+	Further testing may reveal more bugs. However, you should now be able
+	to get at least basic FeedWordPress functionality up and running.
+
+*	AUTHOR MATCHING: FeedWordPress tests several fields to see if it can
+	identify the author of the post as a user already in the WordPress user
+	database. In previous versions, it tested the user login, the nickname,
+	and tested for "aliases" listed in the Profile (see documentation). FWP
+	now also matches authors on the basis of e-mail address (*if* an e-mail
+	address is present). This is particularly helpful for formats such as
+	RSS 2.0, in which authors are primarily identified by e-mail addresses.
+
 Changes from 0.96 to 0.97
 -------------------------
 

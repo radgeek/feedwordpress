@@ -2,41 +2,42 @@ FeedWordPress
 =============
 
 * Author: [Charles Johnson](http://radgeek.com/contact)
-* Version: 0.97
+* Version: 0.98
 * Project URI: <http://projects.radgeek.com/feedwordpress>
 * License: GPL 2. See License below for copyright jots and tittles.
 
 Introduction
 ------------
-FeedWordPress is an Atom/RSS aggregator for WordPress 1.5. It syndicates content
-from newsfeeds that you choose into your WordPress blog; if you syndicate
-several newsfeeds then you can use WordPress's posts database and templating
-engine as the back-end of an aggregation ("planet") website. I originally
-developed it because I needed a more flexible replacement for [Planet][] to
-use at [Feminist Blogs][].
+FeedWordPress is an Atom/RSS aggregator for the WordPress weblog software. It
+syndicates content from newsfeeds that you choose into your WordPress webblog;
+if you syndicate several newsfeeds then you can use WordPress's posts database
+and templating engine as the back-end of an aggregation ("planet") website. I
+originally developed it because I needed a more flexible replacement for
+[Planet][] to use at [Feminist Blogs][].
 
   [Planet]: http://www.planetplanet.org/ "Planet Planet"
   [Feminist Blogs]: http://www.feministblogs.org/
 
 FeedWordPress is designed with flexibility, ease of use, and ease of
-configuration in mind. You'll need a working installation of [WordPress
-1.5][] and FTP or SFTP access to your web host. The ability to create cron
-jobs on your web host would be very helpful but it's not absolutely
-necessary. You *don't* need to tweak any plain-text configuration files and
-you *don't* need shell access to your web host to make it work. (Although, I
-should point out, web hosts that *don't* offer shell access are *bad web
-hosts*.)
+configuration in mind. You'll need a working installation of WordPress (version
+[2.0][] or [1.5][]), and also FTP or SFTP access to your web host. The ability
+to create cron jobs on your web host would be very helpful but it's not
+absolutely necessary. You *don't* need to tweak any plain-text configuration
+files and you *don't* need shell access to your web host to make it work.
+(Although, I should point out, web hosts that *don't* offer shell access are
+*bad web hosts*.)
 
-  [WordPress 1.5]: http://wordpress.org/development/2005/02/strayhorn/
+  [2.0]: http://wordpress.org/development/2005/12/wp2/
+  [1.5]: http://wordpress.org/development/2005/02/strayhorn/
 
 Installation
 ------------
 ### Requirements ###
 
-To use version 0.97 of FeedWordPress, you will need:
+To use version 0.98 of FeedWordPress, you will need:
 
-1.	an installed configured copy of WordPress 1.5.x. (It *won't work* with
-	WP 1.2 or WP 1.6 development builds.)
+1.	an installed configured copy of WordPress 2.0.x or 1.5.x. (FeedWordPress
+	*will not work* with WP 1.2 or WP MU development builds.)
 
 2.	FTP or SFTP access to your web host
 
@@ -50,7 +51,7 @@ And you'll probably also want to have either:
 
 #### Upgrades ####
 
-To *upgrade* an existing installation of FeedWordPress to version 0.97:
+To *upgrade* an existing installation of FeedWordPress to version 0.98:
 
 1.	Download the FeedWordPress archive in zip or gzipped tar format and
 	extract the files on your computer. Replace your existing FeedWordPress
@@ -58,13 +59,14 @@ To *upgrade* an existing installation of FeedWordPress to version 0.97:
 	use the optional MagpieRSS upgrade, or don't use it yet but do want to
 	syndicate Atom 1.0 feeds.
 
-2.	**Immediately** log in to the WordPress Dashboard, and go to Options -->
-	Syndicated. Follow the directions to launch the database upgrade
-	procedure. The new version of FeedWordPress incorporates some
-	long-needed improvements, but old meta-data needs to be updated to
-	prevent duplicate posts and other possible maladies. If you're upgrading
-	an existing installation, updates and FeedWordPress template functions
-	*will not work* until you've done the upgrade.
+2.	If you are upgrading from version 0.96 or earlier, **immediately** log
+	in to the WordPress Dashboard, and go to Options --> Syndicated. Follow
+	the directions to launch the database upgrade procedure. The new
+	versions of FeedWordPress incorporate some long-needed improvements, but
+	old meta-data needs to be updated to prevent duplicate posts and other
+	possible maladies. If you're upgrading an existing installation, updates
+	and FeedWordPress template functions *will not work* until you've done
+	the upgrade.
 
 3.	Take a coffee break while the upgrade runs. It should, hopefully, finish
 	within a few minutes even on relatively large databases.
@@ -201,9 +203,9 @@ You can pull that off in one of two ways, or by a mixture of both:
 
 Basic Concepts
 --------------
-FeedWordPress is written as a plugin for [WordPress 1.5][]. It is designed to
-store all the data it needs within the WordPress database and to make that data
-easy to manage from within the WordPress Dashboard.
+FeedWordPress is written as a plugin for the WordPress weblog software. It is
+designed to store all the data it needs within the WordPress database and to
+make that data easy to manage from within the WordPress Dashboard.
 
 ### Contributors / Newsfeeds ###
 
@@ -371,8 +373,8 @@ Most newsfeeds include information about the author of the items on them.
 the title of the feed from which the item was taken.) This information is used
 to determine the WordPress user that the post will be attributed to. Given the
 name of the author, FeedWordPress looks for authors in the WordPress database
-with the same name as either (1) their login, (2) their first name, (3) their
-nickname, (4) their full name, or (5) one of the "aliases" listed in the
+with the same name as either (1) their login, (2) their display name, (3) their
+e-mail address (if given), or (4) one of the "aliases" listed in the
 user's profile.
 
 __Aliases:__ If there is an author who posts under more than one name (for
