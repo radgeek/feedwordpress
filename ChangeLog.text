@@ -13,6 +13,15 @@ Changes from 0.99 to 0.991
 	no longer displayed, unless debugging parameters have been explicitly
 	enabled.
 
+*	BUG RELATED TO INTERNATIONAL CHARACTERS IN AUTHOR NAMES FIXED: Due to a
+	subtle incompatability between the way that FeedWordPress generated new
+	user information, and the way that WordPress 2.0 and later added new
+	authors to the database, FeedWordPress might end up creating duplicate
+	authors, or throwing a critical error message, when it encountered
+	authors whose names included international characters. This
+	incompatability has now been fixed; hopefully, authors with
+	international characters in their names should now be handled properly.
+
 *	media:content BUG IN MAGPIERSS FIXED: A bug in MagpieRSS's handling of
 	namespaced elements has been fixed. Among other things, this bug caused
 	items containing a Yahoo MediaRSS `<media:content>` element (such as
