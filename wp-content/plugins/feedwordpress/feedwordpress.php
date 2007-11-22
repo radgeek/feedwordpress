@@ -2131,7 +2131,7 @@ class SyndicatedPost {
 			
 			// This should never happen.
 			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
-				FeedWordPress::critical_bug('SyndicatedPost::_wp_id', $this->_wp_id, __LINE__);
+				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', $this, __LINE__);
 			endif;
 	
 			// Unfortunately, as of WordPress 2.3, wp_insert_post()
