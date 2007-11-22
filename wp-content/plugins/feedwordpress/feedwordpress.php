@@ -226,6 +226,11 @@ if (!function_exists('current_user_can')) {
 } else {
 	$legacy_capability_hack = false;
 }
+if (!function_exists('sanitize_user')) {
+	function sanitize_user ($text, $strict) {
+		return $text; // Don't munge it if it wasn't munged going in...
+	}
+}
 
 ################################################################################
 ## TEMPLATE API: functions to make your templates syndication-aware ############
@@ -2333,7 +2338,12 @@ class SyndicatedPost {
 		$url = $a['uri'];
 
 		// Never can be too careful...
+		$login = sanitize_user($author, /*strict=*/ true);
+		$login = apply_filters('pre_user_login', $login);
+
 		$nice_author = sanitize_title($author);
+		$nice_author = apply_filters('pre_user_nicename', $nice_author);
+
 		$reg_author = $wpdb->escape(preg_quote($author));
 		$author = $wpdb->escape($author);
 		$email = $wpdb->escape($email);
@@ -2345,7 +2355,7 @@ class SyndicatedPost {
 			$id = $wpdb->get_var(
 			"SELECT ID from $wpdb->users
 			 WHERE
-				TRIM(LCASE(user_login)) = TRIM(LCASE('$author')) OR
+				TRIM(LCASE(user_login)) = TRIM(LCASE('$login')) OR
 				(
 					LENGTH(TRIM(LCASE(user_email))) > 0
 					AND TRIM(LCASE(user_email)) = TRIM(LCASE('$email'))
@@ -2370,7 +2380,7 @@ class SyndicatedPost {
 			$id = $wpdb->get_var(
 			"SELECT ID FROM $wpdb->users
 			WHERE
-				TRIM(LCASE(user_login)) = TRIM(LCASE('$author'))
+				TRIM(LCASE(user_login)) = TRIM(LCASE('$login'))
 				OR (
 					LENGTH(TRIM(LCASE(user_email))) > 0
 					AND TRIM(LCASE(user_email)) = TRIM(LCASE('$email'))
@@ -2405,7 +2415,7 @@ class SyndicatedPost {
 						"INSERT INTO $wpdb->users
 						 SET
 							ID='0',
-							user_login='$author',
+							user_login='$login',
 							user_firstname='$author',
 							user_nickname='$author',
 							user_nicename='$nice_author',
@@ -2419,7 +2429,8 @@ class SyndicatedPost {
 					
 					#-- user table data
 					$userdata['ID'] = NULL; // new user
-					$userdata['user_login'] = $author;
+					$userdata['user_login'] = $login;
+					$userdata['user_nicename'] = $nice_author;
 					$userdata['user_pass'] = substr(md5(uniqid(microtime())), 0, 6); // just something random to lock it up
 					$userdata['user_email'] = $email;
 					$userdata['user_url'] = $url;
