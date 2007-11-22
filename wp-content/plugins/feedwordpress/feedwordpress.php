@@ -151,6 +151,10 @@ function feedwordpress_auto_update () {
 		$feedwordpress =& new FeedWordPress;
 		$feedwordpress->update();
 	endif;
+	
+	if (FeedWordPress::update_requested()) :
+		exit;
+	endif;
 } /* feedwordpress_auto_update () */
 
 ################################################################################
@@ -1566,11 +1570,20 @@ class FeedWordPress {
 			else :
 				FeedWordPress::critical_bug('FeedWordPress::stale::last', $last, __LINE__);
 			endif;
+
+		// Explicit request for an update (e.g. from a cron job).
+		elseif (FeedWordPress::update_requested()) :
+			$ret = true;
+
 		else :
 			$ret = false;
 		endif;
 		return $ret;
-	}
+	} // FeedWordPress::stale()
+	
+	function update_requested () {
+		return (isset($_REQUEST['update_feedwordpress']) and $_REQUEST['update_feedwordpress']);
+	} // FeedWordPress::update_requested()
 
 	function syndicate_link ($name, $uri, $rss) {
 		global $wpdb;
@@ -2372,10 +2385,10 @@ class SyndicatedPost {
 					(meta_key = 'description' AND TRIM(LCASE(meta_value)) = TRIM(LCASE('$author')))
 					OR (
 						meta_key = 'description'
-						AND LCASE(meta_value)
+						AND TRIM(LCASE(meta_value))
 						RLIKE CONCAT(
 							'(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*',
-							LCASE('$reg_author'),
+							TRIM(LCASE('$reg_author')),
 							'( |\\t|\\r)*(\\n|\$)'
 						)
 					)
