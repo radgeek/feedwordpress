@@ -8,7 +8,7 @@ Stable tag: 0.991
 
 FeedWordPress is an Atom/RSS aggregator for WordPress. When activated, it syndicates content from feeds you choose into your WordPress weblog. 
 
-== Descrption ==
+== Description ==
 
 * Author: [Charles Johnson](http://radgeek.com/contact)
 * Project URI: <http://projects.radgeek.com/feedwordpress>
