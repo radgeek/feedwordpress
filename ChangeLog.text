@@ -3,13 +3,32 @@ FeedWordPress Change Log
 
 Changes from 0.99 to 0.991
 --------------------------
-*	WORDPRESS MU COMPATABILITY
+*	WORDPRESS MU COMPATABILITY: FeedWordPress should now be compatible with
+	recent releases of WordPress MU. Once FeedWordPress is made available
+	as a plugin, each individual blog can choose to activate FeedWordPress
+	and syndicate content from its own set of contributors.
 
-*	DISPLAY OF MAGPIE WARNINGS
+*	DISPLAY OF MAGPIE WARNINGS: A number of MagpieRSS warnings or error
+	messages that were displayed when performing an automatic update are
+	no longer displayed, unless debugging parameters have been explicitly
+	enabled.
 
-*	MAGPIERSS BUG WITH media:content FIXED
+*	media:content BUG IN MAGPIERSS FIXED: A bug in MagpieRSS's handling of
+	namespaced elements has been fixed. Among other things, this bug caused
+	items containing a Yahoo MediaRSS `<media:content>` element (such as
+	many of the feeds produced by wordpress.com) to be represented
+	incorrectly, with only a capital "A" where the content of the post
+	should have been. Feeds containing `<media:content>` elements should now
+	be syndicated correctly.
 
-*	MINOR INTERFACE BUGS FIXED
+*	update_feedwordpress PARAMETER: You can now use an HTTP GET parameter
+	(`update_feedwordpress=1`) to request that FeedWordPress poll its feeds
+	for updates. When used together with a crontab or other means of
+	scheduling tasks, this means that you can keep your blog automatically
+	updated on a regular schedule, even if you do not choose to use the
+	cron-less automatic updates option.
+
+*	Some minor interface-related bugs were also fixed.
 
 
 Changes from 0.981 to 0.99
