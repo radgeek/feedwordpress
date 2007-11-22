@@ -4,7 +4,7 @@ Donate link: http://projects.radgeek.com/feedwordpress/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 1.5
 Tested up to: 2.3.1
-Stable tag: 0.99
+Stable tag: 0.991
 
 FeedWordPress is an Atom/RSS aggregator for WordPress. When activated, it syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -17,18 +17,16 @@ FeedWordPress is an Atom/RSS aggregator for WordPress. When activated, it syndic
 FeedWordPress is an Atom/RSS aggregator for the WordPress weblog software. It
 syndicates content from newsfeeds that you choose into your WordPress webblog;
 if you syndicate several newsfeeds then you can use WordPress's posts database
-and templating engine as the back-end of an aggregation ("planet") website. I
-originally developed it because I needed a more flexible replacement for
-[Planet][] to use at [Feminist Blogs][].
-
-  [Planet]: http://www.planetplanet.org/ "Planet Planet"
-  [Feminist Blogs]: http://www.feministblogs.org/
+and templating engine as the back-end of an aggregation ("planet") website. It
+was developed, originally, because I needed a more flexible replacement for
+[Planet](http://www.planetplanet.org/) to use at
+[Feminist Blogs](http://feministblogs.org/).
 
 FeedWordPress is designed with flexibility, ease of use, and ease of
-configuration in mind. You'll need a working installation of WordPress (version
-[2.3][], [2.2][], [2.1][], [2.0][] or [1.5][]), and also FTP or SFTP access to
-your web host. The ability to create cron jobs on your web host would be very
-helpful but it's not absolutely necessary. You *don't* need to tweak any
+configuration in mind. You'll need a working installation of WordPress or
+WordPress MU (versions [2.3][], [2.2][], [2.1][], [2.0][] or [1.5][]), and also
+FTP or SFTP access to your web host. The ability to create cron jobs on your web
+host is helpful but not absolutely necessary. You *don't* need to tweak any
 plain-text configuration files and you *don't* need shell access to your web
 host to make it work. (Although, I should point out, web hosts that *don't*
 offer shell access are *bad web hosts*.)
@@ -41,17 +39,47 @@ offer shell access are *bad web hosts*.)
 
 == Installation ==
 
-To use version 0.99 of FeedWordPress, you will need:
+To use version 0.991 of FeedWordPress, you will need:
 
-1. 	an installed and configured copy of WordPress 2.3.x, 2.2.x, 2.1.x,
-	2.0.x, or 1.5.x. (FeedWordPress currently *will not work* with older
-	versions of WordPress, or with WordPress MU.)
+* 	an installed and configured copy of WordPress version 2.3.x, 2.2.x,
+	2.1.x, 2.0.x, or 1.5.x. (FeedWordPress will also work with the
+	equivalent versions of WordPress MU.)
 
-2.	FTP or SFTP access to your web host
+*	FTP or SFTP access to your web host
+
+= New Installations =
+
+1.	Download the FeedWordPress archive in zip or gzipped tar format and
+	extract the files on your computer. 
+
+2.	Create a new directory named `feedwordpress` in the `wp-content/plugins`
+	directory of your WordPress installation. Use an FTP or SFTP client to
+	upload the contents of your FeedWordPress archive to the new directory
+	that you just created on your web host.
+
+3.	Upgrade the copy of MagpieRSS packaged with WordPress by installing the
+	new copies of `rss.php` and `rss-functions.php` into the `wp-includes`
+	directory of your FeedWordPress installation. These files are stored in
+	the `MagpieRSS-upgrade` directory of your FeedWordPress	archive. Strictly
+	speaking, upgrading MagpieRSS is optional; FeedWordPress will run
+	correctly without the upgrade. But if you hope to take advantage of
+	numerous bug fixes, or support for Atom 1.0, multiple post categories,
+	RSS enclosures,	or multiple character encodings, then you need to
+	install the upgrade.
+
+4.	Log in to the WordPress Dashboard and activate the FeedWordPress plugin.
+
+5.	Once the plugin is activated, you can go to **Syndication --> Options**
+	and set (1) the link category that FeedWordPress will syndicate links
+	from (by default, "Contributors"), and (2) whether FeedWordPress will
+	use automatic updates or only manual updates.
+
+5.	Go to the main **Syndication** page to set up the list of sites that
+	you want FeedWordPress to syndicate onto your blog.
 
 = Upgrades =
 
-To *upgrade* an existing installation of FeedWordPress to version 0.99:
+To *upgrade* an existing installation of FeedWordPress to version 0.991:
 
 1.	Download the FeedWordPress archive in zip or gzipped tar format and
 	extract the files on your computer. 
@@ -66,13 +94,13 @@ To *upgrade* an existing installation of FeedWordPress to version 0.99:
 
 3.	Upload the new PHP files to `wp-content/plugins/feedwordpress`,
 	overwriting any existing FeedWordPress files that are there. Also be
-	sure to upgrade `wp-includes/rss.php` and
-	`wp-includes/rss-functions.php` if you use the optional MagpieRSS
-	upgrade, or don't use it yet but do want to syndicate Atom 1.0 feeds.
+	sure to upgrade the MagpieRSS module by uploading `rss.php` and
+	`rss-functions.php` from the `MagpieRSS-upgrade` directory in your 
+	archive to the `wp-includes` directory of your WordPress installation.
 
 3.	If you are upgrading from version 0.96 or earlier, **immediately** log
-	in to the WordPress Dashboard, and go to Options --> Syndicated. Follow
-	the directions to launch the database upgrade procedure. The new
+	in to the WordPress Dashboard, and go to **Options --> Syndicated**.
+	Follow the directions to launch the database upgrade procedure. The new
 	versions of FeedWordPress incorporate some long-needed improvements, but
 	old meta-data needs to be updated to prevent duplicate posts and other
 	possible maladies. If you're upgrading an existing installation, updates
@@ -85,49 +113,10 @@ To *upgrade* an existing installation of FeedWordPress to version 0.99:
 	`update-feeds.php` has been eliminated in favor of a (hopefully) more
 	humane method for automatic updating. If you used a cron job for
 	scheduled updates, it will not work anymore, but there is another,
-	simpler method which will. See [Setting Up Feed Updates][] below to get
-	scheduled updates back on track.
+	simpler method which will. See [Setting Up Feed Updates](http://projects.radgeek.com/feedwordpress/install/#setting-up-feed-updates)
+	to get scheduled updates back on track.
 
 5.	Enjoy your new installation of FeedWordPress.
-
-= New Installations =
-
-1.	Download the FeedWordPress archive in zip or gzipped tar format and
-	extract the files on your computer. 
-
-2.	Create a new directory named `feedwordpress` in the `wp-content/plugins`
-	directory of your WordPress installation. Use an FTP or SFTP client to
-	upload the contents of the `wp-content/plugins/feedwordpress` directory
-	in the FeedWordPress archive to the new directory that you just created
-	on your web host.
-
-3.	(Optional) Upgrade the copy of MagpieRSS packaged with WordPress by
-	installing the new `rss.php` and `rss-functions.php` (archived in
-	`OPTIONAL/wp-includes`) into your WordPress `wp-includes` directory.
-	Upgrading MagpieRSS is necessary if you want to take advantage of
-	support for Atom 1.0, multiple post categories, RSS enclosures, and
-	multiple character encodings. (Note, however, that support for
-	transliterating between character encodings is a very complex and
-	iffy prospect in some PHP environments, so if you intend to use
-	a lot of feeds with alternate encodings you should make sure that
-	your installation of PHP is up-to-date and that you keep a copy of
-	the old MagpieRSS around to compare results.)
-
-4.	Log in to the WordPress Dashboard and activate the FeedWordPress
-	plugin. 
-
-5.	While you're at the Dashboard, once the plugin is activated, you can
-	go to **Syndication --> Options** and set (1) the link category that
-	FeedWordPress will syndicate links from (by default, "Contributors"),
-	and (2) whether FeedWordPress will use automatic updates or only
-	manual updates.
-
-5.	Go to the main **Syndication** page to set up the list of sites that
-	you want FeedWordPress to syndicate onto your blog. (If you have the
-	feeds you want to aggregate in a service such as Bloglines,
-	you may prefer to export them to an OPML file and use WordPress's
-	**Blogroll --> Import Links** to import them into the contributors
-	category.)
 
 == Using and Customizing FeedWordPress ==
 
