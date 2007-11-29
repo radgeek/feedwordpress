@@ -1092,6 +1092,23 @@ function fwp_linkedit_page () {
 		if (o.value=='yes') { ed.style.display='inline'; view.style.display='none'; }
 		else { ed.style.display='none'; view.style.display='inline'; }
 	}
+	function flip_newuser (item) {
+		rollup=document.getElementById(item);
+		newuser=document.getElementById(item+'-newuser');
+		sitewide=document.getElementById(item+'-default');
+		if (rollup) {
+			if ('newuser'==rollup.value) {
+				if (newuser) newuser.style.display='block';
+				if (sitewide) sitewide.style.display='none';
+			} else if ('site-default'==rollup.value) {
+				if (newuser) newuser.style.display='none';
+				if (sitewide) sitewide.style.display='block';
+			} else {
+				if (newuser) newuser.style.display='none';
+				if (sitewide) sitewide.style.display='none';
+			}
+		}
+	}
 </script>
 
 <?php if ($updated_link) : ?>
@@ -1288,59 +1305,69 @@ blank.</td>
 <?php $authorlist = fwp_author_list(); ?>
 
 <table>
-<tr><th colspan="2" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by authors that haven't been syndicated before:</th></tr>
-<tr>
-  <th style="text-align: left">Posts by new authors</th>
-  <td>should be
-  <select name="unfamiliar_author">
-    <option value="site-default"<?php if (!isset($meta['unfamiliar author'])) : ?>selected="selected"<?php endif; ?>>handled according to the site-wide setting from Syndication Options</option>
-    <option value="create"<?php if ('create'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>assigned to a newly-created author account with the same name</option>
-    <?php foreach ($authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>"<?php if ($author_id==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>assigned to <?php echo $author_name; ?></option>
-    <?php endforeach; ?>
-    <option value="newuser">assigned to a new user...</option>
-    <option value="filter"<?php if ('filter'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>filtered out</option>
-  </select>
-  </td>
-  <td>named: <input type="text" name="unfamiliar_author_newuser" value="" /></td>
-</tr>
+<tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by specific authors. Blank out a name to delete the rule.</th></tr>
 
-<tr><th colspan="2" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by specific authors. Blank out a name to delete the rule.</th></tr>
-
-<?php if (isset($meta['map authors'])) : foreach ($meta['map authors'] as $author_rules) : foreach ($author_rules as $author_name => $author_action) : ?>
+<?php if (isset($meta['map authors'])) : $i=0; foreach ($meta['map authors'] as $author_rules) : foreach ($author_rules as $author_name => $author_action) : $i++; ?>
 <tr>
   <th style="text-align: left">Posts by <input type="text" name="author_rules_name[]" value="<?php echo htmlspecialchars($author_name); ?>" /></th>
-  <td>should be
-  <select name="author_rules_action[]">
+  <td>
+  <select id="author-rules-<?php echo $i; ?>" name="author_rules_action[]" onchange="flip_newuser('author-rules-<?php echo $i; ?>');">
     <?php foreach ($authorlist as $local_author_id => $local_author_name) : ?>
-    <option value="<?php echo $local_author_id; ?>"<?php if ($local_author_id==$author_action) : echo ' selected="selected"'; endif; ?>>assigned to <?php echo $local_author_name; ?></option>
+    <option value="<?php echo $local_author_id; ?>"<?php if ($local_author_id==$author_action) : echo ' selected="selected"'; endif; ?>>are assigned to <?php echo $local_author_name; ?></option>
     <?php endforeach; ?>
-    <option value="newuser">assigned to a new user...</option>
-    <option value="filter"<?php if ('filter'==$author_action) : echo ' selected="selected"'; endif; ?>>filtered out</option>
+    <option value="newuser">will be assigned to a new user...</option>
+    <option value="filter"<?php if ('filter'==$author_action) : echo ' selected="selected"'; endif; ?>>get filtered out</option>
   </select>
   </td>
-  <td>named: <input type="text" name="author_rules_newuser[]" value="" /></td>
+  <td><div id="author-rules-<?php echo $i; ?>-newuser">named <input type="text" name="author_rules_newuser[]" value="" /></div></td>
 </tr>
 <?php endforeach; endforeach; endif; ?>
 
-<tr><th colspan="2" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">Fill in to create a new rule:</th></tr>
+<tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">Fill in to set up a new rule:</th></tr>
 
 <tr>
   <th style="text-align: left">Posts by <input type="text" name="add_author_rule_name" /></th>
-  <td>should be
-    <select name="add_author_rule_action">
+  <td>
+    <select id="add-author-rule" name="add_author_rule_action" onchange="flip_newuser('add-author-rule');">
       <?php foreach ($authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>">assigned to <?php echo $author_name; ?></option>
+      <option value="<?php echo $author_id; ?>">are assigned to <?php echo $author_name; ?></option>
       <?php endforeach; ?>
-      <option value="newuser">assigned to a new user...</option>
-      <option value="filter">filtered out</option>
+      <option value="newuser">will be assigned to a new user...</option>
+      <option value="filter">get filtered out</option>
     </select>
   </td>
-  <td>named: <input type="text" name="add_author_rule_newuser" value="" /></td>
+  <td><div id="add-author-rule-newuser">named <input type="text" name="add_author_rule_newuser" value="" /></div></td>
 </tr>
+
+<tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by authors that haven't been syndicated before:</th></tr>
+<tr>
+  <th style="text-align: left">Posts by new authors</th>
+  <td> 
+  <select id="unfamiliar-author" name="unfamiliar_author" onchange="flip_newuser('unfamiliar-author');">
+    <option value="site-default"<?php if (!isset($meta['unfamiliar author'])) : ?>selected="selected"<?php endif; ?>>are handled using site-wide settings</option>
+    <option value="create"<?php if ('create'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>create a new author account</option>
+    <?php foreach ($authorlist as $author_id => $author_name) : ?>
+      <option value="<?php echo $author_id; ?>"<?php if ($author_id==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>are assigned to <?php echo $author_name; ?></option>
+    <?php endforeach; ?>
+    <option value="newuser">will be assigned to a new user...</option>
+    <option value="filter"<?php if ('filter'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>get filtered out</option>
+  </select>
+  </td>
+  <td>
+  <div id="unfamiliar-author-default">Site-wide settings can be set in <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a></div>
+  <div id="unfamiliar-author-newuser">named <input type="text" name="unfamiliar_author_newuser" value="" /></div>
+  </td>
+</tr>
+
 </table>
 </fieldset>
-
+<script>
+	flip_newuser('unfamiliar-author');
+<?php for ($j=1; $j<=$i; $j++) : ?>
+	flip_newuser('author-rules-<?php echo $j; ?>');
+<?php endfor; ?>
+	flip_newuser('add-author-rule');
+</script>
 <p class="submit">
 <input type="submit" name="submit" value="<?php _e('Save Changes &raquo;') ?>" />
 </p>
