@@ -873,8 +873,31 @@ function fwp_linkedit_page () {
 				foreach (array("author", "category") as $what) :
 					$sfield = "unfamiliar_{$what}";
 					if (isset($GLOBALS['fwp_post'][$sfield])) :
-						if ($GLOBALS['fwp_post'][$sfield]=='site-default') :
+						if ('site-default'==$GLOBALS['fwp_post'][$sfield]) :
 							unset($meta["unfamiliar {$what}"]);
+						elseif ('newuser'==$GLOBALS['fwp_post'][$sfield]) :
+							$newuser_name = trim($GLOBALS['fwp_post']["{$sfield}_newuser"]);
+							if (strlen($newuser_name) > 0) :
+								$userdata = array();
+								$userdata['ID'] = NULL;
+								
+								$userdata['user_login'] = sanitize_user($newuser_name);
+								$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
+								
+								$userdata['user_nicename'] = sanitize_title($newuser_name);
+								$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
+								
+								$userdata['display_name'] = $wpdb->escape($newuser_name);
+
+								$newuser_id = wp_insert_user($userdata);
+								if (is_numeric($newuser_id)) :
+									$meta["unfamiliar {$what}"] = $newuser_id;
+								else :
+									// TODO: Add some error detection and reporting
+								endif;
+							else :
+								// TODO: Add some error reporting
+							endif;
 						else :
 							$meta["unfamiliar {$what}"] = $GLOBALS['fwp_post'][$sfield];
 						endif;
@@ -890,7 +913,32 @@ function fwp_linkedit_page () {
 						$author_action = strtolower(trim($GLOBALS['fwp_post']['author_rules_action'][$key]));
 						
 						if (strlen($name) > 0) :
-							$meta['map authors']['name'][$name] = $author_action;
+							if ('newuser' == $author_action) :
+								$newuser_name = trim($GLOBALS['fwp_post']['author_rules_newuser'][$key]);
+								if (strlen($newuser_name) > 0) :
+									$userdata = array();
+									$userdata['ID'] = NULL;
+									
+									$userdata['user_login'] = sanitize_user($newuser_name);
+									$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
+									
+									$userdata['user_nicename'] = sanitize_title($newuser_name);
+									$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
+									
+									$userdata['display_name'] = $wpdb->escape($newuser_name);
+	
+									$newuser_id = wp_insert_user($userdata);
+									if (is_numeric($newuser_id)) :
+										$meta['map authors']['name'][$name] = $newuser_id;
+									else :
+										// TODO: Add some error detection and reporting
+									endif;
+								else :
+									// TODO: Add some error reporting
+								endif;
+							else :
+								$meta['map authors']['name'][$name] = $author_action;
+							endif;
 						endif;
 					endforeach;
 				endif;
@@ -899,7 +947,32 @@ function fwp_linkedit_page () {
 					$name = strtolower(trim($GLOBALS['fwp_post']['add_author_rule_name']));
 					$author_action = strtolower(trim($GLOBALS['fwp_post']['add_author_rule_action']));
 					if (strlen($name) > 0) :
-						$meta['map authors']['name'][$name] = $author_action;
+						if ('newuser' == $author_action) :
+							$newuser_name = trim($GLOBALS['fwp_post']['add_author_rule_newuser']);
+							if (strlen($newuser_name) > 0) :
+								$userdata = array();
+								$userdata['ID'] = NULL;
+								
+								$userdata['user_login'] = sanitize_user($newuser_name);
+								$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
+								
+								$userdata['user_nicename'] = sanitize_title($newuser_name);
+								$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
+								
+								$userdata['display_name'] = $wpdb->escape($newuser_name);
+
+								$newuser_id = wp_insert_user($userdata);
+								if (is_numeric($newuser_id)) :
+									$meta['map authors']['name'][$name] = $newuser_id;
+								else :
+									// TODO: Add some error detection and reporting
+								endif;
+							else :
+								// TODO: Add some error reporting
+							endif;
+						else :
+							$meta['map authors']['name'][$name] = $author_action;
+						endif;
 					endif;
 				endif;
 
@@ -1225,9 +1298,11 @@ blank.</td>
     <?php foreach ($authorlist as $author_id => $author_name) : ?>
       <option value="<?php echo $author_id; ?>"<?php if ($author_id==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>assigned to <?php echo $author_name; ?></option>
     <?php endforeach; ?>
+    <option value="newuser">assigned to a new user...</option>
     <option value="filter"<?php if ('filter'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>filtered out</option>
   </select>
   </td>
+  <td>named: <input type="text" name="unfamiliar_author_newuser" value="" /></td>
 </tr>
 
 <tr><th colspan="2" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by specific authors. Blank out a name to delete the rule.</th></tr>
@@ -1240,9 +1315,11 @@ blank.</td>
     <?php foreach ($authorlist as $local_author_id => $local_author_name) : ?>
     <option value="<?php echo $local_author_id; ?>"<?php if ($local_author_id==$author_action) : echo ' selected="selected"'; endif; ?>>assigned to <?php echo $local_author_name; ?></option>
     <?php endforeach; ?>
+    <option value="newuser">assigned to a new user...</option>
     <option value="filter"<?php if ('filter'==$author_action) : echo ' selected="selected"'; endif; ?>>filtered out</option>
   </select>
   </td>
+  <td>named: <input type="text" name="author_rules_newuser[]" value="" /></td>
 </tr>
 <?php endforeach; endforeach; endif; ?>
 
@@ -1255,9 +1332,11 @@ blank.</td>
       <?php foreach ($authorlist as $author_id => $author_name) : ?>
       <option value="<?php echo $author_id; ?>">assigned to <?php echo $author_name; ?></option>
       <?php endforeach; ?>
+      <option value="newuser">assigned to a new user...</option>
       <option value="filter">filtered out</option>
     </select>
   </td>
+  <td>named: <input type="text" name="add_author_rule_newuser" value="" /></td>
 </tr>
 </table>
 </fieldset>
