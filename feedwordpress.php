@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://projects.radgeek.com/feedwordpress
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 0.991
+Version: 0.992a
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -27,7 +27,7 @@ Last modified: 2007-09-25 12:48 PDT
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '0.991');
+define ('FEEDWORDPRESS_VERSION', '0.992a');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
@@ -231,7 +231,31 @@ if (!function_exists('sanitize_user')) {
 		return $text; // Don't munge it if it wasn't munged going in...
 	}
 }
+if (!function_exists('wp_insert_user')) {
+	function wp_insert_user ($userdata) {
+		#-- Help WordPress 1.5.x quack like a duck
+		$login = $userdata['user_login'];
+		$author = $userdata['display_name'];
+		$nice_author = $userdata['user_nicename'];
+		$email = $userdata['user_email'];
+		$url = $userdata['user_url'];
 
+		$wpdb->query (
+			"INSERT INTO $wpdb->users
+			 SET
+				ID='0',
+				user_login='$login',
+				user_firstname='$author',
+				user_nickname='$author',
+				user_nicename='$nice_author',
+				user_description='$author',
+				user_email='$email',
+				user_url='$url'");
+		$id = $wpdb->insert_id;
+		
+		return $id;
+	}
+}
 ################################################################################
 ## TEMPLATE API: functions to make your templates syndication-aware ############
 ################################################################################
@@ -754,6 +778,7 @@ function fwp_linkedit_page () {
 		'ping status',
 		'unfamiliar author',
 		'unfamliar categories',
+		'map authors',
 		'update/.*',
 		'feed/.*',
 		'link/.*',
@@ -772,9 +797,9 @@ function fwp_linkedit_page () {
 				$alter = array ();
 				
 				$meta = $link->settings;
-				if (isset($meta['cats'])):
-					$meta['cats'] = preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, $meta['cats']);
-				endif;
+				//if (isset($meta['cats'])):
+				//	$meta['cats'] = preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, $meta['cats']);
+				//endif;
 
 				// custom feed settings first
 				foreach ($GLOBALS['fwp_post']['notes'] as $mn) :
@@ -856,6 +881,28 @@ function fwp_linkedit_page () {
 					endif;
 				endforeach;
 				
+				// Handle author mapping rules
+				if (isset($GLOBALS['fwp_post']['author_rules_name']) and isset($GLOBALS['fwp_post']['author_rules_action'])) :
+					unset($meta['map authors']);
+					foreach ($GLOBALS['fwp_post']['author_rules_name'] as $key => $name) :
+						// Normalize for case and whitespace
+						$name = strtolower(trim($name));
+						$author_action = strtolower(trim($GLOBALS['fwp_post']['author_rules_action'][$key]));
+						
+						if (strlen($name) > 0) :
+							$meta['map authors']['name'][$name] = $author_action;
+						endif;
+					endforeach;
+				endif;
+
+				if (isset($GLOBALS['fwp_post']['add_author_rule_name']) and isset($GLOBALS['fwp_post']['add_author_rule_action'])) :
+					$name = strtolower(trim($GLOBALS['fwp_post']['add_author_rule_name']));
+					$author_action = strtolower(trim($GLOBALS['fwp_post']['add_author_rule_action']));
+					if (strlen($name) > 0) :
+						$meta['map authors']['name'][$name] = $author_action;
+					endif;
+				endif;
+
 				if (isset($GLOBALS['fwp_post']['cat_split'])) :
 					if (strlen(trim($GLOBALS['fwp_post']['cat_split'])) > 0) :
 						$meta['cat_split'] = trim($GLOBALS['fwp_post']['cat_split']);
@@ -867,7 +914,18 @@ function fwp_linkedit_page () {
 				if (is_array($meta['cats'])) :
 					$meta['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $meta['cats']);
 				endif;
-		
+
+				// Collapse the author mapping rule structure back into a flat string
+				if (isset($meta['map authors'])) :
+					$ma = array();
+					foreach ($meta['map authors'] as $rule_type => $author_rules) :
+						foreach ($author_rules as $author_name => $author_action) :
+							$ma[] = $rule_type."\n".$author_name."\n".$author_action;
+						endforeach;
+					endforeach;
+					$meta['map authors'] = implode("\n\n", $ma);
+				endif;
+				
 				$notes = '';
 				foreach ($meta as $key => $value) :
 					$notes .= $key . ": ". addcslashes($value, "\0..\37".'\\') . "\n";
@@ -1122,22 +1180,12 @@ flip_hardcode('url');
 <fieldset>
 <legend>Advanced Feed Options</legend>
 <table class="editform" width="100%" cellspacing="2" cellpadding="5">
-<tr>
-<th width="20%" scope="row" style="vertical-align:top">Unfamiliar authors:</th>
-<td width="80%"><ul style="margin: 0; list-style:none">
-<li><label><input type="radio" name="unfamiliar_author" value="site-default"<?php echo $unfamiliar['author']['site-default']; ?> /> use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
-(currently <strong><?php echo FeedWordPress::on_unfamiliar('author');; ?></strong>)</label></li>
-<li><label><input type="radio" name="unfamiliar_author" value="create"<?php echo $unfamiliar['author']['create']; ?>/> create a new author account</label></li>
-<li><label><input type="radio" name="unfamiliar_author" value="default"<?php echo $unfamiliar['author']['default']; ?> /> attribute the post to the default author</label></li>
-<li><label><input type="radio" name="unfamiliar_author" value="filter"<?php echo $unfamiliar['author']['filter']; ?> /> don't syndicate the post</label></li>
-</ul></td>
-</tr>
 
 <tr>
 <th width="20%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
 <td width="80%"><ul style="margin: 0; list-style:none">
 <li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
-(currently <strong><?php echo FeedWordPress::on_unfamiliar('category');; ?></strong>)</label></li>
+(currently <strong><?php echo FeedWordPress::on_unfamiliar('category'); ?></strong>)</label></li>
 <li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar['category']['create']; ?> /> create any categories the post is in</label></li>
 <li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories</label></li>
 <li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar['category']['filter']; ?> /> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
@@ -1154,6 +1202,62 @@ the characters used to separate one category from the next. If the feed uses
 spaces (like <a href="http://del.icio.us/">del.icio.us</a>), use the pattern "\s".
 If the feed does not provide multiple categories in a single element, leave this
 blank.</td>
+</tr>
+</table>
+</fieldset>
+
+<p class="submit">
+<input type="submit" name="submit" value="<?php _e('Save Changes &raquo;') ?>" />
+</p>
+
+<fieldset class="options">
+<legend>Syndicated Authors</legend>
+<?php $authorlist = fwp_author_list(); ?>
+
+<table>
+<tr><th colspan="2" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by authors that haven't been syndicated before:</th></tr>
+<tr>
+  <th style="text-align: left">Posts by new authors</th>
+  <td>should be
+  <select name="unfamiliar_author">
+    <option value="site-default"<?php if (!isset($meta['unfamiliar author'])) : ?>selected="selected"<?php endif; ?>>handled according to the site-wide setting from Syndication Options</option>
+    <option value="create"<?php if ('create'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>assigned to a newly-created author account with the same name</option>
+    <?php foreach ($authorlist as $author_id => $author_name) : ?>
+      <option value="<?php echo $author_id; ?>"<?php if ($author_id==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>assigned to <?php echo $author_name; ?></option>
+    <?php endforeach; ?>
+    <option value="filter"<?php if ('filter'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>filtered out</option>
+  </select>
+  </td>
+</tr>
+
+<tr><th colspan="2" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by specific authors. Blank out a name to delete the rule.</th></tr>
+
+<?php if (isset($meta['map authors'])) : foreach ($meta['map authors'] as $author_rules) : foreach ($author_rules as $author_name => $author_action) : ?>
+<tr>
+  <th style="text-align: left">Posts by <input type="text" name="author_rules_name[]" value="<?php echo htmlspecialchars($author_name); ?>" /></th>
+  <td>should be
+  <select name="author_rules_action[]">
+    <?php foreach ($authorlist as $local_author_id => $local_author_name) : ?>
+    <option value="<?php echo $local_author_id; ?>"<?php if ($local_author_id==$author_action) : echo ' selected="selected"'; endif; ?>>assigned to <?php echo $local_author_name; ?></option>
+    <?php endforeach; ?>
+    <option value="filter"<?php if ('filter'==$author_action) : echo ' selected="selected"'; endif; ?>>filtered out</option>
+  </select>
+  </td>
+</tr>
+<?php endforeach; endforeach; endif; ?>
+
+<tr><th colspan="2" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">Fill in to create a new rule:</th></tr>
+
+<tr>
+  <th style="text-align: left">Posts by <input type="text" name="add_author_rule_name" /></th>
+  <td>should be
+    <select name="add_author_rule_action">
+      <?php foreach ($authorlist as $author_id => $author_name) : ?>
+      <option value="<?php echo $author_id; ?>">assigned to <?php echo $author_name; ?></option>
+      <?php endforeach; ?>
+      <option value="filter">filtered out</option>
+    </select>
+  </td>
 </tr>
 </table>
 </fieldset>
@@ -1207,6 +1311,19 @@ blank.</td>
 	<?php
 	endif;
 	return false; // Don't continue
+}
+
+function fwp_author_list () {
+	global $wpdb;
+	$ret = array();
+	$users = $wpdb->get_results("SELECT * FROM $wpdb->users ORDER BY display_name");
+	if (is_array($users)) :
+		foreach ($users as $user) :
+			$id = (int) $user->ID;
+			$ret[$id] = $user->display_name;
+		endforeach;
+	endif;
+	return $ret;
 }
 
 function fwp_multidelete_page () {
@@ -1623,10 +1740,13 @@ class FeedWordPress {
 	function on_unfamiliar ($what = 'author', $override = NULL) {
 		$set = array('create', 'default', 'filter');
 
-		$ret = strtolower($override);
-		if (!in_array($ret, $set)) :
+		if (is_string($override)) :
+			$ret = strtolower($override);
+		endif;
+
+		if (!is_numeric($override) and !in_array($ret, $set)) :
 			$ret = get_option('feedwordpress_unfamiliar_'.$what);
-			if (!in_array($ret, $set)) :
+			if (!is_numeric($ret) and !in_array($ret, $set)) :
 				$ret = 'create';
 			endif;
 		endif;
@@ -2349,84 +2469,87 @@ class SyndicatedPost {
 		$email = $wpdb->escape($email);
 		$url = $wpdb->escape($url);
 
-		// Look for an existing author record that fits...
-		if (!isset($wp_db_version)) :
-			#-- WordPress 1.5.x
-			$id = $wpdb->get_var(
-			"SELECT ID from $wpdb->users
-			 WHERE
-				TRIM(LCASE(user_login)) = TRIM(LCASE('$login')) OR
-				(
-					LENGTH(TRIM(LCASE(user_email))) > 0
-					AND TRIM(LCASE(user_email)) = TRIM(LCASE('$email'))
-				) OR
-				TRIM(LCASE(user_firstname)) = TRIM(LCASE('$author')) OR
-				TRIM(LCASE(user_nickname)) = TRIM(LCASE('$author')) OR
-				TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author')) OR
-				TRIM(LCASE(user_description)) = TRIM(LCASE('$author')) OR
-				(
-					LOWER(user_description)
-					RLIKE CONCAT(
-						'(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*',
-						LCASE('$reg_author'),
-						'( |\\t|\\r)*(\\n|\$)'
-					)
-				)
-			");
-		elseif ($wp_db_version >= 2966) :
-			#-- WordPress 2.0+
-			
-			# First try the user core data table.
-			$id = $wpdb->get_var(
-			"SELECT ID FROM $wpdb->users
-			WHERE
-				TRIM(LCASE(user_login)) = TRIM(LCASE('$login'))
-				OR (
-					LENGTH(TRIM(LCASE(user_email))) > 0
-					AND TRIM(LCASE(user_email)) = TRIM(LCASE('$email'))
-				)
-				OR TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author'))
-			");
+		// Check for an existing author rule....
+		if (isset($this->link->settings['map authors']['name'][strtolower(trim($author))])) :
+			$author_rule = $this->link->settings['map authors']['name'][strtolower(trim($author))];
+		else :
+			$author_rule = NULL;
+		endif;
 
-			if (is_null($id)) : # Then look for aliases in the user meta data table
+		// User name is mapped to a particular author. If that author ID exists, use it.
+		if (is_numeric($author_rule) and get_userdata((int) $author_rule)) :
+			$id = (int) $author_rule;
+
+		// User name is filtered out
+		elseif ('filter' == $author_rule) :
+			$id = NULL;
+		
+		else :
+			// Check the database for an existing author record that might fit
+
+			#-- WordPress 1.5.x
+			if (!isset($wp_db_version)) :
 				$id = $wpdb->get_var(
-				"SELECT user_id FROM $wpdb->usermeta
-				WHERE
-					(meta_key = 'description' AND TRIM(LCASE(meta_value)) = TRIM(LCASE('$author')))
-					OR (
-						meta_key = 'description'
-						AND TRIM(LCASE(meta_value))
+				"SELECT ID from $wpdb->users
+				 WHERE
+					TRIM(LCASE(user_login)) = TRIM(LCASE('$login')) OR
+					(
+						LENGTH(TRIM(LCASE(user_email))) > 0
+						AND TRIM(LCASE(user_email)) = TRIM(LCASE('$email'))
+					) OR
+					TRIM(LCASE(user_firstname)) = TRIM(LCASE('$author')) OR
+					TRIM(LCASE(user_nickname)) = TRIM(LCASE('$author')) OR
+					TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author')) OR
+					TRIM(LCASE(user_description)) = TRIM(LCASE('$author')) OR
+					(
+						LOWER(user_description)
 						RLIKE CONCAT(
 							'(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*',
-							TRIM(LCASE('$reg_author')),
+							LCASE('$reg_author'),
 							'( |\\t|\\r)*(\\n|\$)'
 						)
 					)
 				");
-			endif;
-		endif;
 
-		// ... if you don't find one, then do what you need to do
-		if (is_null($id)) :
-			if ($unfamiliar_author === 'create') :
-				if (!isset($wp_db_version)) :
-					#-- WordPress 1.5.x
-					$wpdb->query (
-						"INSERT INTO $wpdb->users
-						 SET
-							ID='0',
-							user_login='$login',
-							user_firstname='$author',
-							user_nickname='$author',
-							user_nicename='$nice_author',
-							user_description='$author',
-							user_email='$email',
-							user_url='$url'");
-					$id = $wpdb->insert_id;
-				elseif ($wp_db_version >= 2966) :
-					#-- WordPress 2.0+
+			#-- WordPress 2.0+
+			elseif ($wp_db_version >= 2966) :
+
+				// First try the user core data table.
+				$id = $wpdb->get_var(
+				"SELECT ID FROM $wpdb->users
+				WHERE
+					TRIM(LCASE(user_login)) = TRIM(LCASE('$login'))
+					OR (
+						LENGTH(TRIM(LCASE(user_email))) > 0
+						AND TRIM(LCASE(user_email)) = TRIM(LCASE('$email'))
+					)
+					OR TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author'))
+				");
+	
+				// If that fails, look for aliases in the user meta data table
+				if (is_null($id)) :
+					$id = $wpdb->get_var(
+					"SELECT user_id FROM $wpdb->usermeta
+					WHERE
+						(meta_key = 'description' AND TRIM(LCASE(meta_value)) = TRIM(LCASE('$author')))
+						OR (
+							meta_key = 'description'
+							AND TRIM(LCASE(meta_value))
+							RLIKE CONCAT(
+								'(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*',
+								TRIM(LCASE('$reg_author')),
+								'( |\\t|\\r)*(\\n|\$)'
+							)
+						)
+					");
+				endif;
+			endif;
+
+			// ... if you don't find one, then do what you need to do
+			if (is_null($id)) :
+				if ($unfamiliar_author === 'create') :
 					$userdata = array();
-					
+
 					#-- user table data
 					$userdata['ID'] = NULL; // new user
 					$userdata['user_login'] = $login;
@@ -2435,12 +2558,18 @@ class SyndicatedPost {
 					$userdata['user_email'] = $email;
 					$userdata['user_url'] = $url;
 					$userdata['display_name'] = $author;
-
+	
 					$id = wp_insert_user($userdata);
+				elseif (is_numeric($unfamiliar_author) and get_userdata((int) $unfamiliar_author)) :
+					$id = (int) $unfamiliar_author;
+				elseif ($unfamiliar_author === 'default') :
+					$id = 1;
 				endif;
-			elseif ($unfamiliar_author === 'default') :
-				$id = 1;
 			endif;
+		endif;
+
+		if ($id) :
+			$this->link->settings['map authors']['name'][strtolower(trim($author))] = $id;
 		endif;
 		return $id;	
 	} // function SyndicatedPost::author_id ()
@@ -2794,6 +2923,22 @@ class SyndicatedLink {
 			if (isset($this->settings['cats'])):
 				$this->settings['cats'] = preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, $this->settings['cats']);
 			endif;
+			
+			if (isset($this->settings['map authors'])) :
+				$author_rules = explode("\n\n", $this->settings['map authors']);
+				$ma = array();
+				foreach ($author_rules as $rule) :
+					list($rule_type, $author_name, $author_action) = explode("\n", $rule);
+					
+					// Normalize for case and whitespace
+					$rule_type = strtolower(trim($rule_type));
+					$author_name = strtolower(trim($author_name));
+					$author_action = strtolower(trim($author_action));
+					
+					$ma[$rule_type][$author_name] = $author_action;
+				endforeach;
+				$this->settings['map authors'] = $ma;
+			endif;
 		endif;
 	} // SyndicatedLink::SyndicatedLink ()
 	
@@ -2871,6 +3016,17 @@ class SyndicatedLink {
 			if (is_array($to_notes['cats'])) :
 				$to_notes['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['cats']);
 			endif;
+
+			if (isset($to_notes['map authors'])) :
+				$ma = array();
+				foreach ($to_notes['map authors'] as $rule_type => $author_rules) :
+					foreach ($author_rules as $author_name => $author_action) :
+						$ma[] = $rule_type."\n".$author_name."\n".$author_action;
+					endforeach;
+				endforeach;
+				$to_notes['map authors'] = implode("\n\n", $ma);
+			endif;
+
 			unset($to_notes['link/id']); unset($to_notes['link/uri']);
 			unset($to_notes['link/name']);
 			unset($to_notes['hardcode categories']); // Deprecated
@@ -2900,6 +3056,41 @@ class SyndicatedLink {
 					endif;
 				endforeach;
 			endif;
+			
+			// Copy back any changes to feed settings made in the course of updating (e.g. new author rules)
+			$to_notes = $this->settings;
+
+			if (is_array($to_notes['cats'])) :
+				$to_notes['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['cats']);
+			endif;
+
+			if (isset($to_notes['map authors'])) :
+				$ma = array();
+				foreach ($to_notes['map authors'] as $rule_type => $author_rules) :
+					foreach ($author_rules as $author_name => $author_action) :
+						$ma[] = $rule_type."\n".$author_name."\n".$author_action;
+					endforeach;
+				endforeach;
+				$to_notes['map authors'] = implode("\n\n", $ma);
+			endif;
+
+			unset($to_notes['link/id']); unset($to_notes['link/uri']);
+			unset($to_notes['link/name']);
+			unset($to_notes['hardcode categories']); // Deprecated
+	
+			$notes = '';
+			foreach ($to_notes as $key => $value) :
+				$notes .= $key . ": ". addcslashes($value, "\0..\37".'\\') . "\n";
+			endforeach;
+
+			$update_set = "link_notes = '".$wpdb->escape($notes)."'";
+			
+			// Update the properties of the link from the feed information
+			$result = $wpdb->query("
+				UPDATE $wpdb->links
+				SET $update_set
+				WHERE link_id='$this->id'
+			");
 		endif;
 		return $new_count;
 	} /* SyndicatedLink::poll() */
@@ -2957,7 +3148,7 @@ class SyndicatedLink {
 		return $ret;
 	} /* SyndicatedLink::ttl() */
 
-	// SyndicatedLink:flatten_array (): flatten an array. Useful for
+	// SyndicatedLink::flatten_array (): flatten an array. Useful for
 	// hierarchical and namespaced elements.
 	//
 	// Given an array which may contain array or object elements in it,
