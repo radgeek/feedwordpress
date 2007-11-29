@@ -7,7 +7,7 @@ Version: 0.992a
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
-Last modified: 2007-09-25 12:48 PDT
+Last modified: 2007-11-29 09:06 PDT
 */
 
 # This uses code derived from:
