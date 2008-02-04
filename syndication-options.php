@@ -232,6 +232,20 @@ function fwp_syndication_options_page () {
 </fieldset>
 
 <fieldset class="options">
+<legend>Syndicated Authors</legend>
+<ul>
+<li>When this feed attributes a post to <input type="text" />, FeedWordPress should <select>
+<option>filter out the post</option>
+</select></li>
+<li>When this feed attributes a post to <strong>a new author</strong>, FeedWordPress should <select>
+<option>create a new account for the new author</option>
+<option>filter out the post</option>
+</select></li>
+</ul>
+<div class="submit"><input type="submit" name="action" value="<?php echo $caption; ?>" /></div>
+</fieldset>
+
+<fieldset class="options">
 <legend>Back-end Options</legend>
 <table class="editform" width="100%" cellspacing="2" cellpadding="5">
 <th width="33%" scope="row">Write update notices to PHP logs:</th>

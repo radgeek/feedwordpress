@@ -7,7 +7,7 @@ Version: 0.992a
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
-Last modified: 2007-11-29 09:06 PDT
+Last modified: 2008-01-04 14:14 PDT
 */
 
 # This uses code derived from:
@@ -112,6 +112,13 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	
 	# Filter in original permalinks if the user wants that
 	add_filter('post_link', 'syndication_permalink', 1);
+
+	# WTF? By default, wp_insert_link runs incoming link_url and link_rss
+	# URIs through default filters that include `wp_kses()`. But `wp_kses()`
+	# just happens to escape any occurrence of & to &amp; -- which just
+	# happens to fuck up any URI with a & to separate GET parameters.
+	remove_filter('pre_link_rss', 'wp_filter_kses');
+	remove_filter('pre_link_url', 'wp_filter_kses');
 	
 	# Admin menu
 	add_action('admin_menu', 'fwp_add_pages');
@@ -575,7 +582,7 @@ if ($cont):
 				if (strlen($display_uri) > 32) : $display_uri = substr($display_uri, 0, 32).'&#8230;'; endif;
 ?>
 				<td>
-				<strong><a href="<?php echo $link->link_rss; ?>"><?php echo wp_specialchars($display_uri, 'both'); ?></a></strong></td>
+				<strong><a href="<?php echo wp_specialchars($link->link_rss, 'both'); ?>"><?php echo wp_specialchars($display_uri, 'both'); ?></a></strong></td>
 <?php
 			else:
 				$caption='Find Feed';
