@@ -17,7 +17,34 @@ function fwp_syndication_options_page () {
 			update_option('feedwordpress_cat_id', $_REQUEST['syndication_category']);
 			update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
 			update_option('feedwordpress_update_logging', $_REQUEST['update_logging']);
-			update_option('feedwordpress_unfamiliar_author', $_REQUEST['unfamiliar_author']);
+			
+			if ('newuser'==$_REQUEST['unfamiliar_author']) :
+				$newuser_name = trim($_REQUEST['unfamiliar_author_newuser']);
+				if (strlen($newuser_name) > 0) :
+					$userdata = array();
+					$userdata['ID'] = NULL;
+					
+					$userdata['user_login'] = sanitize_user($newuser_name);
+					$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
+					
+					$userdata['user_nicename'] = sanitize_title($newuser_name);
+					$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
+					
+					$userdata['display_name'] = $wpdb->escape($newuser_name);
+
+					$newuser_id = wp_insert_user($userdata);
+					if (is_numeric($newuser_id)) :
+						update_option('feedwordpress_unfamiliar_author', $newuser_id);
+					else :
+						// TODO: Add some error detection and reporting
+					endif;
+				else :
+					// TODO: Add some error reporting
+				endif;			
+			else :
+				update_option('feedwordpress_unfamiliar_author', $_REQUEST['unfamiliar_author']);
+			endif;
+
 			update_option('feedwordpress_unfamiliar_category', $_REQUEST['unfamiliar_category']);
 			update_option('feedwordpress_syndicated_post_status', $_REQUEST['post_status']);
 			update_option('feedwordpress_automatic_updates', ($_POST['automatic_updates']=='yes'));
@@ -138,6 +165,23 @@ function fwp_syndication_options_page () {
 	endforeach;
 
 ?>
+<script type="text/javascript">
+	function flip_newuser (item) {
+		rollup=document.getElementById(item);
+		newuser=document.getElementById(item+'-newuser');
+		sitewide=document.getElementById(item+'-default');
+		if (rollup) {
+			if ('newuser'==rollup.value) {
+				if (newuser) newuser.style.display='block';
+				if (sitewide) sitewide.style.display='none';
+			} else {
+				if (newuser) newuser.style.display='none';
+				if (sitewide) sitewide.style.display='block';
+			}
+		}
+	}
+</script>
+
 <div class="wrap">
 <h2>Syndication Options</h2>
 <form action="" method="post">
@@ -208,13 +252,6 @@ function fwp_syndication_options_page () {
 <li><label><input type="radio" name="ping_status" value="closed"<?php echo ($ping_status!='open')?' checked="checked"':''; ?> /> Don't accept pings on syndicated posts</label></li>
 </ul></td></tr>
 
-<tr style="vertical-align: top"><th width="44%" scope="row" style="vertical-align:top">Unfamiliar authors:</th>
-<td width="56%"><ul style="margin: 0; padding: 0; list-style:none">
-<li><label><input type="radio" name="unfamiliar_author" value="create"<?php echo $unfamiliar_author['create']; ?>/> create a new author account</label></li>
-<li><label><input type="radio" name="unfamiliar_author" value="default"<?php echo $unfamiliar_author['default']; ?> /> attribute the post to the default author</label></li>
-<li><label><input type="radio" name="unfamiliar_author" value="filter"<?php echo $unfamiliar_author['filter']; ?> /> don't syndicate the post</label></li>
-</ul></td></tr>
-
 <tr style="vertical-align: top"><th width="44%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
 <td width="56%"><ul style="margin: 0; padding:0; list-style:none">
 <li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar_category['create']; ?>/> create any categories the post is in</label></li>
@@ -233,15 +270,36 @@ function fwp_syndication_options_page () {
 
 <fieldset class="options">
 <legend>Syndicated Authors</legend>
-<ul>
-<li>When this feed attributes a post to <input type="text" />, FeedWordPress should <select>
-<option>filter out the post</option>
-</select></li>
-<li>When this feed attributes a post to <strong>a new author</strong>, FeedWordPress should <select>
-<option>create a new account for the new author</option>
-<option>filter out the post</option>
-</select></li>
-</ul>
+<?php
+	$unfamiliar_author = FeedWordPress::on_unfamiliar('author');
+	$authorlist = fwp_author_list();
+?>
+
+<table>
+<tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by authors that haven't been syndicated before:</th></tr>
+<tr>
+  <th style="text-align: left">Posts by new authors</th>
+  <td> 
+  <select id="unfamiliar-author" name="unfamiliar_author" onchange="flip_newuser('unfamiliar-author');">
+    <option value="create"<?php if ('create'==$unfamiliar_author) : ?>selected="selected"<?php endif; ?>>create a new author account</option>
+    <?php foreach ($authorlist as $author_id => $author_name) : ?>
+      <option value="<?php echo $author_id; ?>"<?php if ($author_id==$unfamiliar_author) : ?>selected="selected"<?php endif; ?>>are assigned to <?php echo $author_name; ?></option>
+    <?php endforeach; ?>
+    <option value="newuser">will be assigned to a user named...</option>
+    <option value="filter"<?php if ('filter'==$unfamiliar_author) : ?>selected="selected"<?php endif; ?>>get filtered out</option>
+  </select>
+  </td>
+  <td>
+  <div id="unfamiliar-author-default">This is a default setting. You can override it for one or more particular feeds using the Edit link in <a href="admin.php?page=feedwordpress/feedwordpress.php">Syndicated Sites</a></div>
+  <div id="unfamiliar-author-newuser"><input type="text" name="unfamiliar_author_newuser" value="" /></div>
+  </td>
+</tr>
+</table>
+
+<script>
+	flip_newuser('unfamiliar-author');
+</script>
+
 <div class="submit"><input type="submit" name="action" value="<?php echo $caption; ?>" /></div>
 </fieldset>
 
