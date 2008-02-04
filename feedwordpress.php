@@ -1122,7 +1122,7 @@ function fwp_linkedit_page () {
 <input type="hidden" name="save" value="link" />
 
 <h2>Edit a syndicated feed:</h2>
-<fieldset><legend>Basics</legend>
+<fieldset class="options"><legend>Basics</legend>
 <table class="editform" width="100%" cellspacing="2" cellpadding="5">
 <tr>
 <th scope="row" width="20%"><?php _e('Feed URI:') ?></th>
@@ -1217,7 +1217,7 @@ flip_hardcode('url');
 <input type="submit" name="submit" value="<?php _e('Save Changes &raquo;') ?>" />
 </p>
 
-<fieldset>
+<fieldset class="options">
 <legend>Syndicated Posts</legend>
 
 <?php fwp_category_box($dogs, 'all syndicated posts from this feed'); ?>
@@ -1259,39 +1259,6 @@ flip_hardcode('url');
 <li><label><input type="radio" name="feed_ping_status" value="closed"
 <?php echo $status['ping']['closed']; ?> /> Don't accept pings on syndicated posts from this feed</label></li>
 </ul></td>
-</tr>
-</table>
-</fieldset>
-
-<p class="submit">
-<input type="submit" name="submit" value="<?php _e('Save Changes &raquo;') ?>" />
-</p>
-
-<fieldset>
-<legend>Advanced Feed Options</legend>
-<table class="editform" width="100%" cellspacing="2" cellpadding="5">
-
-<tr>
-<th width="20%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
-<td width="80%"><ul style="margin: 0; list-style:none">
-<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
-(currently <strong><?php echo FeedWordPress::on_unfamiliar('category'); ?></strong>)</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar['category']['create']; ?> /> create any categories the post is in</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar['category']['filter']; ?> /> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
-</ul></td>
-</tr>
-
-<tr>
-<th width="20%" scope="row" style="vertical-align:top">Multiple categories:</th>
-<td width="80%"> 
-<input type="text" size="20" id="cat_split" name="cat_split" value="<?php if (isset($meta['cat_split'])) : echo htmlspecialchars($meta['cat_split']); endif; ?>" /><br/>
-Enter a <a href="http://us.php.net/manual/en/reference.pcre.pattern.syntax.php">Perl-compatible regular expression</a> here if the feed provides multiple
-categories in a single category element. The regular expression should match
-the characters used to separate one category from the next. If the feed uses
-spaces (like <a href="http://del.icio.us/">del.icio.us</a>), use the pattern "\s".
-If the feed does not provide multiple categories in a single element, leave this
-blank.</td>
 </tr>
 </table>
 </fieldset>
@@ -1361,6 +1328,7 @@ blank.</td>
 
 </table>
 </fieldset>
+
 <script>
 	flip_newuser('unfamiliar-author');
 <?php for ($j=1; $j<=$i; $j++) : ?>
@@ -1368,6 +1336,40 @@ blank.</td>
 <?php endfor; ?>
 	flip_newuser('add-author-rule');
 </script>
+
+<p class="submit">
+<input type="submit" name="submit" value="<?php _e('Save Changes &raquo;') ?>" />
+</p>
+
+<fieldset>
+<legend>Advanced Feed Options</legend>
+<table class="editform" width="100%" cellspacing="2" cellpadding="5">
+
+<tr>
+<th width="20%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
+<td width="80%"><ul style="margin: 0; list-style:none">
+<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
+(currently <strong><?php echo FeedWordPress::on_unfamiliar('category'); ?></strong>)</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar['category']['create']; ?> /> create any categories the post is in</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar['category']['filter']; ?> /> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
+</ul></td>
+</tr>
+
+<tr>
+<th width="20%" scope="row" style="vertical-align:top">Multiple categories:</th>
+<td width="80%"> 
+<input type="text" size="20" id="cat_split" name="cat_split" value="<?php if (isset($meta['cat_split'])) : echo htmlspecialchars($meta['cat_split']); endif; ?>" /><br/>
+Enter a <a href="http://us.php.net/manual/en/reference.pcre.pattern.syntax.php">Perl-compatible regular expression</a> here if the feed provides multiple
+categories in a single category element. The regular expression should match
+the characters used to separate one category from the next. If the feed uses
+spaces (like <a href="http://del.icio.us/">del.icio.us</a>), use the pattern "\s".
+If the feed does not provide multiple categories in a single element, leave this
+blank.</td>
+</tr>
+</table>
+</fieldset>
+
 <p class="submit">
 <input type="submit" name="submit" value="<?php _e('Save Changes &raquo;') ?>" />
 </p>
