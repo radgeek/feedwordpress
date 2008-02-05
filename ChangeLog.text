@@ -1,6 +1,36 @@
 FeedWordPress Change Log
 ========================
 
+Changes from 0.991 to 0.992
+---------------------------
+*	AUTHOR RE-MAPPING: FeedWordPress now offers considerable control over
+	how author names on a feed are translated into usernames within the
+	WordPress database. When a post by an unrecognized author comes in,
+	Administrators can now specify any username as the default username to
+	assign the post to by setting the option in Syndication --> Options
+	(formerly FeedWordPress only allowed you to assign such posts to user
+	#1, the site administrator). Administrators can also create re-mapping
+	rules for particular feeds (under Syndication --> Syndicated Sites -->
+	Edit), so that (for example) any posts attributed to "Administrator"
+	on the feed <http://praxeology.net/blog/feed/> will be assigned to
+	a user named "Roderick T. Long," rather than a user named
+	"Administrator." These settings also allow administrators to filter out
+	posts by particular users, and to control what will happen when
+	FeedWordPress encounters a post by an unrecognized user on that
+	particular feed.
+	
+*	BUG RELATED TO URIS CONTAINING AMPERSAND CHARACTERS FIXED: A bug in
+	WordPress 2.x's handling of URIs in Blogroll links created problems for
+	updating any feeds whose URIs included an ampersand character, such as
+	Google News RSS feeds and other feeds that have multiple parameters
+	passed through HTTP GET. If you experienced this bug, the most likely
+	effect was that FeedWordPress simply would not import new posts from a
+	feed when instructred to do so, returning a "0 new posts" response. In
+	other cases, it might lead to unpredictable results from feed updates,
+	such as importing posts which were not contained in the feed being
+	syndicated, but which did appear elsewhere on the same website. This bug
+	has, hopefully, been resolved, by correcting for the bug in WordPress.
+
 Changes from 0.99 to 0.991
 --------------------------
 *	WORDPRESS MU COMPATABILITY: FeedWordPress should now be compatible with

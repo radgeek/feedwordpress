@@ -4,7 +4,7 @@ Donate link: http://projects.radgeek.com/feedwordpress/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 1.5
 Tested up to: 2.3.1
-Stable tag: 0.991
+Stable tag: 0.992
 
 FeedWordPress is an Atom/RSS aggregator for WordPress. When activated, it syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -38,7 +38,7 @@ offer shell access are *bad web hosts*.)
 
 == Installation ==
 
-To use version 0.991 of FeedWordPress, you will need:
+To use version 0.992 of FeedWordPress, you will need:
 
 * 	an installed and configured copy of WordPress version 2.3.x, 2.2.x,
 	2.1.x, 2.0.x, or 1.5.x. (FeedWordPress will also work with the
@@ -78,7 +78,7 @@ To use version 0.991 of FeedWordPress, you will need:
 
 = Upgrades =
 
-To *upgrade* an existing installation of FeedWordPress to version 0.991:
+To *upgrade* an existing installation of FeedWordPress to version 0.992:
 
 1.	Download the FeedWordPress archive in zip or gzipped tar format and
 	extract the files on your computer. 
