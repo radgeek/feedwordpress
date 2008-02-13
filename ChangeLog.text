@@ -1,6 +1,18 @@
 FeedWordPress Change Log
 ========================
 
+Changes from 0.992 to 0.993
+---------------------------
+*	SYNDICATED POSTS CAN BE MARKED AS "PENDING REVIEW": WordPress 2.3 users
+	can now take advantage of WordPress's new "Pending Review" features for
+	incoming syndicated posts. Posts marked as "Pending Review" are not
+	published immediately, but are marked as ready to be reviewed by an
+	Administrator or Editor, who can then choose to publish the post or
+	hold it back. If you want to review syndicated posts from a particular
+	feed, or from all feeds, before they are posted, then use
+	Syndication --> Syndicated Sites --> Edit or Syndication --> Options to
+	change the settings for handling new posts.
+
 Changes from 0.991 to 0.992
 ---------------------------
 *	AUTHOR RE-MAPPING: FeedWordPress now offers considerable control over

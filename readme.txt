@@ -6,7 +6,7 @@ Requires at least: 1.5
 Tested up to: 2.3.1
 Stable tag: 0.992
 
-FeedWordPress is an Atom/RSS aggregator for WordPress. When activated, it syndicates content from feeds you choose into your WordPress weblog. 
+FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
 == Description ==
 

@@ -236,8 +236,11 @@ function fwp_syndication_options_page () {
 <tr style="vertical-align: top"><th width="44%" scope="row">Publication:</th>
 <td width="56%"><ul style="margin: 0; padding: 0; list-style:none">
 <li><label><input type="radio" name="post_status" value="publish"<?php echo (!$post_status or $post_status=='publish')?' checked="checked"':''; ?> /> Publish syndicated posts immediately</label></li>
-<li><label><input type="radio" name="post_status" value="draft"<?php echo ($post_status=='draft')?' checked="checked"':''; ?> /> Hold syndicated posts as drafts</label></li>
-<li><label><input type="radio" name="post_status" value="private"<?php echo ($post_status=='private')?' checked="checked"':''; ?> /> Hold syndicated posts as private posts</label></li>
+<?php if (FeedWordPress::use_api('post_status_pending')) : ?>
+<li><label><input type="radio" name="post_status" value="pending"<?php echo ($post_status=='pending')?' checked="checked"':''; ?> /> Hold syndicated posts for review; mark as Pending</label></li>
+<?php endif; ?>
+<li><label><input type="radio" name="post_status" value="draft"<?php echo ($post_status=='draft')?' checked="checked"':''; ?> /> Save syndicated posts as drafts</label></li>
+<li><label><input type="radio" name="post_status" value="private"<?php echo ($post_status=='private')?' checked="checked"':''; ?> /> Save syndicated posts as private posts</label></li>
 </ul></td></tr>
 
 <tr style="vertical-align: top"><th width="44%" scope="row">Comments:</th>

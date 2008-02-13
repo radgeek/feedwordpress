@@ -3,11 +3,11 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://projects.radgeek.com/feedwordpress
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 0.992
+Version: 0.993a
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
-Last modified: 2008-01-04 18:03 PDT
+Last modified: 2008-02-12 21:41 PST
 */
 
 # This uses code derived from:
@@ -27,7 +27,7 @@ Last modified: 2008-01-04 18:03 PDT
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '0.992');
+define ('FEEDWORDPRESS_VERSION', '0.993a');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
@@ -1041,6 +1041,10 @@ function fwp_linkedit_page () {
 			$ping_status_global = get_option('feedwordpress_syndicated_ping_status');
 			
 			$status['post'] = array('publish' => '', 'private' => '', 'draft' => '', 'site-default' => '');
+			if (SyndicatedPost::use_api('post_status_pending')) :
+				$status['post']['pending'] = '';
+			endif;
+
 			$status['comment'] = array('open' => '', 'closed' => '', 'site-default' => '');
 			$status['ping'] = array('open' => '', 'closed' => '', 'site-default' => '');
 
@@ -1237,10 +1241,16 @@ flip_hardcode('url');
 (currently: <strong><?php echo ($post_status_global ? $post_status_global : 'publish'); ?></strong>)</label></li>
 <li><label><input type="radio" name="feed_post_status" value="publish"
 <?php echo $status['post']['publish']; ?> /> Publish posts from this feed immediately</label></li>
-<li><label><input type="radio" name="feed_post_status" value="private"
-<?php echo $status['post']['private']; ?> /> Hold posts from this feed as private posts</label></li>
+
+<?php if (SyndicatedPost::use_api('post_status_pending')) : ?>
+<li><label><input type="radio" name="feed_post_status" value="pending"
+<?php echo $status['post']['pending']; ?>/> Hold posts from this feed for review; mark as Pending</label></li>
+<?php endif; ?>
+
 <li><label><input type="radio" name="feed_post_status" value="draft"
-<?php echo $status['post']['draft']; ?> /> Hold posts from this feed as drafts</label></li>
+<?php echo $status['post']['draft']; ?> /> Save posts from this feed as drafts</label></li>
+<li><label><input type="radio" name="feed_post_status" value="private"
+<?php echo $status['post']['private']; ?> /> Save posts from this feed as private posts</label></li>
 </ul></td>
 </tr>
 
@@ -2780,11 +2790,16 @@ class SyndicatedPost {
 
 	function use_api ($tag) {
 		global $wp_db_version;
-		if ('wp_insert_post'==$tag) :
+		switch ($tag) :
+		case 'wp_insert_post':
 			// Before 2.2, wp_insert_post does too much of the wrong stuff to use it
 			// In 1.5 it was such a resource hog it would make PHP segfault on big updates
 			$ret = (isset($wp_db_version) and $wp_db_version > FWP_SCHEMA_21);
-		endif;
+			break;
+		case 'post_status_pending':
+			$ret = (isset($wp_db_version) and $wp_db_version > FWP_SCHEMA_23);
+			break;
+		endswitch;
 		return $ret;		
 	} // function SyndicatedPost::use_api ()
 
