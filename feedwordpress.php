@@ -148,6 +148,10 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 		
 	# Cron-less auto-update. Hooray!
 	add_action('init', 'feedwordpress_auto_update');
+	
+	# Default sanitizers
+	add_filter('syndicated_item_content', array('SyndicatedPost', 'sanitize_content'), 0, 2);
+
 else :
 	# Hook in the menus, which will just point to the upgrade interface
 	add_action('admin_menu', 'fwp_add_pages');
@@ -2079,11 +2083,6 @@ class SyndicatedPost {
 	var $_freshness = null;
 	var $_wp_id = null;
 
-	var $strip_attrs = array (
-		      array('[a-z]+', 'style'),
-		      array('[a-z]+', 'target'),
-	);
-
 	function SyndicatedPost ($item, $link) {
 		global $wpdb;
 
@@ -2116,12 +2115,12 @@ class SyndicatedPost {
 			# of insertion, not here, to avoid double-escaping and
 			# to avoid screwing with syndicated_post filters
 
-			$this->post['post_title'] = $this->item['title'];
+			$this->post['post_title'] = apply_filters('syndicated_item_title', $this->item['title'], $this);
 
 			// This just gives us an alphanumeric representation of
 			// the author. We will look up (or create) the numeric
 			// ID for the author in SyndicatedPost::add()
-			$this->post['named']['author'] = $this->author();
+			$this->post['named']['author'] = apply_filters('syndicated_item_author', $this->author(), $this);
 
 			# Identify content and sanitize it.
 			# ---------------------------------
@@ -2134,22 +2133,7 @@ class SyndicatedPost {
 			else:
 				$content = $this->item['description'];
 			endif;
-		
-			# FeedWordPress used to resolve URIs relative to the
-			# feed URI. It now relies on the xml:base support
-			# baked in to the MagpieRSS upgrade. So all we do here
-			# now is to sanitize problematic attributes.
-			#
-			# This kind of sucks. I intend to replace it with
-			# lib_filter sometime soon.
-			foreach ($this->strip_attrs as $pair):
-				list($tag,$attr) = $pair;
-				$content = preg_replace (
-					":(<$tag [^>]*)($attr=(\"[^\">]*\"|[^>\\s]+))([^>]*>):i",
-					"\\1\\4",
-					$content
-				);
-			endforeach;
+			$this->post['post_content'] = apply_filters('syndicated_item_content', $content, $this);
 
 			# Identify and sanitize excerpt
 			$excerpt = NULL;
@@ -2161,9 +2145,8 @@ class SyndicatedPost {
 					$excerpt = substr($excerpt,0,252).'...';
 				endif;
 			endif;
+			$excerpt = apply_filters('syndicated_item_excerpt', $excerpt, $this); 
 
-			$this->post['post_content'] = $content;
-			
 			if (!is_null($excerpt)):
 				$this->post['post_excerpt'] = $excerpt;
 			endif;
@@ -2173,9 +2156,9 @@ class SyndicatedPost {
 				$this->post['post_name'] = sanitize_title($this->post['post_title']);
 			endif;
 
-			$this->post['epoch']['issued'] = $this->published();
-			$this->post['epoch']['created'] = $this->created();
-			$this->post['epoch']['modified'] = $this->updated();
+			$this->post['epoch']['issued'] = apply_filters('syndicated_item_published', $this->published(), $this);
+			$this->post['epoch']['created'] = apply_filters('syndicated_item_created', $this->created(), $this);
+			$this->post['epoch']['modified'] = apply_filters('syndicated_item_updated', $this->updated(), $this);
 
 			// Dealing with timestamps in WordPress is so fucking fucked.
 			$offset = (int) get_option('gmt_offset') * 60 * 60;
@@ -2190,33 +2173,33 @@ class SyndicatedPost {
 			$this->post['ping_status'] = $this->link->syndicated_status('ping', 'closed');
 
 			// Unique ID (hopefully a unique tag: URI); failing that, the permalink
-			$this->post['guid'] = $this->guid();
+			$this->post['guid'] = apply_filters('syndicated_item_guid', $this->guid(), $this);
 
 			// RSS 2.0 / Atom 1.0 enclosure support
 			if ( isset($this->item['enclosure#']) ) :
 				for ($i = 1; $i <= $this->item['enclosure#']; $i++) :
 					$eid = (($i > 1) ? "#{$id}" : "");
 					$this->post['meta']['enclosure'][] =
-						$this->item["enclosure{$eid}@url"]."\n".
-						$this->item["enclosure{$eid}@length"]."\n".
-						$this->item["enclosure{$eid}@type"];
+						apply_filters('syndicated_item_enclosure_url', $this->item["enclosure{$eid}@url"], $this)."\n".
+						apply_filters('syndicated_item_enclosure_length', $this->item["enclosure{$eid}@length"], $this)."\n".
+						apply_filters('syndicated_item_enclosure_type', $this->item["enclosure{$eid}@type"], $this);
 				endfor;
 			endif;
 
 			// In case you want to point back to the blog this was syndicated from
 			if (isset($this->feed->channel['title'])) :
-				$this->post['meta']['syndication_source'] = $this->feed->channel['title'];
+				$this->post['meta']['syndication_source'] = apply_filters('syndicated_item_source_title', $this->feed->channel['title'], $this);
 			endif;
 			if (isset($this->feed->channel['link'])) :
-				$this->post['meta']['syndication_source_uri'] = $this->feed->channel['link'];
+				$this->post['meta']['syndication_source_uri'] = apply_filters('syndicated_item_source_link', $this->feed->channel['link'], $this);
 			endif;
 			
 			// Store information on human-readable and machine-readable comment URIs
 			if (isset($this->item['comments'])) :
-				$this->post['meta']['rss:comments'] = $this->item['comments'];
+				$this->post['meta']['rss:comments'] = apply_filters('syndicated_item_comments', $this->item['comments']);
 			endif;
 			if (isset($this->item['wfw']['commentrss'])) :
-				$this->post['meta']['wfw:commentRSS'] = $this->item['wfw']['commentrss'];
+				$this->post['meta']['wfw:commentRSS'] = apply_filters('syndicated_item_commentrss', $this->item['wfw']['commentrss']);
 			endif;
 
 			// Store information to identify the feed that this came from
@@ -2224,7 +2207,7 @@ class SyndicatedPost {
 			$this->post['meta']['syndication_feed_id'] = $this->feedmeta['link/id'];
 
 			// In case you want to know the external permalink...
-			$this->post['meta']['syndication_permalink'] = $this->item['link'];
+			$this->post['meta']['syndication_permalink'] = apply_filters('syndicated_item_link', $this->item['link']);
 
 			// Feed-by-feed options for author and category creation
 			$this->post['named']['unfamiliar']['author'] = $this->feedmeta['unfamiliar author'];
@@ -2257,6 +2240,7 @@ class SyndicatedPost {
 					endif;
 				endfor;
 			endif;
+			$this->post['named']['category'] = apply_filters('syndicated_item_categories', $this->post['named']['category'], $this);
 		endif;
 	} // SyndicatedPost::SyndicatedPost()
 
@@ -2958,6 +2942,29 @@ class SyndicatedPost {
 
 		return $author;
 	} // SyndicatedPost::author()
+	
+	var $strip_attrs = array (
+		      array('[a-z]+', 'style'),
+		      array('[a-z]+', 'target'),
+	);
+	function sanitize_content ($content, $obj) {
+		# FeedWordPress used to resolve URIs relative to the
+		# feed URI. It now relies on the xml:base support
+		# baked in to the MagpieRSS upgrade. So all we do here
+		# now is to sanitize problematic attributes.
+		#
+		# This kind of sucks. I intend to replace it with
+		# lib_filter sometime soon.
+		foreach ($obj->strip_attrs as $pair):
+			list($tag,$attr) = $pair;
+			$content = preg_replace (
+				":(<$tag [^>]*)($attr=(\"[^\">]*\"|[^>\\s]+))([^>]*>):i",
+				"\\1\\4",
+				$content
+			);
+		endforeach;
+		return $content;
+	}
 } // class SyndicatedPost
 
 # class SyndicatedLink: represents a syndication feed stored within the
