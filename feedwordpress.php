@@ -2118,7 +2118,7 @@ class SyndicatedPost {
 
 			$this->post['post_title'] = $this->item['title'];
 
-			// This just gives usan alphanumeric representation of
+			// This just gives us an alphanumeric representation of
 			// the author. We will look up (or create) the numeric
 			// ID for the author in SyndicatedPost::add()
 			$this->post['named']['author'] = $this->author();
@@ -3046,7 +3046,9 @@ class SyndicatedLink {
 			endif;
 			
 			// Set this up automagically for del.icio.us
-			if (!isset($this->settings['cat_split']) and false !== strpos($this->link->link_rss, 'del.icio.us')) : 
+			$bits = parse_url($this->link->link_rss);
+			$tagspacers = array('del.icio.us', 'feeds.delicious.com');
+			if (!isset($this->settings['cat_split']) and in_array($bits['host'], $tagspacers)) : 
 				$this->settings['cat_split'] = '\s'; // Whitespace separates multiple tags in del.icio.us RSS feeds
 			endif;
 
