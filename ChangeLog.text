@@ -3,6 +3,7 @@ FeedWordPress Change Log
 
 Changes from 0.992 to 0.993
 ---------------------------
+
 *	SYNDICATED POSTS CAN BE MARKED AS "PENDING REVIEW": WordPress 2.3 users
 	can now take advantage of WordPress's new "Pending Review" features for
 	incoming syndicated posts. Posts marked as "Pending Review" are not
@@ -13,6 +14,16 @@ Changes from 0.992 to 0.993
 	Syndication --> Syndicated Sites --> Edit or Syndication --> Options to
 	change the settings for handling new posts.
 
+*	AWARE OF NEW URI FOR del.icio.us FEEDS: Previous releases of
+	FeedWordPress a;ready  automatically split del.icio.us tags up
+	appropriately appropriately when generating categories. (del.icio.us
+	feeds smoosh all the tags into a single `<dc:subject>` element,
+	separated by spaces; FeedWordPress un-smooshes them into multiple
+	categories by separating them at whitespace.) Unfortunately, del.icio.us
+	recently broke the existing behavior by changing host names for their
+	feeds from del.icio.us to feeds.delicious.com. Version 0.993 accounts
+	for the new host name and un-breaks the tag splitting.
+	
 Changes from 0.991 to 0.992
 ---------------------------
 *	AUTHOR RE-MAPPING: FeedWordPress now offers considerable control over
