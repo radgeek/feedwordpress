@@ -1764,7 +1764,7 @@ function parse_w3cdtf ( $date_str ) {
         $epoch = gmmktime( $hours, $minutes, $seconds, $month, $day, $year);
         
         $offset = 0;
-        if ( $match[14] == 'Z' ) {
+        if ( $match[15] == 'Z' ) {
             # zulu time, aka GMT
         }
         else {
