@@ -91,6 +91,18 @@ if (is_array($_POST)) :
 	$fwp_post = stripslashes_deep($_POST);
 endif;
 
+// Get the path relative to the plugins directory in which FWP is stored
+preg_match (
+	'|/wp-content/plugins/(.+)$|',
+	dirname(__FILE__),
+	$ref
+);
+
+if (isset($ref[1])) :
+	$fwp_path = $ref[1];
+else : // Something went wrong. Let's just guess.
+	$fwp_path = 'feedwordpress';
+endif;
 
 if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 
@@ -403,6 +415,7 @@ like me you may want to back up your database before you proceed.</p>
 
 function fwp_add_pages () {
 	global $legacy_capability_hack;
+	global $fwp_path;
 
 	if ($legacy_capability_hack) :
 		// old & busted: numeric user levels
@@ -415,9 +428,9 @@ function fwp_add_pages () {
 	endif;
 
 	//add_submenu_page('plugins.php', 'Akismet Configuration', 'Akismet Configuration', 'manage_options', 'syndication-manage-page', 'fwp_syndication_manage_page');
-	add_menu_page('Syndicated Sites', 'Syndication', $manage_links, 'feedwordpress/'.basename(__FILE__), 'fwp_syndication_manage_page');
-	add_submenu_page('feedwordpress/'.basename(__FILE__), 'Syndication Options', 'Options', $manage_options, 'feedwordpress/syndication-options.php');
-	add_options_page('Syndication Options', 'Syndication', $manage_options, 'feedwordpress/syndication-options.php');
+	add_menu_page('Syndicated Sites', 'Syndication', $manage_links, $fwp_path.'/'.basename(__FILE__), 'fwp_syndication_manage_page');
+	add_submenu_page($fwp_path.'/'.basename(__FILE__), 'Syndication Options', 'Options', $manage_options, $fwp_path.'/syndication-options.php');
+	add_options_page('Syndication Options', 'Syndication', $manage_options, $fwp_path.'/syndication-options.php');
 } // function fwp_add_pages () */
 
 function fwp_category_box ($checked, $object) {
@@ -546,7 +559,7 @@ if ($cont):
 	<p><strong>Note:</strong> Automatic updates are currently turned
 	<strong>off</strong>. New posts from your feeds will not be syndicated
 	until you manually check for them here. You can turn on automatic
-	updates under <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication
+	updates under <a href="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/syndication-options.php">Syndication
 	Options</a>.</p>
 <?php 	endif; ?>
 	
@@ -555,7 +568,7 @@ if ($cont):
 	</form>
 	</div> <!-- class="wrap" -->
 
-	<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
+	<form action="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/<?php echo basename(__FILE__); ?>" method="post">
 	<div class="wrap">
 	<h2>Syndicated Sites</h2>
 <?php	$alt_row = true;
@@ -596,9 +609,9 @@ if ($cont):
 <?php
 			endif;
 ?>
-			<td><a href="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit" class="edit"><?php _e('Edit')?></a></td>
-			<td><a href="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder" class="edit"><?php echo $caption; ?></a></td>
-			<td><a href="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=Unsubscribe" class="delete"><?php _e('Unsubscribe'); ?></a></td>
+			<td><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit" class="edit"><?php _e('Edit')?></a></td>
+			<td><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder" class="edit"><?php echo $caption; ?></a></td>
+			<td><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=Unsubscribe" class="delete"><?php _e('Unsubscribe'); ?></a></td>
 			<td><input type="checkbox" name="link_ids[]" value="<?php echo $link->link_id; ?>" /></td>
 <?php
 			echo "\n\t</tr>";
@@ -618,7 +631,7 @@ if ($cont):
 	</form>
 
 	<div class="wrap">
-	<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
+	<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 	<h2>Add a new syndicated site:</h2>
 	<div>
 	<label for="add-uri">Website or newsfeed:</label>
@@ -665,7 +678,7 @@ function fwp_feedfinder_page () {
 				$feed_title = isset($rss->channel['title'])?$rss->channel['title']:$rss->channel['link'];
 				$feed_link = isset($rss->channel['link'])?$rss->channel['link']:'';
 ?>
-				<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
+				<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 				<fieldset style="clear: both">
 				<legend><?php echo $rss->feed_type; ?> <?php echo $rss->feed_version; ?> feed</legend>
 
@@ -718,7 +731,7 @@ function fwp_feedfinder_page () {
 ?>
 	</div>
 
-	<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
+	<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 	<div class="wrap">
 	<h2>Use another feed</h2>
 	<div><label>Feed:</label>
@@ -1130,7 +1143,7 @@ function fwp_linkedit_page () {
 <div class="updated"><p>Syndicated feed settings updated.</p></div>
 <?php endif; ?>
 
-<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
+<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 <div class="wrap">
 <input type="hidden" name="link_id" value="<?php echo $link_id; ?>" />
 <input type="hidden" name="action" value="linkedit" />
@@ -1241,7 +1254,7 @@ flip_hardcode('url');
 <tr><th width="27%" scope="row" style="vertical-align:top">Publication:</th>
 <td width="73%" style="vertical-align:top"><ul style="margin:0; list-style:none">
 <li><label><input type="radio" name="feed_post_status" value="site-default"
-<?php echo $status['post']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
+<?php echo $status['post']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
 (currently: <strong><?php echo ($post_status_global ? $post_status_global : 'publish'); ?></strong>)</label></li>
 <li><label><input type="radio" name="feed_post_status" value="publish"
 <?php echo $status['post']['publish']; ?> /> Publish posts from this feed immediately</label></li>
@@ -1261,7 +1274,7 @@ flip_hardcode('url');
 <tr><th width="27%" scope="row" style="vertical-align:top">Comments:</th>
 <td width="73%"><ul style="margin:0; list-style:none">
 <li><label><input type="radio" name="feed_comment_status" value="site-default"
-<?php echo $status['comment']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
+<?php echo $status['comment']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
 (currently: <strong><?php echo ($comment_status_global ? $comment_status_global : 'closed'); ?>)</strong></label></li>
 <li><label><input type="radio" name="feed_comment_status" value="open"
 <?php echo $status['comment']['open']; ?> /> Allow comments on syndicated posts from this feed</label></li>
@@ -1273,7 +1286,7 @@ flip_hardcode('url');
 <tr><th width="27%" scope="row" style="vertical-align:top">Trackback and Pingback:</th>
 <td width="73%"><ul style="margin:0; list-style:none">
 <li><label><input type="radio" name="feed_ping_status" value="site-default"
-<?php echo $status['ping']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
+<?php echo $status['ping']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
 (currently: <strong><?php echo ($ping_status_global ? $ping_status_global : 'closed'); ?>)</strong></label></li>
 <li><label><input type="radio" name="feed_ping_status" value="open"
 <?php echo $status['ping']['open']; ?> /> Accept pings on syndicated posts from this feed</label></li>
@@ -1342,7 +1355,7 @@ flip_hardcode('url');
   </select>
   </td>
   <td>
-  <div id="unfamiliar-author-default">Site-wide settings can be set in <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a></div>
+  <div id="unfamiliar-author-default">Site-wide settings can be set in <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a></div>
   <div id="unfamiliar-author-newuser">named <input type="text" name="unfamiliar_author_newuser" value="" /></div>
   </td>
 </tr>
@@ -1369,7 +1382,7 @@ flip_hardcode('url');
 <tr>
 <th width="20%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
 <td width="80%"><ul style="margin: 0; list-style:none">
-<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use site-wide setting from <a href="admin.php?page=feedwordpress/syndication-options.php">Syndication Options</a>
+<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
 (currently <strong><?php echo FeedWordPress::on_unfamiliar('category'); ?></strong>)</label></li>
 <li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar['category']['create']; ?> /> create any categories the post is in</label></li>
 <li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories</label></li>
@@ -1546,7 +1559,7 @@ function fwp_multidelete_page () {
 			WHERE link_id IN (".implode(",",$link_ids).")
 			");
 ?>
-<form action="admin.php?page=feedwordpress/<?php echo basename(__FILE__); ?>" method="post">
+<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 <div class="wrap">
 <input type="hidden" name="action" value="Unsubscribe" />
 <input type="hidden" name="confirm" value="Delete" />
