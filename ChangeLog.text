@@ -15,7 +15,7 @@ Changes from 0.992 to 0.993
 	change the settings for handling new posts.
 
 *	AWARE OF NEW URI FOR del.icio.us FEEDS: Previous releases of
-	FeedWordPress a;ready  automatically split del.icio.us tags up
+	FeedWordPress already automatically split del.icio.us tags up
 	appropriately appropriately when generating categories. (del.icio.us
 	feeds smoosh all the tags into a single `<dc:subject>` element,
 	separated by spaces; FeedWordPress un-smooshes them into multiple

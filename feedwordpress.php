@@ -31,7 +31,7 @@ define ('FEEDWORDPRESS_VERSION', '0.993a');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
-define ('FEEDWORDPRESS_DEBUG', false);
+define ('FEEDWORDPRESS_DEBUG', true);
 
 define ('FEEDWORDPRESS_CAT_SEPARATOR_PATTERN', '/[:\n]/');
 define ('FEEDWORDPRESS_CAT_SEPARATOR', "\n");
@@ -801,7 +801,8 @@ function fwp_linkedit_page () {
 		'comment status',
 		'ping status',
 		'unfamiliar author',
-		'unfamliar categories',
+		'unfamliar categories', /* Deprecated */
+		'unfamiliar category',
 		'map authors',
 		'update/.*',
 		'feed/.*',
@@ -2224,7 +2225,7 @@ class SyndicatedPost {
 
 			// Feed-by-feed options for author and category creation
 			$this->post['named']['unfamiliar']['author'] = $this->feedmeta['unfamiliar author'];
-			$this->post['named']['unfamiliar']['category'] = $this->feedmeta['unfamiliar categories'];
+			$this->post['named']['unfamiliar']['category'] = $this->feedmeta['unfamiliar category'];
 
 			// Categories: start with default categories, if any
 			$fc = get_option("feedwordpress_syndication_cats");
@@ -3057,14 +3058,20 @@ class SyndicatedLink {
 			$this->settings['link/name'] = $this->link->link_name;
 			$this->settings['link/id'] = $this->link->link_id;
 			
-			// `hardcode categories` is deprecated in favor of `unfamiliar categories`
+			// `hardcode categories` and `unfamiliar categories` are deprecated in favor of `unfamiliar category`
+			if (
+				isset($this->settings['unfamiliar categories'])
+				and !isset($this->settings['unfamiliar category'])
+			) :
+				$this->settings['unfamiliar category'] = $this->settings['unfamiliar categories'];
+			endif;
 			if (
 				FeedWordPress::affirmative($this->settings, 'hardcode categories')
-				and !isset($this->settings['unfamiliar categories'])
+				and !isset($this->settings['unfamiliar category'])
 			) :
-				$this->settings['unfamiliar categories'] = 'default';
+				$this->settings['unfamiliar category'] = 'default';
 			endif;
-			
+
 			// Set this up automagically for del.icio.us
 			$bits = parse_url($this->link->link_rss);
 			$tagspacers = array('del.icio.us', 'feeds.delicious.com');
@@ -3182,6 +3189,7 @@ class SyndicatedLink {
 			unset($to_notes['link/id']); unset($to_notes['link/uri']);
 			unset($to_notes['link/name']);
 			unset($to_notes['hardcode categories']); // Deprecated
+			unset($to_notes['unfamiliar categories']); // Deprecated
 	
 			$notes = '';
 			foreach ($to_notes as $key => $value) :
@@ -3229,6 +3237,7 @@ class SyndicatedLink {
 			unset($to_notes['link/id']); unset($to_notes['link/uri']);
 			unset($to_notes['link/name']);
 			unset($to_notes['hardcode categories']); // Deprecated
+			unset($to_notes['unfamiliar categories']); // Deprecated
 	
 			$notes = '';
 			foreach ($to_notes as $key => $value) :
