@@ -3,8 +3,8 @@ Contributors: Charles Johnson
 Donate link: http://projects.radgeek.com/feedwordpress/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 1.5
-Tested up to: 2.3.1
-Stable tag: 0.992
+Tested up to: 2.5.1
+Stable tag: 0.993
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -23,13 +23,14 @@ to use at [Feminist Blogs](http://feministblogs.org/).
 
 FeedWordPress is designed with flexibility, ease of use, and ease of
 configuration in mind. You'll need a working installation of WordPress or
-WordPress MU (versions [2.3][], [2.2][], [2.1][], [2.0][] or [1.5][]), and also
-FTP or SFTP access to your web host. The ability to create cron jobs on your web
-host is helpful but not absolutely necessary. You *don't* need to tweak any
-plain-text configuration files and you *don't* need shell access to your web
+WordPress MU (versions [2.5][], [2.3][], [2.2][], [2.1][], [2.0][] or [1.5][]),
+and also FTP or SFTP access to your web host. The ability to create cron jobs on
+your web host is helpful but not absolutely necessary. You *don't* need to tweak
+any plain-text configuration files and you *don't* need shell access to your web
 host to make it work. (Although, I should point out, web hosts that *don't*
 offer shell access are *bad web hosts*.)
 
+  [2.5]: http://codex.wordpress.org/Version_2.5
   [2.3]: http://codex.wordpress.org/Version_2.3
   [2.2]: http://codex.wordpress.org/Version_2.2
   [2.1]: http://codex.wordpress.org/Version_2.1
@@ -38,7 +39,7 @@ offer shell access are *bad web hosts*.)
 
 == Installation ==
 
-To use version 0.992 of FeedWordPress, you will need:
+To use version 0.993 of FeedWordPress, you will need:
 
 * 	an installed and configured copy of WordPress version 2.3.x, 2.2.x,
 	2.1.x, 2.0.x, or 1.5.x. (FeedWordPress will also work with the
@@ -78,7 +79,7 @@ To use version 0.992 of FeedWordPress, you will need:
 
 = Upgrades =
 
-To *upgrade* an existing installation of FeedWordPress to version 0.992:
+To *upgrade* an existing installation of FeedWordPress to version 0.993:
 
 1.	Download the FeedWordPress archive in zip or gzipped tar format and
 	extract the files on your computer. 

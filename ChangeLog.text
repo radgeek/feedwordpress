@@ -4,6 +4,14 @@ FeedWordPress Change Log
 Changes from 0.992 to 0.993
 ---------------------------
 
+*	WORDPRESS 2.5.1 COMPATABILITY: FeedWordPress should now be compatible
+	with WordPress 2.5.1.
+
+*	WORDPRESS 2.5 INTERFACE IMPROVEMENTS: FeedWordPress's Dashboard
+	interface has undergone several cosmetic changes that should help it
+	integrate better with the WordPress Dashboard interface in WordPress
+	version 2.5.x.
+
 *	SYNDICATED POSTS CAN BE MARKED AS "PENDING REVIEW": WordPress 2.3 users
 	can now take advantage of WordPress's new "Pending Review" features for
 	incoming syndicated posts. Posts marked as "Pending Review" are not
