@@ -7,8 +7,7 @@ function fwp_syndication_options_page () {
 		return;
 	endif;
 
-	$caption = 'Save Changes';
-	if (isset($_POST['action']) and $_POST['action']==$caption):
+	if (isset($_POST['submit'])) :
 		check_admin_referer();
 
 		if (!current_user_can('manage_options')):
@@ -60,9 +59,22 @@ function fwp_syndication_options_page () {
 			endif;
 
 			if (!empty($cats)) :
-				update_option('feedwordpress_syndication_cats', implode("\n", $cats));
+				update_option('feedwordpress_syndication_cats', implode(FEEDWORDPRESS_CAT_SEPARATOR, $cats));
 			else :
 				delete_option('feedwordpress_syndication_cats');
+			endif;
+
+			// Tags
+			if (isset($_REQUEST['tags_input'])) :
+				$tags = explode(",", $_REQUEST['tags_input']);
+			else :
+				$tags =  array();
+			endif;
+			
+			if (!empty($tags)) :
+				update_option('feedwordpress_syndication_tags', implode(FEEDWORDPRESS_CAT_SEPARATOR, $tags));
+			else :
+				delete_option('feedwordpress_syndication_tags');
 			endif;
 
 			if (isset($_REQUEST['comment_status']) and ($_REQUEST['comment_status'] == 'open')) :
@@ -147,23 +159,14 @@ function fwp_syndication_options_page () {
 		$results = $wpdb->get_results("SELECT cat_id, cat_name, auto_toggle FROM $wpdb->linkcategories ORDER BY cat_id");
 	endif;
 
-	$cats = get_option('feedwordpress_syndication_cats');
-	$dogs = get_nested_categories(-1, 0);
-	$cats = array_map('strtolower',
-		array_map('trim',
-			preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, $cats)
-		));
-	
-	foreach ($dogs as $tag => $dog) :
-		$found_by_name = in_array(strtolower(trim($dog['cat_name'])), $cats);
-		if (isset($dog['cat_ID'])) : $dog['cat_id'] = $dog['cat_ID']; endif;
-		$found_by_id = in_array('{#'.trim($dog['cat_id']).'}', $cats);
+	$cats = array_map('trim',
+			preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, get_option('feedwordpress_syndication_cats'))
+	);
+	$dogs = SyndicatedPost::category_ids($cats, /*unfamiliar=*/ NULL);
 
-		if ($found_by_name or $found_by_id) :
-			$dogs[$tag]['checked'] = true;
-		endif;
-	endforeach;
-
+	$tags = array_map('trim',
+			preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, get_option('feedwordpress_syndication_tags'))
+	);
 ?>
 <script type="text/javascript">
 	function flip_newuser (item) {
@@ -184,9 +187,11 @@ function fwp_syndication_options_page () {
 
 <div class="wrap">
 <h2>Syndication Options</h2>
+<div id="poststuff">
 <form action="" method="post">
-<fieldset class="options">
-<legend>Syndicated Feeds</legend>
+<?php fwp_linkedit_single_submit(); ?>
+<div id="post-body">
+<?php fwp_option_box_opener('Syndicated Feeds', 'syndicatedfeedsdiv'); ?>
 <table class="editform" width="100%" cellspacing="2" cellpadding="5">
 <tr>
 <th width="33%" scope="row">Syndicated Link category:</th>
@@ -224,14 +229,12 @@ function fwp_syndication_options_page () {
 <li><input type="checkbox" name="hardcode_url" value="no"<?php echo (($hardcode_url=='yes')?'':' checked="checked"');?>/> Update the contributor homepage when the feed link changes</li>
 </ul></td></tr>
 </table>
-<div class="submit"><input type="submit" name="action" value="<?php echo $caption; ?>" /></div>
-</fieldset>
+<?php fwp_linkedit_periodic_submit(); ?>
+<?php fwp_option_box_closer(); ?>
 
-<fieldset class="options">
-<legend>Syndicated Posts</legend>
-
-<?php fwp_category_box($dogs, '<em>all syndicated posts</em>'); ?>
-
+<?php
+	fwp_option_box_opener(__('Syndicated Posts'), 'syndicatedpostsdiv');
+?>
 <table class="editform" width="75%" cellspacing="2" cellpadding="5">
 <tr style="vertical-align: top"><th width="44%" scope="row">Publication:</th>
 <td width="56%"><ul style="margin: 0; padding: 0; list-style:none">
@@ -242,42 +245,60 @@ function fwp_syndication_options_page () {
 <li><label><input type="radio" name="post_status" value="draft"<?php echo ($post_status=='draft')?' checked="checked"':''; ?> /> Save syndicated posts as drafts</label></li>
 <li><label><input type="radio" name="post_status" value="private"<?php echo ($post_status=='private')?' checked="checked"':''; ?> /> Save syndicated posts as private posts</label></li>
 </ul></td></tr>
-
-<tr style="vertical-align: top"><th width="44%" scope="row">Comments:</th>
-<td width="56%"><ul style="margin: 0; padding: 0; list-style:none">
-<li><label><input type="radio" name="comment_status" value="open"<?php echo ($comment_status=='open')?' checked="checked"':''; ?> /> Allow comments on syndicated posts</label></li>
-<li><label><input type="radio" name="comment_status" value="closed"<?php echo ($comment_status!='open')?' checked="checked"':''; ?> /> Don't allow comments on syndicated posts</label></li>
-</ul></td></tr>
-
-<tr style="vertical-align: top"><th width="44%" scope="row">Trackback and Pingback:</th>
-<td width="56%"><ul style="margin:0; padding: 0; list-style:none">
-<li><label><input type="radio" name="ping_status" value="open"<?php echo ($ping_status=='open')?' checked="checked"':''; ?> /> Accept pings on syndicated posts</label></li>
-<li><label><input type="radio" name="ping_status" value="closed"<?php echo ($ping_status!='open')?' checked="checked"':''; ?> /> Don't accept pings on syndicated posts</label></li>
-</ul></td></tr>
-
-<tr style="vertical-align: top"><th width="44%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
-<td width="56%"><ul style="margin: 0; padding:0; list-style:none">
-<li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar_category['create']; ?>/> create any categories the post is in</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar_category['default']; ?>/> don't create new categories</li>
-<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar_category['filter']; ?>/> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
-</ul></td></tr>
-
 <tr style="vertical-align: top"><th width="44%" scope="row">Permalinks point to:</th>
 <td width="56%"><select name="munge_permalink" size="1">
 <option value="yes"<?php echo ($munge_permalink=='yes')?' selected="selected"':''; ?>>original website</option>
 <option value="no"<?php echo ($munge_permalink=='no')?' selected="selected"':''; ?>>this website</option>
 </select></td></tr>
 </table>
-<div class="submit"><input type="submit" name="action" value="<?php echo $caption; ?>" /></div>
-</fieldset>
-
-<fieldset class="options">
-<legend>Syndicated Authors</legend>
 <?php
+	fwp_option_box_closer();
+	fwp_linkedit_periodic_submit();
+
+	fwp_option_box_opener(__('Categories for syndicated posts'), 'categorydiv', 'postbox');
+	fwp_category_box($dogs, '<em>all syndicated posts</em>');
+?>
+<table class="editform" width="75%" cellspacing="2" cellpadding="5">
+<tr style="vertical-align: top"><th width="27%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
+<td><ul style="margin: 0; padding:0; list-style:none">
+<li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar_category['create']; ?>/> create any categories the post is in</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar_category['default']; ?>/> don't create new categories</li>
+<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar_category['filter']; ?>/> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
+</ul></td></tr>
+</table>
+<?php
+	fwp_option_box_closer();
+	fwp_linkedit_periodic_submit();
+
+if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
+	fwp_tags_box($tags);
+	fwp_linkedit_periodic_submit();
+endif;
+
+	fwp_option_box_opener(__('Comments & Pings'), 'commentstatus', 'postbox');
+?>
+<table class="editform" width="75%" cellspacing="2" cellpadding="5">
+<tr style="vertical-align: top"><th width="44%" scope="row"><?php print __('Comments') ?>:</th>
+<td width="56%"><ul style="margin: 0; padding: 0; list-style:none">
+<li><label><input type="radio" name="comment_status" value="open"<?php echo ($comment_status=='open')?' checked="checked"':''; ?> /> Allow comments on syndicated posts</label></li>
+<li><label><input type="radio" name="comment_status" value="closed"<?php echo ($comment_status!='open')?' checked="checked"':''; ?> /> Don't allow comments on syndicated posts</label></li>
+</ul></td></tr>
+
+<tr style="vertical-align: top"><th width="44%" scope="row"><?php print __('Pings') ?>:</th>
+<td width="56%"><ul style="margin:0; padding: 0; list-style:none">
+<li><label><input type="radio" name="ping_status" value="open"<?php echo ($ping_status=='open')?' checked="checked"':''; ?> /> Accept pings on syndicated posts</label></li>
+<li><label><input type="radio" name="ping_status" value="closed"<?php echo ($ping_status!='open')?' checked="checked"':''; ?> /> Don't accept pings on syndicated posts</label></li>
+</ul></td></tr>
+</table>
+<?php
+	fwp_option_box_closer();
+	fwp_linkedit_periodic_submit();
+
+	fwp_option_box_opener('Syndicated Authors', 'authordiv', 'postbox');
+
 	$unfamiliar_author = FeedWordPress::on_unfamiliar('author');
 	$authorlist = fwp_author_list();
 ?>
-
 <table>
 <tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by authors that haven't been syndicated before:</th></tr>
 <tr>
@@ -302,12 +323,12 @@ function fwp_syndication_options_page () {
 <script>
 	flip_newuser('unfamiliar-author');
 </script>
-
-<div class="submit"><input type="submit" name="action" value="<?php echo $caption; ?>" /></div>
-</fieldset>
-
-<fieldset class="options">
-<legend>Back-end Options</legend>
+<?php
+	fwp_option_box_closer();
+	fwp_linkedit_periodic_submit();
+	
+	fwp_option_box_opener('Back End', 'backenddiv', 'postbox');
+?>
 <table class="editform" width="100%" cellspacing="2" cellpadding="5">
 <th width="33%" scope="row">Write update notices to PHP logs:</th>
 <td width="67%"><select name="update_logging" size="1">
@@ -316,9 +337,13 @@ function fwp_syndication_options_page () {
 </select></td>
 </tr>
 </table>
-<div class="submit"><input type="submit" name="action" value="<?php echo $caption; ?>" /></div>
-</fieldset>
+<?php
+	fwp_option_box_closer();
+	fwp_linkedit_periodic_submit();
+?>
+</div>
 </form>
+</div>
 </div>
 <?php
 }

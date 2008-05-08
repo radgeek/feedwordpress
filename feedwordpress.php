@@ -43,6 +43,7 @@ define ('FEEDWORDPRESS_FRESHNESS_INTERVAL', 10*60); // Every ten minutes
 define ('FWP_SCHEMA_20', 3308); // Database schema # for WP 2.0
 define ('FWP_SCHEMA_21', 4772); // Database schema # for WP 2.1
 define ('FWP_SCHEMA_23', 5495); // Database schema # for WP 2.3
+define ('FWP_SCHEMA_25', 7558); // Database schema # for WP 2.5
 
 if (FEEDWORDPRESS_DEBUG) :
 	// Help us to pick out errors, if any.
@@ -83,7 +84,12 @@ if (isset($wp_db_version)) :
 endif;
 
 if (function_exists('wp_enqueue_script')) :
-	wp_enqueue_script( 'ajaxcat' ); // Provides the handy-dandy new category text box
+	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
+		wp_enqueue_script('post');
+		wp_enqueue_script('thickbox');
+	else :
+		wp_enqueue_script( 'ajaxcat' ); // Provides the handy-dandy new category text box
+	endif;
 endif;
 
 // Magic quotes are just about the stupidest thing ever.
@@ -279,6 +285,24 @@ if (!function_exists('wp_insert_user')) {
 		return $id;
 	}
 }
+
+function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selected_cats = false) {
+	if (function_exists('wp_category_checklist')) :
+		wp_category_checklist($post_id, $descendents_and_self, $selected_cats);
+	else :
+		global $checked_categories;
+
+		// selected_cats is an array of integer cat_IDs / term_ids for
+		// the categories that should be checked
+		$cats = array();
+		if ($post_id) : $cats = wp_get_post_categories($post_id);
+		else : $cats = $selected_cats;
+		endif;
+		
+		$checked_categories = $cats;
+		dropdown_categories();
+	endif;
+}
 ################################################################################
 ## TEMPLATE API: functions to make your templates syndication-aware ############
 ################################################################################
@@ -433,13 +457,123 @@ function fwp_add_pages () {
 	add_options_page('Syndication Options', 'Syndication', $manage_options, $fwp_path.'/syndication-options.php');
 } // function fwp_add_pages () */
 
-function fwp_category_box ($checked, $object) {
+function fwp_linkedit_single_submit ($status = NULL) {
+	global $wp_db_version;
+	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
+?>
+<div class="submitbox" id="submitlink">
+<div id="previewview"></div>
+<div class="inside">
+<?php if (!is_null($status)) : ?>
+	<p><strong>Publication</strong></p>
+	<p>When a new post is syndicated from this feed...</p>
+	<select name="feed_post_status">
+	<option value="site-default" <?php echo $status['post']['site-default']; ?>> Use
+	Syndication Options setting</option>
+	<option value="publish" <?php echo $status['post']['publish']; ?>>Publish it immediately</option>
+	
+	<?php if (SyndicatedPost::use_api('post_status_pending')) : ?>
+	<option value="pending" <?php echo $status['post']['pending']; ?>>Hold it Pending Review</option>
+	<?php endif; ?>
+	
+	<option value="draft" <?php echo $status['post']['draft']; ?>>Save it as a draft</option>
+	<option value="private" <?php echo $status['post']['private']; ?>>Keep it private</option>
+	</select>
+<?php endif; ?>
+</div>
+
+<p class="submit">
+<input type="submit" name="submit" value="<?php _e('Save') ?>" />
+</p>
+</div>
+<?php
+	endif;
+}
+
+function fwp_linkedit_periodic_submit ($caption = NULL) {
+	global $wp_db_version;
+	if (!(isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25)) :
+		if (is_null($caption)) : $caption = __('Save Changes &raquo;'); endif;
+?>
+<p class="submit">
+<input type="submit" name="submit" value="<?php print $caption; ?>" />
+</p>
+<?php
+	endif;
+}
+
+function fwp_option_box_opener ($legend, $id, $class = "stuffbox") {
+	global $wp_db_version;
+	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
+?>
+<div id="<?php print $id; ?>" class="<?php print $class; ?>">
+<h3><?php print htmlspecialchars($legend); ?></h3>
+<div class="inside">
+<?php
+	else :
+?>
+<fieldset class="options"><legend><?php print htmlspecialchars($legend); ?></legend>
+<?php
+	endif;
+}
+
+function fwp_option_box_closer () {
+	global $wp_db_version;
+	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
+?>
+	</div> <!-- class="inside" -->
+	</div> <!-- class="stuffbox" -->
+<?php
+	else :
+?>
+</fieldset>
+<?php
+	endif;
+}
+
+function fwp_tags_box ($tags) {
+?>
+<div id="tagsdiv" class="postbox">
+	<h3><?php _e('Tags') ?></h3>
+	<p style="font-size:smaller;font-style:bold;margin:0">Place <?php print $object; ?> under...</p>
+	<div class="inside">
+	<p id="jaxtag"><input type="text" name="tags_input" class="tags-input" id="tags-input" size="40" tabindex="3" value="<?php echo implode(",", $tags); ?>" /></p>
+	<div id="tagchecklist"></div>
+ 	</div>
+</div>
+<?php
+}
+
+function fwp_category_box ($checked, $object, $tags = array()) {
 	global $wp_db_version;
 
-	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_20) : // WordPress 2.x
+	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) : // WordPress 2.5.x
 ?>
-		<div id="poststuff">
-		
+<div id="category-adder" class="wp-hidden-children">
+    <h4><a id="category-add-toggle" href="#category-add" class="hide-if-no-js" tabindex="3"><?php _e( '+ Add New Category' ); ?></a></h4>
+    <p id="category-add" class="wp-hidden-child">
+	<input type="text" name="newcat" id="newcat" class="form-required form-input-tip" value="<?php _e( 'New category name' ); ?>" tabindex="3" />
+	<?php wp_dropdown_categories( array( 'hide_empty' => 0, 'name' => 'newcat_parent', 'orderby' => 'name', 'hierarchical' => 1, 'show_option_none' => __('Parent category'), 'tab_index' => 3 ) ); ?>
+	<input type="button" id="category-add-sumbit" class="add:categorychecklist:category-add button" value="<?php _e( 'Add' ); ?>" tabindex="3" />
+	<?php wp_nonce_field( 'add-category', '_ajax_nonce', false ); ?>
+	<span id="category-ajax-response"></span>
+    </p>
+</div>
+
+<ul id="category-tabs">
+	<li class="ui-tabs-selected"><a href="#categories-all" tabindex="3"><?php _e( 'All posts' ); ?></a>
+        <p style="font-size:smaller;font-style:bold;margin:0">Give <?php print $object; ?> these categories</p>
+</li>
+</ul>
+
+<div id="categories-all" class="ui-tabs-panel">
+    <ul id="categorychecklist" class="list:category categorychecklist form-no-clear">
+	<?php fwp_category_checklist(NULL, false, $checked) ?>
+    </ul>
+</div>
+<?php
+	elseif (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_20) : // WordPress 2.x
+?>
 		<div id="moremeta">
 		<div id="grabit" class="dbx-group">
 			<fieldset id="categorydiv" class="dbx-box">
@@ -447,9 +581,8 @@ function fwp_category_box ($checked, $object) {
 			<div class="dbx-content">
 			<p style="font-size:smaller;font-style:bold;margin:0">Place <?php print $object; ?> under...</p>
 			<p id="jaxcat"></p>
-			<ul id="categorychecklist"><?php write_nested_categories($checked); ?></ul></div>
+			<ul id="categorychecklist"><?php fwp_category_checklist(NULL, false, $checked); ?></ul></div>
 			</fieldset>
-		</div>
 		</div>
 		</div>
 <?php
@@ -458,7 +591,7 @@ function fwp_category_box ($checked, $object) {
 		<fieldset id="categorydiv" style="width: 20%; margin-right: 2em">
 		<legend><?php _e('Categories') ?></legend>
 		<p style="font-size:smaller;font-style:bold;margin:0">Place <?php print $object; ?> under...</p>
-		<div style="height: 20em"><?php write_nested_categories($checked); ?></div>
+		<div style="height: 20em"><?php fwp_category_checklist(NULL, false, $checked); ?></div>
 		</fieldset>
 <?php
 	endif;
@@ -786,7 +919,7 @@ updated to &lt;<a href="<?php echo $_REQUEST['feed']; ?>"><?php echo wp_specialc
 }
 
 function fwp_linkedit_page () {
-	global $wpdb;
+	global $wpdb, $wp_db_version;
 
 	check_admin_referer(); // Make sure we arrived here from the Dashboard
 
@@ -804,6 +937,7 @@ function fwp_linkedit_page () {
 		'unfamliar categories', /* Deprecated */
 		'unfamiliar category',
 		'map authors',
+		'tags',
 		'update/.*',
 		'feed/.*',
 		'link/.*',
@@ -880,6 +1014,14 @@ function fwp_linkedit_page () {
 					endforeach;
 				else :
 					unset($meta['cats']);
+				endif;
+
+				// Tags
+				if (isset($GLOBALS['fwp_post']['tags_input'])) :
+					$meta['tags'] = array();
+					foreach (explode(',', $GLOBALS['fwp_post']['tags_input']) as $tag) :
+						$meta['tags'][] = trim($tag);
+					endforeach;
 				endif;
 
 				// Post status, comment status, ping status
@@ -1012,6 +1154,9 @@ function fwp_linkedit_page () {
 				if (is_array($meta['cats'])) :
 					$meta['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $meta['cats']);
 				endif;
+				if (is_array($meta['tags'])) :
+					$meta['tags'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $meta['tags']);
+				endif;
 
 				// Collapse the author mapping rule structure back into a flat string
 				if (isset($meta['map authors'])) :
@@ -1087,26 +1232,11 @@ function fwp_linkedit_page () {
 				$unfamiliar[$what][$key] = ' checked="checked"';
 			endforeach;
 
-			$dogs = get_nested_categories(-1, 0);
-			if (is_array($meta['cats'])) :
-				$cats = array_map('strtolower',
-					array_map('trim',
-						$meta['cats']
-					));
-			else:
-				$cats = array();
+			if (is_array($meta['cats'])) : $cats = $meta['cats'];
+			else : $cats = array();
 			endif;
-			
-			foreach ($dogs as $tag => $dog) :
-				$found_by_name = in_array(strtolower(trim($dog['cat_name'])), $cats);
-				
-				if (isset($dog['cat_ID'])) : $dog['cat_id'] = $dog['cat_ID']; endif;
-				$found_by_id = in_array('{#'.trim($dog['cat_id']).'}', $cats);
 
-				if ($found_by_name or $found_by_id) :
-					$dogs[$tag]['checked'] = true;
-				endif;
-			endforeach;
+			$dogs = SyndicatedPost::category_ids($cats, /*unfamiliar=*/ NULL);
 		else :
 			die( __('Link not found.') ); 
 		endif;
@@ -1151,90 +1281,94 @@ function fwp_linkedit_page () {
 <input type="hidden" name="save" value="link" />
 
 <h2>Edit a syndicated feed:</h2>
-<fieldset class="options"><legend>Basics</legend>
-<table class="editform" width="100%" cellspacing="2" cellpadding="5">
-<tr>
-<th scope="row" width="20%"><?php _e('Feed URI:') ?></th>
-<td width="60%"><a href="<?php echo wp_specialchars($link_rss_uri, 'both'); ?>"><?php echo $link_rss_uri; ?></a>
-(<a href="<?php echo FEEDVALIDATOR_URI; ?>?url=<?php echo urlencode($link_rss_uri); ?>"
-title="Check feed &lt;<?php echo wp_specialchars($link_rss_uri, 'both'); ?>&gt; for validity">validate</a>)
-</td>
-<td width="20%"><input type="submit" name="feedfinder" value="switch &rarr;" style="font-size:smaller" /></td>
-</tr>
-<tr>
-<th scope="row" width="20%"><?php _e('Link Name:') ?></th>
-<td width="60%"><input type="text" id="basics-name-edit" name="name"
-value="<?php echo $link_name; ?>" style="width: 95%" />
-<span id="basics-name-view"><strong><?php echo $link_name; ?></strong></span>
-</td>
-<td>
-<select id="basics-hardcode-name" onchange="flip_hardcode('name')" name="hardcode_name">
-<option value="no" <?php echo $link->hardcode('name')?'':'selected="selected"'; ?>>update automatically</option>
-<option value="yes" <?php echo $link->hardcode('name')?'selected="selected"':''; ?>>edit manually</option>
-</select>
-</td>
-</tr>
-<tr>
-<th scope="row" width="20%"><?php _e('Short description:') ?></th>
-<td width="60%">
-<input id="basics-description-edit" type="text" name="description" value="<?php echo $link_description; ?>" style="width: 95%" />
-<span id="basics-description-view"><strong><?php echo $link_description; ?></strong></span>
-</td>
-<td>
-<select id="basics-hardcode-description" onchange="flip_hardcode('description')"
-name="hardcode_description">
-<option value="no" <?php echo $link->hardcode('description')?'':'selected="selected"'; ?>>update automatically</option>
-<option value="yes" <?php echo $link->hardcode('description')?'selected="selected"':''; ?>>edit manually</option>
-</select></td>
-</tr>
-<tr>
-<th width="20%" scope="row"><?php _e('Homepage:') ?></th>
-<td width="60%">
-<input id="basics-url-edit" type="text" name="linkurl" value="<?php echo $link_url; ?>" style="width: 95%;" />
-<a id="basics-url-view" href="<?php echo $link_url; ?>"><?php echo $link_url; ?></a></td>
-<td>
-<select id="basics-hardcode-url" onchange="flip_hardcode('url')" name="hardcode_url">
-<option value="no"<?php echo $link->hardcode('url')?'':' selected="selected"'; ?>>update automatically</option>
-<option value="yes"<?php echo $link->hardcode('url')?' selected="selected"':''; ?>>edit manually</option>
-</select></td></tr>
+<div id="poststuff">
+<?php fwp_linkedit_single_submit($status); ?>
 
-<tr>
-<th width="20%"><?php _e('Last update') ?>:</th>
-<td colspan="2"><?php
-	if (isset($meta['update/last'])) :
-		echo strftime('%x %X', $meta['update/last'])." ";
-	else :
-		echo " none yet";
-	endif;
-?></td></tr>
-<tr><th width="20%">Next update:</th>
-<td colspan="2"><?php
-	$holdem = (isset($meta['update/hold']) ? $meta['update/hold'] : 'scheduled');
-?>
-<select name="update_schedule">
-<option value="scheduled"<?php echo ($holdem=='scheduled')?' selected="selected"':''; ?>>update on schedule <?php
-	echo " (";
-	if (isset($meta['update/ttl']) and is_numeric($meta['update/ttl'])) :
-		if (isset($meta['update/timed']) and $meta['update/timed']=='automatically') :
-			echo 'next: ';
-			$next = $meta['update/last'] + ((int) $meta['update/ttl'] * 60);
-			if (strftime('%x', time()) != strftime('%x', $next)) :
-				echo strftime('%x', $next)." ";
-			endif;
-			echo strftime('%X', $meta['update/last']+((int) $meta['update/ttl']*60));
+<div id="post-body">
+<?php fwp_option_box_opener('Feed Information', 'feedinformationdiv'); ?>
+	<table class="editform" width="100%" cellspacing="2" cellpadding="5">
+	<tr>
+	<th scope="row" width="20%"><?php _e('Feed URI:') ?></th>
+	<td width="60%"><a href="<?php echo wp_specialchars($link_rss_uri, 'both'); ?>"><?php echo $link_rss_uri; ?></a>
+	(<a href="<?php echo FEEDVALIDATOR_URI; ?>?url=<?php echo urlencode($link_rss_uri); ?>"
+	title="Check feed &lt;<?php echo wp_specialchars($link_rss_uri, 'both'); ?>&gt; for validity">validate</a>)
+	</td>
+	<td width="20%"><input type="submit" name="feedfinder" value="switch &rarr;" style="font-size:smaller" /></td>
+	</tr>
+	<tr>
+	<th scope="row" width="20%"><?php _e('Link Name:') ?></th>
+	<td width="60%"><input type="text" id="basics-name-edit" name="name"
+	value="<?php echo $link_name; ?>" style="width: 95%" />
+	<span id="basics-name-view"><strong><?php echo $link_name; ?></strong></span>
+	</td>
+	<td>
+	<select id="basics-hardcode-name" onchange="flip_hardcode('name')" name="hardcode_name">
+	<option value="no" <?php echo $link->hardcode('name')?'':'selected="selected"'; ?>>update automatically</option>
+	<option value="yes" <?php echo $link->hardcode('name')?'selected="selected"':''; ?>>edit manually</option>
+	</select>
+	</td>
+	</tr>
+	<tr>
+	<th scope="row" width="20%"><?php _e('Short description:') ?></th>
+	<td width="60%">
+	<input id="basics-description-edit" type="text" name="description" value="<?php echo $link_description; ?>" style="width: 95%" />
+	<span id="basics-description-view"><strong><?php echo $link_description; ?></strong></span>
+	</td>
+	<td>
+	<select id="basics-hardcode-description" onchange="flip_hardcode('description')"
+	name="hardcode_description">
+	<option value="no" <?php echo $link->hardcode('description')?'':'selected="selected"'; ?>>update automatically</option>
+	<option value="yes" <?php echo $link->hardcode('description')?'selected="selected"':''; ?>>edit manually</option>
+	</select></td>
+	</tr>
+	<tr>
+	<th width="20%" scope="row"><?php _e('Homepage:') ?></th>
+	<td width="60%">
+	<input id="basics-url-edit" type="text" name="linkurl" value="<?php echo $link_url; ?>" style="width: 95%;" />
+	<a id="basics-url-view" href="<?php echo $link_url; ?>"><?php echo $link_url; ?></a></td>
+	<td>
+	<select id="basics-hardcode-url" onchange="flip_hardcode('url')" name="hardcode_url">
+	<option value="no"<?php echo $link->hardcode('url')?'':' selected="selected"'; ?>>update automatically</option>
+	<option value="yes"<?php echo $link->hardcode('url')?' selected="selected"':''; ?>>edit manually</option>
+	</select></td></tr>
+	
+	<tr>
+	<th width="20%"><?php _e('Last update') ?>:</th>
+	<td colspan="2"><?php
+		if (isset($meta['update/last'])) :
+			echo strftime('%x %X', $meta['update/last'])." ";
 		else :
-			echo "every ".$meta['update/ttl']." minute".(($meta['update/ttl']!=1)?"s":"");
+			echo " none yet";
 		endif;
-	else:
-		echo "next scheduled update";
-	endif;
-	echo ")";
-?></option>
-<option value="next"<?php echo ($holdem=='next')?' selected="selected"':''; ?>>update ASAP</option>
-<option value="ping"<?php echo ($holdem=='ping')?' selected="selected"':''; ?>>update only when pinged</option>
-</select></tr>
-</table>
-</fieldset>
+	?></td></tr>
+	<tr><th width="20%">Next update:</th>
+	<td colspan="2"><?php
+		$holdem = (isset($meta['update/hold']) ? $meta['update/hold'] : 'scheduled');
+	?>
+	<select name="update_schedule">
+	<option value="scheduled"<?php echo ($holdem=='scheduled')?' selected="selected"':''; ?>>update on schedule <?php
+		echo " (";
+		if (isset($meta['update/ttl']) and is_numeric($meta['update/ttl'])) :
+			if (isset($meta['update/timed']) and $meta['update/timed']=='automatically') :
+				echo 'next: ';
+				$next = $meta['update/last'] + ((int) $meta['update/ttl'] * 60);
+				if (strftime('%x', time()) != strftime('%x', $next)) :
+					echo strftime('%x', $next)." ";
+				endif;
+				echo strftime('%X', $meta['update/last']+((int) $meta['update/ttl']*60));
+			else :
+				echo "every ".$meta['update/ttl']." minute".(($meta['update/ttl']!=1)?"s":"");
+			endif;
+		else:
+			echo "next scheduled update";
+		endif;
+		echo ")";
+	?></option>
+	<option value="next"<?php echo ($holdem=='next')?' selected="selected"':''; ?>>update ASAP</option>
+	<option value="ping"<?php echo ($holdem=='ping')?' selected="selected"':''; ?>>update only when pinged</option>
+	</select></tr>
+	</table>
+<?php fwp_option_box_closer(); ?>
 
 <script type="text/javascript">
 flip_hardcode('name');
@@ -1242,15 +1376,12 @@ flip_hardcode('description');
 flip_hardcode('url');
 </script>
 
-<p class="submit">
-<input type="submit" name="submit" value="<?php _e('Save Changes &raquo;') ?>" />
-</p>
+<?php fwp_linkedit_periodic_submit(); ?>
 
-<fieldset class="options">
-<legend>Syndicated Posts</legend>
-
-<?php fwp_category_box($dogs, 'all syndicated posts from this feed'); ?>
-
+<?php
+if (!(isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25)) :
+	fwp_option_box_opener('Syndicated Posts', 'syndicatedpostsdiv', 'postbox');
+?>
 <table class="editform" width="75%" cellspacing="2" cellpadding="5">
 <tr><th width="27%" scope="row" style="vertical-align:top">Publication:</th>
 <td width="73%" style="vertical-align:top"><ul style="margin:0; list-style:none">
@@ -1271,42 +1402,71 @@ flip_hardcode('url');
 <?php echo $status['post']['private']; ?> /> Save posts from this feed as private posts</label></li>
 </ul></td>
 </tr>
+</table>
+<?php
+	fwp_option_box_closer();
+	fwp_linkedit_periodic_submit();
+endif;
 
-<tr><th width="27%" scope="row" style="vertical-align:top">Comments:</th>
-<td width="73%"><ul style="margin:0; list-style:none">
-<li><label><input type="radio" name="feed_comment_status" value="site-default"
-<?php echo $status['comment']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
-(currently: <strong><?php echo ($comment_status_global ? $comment_status_global : 'closed'); ?>)</strong></label></li>
-<li><label><input type="radio" name="feed_comment_status" value="open"
-<?php echo $status['comment']['open']; ?> /> Allow comments on syndicated posts from this feed</label></li>
-<li><label><input type="radio" name="feed_comment_status" value="closed"
-<?php echo $status['comment']['closed']; ?> /> Don't allow comments on syndicated posts from this feed</label></li>
+	fwp_option_box_opener(__('Categories'), 'categorydiv', 'postbox');
+	fwp_category_box($dogs, 'all syndicated posts from this feed');
+?>
+<table>
+<tr>
+<th width="20%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
+<td width="80%"><ul style="margin: 0; list-style:none">
+<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
+(currently <strong><?php echo FeedWordPress::on_unfamiliar('category'); ?></strong>)</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar['category']['create']; ?> /> create any categories the post is in</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar['category']['filter']; ?> /> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
 </ul></td>
 </tr>
 
-<tr><th width="27%" scope="row" style="vertical-align:top">Trackback and Pingback:</th>
-<td width="73%"><ul style="margin:0; list-style:none">
-<li><label><input type="radio" name="feed_ping_status" value="site-default"
-<?php echo $status['ping']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
-(currently: <strong><?php echo ($ping_status_global ? $ping_status_global : 'closed'); ?>)</strong></label></li>
-<li><label><input type="radio" name="feed_ping_status" value="open"
-<?php echo $status['ping']['open']; ?> /> Accept pings on syndicated posts from this feed</label></li>
-<li><label><input type="radio" name="feed_ping_status" value="closed"
-<?php echo $status['ping']['closed']; ?> /> Don't accept pings on syndicated posts from this feed</label></li>
-</ul></td>
+<tr>
+<th width="20%" scope="row" style="vertical-align:top">Multiple categories:</th>
+<td width="80%"> 
+<input type="text" size="20" id="cat_split" name="cat_split" value="<?php if (isset($meta['cat_split'])) : echo htmlspecialchars($meta['cat_split']); endif; ?>" /><br/>
+Enter a <a href="http://us.php.net/manual/en/reference.pcre.pattern.syntax.php">Perl-compatible regular expression</a> here if the feed provides multiple
+categories in a single category element. The regular expression should match
+the characters used to separate one category from the next. If the feed uses
+spaces (like <a href="http://del.icio.us/">del.icio.us</a>), use the pattern "\s".
+If the feed does not provide multiple categories in a single element, leave this
+blank.</td>
 </tr>
 </table>
-</fieldset>
+<?php
+	fwp_option_box_closer();
+	fwp_linkedit_periodic_submit();
+	
+if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
+	fwp_tags_box($meta['tags']);
+	fwp_linkedit_periodic_submit();
+endif; ?>
 
-<p class="submit">
-<input type="submit" name="submit" value="<?php _e('Save Changes &raquo;') ?>" />
-</p>
-
-<fieldset class="options">
-<legend>Syndicated Authors</legend>
+<?php fwp_option_box_opener('Syndicated Authors', 'authordiv', 'postbox'); ?>
 <?php $authorlist = fwp_author_list(); ?>
-
 <table>
+<tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by authors that haven't been syndicated before:</th></tr>
+<tr>
+  <th style="text-align: left">Posts by new authors</th>
+  <td> 
+  <select id="unfamiliar-author" name="unfamiliar_author" onchange="flip_newuser('unfamiliar-author');">
+    <option value="site-default"<?php if (!isset($meta['unfamiliar author'])) : ?>selected="selected"<?php endif; ?>>are handled using site-wide settings</option>
+    <option value="create"<?php if ('create'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>create a new author account</option>
+    <?php foreach ($authorlist as $author_id => $author_name) : ?>
+      <option value="<?php echo $author_id; ?>"<?php if ($author_id==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>are assigned to <?php echo $author_name; ?></option>
+    <?php endforeach; ?>
+    <option value="newuser">will be assigned to a new user...</option>
+    <option value="filter"<?php if ('filter'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>get filtered out</option>
+  </select>
+  </td>
+  <td>
+  <div id="unfamiliar-author-default">Site-wide settings can be set in <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a></div>
+  <div id="unfamiliar-author-newuser">named <input type="text" name="unfamiliar_author_newuser" value="" /></div>
+  </td>
+</tr>
+
 <tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by specific authors. Blank out a name to delete the rule.</th></tr>
 
 <?php if (isset($meta['map authors'])) : $i=0; foreach ($meta['map authors'] as $author_rules) : foreach ($author_rules as $author_name => $author_action) : $i++; ?>
@@ -1341,28 +1501,8 @@ flip_hardcode('url');
   <td><div id="add-author-rule-newuser">named <input type="text" name="add_author_rule_newuser" value="" /></div></td>
 </tr>
 
-<tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by authors that haven't been syndicated before:</th></tr>
-<tr>
-  <th style="text-align: left">Posts by new authors</th>
-  <td> 
-  <select id="unfamiliar-author" name="unfamiliar_author" onchange="flip_newuser('unfamiliar-author');">
-    <option value="site-default"<?php if (!isset($meta['unfamiliar author'])) : ?>selected="selected"<?php endif; ?>>are handled using site-wide settings</option>
-    <option value="create"<?php if ('create'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>create a new author account</option>
-    <?php foreach ($authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>"<?php if ($author_id==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>are assigned to <?php echo $author_name; ?></option>
-    <?php endforeach; ?>
-    <option value="newuser">will be assigned to a new user...</option>
-    <option value="filter"<?php if ('filter'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>get filtered out</option>
-  </select>
-  </td>
-  <td>
-  <div id="unfamiliar-author-default">Site-wide settings can be set in <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a></div>
-  <div id="unfamiliar-author-newuser">named <input type="text" name="unfamiliar_author_newuser" value="" /></div>
-  </td>
-</tr>
-
 </table>
-</fieldset>
+<?php fwp_option_box_closer(); ?>
 
 <script>
 	flip_newuser('unfamiliar-author');
@@ -1372,45 +1512,38 @@ flip_hardcode('url');
 	flip_newuser('add-author-rule');
 </script>
 
-<p class="submit">
-<input type="submit" name="submit" value="<?php _e('Save Changes &raquo;') ?>" />
-</p>
+<?php
+	fwp_linkedit_periodic_submit();
+	fwp_option_box_opener('Comments & Pings', 'commentstatusdiv', 'postbox');
+?>
+<table class="editform" width="75%" cellspacing="2" cellpadding="5">
+<tr><th width="27%" scope="row" style="vertical-align:top"><?php print __('Comments'); ?>:</th>
+<td width="73%"><ul style="margin:0; list-style:none">
+<li><label><input type="radio" name="feed_comment_status" value="site-default"
+<?php echo $status['comment']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
+(currently: <strong><?php echo ($comment_status_global ? $comment_status_global : 'closed'); ?>)</strong></label></li>
+<li><label><input type="radio" name="feed_comment_status" value="open"
+<?php echo $status['comment']['open']; ?> /> Allow comments on syndicated posts from this feed</label></li>
+<li><label><input type="radio" name="feed_comment_status" value="closed"
+<?php echo $status['comment']['closed']; ?> /> Don't allow comments on syndicated posts from this feed</label></li>
+</ul></td></tr>
 
-<fieldset>
-<legend>Advanced Feed Options</legend>
-<table class="editform" width="100%" cellspacing="2" cellpadding="5">
+<tr><th width="27%" scope="row" style="vertical-align:top"><?php print __('Pings'); ?>:</th>
+<td width="73%"><ul style="margin:0; list-style:none">
+<li><label><input type="radio" name="feed_ping_status" value="site-default"
+<?php echo $status['ping']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
+(currently: <strong><?php echo ($ping_status_global ? $ping_status_global : 'closed'); ?>)</strong></label></li>
+<li><label><input type="radio" name="feed_ping_status" value="open"
+<?php echo $status['ping']['open']; ?> /> Accept pings on syndicated posts from this feed</label></li>
+<li><label><input type="radio" name="feed_ping_status" value="closed"
+<?php echo $status['ping']['closed']; ?> /> Don't accept pings on syndicated posts from this feed</label></li>
+</ul></td></tr>
 
-<tr>
-<th width="20%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
-<td width="80%"><ul style="margin: 0; list-style:none">
-<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
-(currently <strong><?php echo FeedWordPress::on_unfamiliar('category'); ?></strong>)</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar['category']['create']; ?> /> create any categories the post is in</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar['category']['filter']; ?> /> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
-</ul></td>
-</tr>
-
-<tr>
-<th width="20%" scope="row" style="vertical-align:top">Multiple categories:</th>
-<td width="80%"> 
-<input type="text" size="20" id="cat_split" name="cat_split" value="<?php if (isset($meta['cat_split'])) : echo htmlspecialchars($meta['cat_split']); endif; ?>" /><br/>
-Enter a <a href="http://us.php.net/manual/en/reference.pcre.pattern.syntax.php">Perl-compatible regular expression</a> here if the feed provides multiple
-categories in a single category element. The regular expression should match
-the characters used to separate one category from the next. If the feed uses
-spaces (like <a href="http://del.icio.us/">del.icio.us</a>), use the pattern "\s".
-If the feed does not provide multiple categories in a single element, leave this
-blank.</td>
-</tr>
 </table>
-</fieldset>
+<?php fwp_option_box_closer(); ?>
+<?php fwp_linkedit_periodic_submit(); ?>
 
-<p class="submit">
-<input type="submit" name="submit" value="<?php _e('Save Changes &raquo;') ?>" />
-</p>
-
-<fieldset id="postcustom">
-<legend>Custom Settings (for use in templates)</legend>
+<?php fwp_option_box_opener('Custom Settings (for use in templates)', 'postcustom', 'postbox'); ?>
 <div id="postcustomstuff">
 <table id="meta-list" cellpadding="3">
 	<tr>
@@ -1444,12 +1577,11 @@ blank.</td>
 	<td><em>add new setting...</em><input type="hidden" name="notes[<?php echo $i; ?>][action]" value="update" /></td>
 	</tr>
 </table>
-</fieldset>
+<?php fwp_option_box_closer(); ?>
 
-<p class="submit">
-<input type="submit" name="submit" value="<?php _e('Save Changes &raquo;') ?>" />
-</p>
-
+<?php fwp_linkedit_periodic_submit(); ?>
+</div> <!-- id="post-body" -->
+</div> <!-- id="poststuff" -->
 </div>
 	<?php
 	endif;
@@ -2255,6 +2387,18 @@ class SyndicatedPost {
 				endfor;
 			endif;
 			$this->post['named']['category'] = apply_filters('syndicated_item_categories', $this->post['named']['category'], $this);
+			
+			// Tags: start with default tags, if any
+			$ft = get_option("feedwordpress_syndication_tags");
+			if ($ft) :
+				$this->post['tags_input'] = explode('FEEDWORDPRESS_CAT_SEPARATOR', $ft);
+			else :
+				$this->post['tags_input'] = array();
+			endif;
+			
+			if (is_array($this->feedmeta['tags'])) :
+				$this->post['tags_input'] = array_merge($this->post['tags_input'], $this->feedmeta['tags']);
+			endif;
 		endif;
 	} // SyndicatedPost::SyndicatedPost()
 
@@ -2386,13 +2530,22 @@ class SyndicatedPost {
 			endif;
 		endforeach;
 
+		if (strlen($dbpost['post_title'].$dbpost['post_content'].$dbpost['post_excerpt']) == 0) :
+			// FIXME: Option for filtering out empty posts
+		endif;
+		if (strlen($dbpost['post_title'])==0) :
+			$dbpost['post_title'] = $this->post['meta']['syndication_source']
+				.' '.gmdate('Y-m-d H:i:s', $this->published() + $offset);
+			// FIXME: Option for what to fill a blank title with...
+		endif;
+
 		if ($this->use_api('wp_insert_post')) :
 			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
 			$this->_wp_id = wp_insert_post($dbpost);
 			
 			// This should never happen.
 			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
-				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', $this, __LINE__);
+				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', array($dbpost, $this), __LINE__);
 			endif;
 	
 			// Unfortunately, as of WordPress 2.3, wp_insert_post()
@@ -3082,6 +3235,9 @@ class SyndicatedLink {
 			if (isset($this->settings['cats'])):
 				$this->settings['cats'] = preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, $this->settings['cats']);
 			endif;
+			if (isset($this->settings['tags'])):
+				$this->settings['tags'] = preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, $this->settings['tags']);
+			endif;
 			
 			if (isset($this->settings['map authors'])) :
 				$author_rules = explode("\n\n", $this->settings['map authors']);
@@ -3175,6 +3331,9 @@ class SyndicatedLink {
 			if (is_array($to_notes['cats'])) :
 				$to_notes['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['cats']);
 			endif;
+			if (is_array($to_notes['tags'])) :
+				$to_notes['tags'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['tags']);
+			endif;
 
 			if (isset($to_notes['map authors'])) :
 				$ma = array();
@@ -3222,6 +3381,9 @@ class SyndicatedLink {
 
 			if (is_array($to_notes['cats'])) :
 				$to_notes['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['cats']);
+			endif;
+			if (is_array($to_notes['tags'])) :
+				$to_notes['tags'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['tags']);
 			endif;
 
 			if (isset($to_notes['map authors'])) :
