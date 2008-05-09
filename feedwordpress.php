@@ -532,6 +532,7 @@ function fwp_option_box_closer () {
 }
 
 function fwp_tags_box ($tags) {
+	if (!is_array($tags)) : $tags = array(); endif;
 ?>
 <div id="tagsdiv" class="postbox">
 	<h3><?php _e('Tags') ?></h3>
