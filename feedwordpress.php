@@ -1141,8 +1141,15 @@ class SyndicatedPost {
 
 		if ($this->use_api('wp_insert_post')) :
 			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
+
+			// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
+			add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+
 			$this->_wp_id = wp_insert_post($dbpost);
-			
+
+			// So is this.
+			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+
 			// This should never happen.
 			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
 				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', array($dbpost, $this), __LINE__);
@@ -1221,7 +1228,14 @@ class SyndicatedPost {
 
 		if ($this->use_api('wp_insert_post')) :
 			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
+
+			// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
+			add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+
 			$this->_wp_id = wp_insert_post($dbpost);
+
+			// So is this.
+			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
 
 			// This should never happen.
 			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
@@ -1272,6 +1286,37 @@ class SyndicatedPost {
 			do_action('edit_post', $this->post['ID']);
 		endif;
 	} /* SyndicatedPost::update_existing() */
+
+	/**
+	 * SyndicatedPost::fix_revision_meta() - Fixes the way WP 2.6+ fucks up
+	 * meta-data (authorship, etc.) when storing revisions of an updated
+	 * syndicated post.
+	 *
+	 * In their infinite wisdom, the WordPress coders have made it completely
+	 * impossible for a plugin that uses wp_insert_post() to set certain
+	 * meta-data (such as the author) when you store an old revision of an
+	 * updated post. Instead, it uses the WordPress defaults (= currently
+	 * active user ID if the process is running with a user logged in, or
+	 * = #0 if there is no user logged in). This results in bogus authorship
+	 * data for revisions that are syndicated from off the feed, unless we
+	 * use a ridiculous kludge like this to end-run the munging of meta-data
+	 * by _wp_put_post_revision.
+	 *
+	 * @param int $revision_id The revision ID to fix up meta-data
+	 */
+	function fix_revision_meta ($revision_id) {
+		global $wpdb;
+		
+		$post_author = (int) $this->post['post_author'];
+		
+		$revision_id = (int) $revision_id;
+		$wpdb->query("
+		UPDATE $wpdb->posts
+		SET post_author={$this->post['post_author']}
+		WHERE post_type = 'revision' AND ID='$revision_id'
+		");
+	} /* SyndicatedPost::fix_revision_meta () */
+
 
 	// SyndicatedPost::add_rss_meta: adds interesting meta-data to each entry
 	// using the space for custom keys. The set of keys and values to add is
