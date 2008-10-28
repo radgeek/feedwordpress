@@ -3,6 +3,18 @@
 ## LEGACY API: Replicate or mock up functions for legacy support purposes ######
 ################################################################################
 
+// version testing
+function fwp_test_wp_version ($floor, $ceiling = NULL) {
+	global $wp_db_version;
+	
+	$ver = (isset($wp_db_version) ? $wp_db_version : 0);
+	$good = ($ver >= $floor);
+	if (!is_null($ceiling)) :
+		$good = ($good and ($ver < $ceiling));
+	endif;
+	return $good;
+} /* function fwp_test_wp_version () */
+
 if (!function_exists('get_option')) {
 	function get_option ($option) {
 		return get_settings($option);

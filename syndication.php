@@ -5,28 +5,8 @@ require_once(dirname(__FILE__) . '/admin-ui.php');
 ## ADMIN MENU ADD-ONS: implement Dashboard management pages ####################
 ################################################################################
 
-function fwp_syndication_manage_page () {
+function fwp_dashboard_update_if_requested () {
 	global $wpdb;
-
-	if (FeedWordPress::needs_upgrade()) :
-		fwp_upgrade_page();
-		return;
-	endif;
-
-?>
-<?php $cont = true;
-if (isset($_REQUEST['action'])):
-	if ($_REQUEST['action'] == 'feedfinder') : $cont = fwp_feedfinder_page();
-	elseif ($_REQUEST['action'] == 'switchfeed') : $cont = fwp_switchfeed_page();
-	elseif ($_REQUEST['action'] == 'linkedit') : $cont = fwp_linkedit_page();
-	elseif ($_REQUEST['action'] == 'Unsubscribe from Checked Links' or $_REQUEST['action'] == 'Unsubscribe') : $cont = fwp_multidelete_page();
-	endif;
-endif;
-
-if ($cont):
-?>
-<?php
-	$links = FeedWordPress::syndicated_links();
 
 	if (isset($_POST['update']) or isset($_POST['action']) or isset($_POST['update_uri'])) :
 		$fwp_update_invoke = 'post';
@@ -51,11 +31,16 @@ if ($cont):
 		$update_set[] = $_POST['update_uri'];
 	endif;
 
+
 	if ($fwp_update_invoke != 'get' and count($update_set) > 0) : // Only do things with side-effects for HTTP POST or command line
 		$feedwordpress =& new FeedWordPress;
 		add_action('feedwordpress_check_feed', 'update_feeds_mention');
 		
-		echo "<div class=\"updated\">\n";
+		if (fwp_test_wp_version(FWP_SCHEMA_25)) :
+			echo "<div class=\"youare\">\n";
+		else :
+			echo "<div class=\"updated\">\n";
+		endif;
 		echo "<ul>\n";
 		$tdelta = NULL;
 		foreach ($update_set as $uri) :
@@ -82,29 +67,87 @@ if ($cont):
 			echo "\n"; flush();
 		endif;
 		echo "</div> <!-- class=\"updated\" -->\n";
+	elseif (fwp_test_wp_version(FWP_SCHEMA_25)) :
+?>
+		<p class="youare">Check currently scheduled feeds for new and updated posts.</p>
+<?php
+	endif;
+}
+
+function fwp_syndication_manage_page () {
+	global $wpdb;
+
+	if (FeedWordPress::needs_upgrade()) :
+		fwp_upgrade_page();
+		return;
 	endif;
 
+?>
+<?php $cont = true;
+if (isset($_REQUEST['action'])):
+	if ($_REQUEST['action'] == 'feedfinder') : $cont = fwp_feedfinder_page();
+	elseif ($_REQUEST['action'] == 'switchfeed') : $cont = fwp_switchfeed_page();
+	elseif ($_REQUEST['action'] == 'linkedit') : $cont = fwp_linkedit_page();
+	elseif ($_REQUEST['action'] == 'Unsubscribe from Checked Links' or $_REQUEST['action'] == 'Unsubscribe') : $cont = fwp_multidelete_page();
+	endif;
+endif;
+
+if ($cont):
+?>
+<?php
+	$links = FeedWordPress::syndicated_links();
+
+	if (fwp_test_wp_version(0, FWP_SCHEMA_25)) :
+		fwp_dashboard_update_if_requested();
+	endif;
+
+	if ($links): // only display Update panel if there are some links to update....
 	?>
-	<div class="wrap">
 	<form action="" method="POST">
-	<h2>Update feeds now</h2>
-	<p>Check currently scheduled feeds for new and updated posts.</p>
+	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
+		<div class="wrap">
+		<div id="rightnow">
+		<h3 class="reallynow"><span>Update feeds now</span>
+		<input type="hidden" name="update_uri" value="*" /><input style="float: right; border: none;" class="rbutton" type="submit" name="update" value="Update" />
+		<br class="clear"/></h3>
+	<?php else : ?>	
+		<div class="wrap">
+		<h2>Update feeds now</h2>
+	<?php endif; ?>
+
+	<?php
+	if (fwp_test_wp_version(FWP_SCHEMA_25)) :
+		fwp_dashboard_update_if_requested();
+	else :
+?>
+<p>Check currently scheduled feeds for new and updated posts.</p>
+<?php
+	endif;
+	?>
 
 <?php 	if (!get_option('feedwordpress_automatic_updates')) : ?>
-	<p><strong>Note:</strong> Automatic updates are currently turned
+	<p class="youhave"><strong>Note:</strong> Automatic updates are currently turned
 	<strong>off</strong>. New posts from your feeds will not be syndicated
 	until you manually check for them here. You can turn on automatic
 	updates under <a href="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/syndication-options.php">Syndication
 	Options</a>.</p>
 <?php 	endif; ?>
-	
 
+	<?php if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
 	<div class="submit"><input type="hidden" name="update_uri" value="*" /><input type="submit" name="update" value="Update" /></div>
-	</form>
-	</div> <!-- class="wrap" -->
+	<?php endif; ?>
 
-	<form action="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/<?php echo basename(__FILE__); ?>" method="post">
+	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
+		</div> <!-- id="rightnow" -->
+	<?php endif; ?>
+	</div> <!-- class="wrap" -->
+	</form>
+<?php
+	endif;
+?>
+
 	<div class="wrap">
+	<form action="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/<?php echo basename(__FILE__); ?>" method="post">
 	<h2>Syndicated Sites</h2>
 <?php	$alt_row = true;
 	if ($links): ?>
@@ -151,19 +194,29 @@ if ($cont):
 <?php
 			echo "\n\t</tr>";
 		endforeach;
+?>
+</table>
+
+	<?php
+	// WP 2.5 and 2.6 provide a line of their own above any class="submit"
+	if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
+	<br/><hr/>
+	<?php endif; ?>
+
+	<div class="submit"><input type="submit" class="delete" name="action" value="Unsubscribe from Checked Links" />
+	<input type="submit" name="action" value="Update Checked Links" /></div>
+
+<?php
 	else:
 ?>
 
 <p>There are no websites currently listed for syndication.</p>
 
 <?php	endif; ?>
-	</table>
 
-	<br/><hr/>
-	<div class="submit"><input type="submit" class="delete" name="action" value="Unsubscribe from Checked Links" />
-	<input type="submit" name="action" value="Update Checked Links" /></div>
-	</div> <!-- class="wrap" -->
 	</form>
+
+	</div> <!-- class="wrap" -->
 
 	<div class="wrap">
 	<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">

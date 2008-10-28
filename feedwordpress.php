@@ -83,6 +83,8 @@ if (isset($wp_db_version)) :
 	endif;
 endif;
 
+require_once(dirname(__FILE__) . '/compatability.php'); // LEGACY API: Replicate or mock up functions for legacy support purposes
+
 // Magic quotes are just about the stupidest thing ever.
 if (is_array($_POST)) :
 	$fwp_post = stripslashes_deep($_POST);
@@ -103,13 +105,18 @@ endif;
 
 // If this is a FeedWordPress admin page, queue up scripts for AJAX functions that FWP uses
 // If it is a display page or a non-FeedWordPress admin page, don't.
-if (is_admin() and function_exists('wp_enqueue_script')) :
-	if (isset($_REQUEST['page']) and preg_match("|^{$fwp_path}/|", $_REQUEST['page'])) :
+if (is_admin() and isset($_REQUEST['page']) and preg_match("|^{$fwp_path}/|", $_REQUEST['page'])) :
+	if (function_exists('wp_enqueue_script')) :
 		if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
 			wp_enqueue_script('post');
 			wp_enqueue_script('thickbox');
 		else :
 			wp_enqueue_script( 'ajaxcat' ); // Provides the handy-dandy new category text box
+		endif;
+	endif;
+	if (function_exists('wp_enqueue_style')) :
+		if (fwp_test_wp_version(FWP_SCHEMA_25)) :
+			wp_enqueue_style('dashboard');
 		endif;
 	endif;
 endif;
@@ -226,8 +233,6 @@ function log_feedwordpress_update_complete ($delta) {
 		.(is_null($delta) ? "Error: I don't syndicate that URI"
 		: implode(' and ', $mesg)));
 }
-
-require_once(dirname(__FILE__) . '/compatability.php'); // LEGACY API: Replicate or mock up functions for legacy support purposes
 
 ################################################################################
 ## TEMPLATE API: functions to make your templates syndication-aware ############
