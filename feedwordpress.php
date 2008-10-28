@@ -936,7 +936,7 @@ class SyndicatedPost {
 			$this->post['meta']['syndication_permalink'] = apply_filters('syndicated_item_link', $this->item['link']);
 
 			// Store a hash of the post content for checking whether something needs to be updated
-			$this->post['meta']['syndication_item_hash'] = md5(serialize($this->item));
+			$this->post['meta']['syndication_item_hash'] = $this->update_hash();
 
 			// Feed-by-feed options for author and category creation
 			$this->post['named']['unfamiliar']['author'] = $this->feedmeta['unfamiliar author'];
@@ -1007,14 +1007,22 @@ class SyndicatedPost {
 			if (!$result) :
 				$this->_freshness = 2; // New content
 			else:
+				$stored_update_hashes = get_post_custom_values('syndication_item_hash', $result->id);
+				if (count($stored_update_hashes) > 0) :
+					$stored_update_hash = $stored_update_hashes[0];
+					$update_hash_changed = ($stored_update_hash != $this->update_hash());
+				else :
+					$update_hash_changed = false;
+				endif;
+
 				preg_match('/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+)/', $result->post_modified_gmt, $backref);
 
 				$last_rev_ts = gmmktime($backref[4], $backref[5], $backref[6], $backref[2], $backref[3], $backref[1]);
 				$updated_ts = $this->updated(/*fallback=*/ true, /*default=*/ NULL);
-				$updated = (
+				$updated = ((
 					!is_null($updated_ts)
 					and ($updated_ts > $last_rev_ts)
-				);
+				) or $update_hash_changed);
 
 				if ($updated) :
 					$this->_freshness = 1; // Updated content
@@ -1619,6 +1627,10 @@ class SyndicatedPost {
 		endif;
 
 		return $epoch;
+	}
+
+	function update_hash () {
+		return md5(serialize($this->item));
 	}
 
 	function guid () {
