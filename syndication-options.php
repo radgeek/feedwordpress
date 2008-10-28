@@ -1,4 +1,6 @@
 <?php
+require_once(dirname(__FILE__) . '/admin-ui.php');
+
 function fwp_syndication_options_page () {
         global $wpdb, $wp_db_version;
 	
@@ -349,4 +351,4 @@ endif;
 }
 
 	fwp_syndication_options_page();
-?>
+
