@@ -1001,16 +1001,25 @@ class SyndicatedPost {
 			FROM $wpdb->posts WHERE guid='$guid'
 			");
 
-			preg_match('/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+)/', $result->post_modified_gmt, $backref);
-			$updated = gmmktime($backref[4], $backref[5], $backref[6], $backref[2], $backref[3], $backref[1]);
 			if (!$result) :
 				$this->_freshness = 2; // New content
-			elseif ($this->updated() > $updated) :
-				$this->_freshness = 1; // Updated content
-				$this->_wp_id = $result->id;
-			else :
-				$this->_freshness = 0; // Same old, same old
-				$this->_wp_id = $result->id;
+			else:
+				preg_match('/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+)/', $result->post_modified_gmt, $backref);
+
+				$last_rev_ts = gmmktime($backref[4], $backref[5], $backref[6], $backref[2], $backref[3], $backref[1]);
+				$updated_ts = $this->updated(/*fallback=*/ true, /*default=*/ NULL);
+				$updated = (
+					!is_null($updated_ts)
+					and ($updated_ts > $last_rev_ts)
+				);
+
+				if ($updated) :
+					$this->_freshness = 1; // Updated content
+					$this->_wp_id = $result->id;
+				else :
+					$this->_freshness = 0; // Same old, same old
+					$this->_wp_id = $result->id;
+				endif;
 			endif;
 		endif;
 		return $this->_freshness;
@@ -1570,12 +1579,16 @@ class SyndicatedPost {
 		
 		# If everything failed, then default to the current time.
 		if (is_null($epoch)) :
-			$epoch = time();
+			if (-1 == $default) :
+				$epoch = time();
+			else :
+				$epoch = $default;
+			endif;
 		endif;
 		
 		return $epoch;
 	}
-	function updated ($fallback = true) {
+	function updated ($fallback = true, $default = -1) {
 		$epoch = null;
 
 		# As far as I know, only dcterms and Atom have reliable ways to
@@ -1590,12 +1603,16 @@ class SyndicatedPost {
 		elseif (isset($this->item['updated'])):				// Atom 1.0
 			$epoch = @parse_w3cdtf($this->item['updated']);
 		elseif ($fallback) :						// Fall back to issued / dc:date
-			$epoch = $this->published(/*fallback=*/ false);
+			$epoch = $this->published(/*fallback=*/ false, /*default=*/ $default);
 		endif;
 		
 		# If everything failed, then default to the current time.
 		if (is_null($epoch)) :
-			$epoch = time();
+			if (-1 == $default) :
+				$epoch = time();
+			else :
+				$epoch = $default;
+			endif;
 		endif;
 
 		return $epoch;
