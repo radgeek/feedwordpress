@@ -17,6 +17,7 @@ function fwp_syndication_options_page () {
 		else:
 			update_option('feedwordpress_cat_id', $_REQUEST['syndication_category']);
 			update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
+			update_option('feedwordpress_formatting_filters', $_REQUEST['formatting_filters']);
 			update_option('feedwordpress_update_logging', $_REQUEST['update_logging']);
 			
 			if ('newuser'==$_REQUEST['unfamiliar_author']) :
@@ -118,6 +119,7 @@ function fwp_syndication_options_page () {
 
 	$cat_id = FeedWordPress::link_category_id();
 	$munge_permalink = get_option('feedwordpress_munge_permalink');
+	$formatting_filters = get_option('feedwordpress_formatting_filters');
 	$update_logging = get_option('feedwordpress_update_logging');
 
 	$automatic_updates = get_option('feedwordpress_automatic_updates');
@@ -252,6 +254,17 @@ function fwp_syndication_options_page () {
 <option value="yes"<?php echo ($munge_permalink=='yes')?' selected="selected"':''; ?>>original website</option>
 <option value="no"<?php echo ($munge_permalink=='no')?' selected="selected"':''; ?>>this website</option>
 </select></td></tr>
+<tr style="vertical-align:top"><th width="44%" scope="row">Formatting filters:</th>
+<td width="56%">
+<select name="formatting_filters" size="1">
+<option value="no"<?php echo ($formatting_filters!='yes')?' selected="selected"':''; ?>>Protect syndicated posts from formatting filters</option>
+<option value="yes"<?php echo ($formatting_filters=='yes')?' selected="selected"':''; ?>>Expose syndicated posts to formatting filters</option>
+</select>
+<p>If you have trouble getting plugins to work that are supposed to insert
+elements after posts (like relevant links or a social networking
+<q>Share This</q> button), try changing this option to see if it fixes your
+problem.</p>
+</td></tr>
 </table>
 <?php
 	fwp_option_box_closer();

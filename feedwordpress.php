@@ -7,7 +7,7 @@ Version: 0.994b
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
-Last modified: 2008-05-08 4:48 PM PDT
+Last modified: 2008-10-28 3:43pm PDT
 */
 
 # This uses code derived from:
@@ -288,7 +288,7 @@ $feedwordpress_the_syndicated_content = NULL;
 function feedwordpress_preserve_syndicated_content ($text) {
 	global $feedwordpress_the_syndicated_content;
 
-	if ( is_syndicated() ) :
+	if ( is_syndicated() and get_option('feedwordpress_formatting_filters') != 'yes' ) :
 		$feedwordpress_the_syndicated_content = $text;
 	else :
 		$feedwordpress_the_syndicated_content = NULL;
