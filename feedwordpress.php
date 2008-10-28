@@ -44,6 +44,7 @@ define ('FWP_SCHEMA_20', 3308); // Database schema # for WP 2.0
 define ('FWP_SCHEMA_21', 4772); // Database schema # for WP 2.1
 define ('FWP_SCHEMA_23', 5495); // Database schema # for WP 2.3
 define ('FWP_SCHEMA_25', 7558); // Database schema # for WP 2.5
+define ('FWP_SCHEMA_26', 8201); // Database schema # for WP 2.6
 
 if (FEEDWORDPRESS_DEBUG) :
 	// Help us to pick out errors, if any.
@@ -108,8 +109,9 @@ endif;
 if (is_admin() and isset($_REQUEST['page']) and preg_match("|^{$fwp_path}/|", $_REQUEST['page'])) :
 	if (function_exists('wp_enqueue_script')) :
 		if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
-			wp_enqueue_script('post');
-			wp_enqueue_script('thickbox');
+			wp_enqueue_script('post'); // for magic tag and category boxes
+			wp_enqueue_script('thickbox'); // for fold-up boxes
+			wp_enqueue_script('admin-forms'); // for checkbox selection
 		else :
 			wp_enqueue_script( 'ajaxcat' ); // Provides the handy-dandy new category text box
 		endif;
@@ -117,6 +119,11 @@ if (is_admin() and isset($_REQUEST['page']) and preg_match("|^{$fwp_path}/|", $_
 	if (function_exists('wp_enqueue_style')) :
 		if (fwp_test_wp_version(FWP_SCHEMA_25)) :
 			wp_enqueue_style('dashboard');
+		endif;
+	endif;
+	if (function_exists('wp_admin_css')) :
+		if (fwp_test_wp_version(FWP_SCHEMA_25)) :
+			wp_admin_css('css/dashboard');
 		endif;
 	endif;
 endif;

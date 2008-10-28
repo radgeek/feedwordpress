@@ -147,21 +147,45 @@ if ($cont):
 ?>
 
 	<div class="wrap">
-	<form action="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/<?php echo basename(__FILE__); ?>" method="post">
+	<form id="syndicated-links" action="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/<?php echo basename(__FILE__); ?>" method="post">
 	<h2>Syndicated Sites</h2>
 <?php	$alt_row = true;
 	if ($links): ?>
 
-<table width="100%" cellpadding="3" cellspacing="3">
+	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
+	<div class="tablenav">
+	<div class="alignleft">
+	<input class="button-secondary" type="submit" name="action" value="Update Checked Links" />
+	<input class="button-secondary delete" type="submit" class="delete" name="action" value="Unsubscribe from Checked Links" />
+	</div>
+	<br class="clear" />
+	</div>
+	<br class="clear" />
+	
+	<table class="widefat">
+	<?php else : ?>
+	<table width="100%" cellpadding="3" cellspacing="3">
+	<?php endif; ?>
+<thead>
 <tr>
-<th width="20%"><?php _e('Name'); ?></th>
-<th width="40%"><?php _e('Feed'); ?></th>
-<th colspan="4"><?php _e('Action'); ?></th>
+	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : $span = 3; ?>
+	<th class="check-column" scope="col"><input type="checkbox" <?php if (fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_26)) : ?>onclick="checkAll(document.getElementById('syndicated-links'));"<?php endif; ?> /></th>
+	<?php else : $span = 4; ?>
+	<?php endif; ?>
+<th width="20%" scope="col"><?php _e('Name'); ?></th>
+<th width="40%" scope="col"><?php _e('Feed'); ?></th>
+<th class="action-links" scope="col" colspan="<?php print $span; ?>"><?php _e('Action'); ?></th>
 </tr>
+</thead>
 
+<tbody>
 <?php		foreach ($links as $link):
 			$alt_row = !$alt_row; ?>
 <tr<?php echo ($alt_row?' class="alternate"':''); ?>>
+	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
+<th class="check-column" scope="row"><input type="checkbox" name="link_ids[]" value="<?php echo $link->link_id; ?>" /></th>
+	<?php endif; ?>
+
 <td><a href="<?php echo wp_specialchars($link->link_url, 'both'); ?>"><?php echo wp_specialchars($link->link_name, 'both'); ?></a></td>
 <?php 
 			if (strlen($link->link_rss) > 0):
@@ -190,21 +214,22 @@ if ($cont):
 			<td><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit" class="edit"><?php _e('Edit')?></a></td>
 			<td><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder" class="edit"><?php echo $caption; ?></a></td>
 			<td><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=Unsubscribe" class="delete"><?php _e('Unsubscribe'); ?></a></td>
+			<?php if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
 			<td><input type="checkbox" name="link_ids[]" value="<?php echo $link->link_id; ?>" /></td>
 <?php
+			endif;
 			echo "\n\t</tr>";
 		endforeach;
 ?>
+</tbody>
 </table>
 
-	<?php
-	// WP 2.5 and 2.6 provide a line of their own above any class="submit"
-	if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
+	<?php if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
 	<br/><hr/>
-	<?php endif; ?>
-
 	<div class="submit"><input type="submit" class="delete" name="action" value="Unsubscribe from Checked Links" />
 	<input type="submit" name="action" value="Update Checked Links" /></div>
+	<?php endif; ?>
+
 
 <?php
 	else:
@@ -229,6 +254,10 @@ if ($cont):
 	<div class="submit"><input type="submit" value="Syndicate &raquo;" /></div>
 	</form>
 	</div> <!-- class="wrap" -->
+
+<div style="display: none">
+<div id="tags-input"></div> <!-- avoid JS error from WP 2.5 bug -->
+</div>
 <?php
 endif;
 }
