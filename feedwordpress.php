@@ -935,6 +935,9 @@ class SyndicatedPost {
 			// In case you want to know the external permalink...
 			$this->post['meta']['syndication_permalink'] = apply_filters('syndicated_item_link', $this->item['link']);
 
+			// Store a hash of the post content for checking whether something needs to be updated
+			$this->post['meta']['syndication_item_hash'] = md5(serialize($this->item));
+
 			// Feed-by-feed options for author and category creation
 			$this->post['named']['unfamiliar']['author'] = $this->feedmeta['unfamiliar author'];
 			$this->post['named']['unfamiliar']['category'] = $this->feedmeta['unfamiliar category'];
