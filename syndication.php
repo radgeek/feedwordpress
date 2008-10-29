@@ -5,6 +5,16 @@ require_once(dirname(__FILE__) . '/admin-ui.php');
 ## ADMIN MENU ADD-ONS: implement Dashboard management pages ####################
 ################################################################################
 
+if (fwp_test_wp_version(0, FWP_SCHEMA_25)) :
+	define('FWP_UPDATE_CHECKED', 'Update Checked Links');
+	define('FWP_UNSUB_CHECKED', 'Unsubscribe from Checked Links');
+	define('FWP_SYNDICATE_NEW', 'Syndicate »');
+else :
+	define('FWP_UPDATE_CHECKED', 'Update Checked');
+	define('FWP_UNSUB_CHECKED', 'Unsubscribe');
+	define('FWP_SYNDICATE_NEW', 'Syndicate »');
+endif;
+
 function fwp_dashboard_update_if_requested () {
 	global $wpdb;
 
@@ -15,7 +25,7 @@ function fwp_dashboard_update_if_requested () {
 	endif;
 
 	$update_set = array();
-	if (isset($_POST['link_ids']) and is_array($_POST['link_ids']) and ($_POST['action']=='Update Checked Links')) :
+	if (isset($_POST['link_ids']) and is_array($_POST['link_ids']) and ($_POST['action']==FWP_UPDATE_CHECKED)) :
 		$targets = $wpdb->get_results("
 			SELECT * FROM $wpdb->links
 			WHERE link_id IN (".implode(",",$_POST['link_ids']).")
@@ -85,10 +95,10 @@ function fwp_syndication_manage_page () {
 ?>
 <?php $cont = true;
 if (isset($_REQUEST['action'])):
-	if ($_REQUEST['action'] == 'feedfinder') : $cont = fwp_feedfinder_page();
+	if ($_REQUEST['action'] == 'feedfinder' or $_REQUEST['action'] == FWP_SYNDICATE_NEW) : $cont = fwp_feedfinder_page();
 	elseif ($_REQUEST['action'] == 'switchfeed') : $cont = fwp_switchfeed_page();
 	elseif ($_REQUEST['action'] == 'linkedit') : $cont = fwp_linkedit_page();
-	elseif ($_REQUEST['action'] == 'Unsubscribe from Checked Links' or $_REQUEST['action'] == 'Unsubscribe') : $cont = fwp_multidelete_page();
+	elseif ($_REQUEST['action'] == FWP_UNSUB_CHECKED or $_REQUEST['action'] == 'Unsubscribe') : $cont = fwp_multidelete_page();
 	endif;
 endif;
 
@@ -154,10 +164,34 @@ if ($cont):
 
 	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
 	<div class="tablenav">
+	<div class="alignright">
+	<label for="add-uri">Add new source:</label>
+	<input type="text" name="lookup" id="add-uri" value="Website or feed URI" />
+<script type="text/javascript">
+jQuery(document).ready( function () {
+	var addUri = jQuery("#add-uri");
+	var box = addUri.get(0);
+	if (box.value==box.defaultValue) { addUri.addClass('form-input-tip'); }
+	addUri.focus(function() {
+		if ( this.value == this.defaultValue )
+			jQuery(this).val( '' ).removeClass( 'form-input-tip' );
+	});
+	addUri.blur(function() {
+		if ( this.value == '' )
+			jQuery(this).val( this.defaultValue ).addClass( 'form-input-tip' );
+	});
+
+} );
+</script>
+
+	<input type="hidden" name="action" value="feedfinder" />
+	<input type="submit" class="button-secondary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
+
 	<div class="alignleft">
-	<input class="button-secondary" type="submit" name="action" value="Update Checked Links" />
-	<input class="button-secondary delete" type="submit" class="delete" name="action" value="Unsubscribe from Checked Links" />
+	<input class="button-secondary" type="submit" name="action" value="<?php print FWP_UPDATE_CHECKED; ?>" />
+	<input class="button-secondary delete" type="submit" class="delete" name="action" value="<?php print FWP_UNSUB_CHECKED; ?>" />
 	</div>
+
 	<br class="clear" />
 	</div>
 	<br class="clear" />
@@ -226,8 +260,8 @@ if ($cont):
 
 	<?php if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
 	<br/><hr/>
-	<div class="submit"><input type="submit" class="delete" name="action" value="Unsubscribe from Checked Links" />
-	<input type="submit" name="action" value="Update Checked Links" /></div>
+	<div class="submit"><input type="submit" class="delete" name="action" value="<?php print FWP_UNSUB_CHECKED; ?>" />
+	<input type="submit" name="action" value="<?php print FWP_UPDATE_CHECKED; ?>" /></div>
 	<?php endif; ?>
 
 
@@ -243,6 +277,7 @@ if ($cont):
 
 	</div> <!-- class="wrap" -->
 
+	<?php if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
 	<div class="wrap">
 	<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 	<h2>Add a new syndicated site:</h2>
@@ -254,6 +289,7 @@ if ($cont):
 	<div class="submit"><input type="submit" value="Syndicate &raquo;" /></div>
 	</form>
 	</div> <!-- class="wrap" -->
+	<?php endif; ?>
 
 <div style="display: none">
 <div id="tags-input"></div> <!-- avoid JS error from WP 2.5 bug -->
