@@ -146,6 +146,8 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_filter('the_content', 'feedwordpress_preserve_syndicated_content', -10000);
 	add_filter('the_content', 'feedwordpress_restore_syndicated_content', 10000);
 	
+	add_action('atom_entry', 'feedwordpress_item_feed_data');
+	
 	# Filter in original permalinks if the user wants that
 	add_filter('post_link', 'syndication_permalink', 1);
 
@@ -311,6 +313,32 @@ function feedwordpress_restore_syndicated_content ($text) {
 	endif;
 
 	return $text;
+}
+
+function feedwordpress_item_feed_data () {
+	// In a post context....
+	if (is_syndicated()) :
+?>
+<source>
+	<title><?php the_syndication_source(); ?></title>
+	<link rel="alternate" type="text/html" href="<?php the_syndication_source_link(); ?>" />
+	<link rel="self" href="<?php the_syndication_feed(); ?>" />
+<?php
+	$id = get_feed_meta('feed/id');
+	if (strlen($id) > 0) :
+?>
+	<id><?php print $id; ?></id>
+<?php
+	endif;
+	$updated = get_feed_meta('feed/updated');
+	if (strlen($updated) > 0) : ?>
+	<updated><?php print $updated; ?></updated>
+<?php
+	endif;
+?>
+</source>
+<?php
+	endif;
 }
 
 function syndication_permalink ($permalink = '') {

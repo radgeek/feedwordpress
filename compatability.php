@@ -108,7 +108,7 @@ function fwp_upgrade_page () {
 			echo "<h2>Upgrading FeedWordPress...</h2>";
 
 			$feedwordpress =& new FeedWordPress;
-			$feedwordpress->upgrade_database();
+			$feedwordpress->upgrade_database($ver);
 			echo "<p><strong>Done!</strong> Upgraded database to version ".FEEDWORDPRESS_VERSION.".</p>\n";
 			echo "<form action=\"\" method=\"get\">\n";
 			echo "<div class=\"submit\"><input type=\"hidden\" name=\"page\" value=\"syndication.php\" />";
