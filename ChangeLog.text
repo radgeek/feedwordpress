@@ -1,8 +1,8 @@
 FeedWordPress Change Log
 ========================
 
-Changes from 0.993 to 0.994
----------------------------
+Changes from 0.993 to 2008.1030
+-------------------------------
 
 *	WORDPRESS 2.6 COMPATABILITY: FeedWordPress should now be compatible with
 	WordPress 2.6, and should work more or less seamlessly with the new post
@@ -62,6 +62,12 @@ Changes from 0.993 to 0.994
 *	MODULARIZATION OF CODE: The code for different elements of FeedWordPress
 	has been broken out into several modules for easier inspection,
 	documentation, and maintenance of the code.
+
+*	VERSIONING SCHEME CHANGED: FeedWordPress's feature set has proven stable
+	enough that it can now be removed from beta status; a good thing, since
+	I was very quickly running out of version numbers to use. New releases
+	of FeedWordPress will have version numbers based on the date of their
+	release.
 
 Changes from 0.992 to 0.993
 ---------------------------
