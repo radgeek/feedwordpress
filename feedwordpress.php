@@ -1017,6 +1017,7 @@ class SyndicatedPost {
 			if (is_array($this->feedmeta['tags'])) :
 				$this->post['tags_input'] = array_merge($this->post['tags_input'], $this->feedmeta['tags']);
 			endif;
+
 		endif;
 	} // SyndicatedPost::SyndicatedPost()
 
@@ -1179,15 +1180,21 @@ class SyndicatedPost {
 
 			// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
 			add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
-
+			
+			// Kludge to prevent kses filters from stripping the
+			// content of posts when updating without a logged in
+			// user who has `unfiltered_html` capability.
+			add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
+			
 			$this->_wp_id = wp_insert_post($dbpost);
 
-			// So is this.
+			// Turn off ridiculous fucking kludges #1 and #2
 			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+			remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
 
 			// This should never happen.
 			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
-				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', array($dbpost, $this), __LINE__);
+				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', array("dbpost" => $dbpost, "this" => $this), __LINE__);
 			endif;
 	
 			// Unfortunately, as of WordPress 2.3, wp_insert_post()
@@ -1232,7 +1239,7 @@ class SyndicatedPost {
 
 			// This should never happen.
 			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
-				FeedWordPress::critical_bug('SyndicatedPost::_wp_id', $this->_wp_id, __LINE__);
+				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', array("dbpost" => $dbpost, "this" => $this), __LINE__);
 			endif;
 
 			// WordPress 1.5.x - 2.0.x
@@ -1267,14 +1274,20 @@ class SyndicatedPost {
 			// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
 			add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
 
+			// Kludge to prevent kses filters from stripping the
+			// content of posts when updating without a logged in
+			// user who has `unfiltered_html` capability.
+			add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
+
 			$this->_wp_id = wp_insert_post($dbpost);
 
-			// So is this.
+			// Turn off ridiculous fucking kludges #1 and #2
 			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+			remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
 
 			// This should never happen.
 			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
-				FeedWordPress::critical_bug('SyndicatedPost::_wp_id', $this->_wp_id, __LINE__);
+				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', array("dbpost" => $dbpost, "this" => $this), __LINE__);
 			endif;
 
 			// Unfortunately, as of WordPress 2.3, wp_insert_post()
@@ -1309,7 +1322,7 @@ class SyndicatedPost {
 				wp_set_post_cats('1', $this->wp_id(), $this->post['post_category']);
 			// This should never happen.
 			else :
-				FeedWordPress::critical_bug('SyndicatedPost::insert_new::wp_version', $GLOBALS['wp_version'], __LINE__); 	
+				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', array("dbpost" => $dbpost, "this" => $this), __LINE__);
 			endif;
 	
 			// Since we are not going through official channels, we need to
@@ -1352,7 +1365,31 @@ class SyndicatedPost {
 		");
 	} /* SyndicatedPost::fix_revision_meta () */
 
-
+	/**
+	 * SyndicatedPost::avoid_kses_munge() -- If FeedWordPress is processing
+	 * an automatic update, that generally means that wp_insert_post() is
+	 * being called under the user credentials of whoever is viewing the
+	 * blog at the time -- usually meaning no user at all. But if WordPress
+	 * gets a wp_insert_post() when current_user_can('unfiltered_html') is
+	 * false, it will run the content of the post through a kses function
+	 * that strips out lots of HTML tags -- notably <object> and some others.
+	 * This causes problems for syndicating (for example) feeds that contain
+	 * YouTube videos. It also produces an unexpected asymmetry between
+	 * automatically-initiated updates and updates initiated manually from
+	 * the WordPress Dashboard (which are usually initiated under the
+	 * credentials of a logged-in admin, and so don't get run through the
+	 * kses function). So, to avoid the whole mess, what we do here is
+	 * just forcibly disable the kses munging for a single syndicated post,
+	 * by restoring the contents of the `post_content` field.
+	 *
+	 * @param string $content The content of the post, after other filters have gotten to it
+	 * @return string The original content of the post, before other filters had a chance to munge it.
+	 */
+	 function avoid_kses_munge ($content) {
+		 global $wpdb;
+		 return $wpdb->escape($this->post['post_content']);
+	 }
+	 
 	// SyndicatedPost::add_rss_meta: adds interesting meta-data to each entry
 	// using the space for custom keys. The set of keys and values to add is
 	// specified by the keys and values of $post['meta']. This is used to
