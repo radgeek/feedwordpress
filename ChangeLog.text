@@ -59,6 +59,13 @@ Changes from 0.993 to 2008.1030
 	FeedWordPress, you can now do so by changing the "Formatting Filters"
 	setting from "Protect" to "Expose."
 
+* 	**`<atom:source>` ELEMENTS NOW INCLUDED IN ATOM FEED:** Atom 1.0 provides
+	a standard method for aggregators to indicate information about the original source of
+	a syndicated post, using the `<atom:source>` element. FeedWordPress now 
+	introduces standard `<atom:source>` elements including the title, homepage, and
+	feed URI of the source from which a syndicated post was syndicated. Cf.
+	<http://www.atomenabled.org/developers/syndication/atom-format-spec.php#element.source>
+
 *	MODULARIZATION OF CODE: The code for different elements of FeedWordPress
 	has been broken out into several modules for easier inspection,
 	documentation, and maintenance of the code.

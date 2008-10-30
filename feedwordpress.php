@@ -31,7 +31,7 @@ define ('FEEDWORDPRESS_VERSION', '2008.1030');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
-define ('FEEDWORDPRESS_DEBUG', true);
+define ('FEEDWORDPRESS_DEBUG', false);
 
 define ('FEEDWORDPRESS_CAT_SEPARATOR_PATTERN', '/[:\n]/');
 define ('FEEDWORDPRESS_CAT_SEPARATOR', "\n");
