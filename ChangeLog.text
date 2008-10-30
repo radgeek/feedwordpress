@@ -1,6 +1,39 @@
 FeedWordPress Change Log
 ========================
 
+Changes from 0.993 to 0.994
+---------------------------
+
+*	WORDPRESS 2.6 COMPATABILITY: FeedWordPress should now be compatible with
+	WordPress 2.6, and should work more or less seamlessly with the new post
+	revision system. A bug which caused multiple new revisions to be created
+	for posts on certain feeds, regardless of whether or not the item had
+	been updated, has been fixed.
+
+*	INTERFACE IMPROVEMENTS: The user interface has been substantially
+	restyled to fit in better with the visual style of WordPress 2.5 and
+	2.6.
+
+*	AJAX BUGS FIXED: Bugs which blocked the normal operation of WordPress
+	2.5's AJAX interface elements when FeedWordPress was activated have been
+	fixed.
+
+* 	FORMATTING FILTERS: There is a new option available under Syndication ->
+	Options which allows users to choose whether or not to expose syndicated
+	posts to being altered by formatting filters. By default, FeedWordPress
+	has always protected syndicated posts (which are already in display-ready
+	HTML when they are syndicated) from being reformatted by formatting
+	filters. However, this approach means that certain plugins which depend
+	on formatting filters (for example, to add "Share This" bars or relevant
+	links to the end of a post) are blocked from working on any syndicated
+	posts. If you want to use one of these plugins together with
+	FeedWordPress, you can now do so by changing the "Formatting Filters"
+	setting from "Protect" to "Expose."
+
+*	MODULARIZATION OF CODE: The code for different elements of FeedWordPress
+	has been broken out into several modules for easier inspection,
+	documentation, and maintenance of the code.
+
 Changes from 0.992 to 0.993
 ---------------------------
 
