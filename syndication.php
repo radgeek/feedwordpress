@@ -740,7 +740,7 @@ function fwp_linkedit_page () {
 			endforeach;
 
 			$unfamiliar['author'] = array ('create' => '','default' => '','filter' => '');
-			$unfamiliar['category'] = array ('create'=>'','default'=>'','filter'=>'');
+			$unfamiliar['category'] = array ('create'=>'','tag' => '','default'=>'','filter'=>'');
 
 			foreach (array('author', 'category') as $what) :
 				if (is_string($meta["unfamiliar {$what}"]) and
@@ -934,12 +934,15 @@ endif;
 <table>
 <tr>
 <th width="20%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
-<td width="80%"><ul style="margin: 0; list-style:none">
-<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
+<td width="80%"><p>When one of the categories on a syndicated post is a category that FeedWordPress has not encountered before ...</p>
+
+<ul style="margin: 0; list-style:none">
+<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use the site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
 (currently <strong><?php echo FeedWordPress::on_unfamiliar('category'); ?></strong>)</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar['category']['create']; ?> /> create any categories the post is in</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar['category']['filter']; ?> /> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar['category']['create']; ?> /> create a new category</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="tag"<?php echo $unfamiliar['category']['tag']; ?>/> create a new tag</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories or tags</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar['category']['filter']; ?> /> don't create new categories or tags and don't syndicate posts unless they match at least one familiar category</label></li>
 </ul></td>
 </tr>
 

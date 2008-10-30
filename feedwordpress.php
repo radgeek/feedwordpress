@@ -628,15 +628,18 @@ class FeedWordPress {
 	} // function FeedWordPress::syndicate_link()
 
 	function on_unfamiliar ($what = 'author', $override = NULL) {
-		$set = array('create', 'default', 'filter');
-
+		$set = array(
+			'author' => array('create', 'default', 'filter'),
+			'category' => array('create', 'tag', 'default', 'filter'),
+		);
+		
 		if (is_string($override)) :
 			$ret = strtolower($override);
 		endif;
 
-		if (!is_numeric($override) and !in_array($ret, $set)) :
+		if (!is_numeric($override) and !in_array($ret, $set[$what])) :
 			$ret = get_option('feedwordpress_unfamiliar_'.$what);
-			if (!is_numeric($ret) and !in_array($ret, $set)) :
+			if (!is_numeric($ret) and !in_array($ret, $set[$what])) :
 				$ret = 'create';
 			endif;
 		endif;
@@ -1104,11 +1107,15 @@ class SyndicatedPost {
 		
 		if (!$this->filtered() and $freshness > 0) :
 			# -- Look up, or create, numeric ID for categories
-			$this->post['post_category'] = $this->category_ids (
+			list($pcats, $ptags) = $this->category_ids (
 				$this->post['named']['category'],
-				FeedWordPress::on_unfamiliar('category', $this->post['named']['unfamiliar']['category'])
+				FeedWordPress::on_unfamiliar('category', $this->post['named']['unfamiliar']['category']),
+				/*tags_too=*/ true
 			);
-				
+
+			$this->post['post_category'] = $pcats;
+			$this->post['tags_input'] = array_merge($this->post['tags_input'], $ptags);
+
 			if (is_null($this->post['post_category'])) :
 				// filter mode on, no matching categories; drop the post
 				$this->post = NULL;
@@ -1568,7 +1575,7 @@ class SyndicatedPost {
 	} // function SyndicatedPost::author_id ()
 
 	// look up (and create) category ids from a list of categories
-	function category_ids ($cats, $unfamiliar_category = 'create') {
+	function category_ids ($cats, $unfamiliar_category = 'create', $tags_too = false) {
 		global $wpdb;
 
 		// We need to normalize whitespace because (1) trailing
@@ -1578,6 +1585,8 @@ class SyndicatedPost {
 		// because I doubt most people want to make a semantic
 		// distinction between 'Computers' and 'Computers  '
 		$cats = array_map('trim', $cats);
+
+		$tags = array();
 
 		$cat_ids = array ();
 		foreach ($cats as $cat_name) :
@@ -1608,6 +1617,8 @@ class SyndicatedPost {
 						foreach ($results AS $term) :
 							$cat_ids[] = (int) $term->term_id;
 						endforeach;
+					elseif ('tag'==$unfamiliar_category) :
+						$tags[] = $cat_name;
 					elseif ('create'===$unfamiliar_category) :
 						$term = wp_insert_term($cat_name, 'category');
 						$cat_ids[] = $term['term_id'];
@@ -1653,7 +1664,12 @@ class SyndicatedPost {
 		else :
 			$cat_ids = array_unique($cat_ids);
 		endif;
-		return $cat_ids;
+		
+		if ($tags_too) : $ret = array($cat_ids, $tags);
+		else : $ret = $cat_ids;
+		endif;
+
+		return $ret;
 	} // function SyndicatedPost::category_ids ()
 
 	function use_api ($tag) {

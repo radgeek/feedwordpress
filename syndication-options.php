@@ -143,7 +143,7 @@ function fwp_syndication_options_page () {
 	if (is_string($ua) and array_key_exists($ua, $unfamiliar_author)) :
 		$unfamiliar_author[$ua] = ' checked="checked"';
 	endif;
-	$unfamiliar_category = array ('create'=>'','default'=>'','filter'=>'');
+	$unfamiliar_category = array ('create'=>'','default'=>'','filter'=>'', 'tag'=>'');
 	$uc = FeedWordPress::on_unfamiliar('category');
 	if (is_string($uc) and array_key_exists($uc, $unfamiliar_category)) :
 		$unfamiliar_category[$uc] = ' checked="checked"';
@@ -275,10 +275,12 @@ problem.</p>
 ?>
 <table class="editform" width="75%" cellspacing="2" cellpadding="5">
 <tr style="vertical-align: top"><th width="27%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
-<td><ul style="margin: 0; padding:0; list-style:none">
-<li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar_category['create']; ?>/> create any categories the post is in</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar_category['default']; ?>/> don't create new categories</li>
-<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar_category['filter']; ?>/> don't create new categories and don't syndicate posts unless they match at least one familiar category</label></li>
+<td><p>When one of the categories on a syndicated post is a category that FeedWordPress has not encountered before ...</p>
+<ul style="margin: 0; padding:0; list-style:none">
+<li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar_category['create']; ?>/> create a new category</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="tag"<?php echo $unfamiliar_category['tag']; ?>/> create a new tag</label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar_category['default']; ?>/> don't create new categories or tags</li>
+<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar_category['filter']; ?>/> don't create new categories or tags and don't syndicate posts unless they match at least one familiar category</label></li>
 </ul></td></tr>
 </table>
 <?php

@@ -14,22 +14,38 @@ Changes from 0.993 to 0.994
 	restyled to fit in better with the visual style of WordPress 2.5 and
 	2.6.
 
-*	BUGFIX: POSTS SYNDICATED THROUGH AN AUTOMATIC UPDATE ARE NO LONGER
-	STRIPPED OF `<OBJECT>` TAGS AND CERTAIN OTHER HTML ELEMENTS: Due to the
-	way that some versions of WordPress process posts that are inserted into
-	the database when no user is logged in, many users experienced an issue
-	where YouTube videos and other content using the HTML `<object>` tag
-	would be stripped out of posts that were syndicated during an automatic
-	update. (Posts that were syndicated through manual updates from within
-	the WordPress Dashboard were not affected, because the issue does not
-	arise when an update is executed under a logged-in administrator's
-	credentials.) This bug has now been fixed; YouTube videos and other
-	content using `<object>` tags should now appear properly in syndicated
-	posts, regardless of the way in which the post was syndicated.
-	
+*	YOUTUBE BUG FIXED: POSTS SYNDICATED THROUGH AN AUTOMATIC UPDATE ARE NO
+	LONGER STRIPPED OF `<OBJECT>` TAGS AND CERTAIN OTHER HTML ELEMENTS: Due
+	to the way that some versions of WordPress process posts that are
+	inserted into the database when no user is logged in, many users
+	experienced an issue where YouTube videos and other content using the
+	HTML `<object>` tag would be stripped out of posts that were syndicated
+	during an automatic update. (Posts that were syndicated through manual
+	updates from within the WordPress Dashboard were not affected, because
+	the issue does not arise when an update is executed under a logged-in
+	administrator's credentials.) This bug has now been fixed; YouTube
+	videos and other content using `<object>` tags should now appear
+	properly in syndicated posts, regardless of the way in which the post
+	was syndicated.
+
 *	AJAX BUGS FIXED: Bugs which blocked the normal operation of WordPress
 	2.5's AJAX interface elements when FeedWordPress was activated have been
 	fixed.
+
+*	TAG SUPPORT: A couple of features have been introduced to take advantage
+	of the tagging features in WordPress 2.3.x, 2.5.x, and 2.6.x. Now, when
+	unfamiliar categories are encountered for posts on a feed, you can
+	choose for FeedWordPress (1) to drop the category; (2) to drop the
+	category and to filter out any post that does not match at least one
+	familiar category; (3) to create a new category with that name, or,
+	now, you can also have FeedWordPress (4) create a new *tag* with that
+	name. This option can be set site-wide under Syndication --> Options,
+	or it can be set on a feed-by-feed basis in a feed's Edit screen.
+	
+	In addition, you can now set particular tags to apply to all incoming
+	syndicated posts, under Syndication --> Options, or you can set tags
+	to apply to all incoming syndicated posts from a particular feed in that
+	feed's Edit screen.
 
 * 	FORMATTING FILTERS: There is a new option available under Syndication ->
 	Options which allows users to choose whether or not to expose syndicated
