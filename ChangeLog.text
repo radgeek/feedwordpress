@@ -14,6 +14,19 @@ Changes from 0.993 to 0.994
 	restyled to fit in better with the visual style of WordPress 2.5 and
 	2.6.
 
+*	BUGFIX: POSTS SYNDICATED THROUGH AN AUTOMATIC UPDATE ARE NO LONGER
+	STRIPPED OF `<OBJECT>` TAGS AND CERTAIN OTHER HTML ELEMENTS: Due to the
+	way that some versions of WordPress process posts that are inserted into
+	the database when no user is logged in, many users experienced an issue
+	where YouTube videos and other content using the HTML `<object>` tag
+	would be stripped out of posts that were syndicated during an automatic
+	update. (Posts that were syndicated through manual updates from within
+	the WordPress Dashboard were not affected, because the issue does not
+	arise when an update is executed under a logged-in administrator's
+	credentials.) This bug has now been fixed; YouTube videos and other
+	content using `<object>` tags should now appear properly in syndicated
+	posts, regardless of the way in which the post was syndicated.
+	
 *	AJAX BUGS FIXED: Bugs which blocked the normal operation of WordPress
 	2.5's AJAX interface elements when FeedWordPress was activated have been
 	fixed.
