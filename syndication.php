@@ -159,8 +159,7 @@ if ($cont):
 	<div class="wrap">
 	<form id="syndicated-links" action="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/<?php echo basename(__FILE__); ?>" method="post">
 	<h2>Syndicated Sites</h2>
-<?php	$alt_row = true;
-	if ($links): ?>
+<?php	$alt_row = true; ?>
 
 	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
 	<div class="tablenav">
@@ -187,10 +186,12 @@ jQuery(document).ready( function () {
 	<input type="hidden" name="action" value="feedfinder" />
 	<input type="submit" class="button-secondary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
 
+<?php	if (count($links) > 0) : ?>
 	<div class="alignleft">
 	<input class="button-secondary" type="submit" name="action" value="<?php print FWP_UPDATE_CHECKED; ?>" />
 	<input class="button-secondary delete" type="submit" class="delete" name="action" value="<?php print FWP_UNSUB_CHECKED; ?>" />
 	</div>
+<?php 	endif; ?>
 
 	<br class="clear" />
 	</div>
@@ -213,7 +214,7 @@ jQuery(document).ready( function () {
 </thead>
 
 <tbody>
-<?php		foreach ($links as $link):
+<?php		if (count($links) > 0): foreach ($links as $link):
 			$alt_row = !$alt_row; ?>
 <tr<?php echo ($alt_row?' class="alternate"':''); ?>>
 	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
@@ -254,24 +255,20 @@ jQuery(document).ready( function () {
 			endif;
 			echo "\n\t</tr>";
 		endforeach;
+		else :
+?>
+<tr><td colspan="<?php print $span+2; ?>"><p>There are no websites currently listed for syndication.</p></td></tr>
+<?php
+		endif;
 ?>
 </tbody>
 </table>
 
-	<?php if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
-	<br/><hr/>
-	<div class="submit"><input type="submit" class="delete" name="action" value="<?php print FWP_UNSUB_CHECKED; ?>" />
-	<input type="submit" name="action" value="<?php print FWP_UPDATE_CHECKED; ?>" /></div>
-	<?php endif; ?>
-
-
-<?php
-	else:
-?>
-
-<p>There are no websites currently listed for syndication.</p>
-
-<?php	endif; ?>
+<?php if (count($links) > 0 and fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
+<br/><hr/>
+<div class="submit"><input type="submit" class="delete" name="action" value="<?php print FWP_UNSUB_CHECKED; ?>" />
+<input type="submit" name="action" value="<?php print FWP_UPDATE_CHECKED; ?>" /></div>
+<?php endif; ?>
 
 	</form>
 
