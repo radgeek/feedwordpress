@@ -331,7 +331,7 @@ endif;
   </select>
   </td>
   <td>
-  <div id="unfamiliar-author-default">This is a default setting. You can override it for one or more particular feeds using the Edit link in <a href="admin.php?page=feedwordpress/syndication.php">Syndicated Sites</a></div>
+  <div id="unfamiliar-author-default">This is a default setting. You can override it for one or more particular feeds using the Edit link in <a href="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/syndication.php">Syndicated Sites</a></div>
   <div id="unfamiliar-author-newuser"><input type="text" name="unfamiliar_author_newuser" value="" /></div>
   </td>
 </tr>
