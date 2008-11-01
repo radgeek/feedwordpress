@@ -1,6 +1,14 @@
 FeedWordPress Change Log
 ========================
 
+Changes from 2008.1030 to 2008.1101
+-----------------------------------
+
+* 	INTERFACE BUG THAT PREVENTED ADDING NEW SITES FIXED: The UI reforms in
+	FWP 2008.1030 unintentionally introduced a bug that prevents clean
+	installations of FeedWordPress from providing an input box for adding
+	new feeds to the list of syndicated feeds. This bug has been fixed.
+
 Changes from 0.993 to 2008.1030
 -------------------------------
 
