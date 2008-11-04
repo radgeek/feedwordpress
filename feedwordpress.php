@@ -40,6 +40,7 @@ define ('FEEDVALIDATOR_URI', 'http://feedvalidator.org/check.cgi');
 
 define ('FEEDWORDPRESS_FRESHNESS_INTERVAL', 10*60); // Every ten minutes
 
+define ('FWP_SCHEMA_HAS_USERMETA', 2966);
 define ('FWP_SCHEMA_20', 3308); // Database schema # for WP 2.0
 define ('FWP_SCHEMA_21', 4772); // Database schema # for WP 2.1
 define ('FWP_SCHEMA_23', 5495); // Database schema # for WP 2.3
@@ -646,6 +647,26 @@ class FeedWordPress {
 
 		return $ret;
 	} // function FeedWordPress::on_unfamiliar()
+
+	function null_email_set () {
+		$base = get_option('feedwordpress_null_email_set');
+
+		if ($base===false) :
+			$ret = array('noreply@blogger.com'); // default
+		else :
+			$ret = array_map('strtolower',
+				array_map('trim', explode("\n", $base)));
+		endif;
+		$ret = apply_filters('syndicated_item_author_null_email_set', $ret);
+		return $ret;
+
+	} /* FeedWordPress::null_email_set () */
+
+	function is_null_email ($email) {
+		$ret = in_array(strtolower(trim($email)), FeedWordPress::null_email_set());
+		$ret = apply_filters('syndicated_item_author_is_null_email', $ret, $email);
+		return $ret;
+	} /* FeedWordPress::is_null_email () */
 
 	function syndicated_links () {
 		$contributors = FeedWordPress::link_category_id();
@@ -1450,12 +1471,19 @@ class SyndicatedPost {
 	// SyndicatedPost::author_id (): get the ID for an author name from
 	// the feed. Create the author if necessary.
 	function author_id ($unfamiliar_author = 'create') {
-		global $wpdb, $wp_db_version; // test for WordPress 2.0 database schema
+		global $wpdb;
 
 		$a = $this->author();
 		$author = $a['name'];
 		$email = $a['email'];
 		$url = $a['uri'];
+
+		$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
+		if ($match_author_by_email and !FeedWordPress::is_null_email($email)) :
+			$test_email = $email;
+		else :
+			$test_email = NULL;
+		endif;
 
 		// Never can be too careful...
 		$login = sanitize_user($author, /*strict=*/ true);
@@ -1467,6 +1495,7 @@ class SyndicatedPost {
 		$reg_author = $wpdb->escape(preg_quote($author));
 		$author = $wpdb->escape($author);
 		$email = $wpdb->escape($email);
+		$test_email = $wpdb->escape($test_email);
 		$url = $wpdb->escape($url);
 
 		// Check for an existing author rule....
@@ -1487,32 +1516,8 @@ class SyndicatedPost {
 		else :
 			// Check the database for an existing author record that might fit
 
-			#-- WordPress 1.5.x
-			if (!isset($wp_db_version)) :
-				$id = $wpdb->get_var(
-				"SELECT ID from $wpdb->users
-				 WHERE
-					TRIM(LCASE(user_login)) = TRIM(LCASE('$login')) OR
-					(
-						LENGTH(TRIM(LCASE(user_email))) > 0
-						AND TRIM(LCASE(user_email)) = TRIM(LCASE('$email'))
-					) OR
-					TRIM(LCASE(user_firstname)) = TRIM(LCASE('$author')) OR
-					TRIM(LCASE(user_nickname)) = TRIM(LCASE('$author')) OR
-					TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author')) OR
-					TRIM(LCASE(user_description)) = TRIM(LCASE('$author')) OR
-					(
-						LOWER(user_description)
-						RLIKE CONCAT(
-							'(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*',
-							LCASE('$reg_author'),
-							'( |\\t|\\r)*(\\n|\$)'
-						)
-					)
-				");
-
 			#-- WordPress 2.0+
-			elseif ($wp_db_version >= 2966) :
+			if (fwp_test_wp_version(FWP_SCHEMA_HAS_USERMETA)) :
 
 				// First try the user core data table.
 				$id = $wpdb->get_var(
@@ -1521,7 +1526,7 @@ class SyndicatedPost {
 					TRIM(LCASE(user_login)) = TRIM(LCASE('$login'))
 					OR (
 						LENGTH(TRIM(LCASE(user_email))) > 0
-						AND TRIM(LCASE(user_email)) = TRIM(LCASE('$email'))
+						AND TRIM(LCASE(user_email)) = TRIM(LCASE('$test_email'))
 					)
 					OR TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author'))
 				");
@@ -1543,6 +1548,31 @@ class SyndicatedPost {
 						)
 					");
 				endif;
+
+			#-- WordPress 1.5.x
+			else :
+				$id = $wpdb->get_var(
+				"SELECT ID from $wpdb->users
+				 WHERE
+					TRIM(LCASE(user_login)) = TRIM(LCASE('$login')) OR
+					(
+						LENGTH(TRIM(LCASE(user_email))) > 0
+						AND TRIM(LCASE(user_email)) = TRIM(LCASE('$test_email'))
+					) OR
+					TRIM(LCASE(user_firstname)) = TRIM(LCASE('$author')) OR
+					TRIM(LCASE(user_nickname)) = TRIM(LCASE('$author')) OR
+					TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author')) OR
+					TRIM(LCASE(user_description)) = TRIM(LCASE('$author')) OR
+					(
+						LOWER(user_description)
+						RLIKE CONCAT(
+							'(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*',
+							LCASE('$reg_author'),
+							'( |\\t|\\r)*(\\n|\$)'
+						)
+					)
+				");
+
 			endif;
 
 			// ... if you don't find one, then do what you need to do

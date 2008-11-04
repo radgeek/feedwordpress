@@ -47,6 +47,16 @@ function fwp_syndication_options_page () {
 				update_option('feedwordpress_unfamiliar_author', $_REQUEST['unfamiliar_author']);
 			endif;
 
+			if (isset($_REQUEST['match_author_by_email']) and $_REQUEST['match_author_by_email']=='yes') :
+				update_option('feedwordpress_do_not_match_author_by_email', 'no');
+			else :
+				update_option('feedwordpress_do_not_match_author_by_email', 'yes');
+			endif;
+
+			if (isset($_REQUEST['null_emails'])) :
+				update_option('feedwordpress_null_email_set', $_REQUEST['null_emails']);
+			endif;
+
 			update_option('feedwordpress_unfamiliar_category', $_REQUEST['unfamiliar_category']);
 			update_option('feedwordpress_syndicated_post_status', $_REQUEST['post_status']);
 			update_option('feedwordpress_automatic_updates', ($_POST['automatic_updates']=='yes'));
@@ -143,6 +153,10 @@ function fwp_syndication_options_page () {
 	if (is_string($ua) and array_key_exists($ua, $unfamiliar_author)) :
 		$unfamiliar_author[$ua] = ' checked="checked"';
 	endif;
+	
+	$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
+	$null_emails = FeedWordPress::null_email_set();
+	
 	$unfamiliar_category = array ('create'=>'','default'=>'','filter'=>'', 'tag'=>'');
 	$uc = FeedWordPress::on_unfamiliar('category');
 	if (is_string($uc) and array_key_exists($uc, $unfamiliar_category)) :
@@ -173,12 +187,12 @@ function fwp_syndication_options_page () {
 	);
 ?>
 <script type="text/javascript">
-	function flip_newuser (item) {
-		rollup=document.getElementById(item);
-		newuser=document.getElementById(item+'-newuser');
-		sitewide=document.getElementById(item+'-default');
+	function contextual_appearance (item, appear, disappear, value, checkbox) {
+		var rollup=document.getElementById(item);
+		var newuser=document.getElementById(appear);
+		var sitewide=document.getElementById(disappear);
 		if (rollup) {
-			if ('newuser'==rollup.value) {
+			if ((checkbox && rollup.checked) || (!checkbox && value==rollup.value)) {
 				if (newuser) newuser.style.display='block';
 				if (sitewide) sitewide.style.display='none';
 			} else {
@@ -318,10 +332,10 @@ endif;
 ?>
 <table>
 <tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by authors that haven't been syndicated before:</th></tr>
-<tr>
+<tr style="vertical-align: top">
   <th style="text-align: left">Posts by new authors</th>
   <td> 
-  <select id="unfamiliar-author" name="unfamiliar_author" onchange="flip_newuser('unfamiliar-author');">
+  <select style="max-width: 16.0em;" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser');">
     <option value="create"<?php if ('create'==$unfamiliar_author) : ?>selected="selected"<?php endif; ?>>create a new author account</option>
     <?php foreach ($authorlist as $author_id => $author_name) : ?>
       <option value="<?php echo $author_id; ?>"<?php if ($author_id==$unfamiliar_author) : ?>selected="selected"<?php endif; ?>>are assigned to <?php echo $author_name; ?></option>
@@ -331,15 +345,34 @@ endif;
   </select>
   </td>
   <td>
-  <div id="unfamiliar-author-default">This is a default setting. You can override it for one or more particular feeds using the Edit link in <a href="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/syndication.php">Syndicated Sites</a></div>
   <div id="unfamiliar-author-newuser"><input type="text" name="unfamiliar_author_newuser" value="" /></div>
   </td>
 </tr>
+<tr><td></td>
+<td colspan="2">
+<p>This is a default setting. You can override it for one or more particular feeds using the Edit link in <a href="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/syndication.php">Syndicated Sites</a></p>
+</td>
 </table>
 
-<script>
-	flip_newuser('unfamiliar-author');
+<script type="text/javascript">
+	contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser');
 </script>
+
+<h4>Matching Authors</h4>
+<ul style="list-style: none; margin: 0; padding: 0;">
+<li><div><label><input id="match-author-by-email" type="checkbox" name="match_author_by_email" value="yes" <?php if ($match_author_by_email) : ?>checked="checked" <?php endif; ?>onchange="contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', /*checkbox=*/ true);" /> Treat syndicated authors with the same e-mail address as the same author.</label></div>
+<div id="unless-null-email">
+<p>Unless the e-mail address is one of the following anonymous e-mail addresses:</p>
+<textarea name="null_emails" rows="3" style="width: 100%">
+<?php print implode("\n", $null_emails); ?>
+</textarea>
+</div></li>
+</ul>
+
+<script type="text/javascript">
+contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', /*checkbox=*/ true);
+</script>
+
 <?php
 	fwp_option_box_closer();
 	fwp_linkedit_periodic_submit();
