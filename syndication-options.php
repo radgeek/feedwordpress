@@ -9,7 +9,21 @@ function fwp_syndication_options_page () {
 		return;
 	endif;
 
-	if (isset($_POST['submit'])) :
+	if (isset($_POST['create_index'])) :
+		check_admin_referer();
+		if (!current_user_can('manage_options')) :
+			die (__("Cheatin' uh ?"));
+		else :
+			FeedWordPress::create_guid_index();
+?>
+<div class="updated">
+<p><?php _e('Index created on database table.')?></p>
+</div>
+<?php
+		endif;
+	endif;
+
+	if (isset($_POST['submit']) or isset($_POST['create_index'])) :
 		check_admin_referer();
 
 		if (!current_user_can('manage_options')):
@@ -394,11 +408,18 @@ contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes',
 	fwp_option_box_opener('Back End', 'backenddiv', 'postbox');
 ?>
 <table class="editform" width="100%" cellspacing="2" cellpadding="5">
-<th width="33%" scope="row">Write update notices to PHP logs:</th>
+<tr style="vertical-align: top">
+<th width="33%" scope="row">Update notices:</th>
 <td width="67%"><select name="update_logging" size="1">
-<option value="yes"<?php echo (($update_logging=='yes')?' selected="selected"':''); ?>>yes</option>
-<option value="no"<?php echo (($update_logging!='yes')?' selected="selected"':''); ?>>no</option>
+<option value="yes"<?php echo (($update_logging=='yes')?' selected="selected"':''); ?>>write to PHP logs</option>
+<option value="no"<?php echo (($update_logging!='yes')?' selected="selected"':''); ?>>don't write to PHP logs</option>
 </select></td>
+</tr>
+<tr style="vertical-align: top">
+<th width="33%" scope="row">Guid index:</th>
+<td width="67%"><input class="button" type="submit" name="create_index" value="Create index on guid column in posts database table" />
+<p>Creating this index may significantly improve performance on some large
+FeedWordPress installations.</p></td>
 </tr>
 </table>
 <?php
@@ -407,8 +428,9 @@ contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes',
 ?>
 </div>
 </form>
-</div>
-</div>
+
+</div> <!-- id="poststuff" -->
+</div> <!-- class="wrap" -->
 <?php
 }
 

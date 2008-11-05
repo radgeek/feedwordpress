@@ -895,6 +895,14 @@ class FeedWordPress {
 		echo "<p>Upgrade complete. FeedWordPress is now ready to use again.</p>";
 	} /* FeedWordPress::upgrade_database() */
 
+	function create_guid_index () {
+		global $wpdb;
+		
+		$wpdb->query("
+		CREATE INDEX {$wpdb->posts}_guid_idx ON {$wpdb->posts}(guid)
+		");
+	} /* FeedWordPress::create_guid_index () */
+	
 	# Utility functions for handling text settings
 	function negative ($f, $setting) {
 		$nego = array ('n', 'no', 'f', 'false');
