@@ -31,7 +31,7 @@ define ('FEEDWORDPRESS_VERSION', '2008.1101');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
-define ('FEEDWORDPRESS_DEBUG', false);
+define ('FEEDWORDPRESS_DEBUG', true);
 
 define ('FEEDWORDPRESS_CAT_SEPARATOR_PATTERN', '/[:\n]/');
 define ('FEEDWORDPRESS_CAT_SEPARATOR', "\n");
@@ -2172,7 +2172,15 @@ class SyndicatedLink {
 		$this->magpie = fetch_rss($this->link->link_rss);
 		$new_count = NULL;
 
-		$processed = array();
+		$resume = FeedWordPress::affirmative($this->settings, 'update/unfinished');
+		if ($resume) :
+			// pick up where we left off
+			$processed = array_map('trim', explode("\n", $this->settings['update/processed']));
+		else :
+			// begin at the beginning
+			$processed = array();
+		endif;
+
 		if (is_object($this->magpie)) :
 			$new_count = array('new' => 0, 'updated' => 0);
 
@@ -2215,6 +2223,8 @@ class SyndicatedLink {
 				$this->settings['update/hold'] = 'scheduled';
 			endif;
 
+			$this->settings['update/unfinished'] = 'yes';
+
 			$update[] = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
 
 			$update_set = implode(',', $update);
@@ -2228,10 +2238,6 @@ class SyndicatedLink {
 
 			# -- Add new posts from feed and update any updated posts
 			$crashed = false;
-			$resume = FeedWordPress::affirmative($this->settings, 'update/unfinished');
-			if ($resume) :
-				$processed = array_map('trim', explode("\n", $this->settings['update/processed']));
-			endif;
 
 			if (is_array($this->magpie->items)) :
 				foreach ($this->magpie->items as $item) :
@@ -2255,9 +2261,7 @@ class SyndicatedLink {
 			$to_notes = $this->settings;
 
 			$this->settings['update/processed'] = $processed;
-			if ($crashed) :
-				$this->settings['update/unfinished'] = 'yes';
-			else :
+			if (!$crashed) :
 				$this->settings['update/unfinished'] = 'no';
 			endif;
 
@@ -2284,7 +2288,9 @@ class SyndicatedLink {
 		unset($to_notes['unfamiliar categories']); // Deprecated
 
 		// Collapse array settings
-		$to_notes['update/processed'] = implode("\n", $to_notes['update/processed']);
+		if (isset($to_notes['update/processed']) and (is_array($to_notes['update/processed']))) :
+			$to_notes['update/processed'] = implode("\n", $to_notes['update/processed']);
+		endif;
 
 		if (is_array($to_notes['cats'])) :
 			$to_notes['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['cats']);
