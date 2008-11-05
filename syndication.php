@@ -485,11 +485,6 @@ function fwp_linkedit_page () {
 			if (isset($GLOBALS['fwp_post']['save'])) :
 				$alter = array ();
 				
-				$meta = $link->settings;
-				//if (isset($meta['cats'])):
-				//	$meta['cats'] = preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, $meta['cats']);
-				//endif;
-
 				// custom feed settings first
 				foreach ($GLOBALS['fwp_post']['notes'] as $mn) :
 					$mn['key0'] = trim($mn['key0']);
@@ -502,55 +497,55 @@ function fwp_linkedit_page () {
 					endif;
 
 					if (strlen($mn['key0']) > 0) :
-						unset($meta[$mn['key0']]); // out with the old
+						unset($link->settings[$mn['key0']]); // out with the old
 					endif;
 					
 					if (($mn['action']=='update') and (strlen($mn['key1']) > 0)) :
-						$meta[$mn['key1']] = $mn['value']; // in with the new
+						$link->settings[$mn['key1']] = $mn['value']; // in with the new
 					endif;
 				endforeach;
 				
 				// now stuff through the web form
 				// hardcoded feed info
 				if (isset($GLOBALS['fwp_post']['hardcode_name'])) :
-					$meta['hardcode name'] = $GLOBALS['fwp_post']['hardcode_name'];
-					if (FeedWordPress::affirmative($meta, 'hardcode name')) :
+					$link->settings['hardcode name'] = $GLOBALS['fwp_post']['hardcode_name'];
+					if (FeedWordPress::affirmative($link->settings, 'hardcode name')) :
 						$alter[] = "link_name = '".$wpdb->escape($GLOBALS['fwp_post']['name'])."'";
 					endif;
 				endif;
 				if (isset($GLOBALS['fwp_post']['hardcode_description'])) :
-					$meta['hardcode description'] = $GLOBALS['fwp_post']['hardcode_description'];
-					if (FeedWordPress::affirmative($meta, 'hardcode description')) :
+					$link->settings['hardcode description'] = $GLOBALS['fwp_post']['hardcode_description'];
+					if (FeedWordPress::affirmative($link->settings, 'hardcode description')) :
 						$alter[] = "link_description = '".$wpdb->escape($GLOBALS['fwp_post']['description'])."'";
 					endif;
 				endif;
 				if (isset($GLOBALS['fwp_post']['hardcode_url'])) :
-					$meta['hardcode url'] = $GLOBALS['fwp_post']['hardcode_url'];
-					if (FeedWordPress::affirmative($meta, 'hardcode url')) :
+					$link->settings['hardcode url'] = $GLOBALS['fwp_post']['hardcode_url'];
+					if (FeedWordPress::affirmative($link->settings, 'hardcode url')) :
 						$alter[] = "link_url = '".$wpdb->escape($GLOBALS['fwp_post']['linkurl'])."'";
 					endif;
 				endif;
 				
 				// Update scheduling
 				if (isset($GLOBALS['fwp_post']['update_schedule'])) :
-					$meta['update/hold'] = $GLOBALS['fwp_post']['update_schedule'];
+					$link->settings['update/hold'] = $GLOBALS['fwp_post']['update_schedule'];
 				endif;
 
 				// Categories
 				if (isset($GLOBALS['fwp_post']['post_category'])) :
-					$meta['cats'] = array();
+					$link->settings['cats'] = array();
 					foreach ($GLOBALS['fwp_post']['post_category'] as $cat_id) :
-						$meta['cats'][] = '{#'.$cat_id.'}';
+						$link->settings['cats'][] = '{#'.$cat_id.'}';
 					endforeach;
 				else :
-					unset($meta['cats']);
+					unset($link->settings['cats']);
 				endif;
 
 				// Tags
 				if (isset($GLOBALS['fwp_post']['tags_input'])) :
-					$meta['tags'] = array();
+					$link->settings['tags'] = array();
 					foreach (explode(',', $GLOBALS['fwp_post']['tags_input']) as $tag) :
-						$meta['tags'][] = trim($tag);
+						$link->settings['tags'][] = trim($tag);
 					endforeach;
 				endif;
 
@@ -559,9 +554,9 @@ function fwp_linkedit_page () {
 					$sfield = "feed_{$what}_status";
 					if (isset($GLOBALS['fwp_post'][$sfield])) :
 						if ($GLOBALS['fwp_post'][$sfield]=='site-default') :
-							unset($meta["{$what} status"]);
+							unset($link->settings["{$what} status"]);
 						else :
-							$meta["{$what} status"] = $GLOBALS['fwp_post'][$sfield];
+							$link->settings["{$what} status"] = $GLOBALS['fwp_post'][$sfield];
 						endif;
 					endif;
 				endforeach;
@@ -571,7 +566,7 @@ function fwp_linkedit_page () {
 					$sfield = "unfamiliar_{$what}";
 					if (isset($GLOBALS['fwp_post'][$sfield])) :
 						if ('site-default'==$GLOBALS['fwp_post'][$sfield]) :
-							unset($meta["unfamiliar {$what}"]);
+							unset($link->settings["unfamiliar {$what}"]);
 						elseif ('newuser'==$GLOBALS['fwp_post'][$sfield]) :
 							$newuser_name = trim($GLOBALS['fwp_post']["{$sfield}_newuser"]);
 							if (strlen($newuser_name) > 0) :
@@ -588,7 +583,7 @@ function fwp_linkedit_page () {
 
 								$newuser_id = wp_insert_user($userdata);
 								if (is_numeric($newuser_id)) :
-									$meta["unfamiliar {$what}"] = $newuser_id;
+									$link->settings["unfamiliar {$what}"] = $newuser_id;
 								else :
 									// TODO: Add some error detection and reporting
 								endif;
@@ -596,14 +591,14 @@ function fwp_linkedit_page () {
 								// TODO: Add some error reporting
 							endif;
 						else :
-							$meta["unfamiliar {$what}"] = $GLOBALS['fwp_post'][$sfield];
+							$link->settings["unfamiliar {$what}"] = $GLOBALS['fwp_post'][$sfield];
 						endif;
 					endif;
 				endforeach;
 				
 				// Handle author mapping rules
 				if (isset($GLOBALS['fwp_post']['author_rules_name']) and isset($GLOBALS['fwp_post']['author_rules_action'])) :
-					unset($meta['map authors']);
+					unset($link->settings['map authors']);
 					foreach ($GLOBALS['fwp_post']['author_rules_name'] as $key => $name) :
 						// Normalize for case and whitespace
 						$name = strtolower(trim($name));
@@ -626,7 +621,7 @@ function fwp_linkedit_page () {
 	
 									$newuser_id = wp_insert_user($userdata);
 									if (is_numeric($newuser_id)) :
-										$meta['map authors']['name'][$name] = $newuser_id;
+										$link->settings['map authors']['name'][$name] = $newuser_id;
 									else :
 										// TODO: Add some error detection and reporting
 									endif;
@@ -634,7 +629,7 @@ function fwp_linkedit_page () {
 									// TODO: Add some error reporting
 								endif;
 							else :
-								$meta['map authors']['name'][$name] = $author_action;
+								$link->settings['map authors']['name'][$name] = $author_action;
 							endif;
 						endif;
 					endforeach;
@@ -660,7 +655,7 @@ function fwp_linkedit_page () {
 
 								$newuser_id = wp_insert_user($userdata);
 								if (is_numeric($newuser_id)) :
-									$meta['map authors']['name'][$name] = $newuser_id;
+									$link->settings['map authors']['name'][$name] = $newuser_id;
 								else :
 									// TODO: Add some error detection and reporting
 								endif;
@@ -668,42 +663,20 @@ function fwp_linkedit_page () {
 								// TODO: Add some error reporting
 							endif;
 						else :
-							$meta['map authors']['name'][$name] = $author_action;
+							$link->settings['map authors']['name'][$name] = $author_action;
 						endif;
 					endif;
 				endif;
 
 				if (isset($GLOBALS['fwp_post']['cat_split'])) :
 					if (strlen(trim($GLOBALS['fwp_post']['cat_split'])) > 0) :
-						$meta['cat_split'] = trim($GLOBALS['fwp_post']['cat_split']);
+						$link->settings['cat_split'] = trim($GLOBALS['fwp_post']['cat_split']);
 					else :
-						unset($meta['cat_split']);
+						unset($link->settings['cat_split']);
 					endif;
 				endif;
 
-				if (is_array($meta['cats'])) :
-					$meta['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $meta['cats']);
-				endif;
-				if (is_array($meta['tags'])) :
-					$meta['tags'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $meta['tags']);
-				endif;
-
-				// Collapse the author mapping rule structure back into a flat string
-				if (isset($meta['map authors'])) :
-					$ma = array();
-					foreach ($meta['map authors'] as $rule_type => $author_rules) :
-						foreach ($author_rules as $author_name => $author_action) :
-							$ma[] = $rule_type."\n".$author_name."\n".$author_action;
-						endforeach;
-					endforeach;
-					$meta['map authors'] = implode("\n\n", $ma);
-				endif;
-				
-				$notes = '';
-				foreach ($meta as $key => $value) :
-					$notes .= $key . ": ". addcslashes($value, "\0..\37".'\\') . "\n";
-				endforeach;
-				$alter[] = "link_notes = '".$wpdb->escape($notes)."'";
+				$alter[] = "link_notes = '".$wpdb->escape($link->settings_to_notes())."'";
 
 				$alter_set = implode(", ", $alter);
 
@@ -725,10 +698,8 @@ function fwp_linkedit_page () {
 			$link_url = wp_specialchars($db_link->link_url, 1);
 			$link_name = wp_specialchars($db_link->link_name, 1);
 			$link_description = wp_specialchars($db_link->link_description, 'both');
-			$link_notes = wp_specialchars($db_link->link_notes, 'both');
 			$link_rss_uri = wp_specialchars($db_link->link_rss, 'both');
 			
-			$meta = $link->settings;
 			$post_status_global = get_option('feedwordpress_syndicated_post_status');
 			$comment_status_global = get_option('feedwordpress_syndicated_comment_status');
 			$ping_status_global = get_option('feedwordpress_syndicated_ping_status');
@@ -742,8 +713,8 @@ function fwp_linkedit_page () {
 			$status['ping'] = array('open' => '', 'closed' => '', 'site-default' => '');
 
 			foreach (array('post', 'comment', 'ping') as $what) :
-				if (isset($meta["{$what} status"])) :
-					$status[$what][$meta["{$what} status"]] = ' checked="checked"';
+				if (isset($link->settings["{$what} status"])) :
+					$status[$what][$link->settings["{$what} status"]] = ' checked="checked"';
 				else :
 					$status[$what]['site-default'] = ' checked="checked"';
 				endif;
@@ -753,16 +724,16 @@ function fwp_linkedit_page () {
 			$unfamiliar['category'] = array ('create'=>'','tag' => '','default'=>'','filter'=>'');
 
 			foreach (array('author', 'category') as $what) :
-				if (is_string($meta["unfamiliar {$what}"]) and
-				array_key_exists($meta["unfamiliar {$what}"], $unfamiliar[$what])) :
-					$key = $meta["unfamiliar {$what}"];
+				if (is_string($link->settings["unfamiliar {$what}"]) and
+				array_key_exists($link->settings["unfamiliar {$what}"], $unfamiliar[$what])) :
+					$key = $link->settings["unfamiliar {$what}"];
 				else:
 					$key = 'site-default';
 				endif;
 				$unfamiliar[$what][$key] = ' checked="checked"';
 			endforeach;
 
-			if (is_array($meta['cats'])) : $cats = $meta['cats'];
+			if (is_array($link->settings['cats'])) : $cats = $link->settings['cats'];
 			else : $cats = array();
 			endif;
 
@@ -865,29 +836,29 @@ function fwp_linkedit_page () {
 	<tr>
 	<th width="20%"><?php _e('Last update') ?>:</th>
 	<td colspan="2"><?php
-		if (isset($meta['update/last'])) :
-			echo strftime('%x %X', $meta['update/last'])." ";
+		if (isset($link->settings['update/last'])) :
+			echo strftime('%x %X', $link->settings['update/last'])." ";
 		else :
 			echo " none yet";
 		endif;
 	?></td></tr>
 	<tr><th width="20%">Next update:</th>
 	<td colspan="2"><?php
-		$holdem = (isset($meta['update/hold']) ? $meta['update/hold'] : 'scheduled');
+		$holdem = (isset($link->settings['update/hold']) ? $link->settings['update/hold'] : 'scheduled');
 	?>
 	<select name="update_schedule">
 	<option value="scheduled"<?php echo ($holdem=='scheduled')?' selected="selected"':''; ?>>update on schedule <?php
 		echo " (";
-		if (isset($meta['update/ttl']) and is_numeric($meta['update/ttl'])) :
-			if (isset($meta['update/timed']) and $meta['update/timed']=='automatically') :
+		if (isset($link->settings['update/ttl']) and is_numeric($link->settings['update/ttl'])) :
+			if (isset($link->settings['update/timed']) and $link->settings['update/timed']=='automatically') :
 				echo 'next: ';
-				$next = $meta['update/last'] + ((int) $meta['update/ttl'] * 60);
+				$next = $link->settings['update/last'] + ((int) $link->settings['update/ttl'] * 60);
 				if (strftime('%x', time()) != strftime('%x', $next)) :
 					echo strftime('%x', $next)." ";
 				endif;
-				echo strftime('%X', $meta['update/last']+((int) $meta['update/ttl']*60));
+				echo strftime('%X', $link->settings['update/last']+((int) $link->settings['update/ttl']*60));
 			else :
-				echo "every ".$meta['update/ttl']." minute".(($meta['update/ttl']!=1)?"s":"");
+				echo "every ".$link->settings['update/ttl']." minute".(($link->settings['update/ttl']!=1)?"s":"");
 			endif;
 		else:
 			echo "next scheduled update";
@@ -959,7 +930,7 @@ endif;
 <tr>
 <th width="20%" scope="row" style="vertical-align:top">Multiple categories:</th>
 <td width="80%"> 
-<input type="text" size="20" id="cat_split" name="cat_split" value="<?php if (isset($meta['cat_split'])) : echo htmlspecialchars($meta['cat_split']); endif; ?>" /><br/>
+<input type="text" size="20" id="cat_split" name="cat_split" value="<?php if (isset($link->settings['cat_split'])) : echo htmlspecialchars($link->settings['cat_split']); endif; ?>" /><br/>
 Enter a <a href="http://us.php.net/manual/en/reference.pcre.pattern.syntax.php">Perl-compatible regular expression</a> here if the feed provides multiple
 categories in a single category element. The regular expression should match
 the characters used to separate one category from the next. If the feed uses
@@ -973,7 +944,7 @@ blank.</td>
 	fwp_linkedit_periodic_submit();
 	
 if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
-	fwp_tags_box($meta['tags']);
+	fwp_tags_box($link->settings['tags']);
 	fwp_linkedit_periodic_submit();
 endif; ?>
 
@@ -985,13 +956,13 @@ endif; ?>
   <th style="text-align: left">Posts by new authors</th>
   <td> 
   <select id="unfamiliar-author" name="unfamiliar_author" onchange="flip_newuser('unfamiliar-author');">
-    <option value="site-default"<?php if (!isset($meta['unfamiliar author'])) : ?>selected="selected"<?php endif; ?>>are handled using site-wide settings</option>
-    <option value="create"<?php if ('create'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>create a new author account</option>
+    <option value="site-default"<?php if (!isset($link->settings['unfamiliar author'])) : ?>selected="selected"<?php endif; ?>>are handled using site-wide settings</option>
+    <option value="create"<?php if ('create'==$link->settings['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>create a new author account</option>
     <?php foreach ($authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>"<?php if ($author_id==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>are assigned to <?php echo $author_name; ?></option>
+      <option value="<?php echo $author_id; ?>"<?php if ($author_id==$link->settings['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>are assigned to <?php echo $author_name; ?></option>
     <?php endforeach; ?>
     <option value="newuser">will be assigned to a new user...</option>
-    <option value="filter"<?php if ('filter'==$meta['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>get filtered out</option>
+    <option value="filter"<?php if ('filter'==$link->settings['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>get filtered out</option>
   </select>
   </td>
   <td>
@@ -1002,7 +973,7 @@ endif; ?>
 
 <tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by specific authors. Blank out a name to delete the rule.</th></tr>
 
-<?php if (isset($meta['map authors'])) : $i=0; foreach ($meta['map authors'] as $author_rules) : foreach ($author_rules as $author_name => $author_action) : $i++; ?>
+<?php if (isset($link->settings['map authors'])) : $i=0; foreach ($link->settings['map authors'] as $author_rules) : foreach ($author_rules as $author_name => $author_action) : $i++; ?>
 <tr>
   <th style="text-align: left">Posts by <input type="text" name="author_rules_name[]" value="<?php echo htmlspecialchars($author_name); ?>" /></th>
   <td>
@@ -1087,7 +1058,7 @@ endif; ?>
 
 <?php
 	$i = 0;
-	foreach ($meta as $key => $value) :
+	foreach ($link->settings as $key => $value) :
 		if (!preg_match("\007^((".implode(')|(', $special_settings)."))$\007i", $key)) :
 ?>
 			<tr style="vertical-align:top">

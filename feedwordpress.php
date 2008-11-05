@@ -2299,6 +2299,7 @@ class SyndicatedLink {
 			$to_notes['tags'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['tags']);
 		endif;
 
+		// Collapse the author mapping rule structure back into a flat string
 		if (isset($to_notes['map authors'])) :
 			$ma = array();
 			foreach ($to_notes['map authors'] as $rule_type => $author_rules) :
