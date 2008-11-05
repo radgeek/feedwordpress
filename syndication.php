@@ -41,11 +41,19 @@ function fwp_dashboard_update_if_requested () {
 		$update_set[] = $_POST['update_uri'];
 	endif;
 
-
+	shuffle($update_set); // randomize order for load balancing purposes...
 	if ($fwp_update_invoke != 'get' and count($update_set) > 0) : // Only do things with side-effects for HTTP POST or command line
 		$feedwordpress =& new FeedWordPress;
 		add_action('feedwordpress_check_feed', 'update_feeds_mention');
-		
+		add_action('feedwordpress_check_feed_complete', 'update_feeds_finish', 10, 3);
+
+		$crash_dt = (int) get_option('feedwordpress_update_time_limit');
+		if ($crash_dt > 0) :
+			$crash_ts = time() + $crash_dt;
+		else :
+			$crash_ts = NULL;
+		endif;
+
 		if (fwp_test_wp_version(FWP_SCHEMA_25)) :
 			echo "<div class=\"youare\">\n";
 		else :
@@ -54,8 +62,13 @@ function fwp_dashboard_update_if_requested () {
 		echo "<ul>\n";
 		$tdelta = NULL;
 		foreach ($update_set as $uri) :
+			if (time() > $crash_ts) :
+				echo "<li><p><strong>Further updates postponed:</strong> update time limit of ".$crash_dt." second".(($crash_dt==1)?"":"s")." exceeded.</p></li>";
+				break;
+			endif;
+
 			if ($uri == '*') : $uri = NULL; endif;
-			$delta = $feedwordpress->update($uri);
+			$delta = $feedwordpress->update($uri, $crash_ts);
 			if (!is_null($delta)) :
 				if (is_null($tdelta)) :
 					$tdelta = $delta;
@@ -455,6 +468,8 @@ function fwp_linkedit_page () {
 		'unfamiliar category',
 		'map authors',
 		'tags',
+		'last update processed',
+		'unfinished business',
 		'update/.*',
 		'feed/.*',
 		'link/.*',

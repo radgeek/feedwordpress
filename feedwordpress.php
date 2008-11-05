@@ -582,7 +582,7 @@ class FeedWordPress {
 	# *    Updates to existing posts since the last poll are mirrored in the
 	#      WordPress store.
 	#
-	function update ($uri = null) {
+	function update ($uri = null, $crash_ts = null) {
 		global $wpdb;
 
 		if (FeedWordPress::needs_upgrade()) : // Will make duplicate posts if we don't hold off
@@ -597,9 +597,26 @@ class FeedWordPress {
 
 		do_action('feedwordpress_update', $uri);
 
+		if (is_null($crash_ts)) :
+			$crash_dt = (int) get_option('feedwordpress_update_time_limit');
+			if ($crash_dt > 0) :
+				$crash_ts = time() + $crash_dt;
+			else :
+				$crash_ts = NULL;
+			endif;
+		endif;
+		
+		// Randomize order for load balancing purposes
+		$feed_set = $this->feeds;
+		shuffle($feed_set);
+
 		// Loop through and check for new posts
 		$delta = NULL;
-		foreach ($this->feeds as $feed) :
+		foreach ($feed_set as $feed) :
+			if (!is_null($crash_ts) and (time() > $crash_ts)) : // Check whether we've exceeded the time limit
+				break;
+			endif;
+
 			$pinged_that = (is_null($uri) or in_array($uri, array($feed->uri(), $feed->homepage())));
 
 			if (!is_null($uri)) : // A site-specific ping always updates
@@ -614,7 +631,10 @@ class FeedWordPress {
 
 			if ($pinged_that and $timely) :
 				do_action('feedwordpress_check_feed', $feed->settings);
-				$added = $feed->poll();
+				$start_ts = time();
+				$added = $feed->poll($crash_ts);
+				do_action('feedwordpress_check_feed_complete', $feed->settings, $added, time() - $start_ts);
+
 				if (isset($added['new'])) : $delta['new'] += $added['new']; endif;
 				if (isset($added['updated'])) : $delta['updated'] += $added['updated']; endif;
 			endif;
@@ -2146,12 +2166,13 @@ class SyndicatedLink {
 		return $stale;
 	}
 
-	function poll () {
+	function poll ($crash_ts = NULL) {
 		global $wpdb;
 
 		$this->magpie = fetch_rss($this->link->link_rss);
 		$new_count = NULL;
 
+		$processed = array();
 		if (is_object($this->magpie)) :
 			$new_count = array('new' => 0, 'updated' => 0);
 
@@ -2235,18 +2256,39 @@ class SyndicatedLink {
 			");
 
 			# -- Add new posts from feed and update any updated posts
+			$crashed = false;
+			$resume = FeedWordPress::affirmative($this->settings, 'unfinished business');
+			if ($resume) :
+				$processed = array_map('trim', explode("\n", $this->settings['last update processed']));
+			endif;
+
 			if (is_array($this->magpie->items)) :
 				foreach ($this->magpie->items as $item) :
 					$post =& new SyndicatedPost($item, $this);
-					if (!$post->filtered()) :
-						$new = $post->store();
-						if ( $new !== false ) $new_count[$new]++;
+					if (!$resume or !in_array(trim($post->guid()), $processed)) :
+						$processed[] = $post->guid();
+						if (!$post->filtered()) :
+							$new = $post->store();
+							if ( $new !== false ) $new_count[$new]++;
+						endif;
+
+						if (!is_null($crash_ts) and (time() > $crash_ts)) :
+							$crashed = true;
+							break;
+						endif;
 					endif;
 				endforeach;
 			endif;
 			
 			// Copy back any changes to feed settings made in the course of updating (e.g. new author rules)
 			$to_notes = $this->settings;
+
+			$to_notes['last update processed'] = implode("\n", $processed);
+			if ($crashed) :
+				$to_notes['unfinished business'] = 'yes';
+			else :
+				$to_notes['unfinished business'] = 'no';
+			endif;
 
 			if (is_array($to_notes['cats'])) :
 				$to_notes['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['cats']);
@@ -2284,6 +2326,7 @@ class SyndicatedLink {
 				WHERE link_id='$this->id'
 			");
 		endif;
+		
 		return $new_count;
 	} /* SyndicatedLink::poll() */
 	

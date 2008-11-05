@@ -142,8 +142,11 @@ function fwp_category_box ($checked, $object, $tags = array()) {
 
 function update_feeds_mention ($feed) {
 	echo "<li>Updating <cite>".$feed['link/name']."</cite> from &lt;<a href=\""
-		.$feed['link/uri']."\">".$feed['link/uri']."</a>&gt; ...</li>\n";
+		.$feed['link/uri']."\">".$feed['link/uri']."</a>&gt; ...";
 	flush();
+}
+function update_feeds_finish ($feed, $added, $dt) {
+	echo " completed in $dt second".(($dt==1)?'':'s')."</li>\n";
 }
 
 function fwp_author_list () {

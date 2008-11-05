@@ -75,6 +75,7 @@ function fwp_syndication_options_page () {
 			update_option('feedwordpress_unfamiliar_category', $_REQUEST['unfamiliar_category']);
 			update_option('feedwordpress_syndicated_post_status', $_REQUEST['post_status']);
 			update_option('feedwordpress_automatic_updates', ($_POST['automatic_updates']=='yes'));
+			update_option('feedwordpress_update_time_limit', ($_POST['update_time_limit']=='yes')?(int) $_POST['time_limit_seconds']:0);
 			update_option('feedwordpress_freshness',  ($_POST['freshness_interval']*60));
 
 			// Categories
@@ -147,6 +148,8 @@ function fwp_syndication_options_page () {
 	$use_aggregator_source_data = get_option('feedwordpress_use_aggregator_source_data');
 	$formatting_filters = get_option('feedwordpress_formatting_filters');
 	$update_logging = get_option('feedwordpress_update_logging');
+
+	$update_time_limit = (int) get_option('feedwordpress_update_time_limit');
 
 	$automatic_updates = get_option('feedwordpress_automatic_updates');
 
@@ -246,7 +249,7 @@ function fwp_syndication_options_page () {
 ?></td>
 </tr>
 
-<tr>
+<tr style="vertical-align: top">
 <th width="33%" scope="row">Check for feeds ready to be polled for updates:</th>
 <td width="67%"><select name="automatic_updates" size="1" onchange="if (this.value=='yes') { disp = 'inline'; } else { disp = 'none'; }; el=document.getElementById('automatic-update-interval-span'); if (el) el.style.display=disp;">
 <option value="yes"<?php echo ($automatic_updates)?' selected="selected"':''; ?>>automatically</option>
@@ -255,6 +258,19 @@ function fwp_syndication_options_page () {
 <span id="automatic-update-interval-span" style="display: <?php echo $automatic_updates?'inline':'none';?>"><label for="automatic-update-interval">every</label> <input id="automatic-update-interval" name="freshness_interval" value="<?php echo $freshness_interval; ?>" size="4" /> minutes.</span>
 </td>
 </tr>
+
+<tr style="vertical-align: top">
+<th width="33%" scope="row">Time limit updates:</th>
+<td width="67%"><select id="time-limit" name="update_time_limit" size="1" onchange="contextual_appearance('time-limit', 'time-limit-box', null, 'yes');">
+<option value="no"<?php echo ($update_time_limit>0)?'':' selected="selected"'; ?>>no time limit on updates</option>
+<option value="yes"<?php echo ($update_time_limit>0)?' selected="selected"':''; ?>>limit updates to no more than...</option>
+</select>
+<span id="time-limit-box"><label><input type="text" name="time_limit_seconds" value="<?php print $update_time_limit; ?>" size="5" /> seconds</label></span>
+</tr>
+
+<script type="text/javascript">
+	contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
+</script>
 
 <tr><th width="33%" scope="row" style="vertical-align:top">Feed information:</th>
 <td width="67%"><ul style="margin:0;padding:0;list-style:none">
