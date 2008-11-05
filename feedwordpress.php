@@ -423,6 +423,7 @@ function fwp_add_pages () {
 	global $fwp_path;
 
 	add_menu_page('Syndicated Sites', 'Syndication', $fwp_capability['manage_links'], $fwp_path.'/syndication.php');
+	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Authors', 'Authors', $fwp_capability['manage_options'], $fwp_path.'/authors.php');
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndication Options', 'Options', $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
 	add_options_page('Syndication Options', 'Syndication', $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
 } // function fwp_add_pages () */
@@ -2277,7 +2278,37 @@ class SyndicatedLink {
 		
 		return $new_count;
 	} /* SyndicatedLink::poll() */
-	
+
+	function map_name_to_new_user ($name, $newuser_name) {
+		global $wpdb;
+
+		if (strlen($newuser_name) > 0) :
+			$userdata = array();
+			$userdata['ID'] = NULL;
+			
+			$userdata['user_login'] = sanitize_user($newuser_name);
+			$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
+			
+			$userdata['user_nicename'] = sanitize_title($newuser_name);
+			$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
+			
+			$userdata['display_name'] = $wpdb->escape($newuser_name);
+		
+			$newuser_id = wp_insert_user($userdata);
+			if (is_numeric($newuser_id)) :
+				if (is_null($name)) : // Unfamiliar author
+					$this->settings['unfamiliar author'] = $newuser_id;
+				else :
+					$this->settings['map authors']['name'][$name] = $newuser_id;
+				endif;
+			else :
+				// TODO: Add some error detection and reporting
+			endif;
+		else :
+			// TODO: Add some error reporting
+		endif;
+	} /* SyndicatedLink::map_name_to_new_user () */
+
 	function settings_to_notes () {
 		$to_notes = $this->settings;
 

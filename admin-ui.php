@@ -44,6 +44,25 @@ function fwp_linkedit_periodic_submit ($caption = NULL) {
 	endif;
 }
 
+function fwp_authors_single_submit ($link = NULL) {
+	global $wp_db_version;
+	
+	if (fwp_test_wp_version(FWP_SCHEMA_25)) :
+?>
+<div class="submitbox" id="submitlink">
+<div id="previewview">
+</div>
+<div class="inside">
+</div>
+
+<p class="submit">
+<input type="submit" name="save" value="<?php _e('Save') ?>" />
+</p>
+</div>
+<?php
+	endif;
+}
+
 function fwp_option_box_opener ($legend, $id, $class = "stuffbox") {
 	global $wp_db_version;
 	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
