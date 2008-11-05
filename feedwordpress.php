@@ -2144,11 +2144,11 @@ class SyndicatedLink {
 				$this->settings['map authors'] = $ma;
 			endif;
 		endif;
-	} // SyndicatedLink::SyndicatedLink ()
+	} /* SyndicatedLink::SyndicatedLink () */
 	
 	function found () {
 		return is_object($this->link);
-	}
+	} /* SyndicatedLink::found () */
 
 	function stale () {
 		$stale = true;
@@ -2164,7 +2164,7 @@ class SyndicatedLink {
 			$stale = (time() >= $after);
 		endif;
 		return $stale;
-	}
+	} /* SyndicatedLink::stale () */
 
 	function poll ($crash_ts = NULL) {
 		global $wpdb;
@@ -2210,42 +2210,13 @@ class SyndicatedLink {
 				$this->settings['update/ttl'] = rand(30, 120); // spread over time interval for staggered updates
 				$this->settings['update/timed'] = 'automatically';
 			endif;
-	
+
 			if (!isset($this->settings['update/hold']) or $this->settings['update/hold']!='ping') :
 				$this->settings['update/hold'] = 'scheduled';
 			endif;
-	
-			// Copy back without a few things that we don't want to save in the notes
-			$to_notes = $this->settings;
 
-			if (is_array($to_notes['cats'])) :
-				$to_notes['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['cats']);
-			endif;
-			if (is_array($to_notes['tags'])) :
-				$to_notes['tags'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['tags']);
-			endif;
+			$update[] = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
 
-			if (isset($to_notes['map authors'])) :
-				$ma = array();
-				foreach ($to_notes['map authors'] as $rule_type => $author_rules) :
-					foreach ($author_rules as $author_name => $author_action) :
-						$ma[] = $rule_type."\n".$author_name."\n".$author_action;
-					endforeach;
-				endforeach;
-				$to_notes['map authors'] = implode("\n\n", $ma);
-			endif;
-
-			unset($to_notes['link/id']); unset($to_notes['link/uri']);
-			unset($to_notes['link/name']);
-			unset($to_notes['hardcode categories']); // Deprecated
-			unset($to_notes['unfamiliar categories']); // Deprecated
-	
-			$notes = '';
-			foreach ($to_notes as $key => $value) :
-				$notes .= $key . ": ". addcslashes($value, "\0..\37".'\\') . "\n";
-			endforeach;
-			$update[] = "link_notes = '".$wpdb->escape($notes)."'";
-	
 			$update_set = implode(',', $update);
 			
 			// Update the properties of the link from the feed information
@@ -2283,59 +2254,69 @@ class SyndicatedLink {
 			// Copy back any changes to feed settings made in the course of updating (e.g. new author rules)
 			$to_notes = $this->settings;
 
-			$to_notes['last update processed'] = implode("\n", $processed);
+			$this->settings['last update processed'] = $processed;
 			if ($crashed) :
-				$to_notes['unfinished business'] = 'yes';
+				$this->settings['unfinished business'] = 'yes';
 			else :
-				$to_notes['unfinished business'] = 'no';
+				$this->settings['unfinished business'] = 'no';
 			endif;
 
-			if (is_array($to_notes['cats'])) :
-				$to_notes['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['cats']);
-			endif;
-			if (is_array($to_notes['tags'])) :
-				$to_notes['tags'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['tags']);
-			endif;
-
-			if (isset($to_notes['map authors'])) :
-				$ma = array();
-				foreach ($to_notes['map authors'] as $rule_type => $author_rules) :
-					foreach ($author_rules as $author_name => $author_action) :
-						$ma[] = $rule_type."\n".$author_name."\n".$author_action;
-					endforeach;
-				endforeach;
-				$to_notes['map authors'] = implode("\n\n", $ma);
-			endif;
-
-			unset($to_notes['link/id']); unset($to_notes['link/uri']);
-			unset($to_notes['link/name']);
-			unset($to_notes['hardcode categories']); // Deprecated
-			unset($to_notes['unfamiliar categories']); // Deprecated
-	
-			$notes = '';
-			foreach ($to_notes as $key => $value) :
-				$notes .= $key . ": ". addcslashes($value, "\0..\37".'\\') . "\n";
-			endforeach;
-
-			$update_set = "link_notes = '".$wpdb->escape($notes)."'";
+			$update_set = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
 			
 			// Update the properties of the link from the feed information
 			$result = $wpdb->query("
-				UPDATE $wpdb->links
-				SET $update_set
-				WHERE link_id='$this->id'
+			UPDATE $wpdb->links
+			SET $update_set
+			WHERE link_id='$this->id'
 			");
 		endif;
 		
 		return $new_count;
 	} /* SyndicatedLink::poll() */
 	
+	function settings_to_notes () {
+		$to_notes = $this->settings;
+
+		unset($to_notes['link/id']); // Magic setting; don't save
+		unset($to_notes['link/uri']); // Magic setting; don't save
+		unset($to_notes['link/name']); // Magic setting; don't save
+		unset($to_notes['hardcode categories']); // Deprecated
+		unset($to_notes['unfamiliar categories']); // Deprecated
+
+		// Collapse array settings
+		$to_notes['last update processed'] = implode("\n", $to_notes['last update processed']);
+
+		if (is_array($to_notes['cats'])) :
+			$to_notes['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['cats']);
+		endif;
+		if (is_array($to_notes['tags'])) :
+			$to_notes['tags'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['tags']);
+		endif;
+
+		if (isset($to_notes['map authors'])) :
+			$ma = array();
+			foreach ($to_notes['map authors'] as $rule_type => $author_rules) :
+				foreach ($author_rules as $author_name => $author_action) :
+					$ma[] = $rule_type."\n".$author_name."\n".$author_action;
+				endforeach;
+			endforeach;
+			$to_notes['map authors'] = implode("\n\n", $ma);
+		endif;
+
+		$notes = '';
+		foreach ($to_notes as $key => $value) :
+			$notes .= $key . ": ". addcslashes($value, "\0..\37".'\\') . "\n";
+		endforeach;
+		return $notes;
+	} /* SyndicatedLink::settings_to_notes () */
+
 	function uri () {
 		return (is_object($this->link) ? $this->link->link_rss : NULL);
-	}
+	} /* SyndicatedLink::uri () */
+
 	function homepage () {
 		return (isset($this->settings['feed/link']) ? $this->settings['feed/link'] : NULL);
-	}
+	} /* SyndicatedLink::homepage () */
 
 	function ttl () {
 		if (is_object($this->magpie)) :
@@ -2404,7 +2385,7 @@ class SyndicatedLink {
 			endforeach;
 		endif;
 		return $ret;
-	} // function SyndicatedLink::flatten_array ()
+	} /* SyndicatedLink::flatten_array () */
 
 	function hardcode ($what) {
 		$default = get_option("feedwordpress_hardcode_$what");
@@ -2420,7 +2401,7 @@ class SyndicatedLink {
 			$ret = FeedWordPress::affirmative($this->settings, "hardcode $what");
 		endif;
 		return $ret;
-	} // function SyndicatedLink::hardcode ()
+	} /* SyndicatedLink::hardcode () */
 
 	function syndicated_status ($what, $default) {
 		global $wpdb;
@@ -2432,7 +2413,7 @@ class SyndicatedLink {
 			$ret = $default;
 		endif;
 		return $wpdb->escape(trim(strtolower($ret)));
-	} // function SyndicatedLink:syndicated_status ()
+	} /* SyndicatedLink:syndicated_status () */
 } // class SyndicatedLink
 
 ################################################################################
