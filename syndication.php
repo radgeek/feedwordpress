@@ -468,8 +468,6 @@ function fwp_linkedit_page () {
 		'unfamiliar category',
 		'map authors',
 		'tags',
-		'last update processed',
-		'unfinished business',
 		'update/.*',
 		'feed/.*',
 		'link/.*',

@@ -2228,9 +2228,9 @@ class SyndicatedLink {
 
 			# -- Add new posts from feed and update any updated posts
 			$crashed = false;
-			$resume = FeedWordPress::affirmative($this->settings, 'unfinished business');
+			$resume = FeedWordPress::affirmative($this->settings, 'update/unfinished');
 			if ($resume) :
-				$processed = array_map('trim', explode("\n", $this->settings['last update processed']));
+				$processed = array_map('trim', explode("\n", $this->settings['update/processed']));
 			endif;
 
 			if (is_array($this->magpie->items)) :
@@ -2254,11 +2254,11 @@ class SyndicatedLink {
 			// Copy back any changes to feed settings made in the course of updating (e.g. new author rules)
 			$to_notes = $this->settings;
 
-			$this->settings['last update processed'] = $processed;
+			$this->settings['update/processed'] = $processed;
 			if ($crashed) :
-				$this->settings['unfinished business'] = 'yes';
+				$this->settings['update/unfinished'] = 'yes';
 			else :
-				$this->settings['unfinished business'] = 'no';
+				$this->settings['update/unfinished'] = 'no';
 			endif;
 
 			$update_set = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
@@ -2284,7 +2284,7 @@ class SyndicatedLink {
 		unset($to_notes['unfamiliar categories']); // Deprecated
 
 		// Collapse array settings
-		$to_notes['last update processed'] = implode("\n", $to_notes['last update processed']);
+		$to_notes['update/processed'] = implode("\n", $to_notes['update/processed']);
 
 		if (is_array($to_notes['cats'])) :
 			$to_notes['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['cats']);
