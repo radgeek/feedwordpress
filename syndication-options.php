@@ -247,7 +247,7 @@ function fwp_syndication_options_page () {
 </tr>
 
 <tr>
-<th width="33%" scope="row">Check for feeds ready to be updated:</th>
+<th width="33%" scope="row">Check for feeds ready to be polled for updates:</th>
 <td width="67%"><select name="automatic_updates" size="1" onchange="if (this.value=='yes') { disp = 'inline'; } else { disp = 'none'; }; el=document.getElementById('automatic-update-interval-span'); if (el) el.style.display=disp;">
 <option value="yes"<?php echo ($automatic_updates)?' selected="selected"':''; ?>>automatically</option>
 <option value="no"<?php echo (!$automatic_updates)?' selected="selected"':''; ?>>only when I request</option>
