@@ -250,14 +250,77 @@ function log_feedwordpress_update_complete ($delta) {
 
 function is_syndicated () { return (strlen(get_syndication_feed_id()) > 0); }
 
-function the_syndication_source_link () { echo get_syndication_source_link(); }
-function get_syndication_source_link () { list($n) = get_post_custom_values('syndication_source_uri'); return $n; }
+function get_syndication_source_link ($original = NULL) {
+	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
+	endif;
 
-function get_syndication_source () { list($n) = get_post_custom_values('syndication_source'); return $n; }
-function the_syndication_source () { echo get_syndication_source(); }
+	if ($original) : $vals = get_post_custom_values('syndication_source_uri_original');
+	else : $vals = array();
+	endif;
+	
+	if (count($vals) == 0) : $vals = get_post_custom_values('syndication_source_uri');
+	endif;
+	
+	if (count($vals) > 0) : $ret = $vals[0]; else : $ret = NULL; endif;
 
-function get_syndication_feed () { list($u) = get_post_custom_values('syndication_feed'); return $u; }
-function the_syndication_feed () { echo get_syndication_feed (); }
+	return $ret;
+} /* function get_syndication_source_link() */
+
+function the_syndication_source_link ($original = NULL) { echo get_syndication_source_link($original); }
+
+function get_syndication_source ($original = NULL) {
+	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
+	endif;
+
+	if ($original) : $vals = get_post_custom_values('syndication_source_original');
+	else : $vals = array();
+	endif;
+	
+	if (count($vals) == 0) : $vals = get_post_custom_values('syndication_source');
+	endif;
+	
+	if (count($vals) > 0) : $ret = $vals[0]; else : $ret = NULL; endif;
+
+	return $ret;
+} /* function get_syndication_source() */
+
+function the_syndication_source ($original = NULL) { echo get_syndication_source($original); }
+
+function get_syndication_feed ($original = NULL) {
+	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
+	endif;
+
+	if ($original) : $vals = get_post_custom_values('syndication_feed_original');
+	else : $vals = array();
+	endif;
+	
+	if (count($vals) == 0) : $vals = get_post_custom_values('syndication_feed');
+	endif;
+	
+	if (count($vals) > 0) : $ret = $vals[0]; else : $ret = NULL; endif;
+
+	return $ret;
+} /* function get_syndication_feed() */
+
+function the_syndication_feed ($original = NULL) { echo get_syndication_feed ($original); }
+
+function get_syndication_feed_guid ($original = NULL) {
+	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
+	endif;
+
+	if ($original) : $vals = get_post_custom_values('syndication_source_id_original');
+	else : $vals = array();
+	endif;
+	
+	if (count($vals) == 0) : $vals = array(get_feed_meta('feed/id'));
+	endif;
+	
+	if (count($vals) > 0) : $ret = $vals[0]; else : $ret = NULL; endif;
+
+	return $ret;
+} /* function get_syndication_feed_guid () */
+
+function the_syndication_feed_guid ($original = NULL) { echo get_syndication_feed_guid($original); }
 
 function get_syndication_feed_id () { list($u) = get_post_custom_values('syndication_feed_id'); return $u; }
 function the_syndication_feed_id () { echo get_syndication_feed_id(); }
@@ -325,7 +388,7 @@ function feedwordpress_item_feed_data () {
 	<link rel="alternate" type="text/html" href="<?php the_syndication_source_link(); ?>" />
 	<link rel="self" href="<?php the_syndication_feed(); ?>" />
 <?php
-	$id = get_feed_meta('feed/id');
+	$id = get_syndication_feed_guid();
 	if (strlen($id) > 0) :
 ?>
 	<id><?php print $id; ?></id>
@@ -668,6 +731,11 @@ class FeedWordPress {
 		return $ret;
 	} /* FeedWordPress::is_null_email () */
 
+	function use_aggregator_source_data () {
+		$ret = get_option('feedwordpress_use_aggregator_source_data');
+		return apply_filters('syndicated_post_use_aggregator_source_data', ($ret=='yes'));
+	}
+
 	function syndicated_links () {
 		$contributors = FeedWordPress::link_category_id();
 		if (function_exists('get_bookmarks')) :
@@ -975,10 +1043,24 @@ class SyndicatedPost {
 			if (isset($this->feed->channel['title'])) :
 				$this->post['meta']['syndication_source'] = apply_filters('syndicated_item_source_title', $this->feed->channel['title'], $this);
 			endif;
+
 			if (isset($this->feed->channel['link'])) :
 				$this->post['meta']['syndication_source_uri'] = apply_filters('syndicated_item_source_link', $this->feed->channel['link'], $this);
 			endif;
 			
+			// Make use of atom:source data, if present in an aggregated feed
+			if (isset($this->item['source_title'])) :
+				$this->post['meta']['syndication_source_original'] = $this->item['source_title'];
+			endif;
+
+			if (isset($this->item['source_link'])) :
+				$this->post['meta']['syndication_source_uri_original'] = $this->item['source_link'];
+			endif;
+			
+			if (isset($this->item['source_id'])) :
+				$this->post['meta']['syndication_source_id_original'] = $this->item['source_id'];
+			endif;
+
 			// Store information on human-readable and machine-readable comment URIs
 			if (isset($this->item['comments'])) :
 				$this->post['meta']['rss:comments'] = apply_filters('syndicated_item_comments', $this->item['comments']);
@@ -990,6 +1072,10 @@ class SyndicatedPost {
 			// Store information to identify the feed that this came from
 			$this->post['meta']['syndication_feed'] = $this->feedmeta['link/uri'];
 			$this->post['meta']['syndication_feed_id'] = $this->feedmeta['link/id'];
+
+			if (isset($this->item['source_link_self'])) :
+				$this->post['meta']['syndication_feed_original'] = $this->item['source_link_self'];
+			endif;
 
 			// In case you want to know the external permalink...
 			$this->post['meta']['syndication_permalink'] = apply_filters('syndicated_item_link', $this->item['link']);

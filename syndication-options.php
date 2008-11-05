@@ -17,6 +17,7 @@ function fwp_syndication_options_page () {
 		else:
 			update_option('feedwordpress_cat_id', $_REQUEST['syndication_category']);
 			update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
+			update_option('feedwordpress_use_aggregator_source_data', $_REQUEST['use_aggregator_source_data']);
 			update_option('feedwordpress_formatting_filters', $_REQUEST['formatting_filters']);
 			update_option('feedwordpress_update_logging', $_REQUEST['update_logging']);
 			
@@ -129,6 +130,7 @@ function fwp_syndication_options_page () {
 
 	$cat_id = FeedWordPress::link_category_id();
 	$munge_permalink = get_option('feedwordpress_munge_permalink');
+	$use_aggregator_source_data = get_option('feedwordpress_use_aggregator_source_data');
 	$formatting_filters = get_option('feedwordpress_formatting_filters');
 	$update_logging = get_option('feedwordpress_update_logging');
 
@@ -263,11 +265,23 @@ function fwp_syndication_options_page () {
 <li><label><input type="radio" name="post_status" value="draft"<?php echo ($post_status=='draft')?' checked="checked"':''; ?> /> Save syndicated posts as drafts</label></li>
 <li><label><input type="radio" name="post_status" value="private"<?php echo ($post_status=='private')?' checked="checked"':''; ?> /> Save syndicated posts as private posts</label></li>
 </ul></td></tr>
+
 <tr style="vertical-align: top"><th width="44%" scope="row">Permalinks point to:</th>
 <td width="56%"><select name="munge_permalink" size="1">
 <option value="yes"<?php echo ($munge_permalink=='yes')?' selected="selected"':''; ?>>original website</option>
 <option value="no"<?php echo ($munge_permalink=='no')?' selected="selected"':''; ?>>this website</option>
 </select></td></tr>
+
+<tr style="vertical-align: top"><th width="44%" scope="row">Posts from aggregator feeds:</th>
+<td width="56%"><ul style="margin: 0; padding: 0; list-style: none;">
+<li><label><input type="radio" name="use_aggregator_source_data" value="no"<?php echo ($use_aggregator_source_data!="yes")?' checked="checked"':''; ?>> Give the aggregator itself as the source of posts from an aggregator feed.</label></li>
+<li><label><input type="radio" name="use_aggregator_source_data" value="yes"<?php echo ($use_aggregator_source_data=="yes")?' checked="checked"':''; ?>> Give the original source of the post as the source, not the aggregator.</label></li>
+</ul>
+<p>Some feeds (for example, those produced by FeedWordPress) aggregate content from several different sources, and include information about the original source of the post.
+This setting controls what FeedWordPress will give as the source of posts from
+such an aggregator feed.</p>
+</td></tr>
+
 <tr style="vertical-align:top"><th width="44%" scope="row">Formatting filters:</th>
 <td width="56%">
 <select name="formatting_filters" size="1">
