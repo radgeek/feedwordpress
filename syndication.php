@@ -62,7 +62,7 @@ function fwp_dashboard_update_if_requested () {
 		echo "<ul>\n";
 		$tdelta = NULL;
 		foreach ($update_set as $uri) :
-			if (time() > $crash_ts) :
+			if (!is_null($crash_ts) and (time() > $crash_ts)) :
 				echo "<li><p><strong>Further updates postponed:</strong> update time limit of ".$crash_dt." second".(($crash_dt==1)?"":"s")." exceeded.</p></li>";
 				break;
 			endif;
