@@ -260,7 +260,7 @@ function fwp_syndication_options_page () {
 </tr>
 
 <tr style="vertical-align: top">
-<th width="33%" scope="row">Time limit updates:</th>
+<th width="33%" scope="row"><?php print __('Time limit on updates'); ?>:</th>
 <td width="67%"><select id="time-limit" name="update_time_limit" size="1" onchange="contextual_appearance('time-limit', 'time-limit-box', null, 'yes');">
 <option value="no"<?php echo ($update_time_limit>0)?'':' selected="selected"'; ?>>no time limit on updates</option>
 <option value="yes"<?php echo ($update_time_limit>0)?' selected="selected"':''; ?>>limit updates to no more than...</option>
