@@ -20,6 +20,7 @@ function fwp_authors_page () {
 		$link = NULL;
 	endif;
 
+	$mesg = null;
 	if (!current_user_can('manage_links')) :
 		die (__("Cheatin' uh ?"));
 	else :
@@ -80,13 +81,17 @@ function fwp_authors_page () {
 						WHERE ({$wpdb->posts}.id IN $post_set
 						$parent_in_clause)
 						");
-					
+						$mesg = "Re-assigned ".count($post_ids)." post".((count($post_ids)==1)?'':'s').".";
+
 					// ... and kill them all
 					elseif ($fix_mismatch_to_id=='filter') :
 						foreach ($post_ids as $post_id) :
 							wp_delete_post($post_id);
 						endforeach;						
+						$mesg = "Deleted ".count($post_ids)." post".((count($post_ids)==1)?'':'s').".";
 					endif;
+				else :
+					$mesg = "Couldn't find any posts that matched your criteria.";
 				endif;
 			endif;
 		elseif (isset($GLOBALS['fwp_post']['save'])) :
@@ -233,6 +238,8 @@ function fwp_authors_page () {
 
 <?php if ($updated_link) : ?>
 <div class="updated"><p>Syndicated author settings updated.</p></div>
+<?php elseif (!is_null($mesg)) : ?>
+<div class="updated"><p><?php print wp_specialchars($mesg, 1); ?></p></div>
 <?php endif; ?>
 
 <div class="wrap">
@@ -270,7 +277,7 @@ function fwp_authors_page () {
 <table class="form-table">
 <tbody>
 <tr>
-  <th style="text-align: left">New authors</th>
+  <th>New authors</th>
   <td><span>Authors who haven't been syndicated before</span>
   <select style="max-width: 27.0em" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');">
 <?php if (is_object($link) and $link->found()) : ?>
