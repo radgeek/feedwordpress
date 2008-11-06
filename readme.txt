@@ -4,7 +4,7 @@ Donate link: http://projects.radgeek.com/feedwordpress/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 1.5
 Tested up to: 2.6.3
-Stable tag: 2008.1101
+Stable tag: 2008.1105
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -40,7 +40,7 @@ hosts that *don't* offer shell access are *bad web hosts*.)
 
 == Installation ==
 
-To use version 2008.1030 of FeedWordPress, you will need:
+To use FeedWordPress, you will need:
 
 * 	an installed and configured copy of WordPress version 2.6.x, 2.5.x,
 	2.3.x, 2.2.x, 2.1.x, 2.0.x, or 1.5.x. (FeedWordPress will also work with
