@@ -950,6 +950,12 @@ class FeedWordPress {
 		echo $varname.": "; var_dump($var); echo "\n";
 		die;
 	}
+	
+	function noncritical_bug ($varname, $var, $line) {
+		if (FEEDWORDPRESS_DEBUG) : // halt only when we are doing debugging
+			FeedWordPress::critical_bug($varname, $var, $line);
+		endif;
+	}
 } // class FeedWordPress
 
 class SyndicatedPost {
@@ -1742,7 +1748,7 @@ class SyndicatedPost {
 				elseif (get_category($cat_id)) :
 					$cat_ids[] = $cat_id;
 				endif;
-			else :
+			elseif (strlen($cat_name) > 0) :
 				$esc = $wpdb->escape($cat_name);
 				$resc = $wpdb->escape(preg_quote($cat_name));
 				
@@ -1766,7 +1772,11 @@ class SyndicatedPost {
 						$tags[] = $cat_name;
 					elseif ('create'===$unfamiliar_category) :
 						$term = wp_insert_term($cat_name, 'category');
-						$cat_ids[] = $term['term_id'];
+						if (is_wp_error($term)) :
+							FeedWordPress::noncritical_bug('term insertion problem', array('cat_name' => $cat_name, 'term' => $term, 'this' => $this), __LINE__);
+						else :
+							$cat_ids[] = $term['term_id'];
+						endif;
 					endif;
 				
 				// WordPress 1.5.x - 2.2.x
