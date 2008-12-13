@@ -46,6 +46,7 @@ define ('FWP_SCHEMA_21', 4772); // Database schema # for WP 2.1
 define ('FWP_SCHEMA_23', 5495); // Database schema # for WP 2.3
 define ('FWP_SCHEMA_25', 7558); // Database schema # for WP 2.5
 define ('FWP_SCHEMA_26', 8201); // Database schema # for WP 2.6
+define ('FWP_SCHEMA_27', 9872); // Database schema # for WP 2.7
 
 if (FEEDWORDPRESS_DEBUG) :
 	// Help us to pick out errors, if any.

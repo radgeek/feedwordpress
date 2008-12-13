@@ -1,7 +1,6 @@
 <?php
 function fwp_linkedit_single_submit ($status = NULL) {
-	global $wp_db_version;
-	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
+	if (fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) :
 ?>
 <div class="submitbox" id="submitlink">
 <div id="previewview"></div>
@@ -33,12 +32,22 @@ function fwp_linkedit_single_submit ($status = NULL) {
 }
 
 function fwp_linkedit_periodic_submit ($caption = NULL) {
-	global $wp_db_version;
-	if (!(isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25)) :
+	if (!fwp_test_wp_version(FWP_SCHEMA_25)) :
 		if (is_null($caption)) : $caption = __('Save Changes &raquo;'); endif;
 ?>
 <p class="submit">
 <input type="submit" name="submit" value="<?php print $caption; ?>" />
+</p>
+<?php
+	endif;
+}
+
+function fwp_linkedit_single_submit_closer ($caption = NULL) {
+	if (fwp_test_wp_version(FWP_SCHEMA_27)) :
+		if (is_null($caption)) : $caption = __('Save Changes'); endif;
+?>
+<p class="submit">
+<input class="button-primary" type="submit" name="submit" value="<?php print $caption; ?>" />
 </p>
 <?php
 	endif;

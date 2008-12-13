@@ -2,7 +2,7 @@
 require_once(dirname(__FILE__) . '/admin-ui.php');
 
 function fwp_syndication_options_page () {
-        global $wpdb, $wp_db_version;
+        global $wpdb, $wp_db_version, $fwp_path;
 	
 	if (FeedWordPress::needs_upgrade()) :
 		fwp_upgrade_page();
@@ -204,6 +204,18 @@ function fwp_syndication_options_page () {
 	$tags = array_map('trim',
 			preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, get_option('feedwordpress_syndication_tags'))
 	);
+	
+	if (fwp_test_wp_version(FWP_SCHEMA_27)) :
+	$icon = '<div class="icon32"><img src="'.htmlspecialchars(WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress.png').'" alt="" /></div>';
+	else :
+		$icon = '';
+	endif;
+
+	if (fwp_test_wp_version(FWP_SCHEMA_26)) :
+		$options = __('Settings');
+	else :
+		$options = __('Options');
+	endif;
 ?>
 <script type="text/javascript">
 	function contextual_appearance (item, appear, disappear, value, checkbox) {
@@ -223,7 +235,8 @@ function fwp_syndication_options_page () {
 </script>
 
 <div class="wrap">
-<h2>Syndication Options</h2>
+<?php print $icon; ?>
+<h2>Syndication <?php print $options; ?></h2>
 <div id="poststuff">
 <form action="" method="post">
 <?php fwp_linkedit_single_submit(); ?>
@@ -441,6 +454,7 @@ FeedWordPress installations.</p></td>
 <?php
 	fwp_option_box_closer();
 	fwp_linkedit_periodic_submit();
+	fwp_linkedit_single_submit_closer();
 ?>
 </div>
 </form>
