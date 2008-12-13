@@ -431,15 +431,17 @@ function fwp_add_pages () {
 
 	if (fwp_test_wp_version(FWP_SCHEMA_26)) :
 		$options = __('Settings');
+		$longoptions = __('Syndication Settings');
 	else :
 		$options = __('Options');
+		$longoptions = __('Syndication Options');
 	endif;
 
 	call_user_func_array('add_menu_page', $menu);
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Authors', 'Authors', $fwp_capability['manage_options'], $fwp_path.'/authors.php');
-	add_submenu_page($fwp_path.'/syndication.php', 'Syndication Options', 'Options', $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
+	add_submenu_page($fwp_path.'/syndication.php', $longoptions, $options, $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
 
-	add_options_page('Syndication Options', 'Syndication', $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
+	add_options_page($longoptions, 'Syndication', $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
 } // function fwp_add_pages () */
 
 ################################################################################
