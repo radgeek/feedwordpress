@@ -1154,7 +1154,7 @@ class SyndicatedPost {
 			// Tags: start with default tags, if any
 			$ft = get_option("feedwordpress_syndication_tags");
 			if ($ft) :
-				$this->post['tags_input'] = explode('FEEDWORDPRESS_CAT_SEPARATOR', $ft);
+				$this->post['tags_input'] = explode(FEEDWORDPRESS_CAT_SEPARATOR, $ft);
 			else :
 				$this->post['tags_input'] = array();
 			endif;
