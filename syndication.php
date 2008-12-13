@@ -325,7 +325,7 @@ function fwp_feedfinder_page () {
 			die (__("Cheatin' uh ?"));
 		endif;
 	else:
-		$name = "New Syndicated Feed";
+		$name = __("New Syndicated Feed");
 		$link_id = 0;
 	endif;
 ?>
@@ -340,6 +340,21 @@ function fwp_feedfinder_page () {
 			if ($rss):
 				$feed_title = isset($rss->channel['title'])?$rss->channel['title']:$rss->channel['link'];
 				$feed_link = isset($rss->channel['link'])?$rss->channel['link']:'';
+			else :
+				// Give us some sucky defaults
+				$uri_bits = parse_url($lookup);
+				$uri_bits['host'] = preg_replace('/^www\./i', '', $uri_bits['host']);
+				$display_uri =
+					(isset($uri_bits['user'])?$uri_bits['user'].'@':'')
+					.(isset($uri_bits['host'])?$uri_bits['host']:'')
+					.(isset($uri_bits['port'])?':'.$uri_bits['port']:'')
+					.(isset($uri_bits['path'])?$uri_bits['path']:'')
+					.(isset($uri_bits['query'])?'?'.$uri_bits['query']:'');
+				if (strlen($display_uri) > 32) : $display_uri = substr($display_uri, 0, 32).'&#8230;'; endif;
+
+				$feed_title = $display_uri;
+				$feed_link = $lookup;
+			endif;
 ?>
 				<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 				<fieldset style="clear: both">
@@ -386,7 +401,7 @@ function fwp_feedfinder_page () {
 				</div>
 				</fieldset>
 				</form>
-<?php			endif;
+<?php
 		endforeach;
 	else:
 		echo "<p><strong>no feed found</strong></p>";
