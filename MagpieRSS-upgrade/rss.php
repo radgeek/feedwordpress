@@ -1176,7 +1176,9 @@ if (!function_exists('array_change_key_case')) {
 ## WordPress: Load in Snoopy from wp-includes ##################################
 ################################################################################
 
-require_once( dirname(__FILE__) . '/class-snoopy.php');
+if (!function_exists('wp_remote_request')) :
+	require_once( dirname(__FILE__) . '/class-snoopy.php');
+endif;
 
 ################################################################################
 ## rss_fetch.inc: from MagpieRSS 0.8a ##########################################
@@ -1274,7 +1276,7 @@ function fetch_rss ($url) {
         // setup headers
         if ( $cache_status == 'STALE' ) {
             $rss = $cache->get( $cache_key );
-            if ( $rss and $rss->etag and $rss->last_modified ) {
+            if ( $rss and isset($rss->etag) and $rss->last_modified ) {
                 $request_headers['If-None-Match'] = $rss->etag;
                 $request_headers['If-Last-Modified'] = $rss->last_modified;
             }
@@ -1390,18 +1392,40 @@ function magpie_error ($errormsg="") {
     Output:     an HTTP response object (see Snoopy.class.inc)  
 \*=======================================================================*/
 function _fetch_remote_file ($url, $headers = "" ) {
-    // Snoopy is an HTTP client in PHP
-    $client = new Snoopy();
-    $client->agent = MAGPIE_USER_AGENT;
-    $client->read_timeout = MAGPIE_FETCH_TIME_OUT;
-    $client->use_gzip = MAGPIE_USE_GZIP;
-    if (is_array($headers) ) {
-        $client->rawheaders = $headers;
-    }
-    
-    @$client->fetch($url);
-    return $client;
+	// WordPress 2.7 has deprecated Snoopy. It's still there, for now, but
+	// I'd rather not rely on it.
+	if (function_exists('wp_remote_request')) :
+		$resp = wp_remote_request($url, array(
+			'headers' => $headers,
+			'timeout' => MAGPIE_FETCH_TIME_OUT)
+		);
 
+		if ( is_wp_error($resp) ) :
+			$error = array_shift($resp->errors);
+
+			$client = new stdClass;
+			$client->status = 500;
+			$client->response_code = 500;
+			$client->error = $error[0] . "\n"; //\n = Snoopy compatibility
+		else :
+			$client = new stdClass;
+			$client->status = $resp['response']['code'];
+			$client->response_code = $resp['response']['code'];
+			$client->headers = $resp['headers'];
+			$client->results = $resp['body'];
+		endif;
+	else :
+		// Snoopy is an HTTP client in PHP
+		$client = new Snoopy();
+		$client->agent = MAGPIE_USER_AGENT;
+		$client->read_timeout = MAGPIE_FETCH_TIME_OUT;
+		$client->use_gzip = MAGPIE_USE_GZIP;
+		if (is_array($headers) ) {
+			$client->rawheaders = $headers;
+		}
+		@$client->fetch($url);
+	endif;
+	return $client;
 }
 
 /*=======================================================================*\

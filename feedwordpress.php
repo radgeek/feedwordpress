@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://projects.radgeek.com/feedwordpress
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2008.1105
+Version: 2008.1212
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -27,7 +27,7 @@ Last modified: 2008-11-05 4:35pm PST
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2008.1105');
+define ('FEEDWORDPRESS_VERSION', '2008.1212');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
@@ -2498,6 +2498,7 @@ class FeedFinder {
 	var $verify = FALSE;
 	
 	var $_data = NULL;
+	var $_error = NULL;
 	var $_head = NULL;
 
 	# -- Recognition patterns
@@ -2554,6 +2555,10 @@ class FeedFinder {
 		return $this->_data;
 	}
 
+	function error () {
+		return $this->_error;
+	}
+	
 	function is_feed ($uri = NULL) {
 		$data = $this->data($uri);
 
@@ -2574,21 +2579,21 @@ class FeedFinder {
 
 		// Is the result not yet cached?
 		if ($this->_cache_uri !== $this->uri) :
-		    // Snoopy is an HTTP client in PHP
-		    $client = new Snoopy();
-		    
-		    // Prepare headers and internal settings
-		    $client->rawheaders['Connection'] = 'close';
-		    $client->accept = 'application/atom+xml application/rdf+xml application/rss+xml application/xml text/html */*';
-		    $client->agent = 'feedfinder/1.2 (compatible; PHP FeedFinder) +http://projects.radgeek.com/feedwordpress';
-		    $client->read_timeout = 25;
-		    
-		    // Fetch the HTML or feed
-		    @$client->fetch($this->uri);
-		    $this->_data = $client->results;
+			$headers['Connection'] = 'close';
+			$headers['Accept'] = 'application/atom+xml application/rdf+xml application/rss+xml application/xml text/html */*';
+			$headers['User-Agent'] = 'feedfinder/1.2 (compatible; PHP FeedFinder) +http://projects.radgeek.com/feedwordpress';
 
-		    // Kilroy was here
-		    $this->_cache_uri = $this->uri;
+			// Use function provided by MagpieRSS package
+			$client = _fetch_remote_file($this->uri, $headers);
+			if (isset($client->error)) :
+				$this->_error = $client->error;
+			else :
+				$this->_error = NULL;
+			endif;
+			$this->_data = $client->results;
+
+			// Kilroy was here
+			$this->_cache_uri = $this->uri;
 		endif;
 	} /* FeedFinder::_get () */
 
