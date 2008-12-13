@@ -206,7 +206,7 @@ function fwp_syndication_options_page () {
 	);
 	
 	if (fwp_test_wp_version(FWP_SCHEMA_27)) :
-	$icon = '<div class="icon32"><img src="'.htmlspecialchars(WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress.png').'" alt="" /></div>';
+		$icon = '<div class="icon32"><img src="'.htmlspecialchars(WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress.png').'" alt="" /></div>';
 	else :
 		$icon = '';
 	endif;

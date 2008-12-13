@@ -423,9 +423,22 @@ function fwp_add_pages () {
 	global $fwp_capability;
 	global $fwp_path;
 
-	add_menu_page('Syndicated Sites', 'Syndication', $fwp_capability['manage_links'], $fwp_path.'/syndication.php');
+	$menu = array('Syndicated Sites', 'Syndication', $fwp_capability['manage_links'], $fwp_path.'/syndication.php', NULL);
+	if (fwp_test_wp_version(FWP_SCHEMA_27)) :
+		// add icon parameter
+		$menu[] = WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-tiny.png';
+	endif;
+
+	if (fwp_test_wp_version(FWP_SCHEMA_26)) :
+		$options = __('Settings');
+	else :
+		$options = __('Options');
+	endif;
+
+	call_user_func_array('add_menu_page', $menu);
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Authors', 'Authors', $fwp_capability['manage_options'], $fwp_path.'/authors.php');
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndication Options', 'Options', $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
+
 	add_options_page('Syndication Options', 'Syndication', $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
 } // function fwp_add_pages () */
 
