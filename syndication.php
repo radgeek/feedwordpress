@@ -325,7 +325,7 @@ function fwp_feedfinder_page () {
 			die (__("Cheatin' uh ?"));
 		endif;
 	else:
-		$name = __("New Syndicated Feed");
+		$name = "<code>".htmlspecialchars($lookup)."</code>";
 		$link_id = 0;
 	endif;
 ?>
@@ -404,7 +404,11 @@ function fwp_feedfinder_page () {
 <?php
 		endforeach;
 	else:
-		echo "<p><strong>no feed found</strong></p>";
+		print "<p><strong>".__('Error').":</strong> ".__("I couldn't find any feeds at").' <code><a href="'.htmlspecialchars($lookup).'">'.htmlspecialchars($lookup).'</a></code>';
+		if (!is_null($f->error())) :
+			print " [".__('HTTP request error').": ".htmlspecialchars(trim($f->error()))."]";
+		endif;
+		print ". ".__('Try another URL')."</p>";
 	endif;
 ?>
 	</div>
