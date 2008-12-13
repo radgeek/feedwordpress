@@ -119,34 +119,91 @@ if ($cont):
 ?>
 <?php
 	$links = FeedWordPress::syndicated_links();
-
+?>
+	<div class="wrap">
+	<h2>Syndicated Sites</h2>
+<?php
 	if (fwp_test_wp_version(0, FWP_SCHEMA_25)) :
 		fwp_dashboard_update_if_requested();
 	endif;
 
-	if ($links): // only display Update panel if there are some links to update....
-	?>
-	<form action="" method="POST">
-	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
+	if (fwp_test_wp_version(FWP_SCHEMA_27)) :
+?>
+		<script type="text/javascript">
+			jQuery(document).ready( function($) {
+				// In case someone got here first.
+				$('.postbox h3, .postbox .handlediv').unbind('click');
+				$('.hide-postbox-tog').unbind('click');
+				$('.meta-box-sortables').sortable('destroy');
+
+				postboxes.add_postbox_toggles('feedwordpress_syndication');
+			} );
+		</script>
+<?php
+		echo "<form style='display: none' method='get' action=''>\n<p>\n";
+		wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false );
+		wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false );
+		echo "</p>\n</form>\n";
+		
+		if ($links) :
+			add_meta_box('feedwordpress_update_box', __('Update feeds now'), 'fwp_syndication_manage_page_update_box', /*page=*/ 'feedwordpress_syndication', /*context =*/ 'normal');
+		endif;
+		add_meta_box('feedwordpress_feeds_box', __('Syndicated sources'), 'fwp_syndication_manage_page_links_box', /*page=*/ 'feedwordpress_syndication', /*context =*/ 'normal');
+?>
+	<div class="metabox-holder">		
+	<div id="feedwordpress-sortables" class="meta-box-sortables ui-sortable">
+<?php
+		do_meta_boxes('feedwordpress_syndication', 'normal', NULL);
+	else :
+		if ($links): // only display Update panel if there are some links to update....
+			fwp_syndication_manage_page_update_box();
+		endif;
+		fwp_syndication_manage_page_links_box();
+?>
+		</div> <!-- class="wrap" -->
+
+		<?php if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
 		<div class="wrap">
+		<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
+		<h2>Add a new syndicated site:</h2>
+		<div>
+		<label for="add-uri">Website or newsfeed:</label>
+		<input type="text" name="lookup" id="add-uri" value="URI" size="64" />
+		<input type="hidden" name="action" value="feedfinder" />
+		</div>
+		<div class="submit"><input type="submit" value="Syndicate &raquo;" /></div>
+		</form>
+		</div> <!-- class="wrap" -->
+		<?php endif; ?>
+
+		<div style="display: none">
+		<div id="tags-input"></div> <!-- avoid JS error from WP 2.5 bug -->
+		</div>
+<?php
+	endif;
+endif;
+} /* function fwp_syndication_manage_page () */
+
+function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
+	$updateFeedsNow = __('Update feeds now');
+?>
+	<form action="" method="POST">
+	<?php if (fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) : ?>
 		<div id="rightnow">
-		<h3 class="reallynow"><span>Update feeds now</span>
+		<h3 class="reallynow"><span><?php print $updateFeedsNow; ?></span>
 		<input type="hidden" name="update_uri" value="*" /><input style="float: right; border: none;" class="rbutton" type="submit" name="update" value="Update" />
 		<br class="clear"/></h3>
-	<?php else : ?>	
-		<div class="wrap">
-		<h2>Update feeds now</h2>
+	<?php elseif (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>	
+		<h2><?php print $updateFeedsNow; ?></h2>
 	<?php endif; ?>
 
-	<?php
+<?php
 	if (fwp_test_wp_version(FWP_SCHEMA_25)) :
 		fwp_dashboard_update_if_requested();
 	else :
 ?>
 <p>Check currently scheduled feeds for new and updated posts.</p>
-<?php
-	endif;
-	?>
+<?php	endif; ?>
 
 <?php 	if (!get_option('feedwordpress_automatic_updates')) : ?>
 	<p class="youhave"><strong>Note:</strong> Automatic updates are currently turned
@@ -156,22 +213,30 @@ if ($cont):
 	Options</a>.</p>
 <?php 	endif; ?>
 
-	<?php if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
-	<div class="submit"><input type="hidden" name="update_uri" value="*" /><input type="submit" name="update" value="Update" /></div>
+	<?php if (!fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) : ?>
+	<div class="submit"><input type="hidden" name="update_uri" value="*" /><input class="button-primary" type="submit" name="update" value="Update" /></div>
 	<?php endif; ?>
-
-	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
+	
+	<?php if (fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
+		<br style="clear: both" />
+	<?php elseif (fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) : ?>
 		</div> <!-- id="rightnow" -->
+		</div> <!-- class="wrap" -->
+	<?php elseif (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
+		</div> <!-- class="wrap" -->
 	<?php endif; ?>
-	</div> <!-- class="wrap" -->
 	</form>
 <?php
-	endif;
-?>
+} /* function fwp_syndication_manage_page_update_box () */
 
-	<div class="wrap">
+function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
+	$links = FeedWordPress::syndicated_links();
+?>
+	<?php if (!fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
+		<div class="wrap">
+	<?php endif; ?>
+
 	<form id="syndicated-links" action="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/<?php echo basename(__FILE__); ?>" method="post">
-	<h2>Syndicated Sites</h2>
 <?php	$alt_row = true; ?>
 
 	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
@@ -284,29 +349,8 @@ jQuery(document).ready( function () {
 <?php endif; ?>
 
 	</form>
-
-	</div> <!-- class="wrap" -->
-
-	<?php if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
-	<div class="wrap">
-	<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
-	<h2>Add a new syndicated site:</h2>
-	<div>
-	<label for="add-uri">Website or newsfeed:</label>
-	<input type="text" name="lookup" id="add-uri" value="URI" size="64" />
-	<input type="hidden" name="action" value="feedfinder" />
-	</div>
-	<div class="submit"><input type="submit" value="Syndicate &raquo;" /></div>
-	</form>
-	</div> <!-- class="wrap" -->
-	<?php endif; ?>
-
-<div style="display: none">
-<div id="tags-input"></div> <!-- avoid JS error from WP 2.5 bug -->
-</div>
 <?php
-endif;
-}
+} /* function fwp_syndication_manage_page_links_box() */
 
 function fwp_feedfinder_page () {
 	global $wpdb;
