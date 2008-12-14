@@ -251,6 +251,9 @@ function fwp_authors_page () {
 <?php endif; ?>
 
 <?php $links = FeedWordPress::syndicated_links(); ?>
+<?php if (fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
+	<div class="icon32"><img src="<?php print htmlspecialchars(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></div>
+<?php endif; ?>
 <h2>Syndicated Author Settings<?php if (!is_null($link) and $link->found()) : ?>: <?php echo wp_specialchars($link->link->link_name, 1); ?><?php endif; ?></h2>
 <p id="post-search">
 <select name="link_id" style="max-width: 20.0em">

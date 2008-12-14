@@ -121,8 +121,10 @@ if ($cont):
 	$links = FeedWordPress::syndicated_links();
 ?>
 	<div class="wrap">
+<?php	if (fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
+	<div class="icon32"><img src="<?php print htmlspecialchars(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></div>
 	<h2>Syndicated Sites</h2>
-<?php
+<?php 	endif;
 	if (fwp_test_wp_version(0, FWP_SCHEMA_25)) :
 		fwp_dashboard_update_if_requested();
 	endif;
@@ -234,6 +236,7 @@ function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
 ?>
 	<?php if (!fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
 		<div class="wrap">
+		<h2>Syndicated Sites</h2>
 	<?php endif; ?>
 
 	<form id="syndicated-links" action="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/<?php echo basename(__FILE__); ?>" method="post">
