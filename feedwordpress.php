@@ -3,11 +3,11 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://projects.radgeek.com/feedwordpress
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2008.1212
+Version: 2008.1214
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
-Last modified: 2008-11-05 4:35pm PST
+Last modified: 2008-12-13 10:54pm PST
 */
 
 # This uses code derived from:
@@ -16,18 +16,20 @@ Last modified: 2008-11-05 4:35pm PST
 # -	Ultra-Liberal Feed Finder by Mark Pilgrim <mark@diveintomark.org>
 # according to the terms of the GNU General Public License.
 #
-# INSTALLATION: see README.text or <http://projects.radgeek.com/install>
+# INSTALLATION: see readme.txt or <http://projects.radgeek.com/install>
 #
 # USAGE: once FeedWordPress is installed, you manage just about everything from
-# the WordPress Dashboard, under Options --> Syndication or Links --> Syndicated
-# To ensure that fresh content is added as it becomes available, get your
-# contributors to put your XML-RPC URI (if WordPress is installed at
+# the WordPress Dashboard, under the Syndication menu. To ensure that fresh
+# content is added as it becomes available, you can convince your contributors
+# to put your XML-RPC URI (if WordPress is installed at
 # <http://www.zyx.com/blog>, XML-RPC requests should be sent to
-# <http://www.zyx.com/blog/xmlrpc.php>), or see `update-feeds.php`	
+# <http://www.zyx.com/blog/xmlrpc.php>), or update manually under the
+# Syndication menu, or set up automatic updates under Syndication --> Settings,
+# or use a cron job.
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2008.1212');
+define ('FEEDWORDPRESS_VERSION', '2008.1214');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 

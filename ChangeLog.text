@@ -1,8 +1,39 @@
 FeedWordPress Change Log
 ========================
 
-Changes from 2008.1105 to 2008.1212
+Changes from 2008.1105 to 2008.1214
 -----------------------------------
+
+*	WORDPRESS 2.7 COMPATIBILITY: FeedWordPress has been tested for
+	compatibility with the newly released WordPress 2.7. WordPress 2.7 has
+	deprecated the Snoopy library for HTTP requests, which caused a fatal
+	error for users who had not installed the MagpieRSS upgrade (or whose
+	installation of the MagpieRSS upgrade was overwritten by a recent update
+	of WordPress). FeedWordPress now handles things gracefully when Snoopy
+	is not immediately available.
+
+*	INTERFACE SPIFFED UP: Interface elements have been updated so that
+	FeedWordPress's management interface fits in more naturally with the
+	WordPress 2.7 interface (including a new logo and a number of small
+	interface tweaks).
+
+*	BUG WITH TAGS FOR SYNDICATED ARTICLES UNDER SYNDICATION --> SETTINGS
+	FIXED: Several users encountered a bug involving the 
+
+*	MORE INFORMATION AVAILABLE WHEN FEEDWORDPRESS CAN'T FIND A FEED: When
+	you enter a URL for a new syndication source, FeedWordPress uses a
+	simple feed-finding algorithm (originally based on Mark Pilgrim's
+	Universal Feed Finder) to try to determine whether the URL is the URL
+	for a feed, or, if the URL points to an ordinary website rather than to
+	a feed, whether there is a feed for that website. All well and good, but
+	if FeedWordPress failed to find a feed, for whatever reason, it would
+	typically return nothing more than a nasty little note to the effect of
+	"no feed found," without any explanation of what went wrong.
+	FeedWordPress now keeps track of error conditions from the HTTP
+	requests that it uses in the course of looking for the feed, and so may
+	be able to give you a bit more information about the nature of the
+	problem if something goes wrong.
+
 
 Changes from 2008.1101 to 2008.1105
 -----------------------------------
