@@ -53,7 +53,7 @@ if (!function_exists('current_user_can')) {
 	$fwp_capability['manage_links'] = 'manage_links';
 }
 if (!function_exists('sanitize_user')) {
-	function sanitize_user ($text, $strict) {
+	function sanitize_user ($text, $strict = false) {
 		return $text; // Don't munge it if it wasn't munged going in...
 	}
 }

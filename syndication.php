@@ -775,6 +775,9 @@ function fwp_linkedit_page () {
 				$updated_link = true;
 
 				// reload link information from DB
+				if (function_exists('clean_bookmark_cache')) :
+					clean_bookmark_cache($link_id);
+				endif;
 				$link =& new SyndicatedLink($link_id);
 			else :
 				$updated_link = false;
