@@ -15,6 +15,13 @@ function fwp_test_wp_version ($floor, $ceiling = NULL) {
 	return $good;
 } /* function fwp_test_wp_version () */
 
+if (!function_exists('stripslashes_deep')) {
+	function stripslashes_deep($value) {
+		$value = is_array($value) ? array_map('stripslashes_deep', $value) : stripslashes($value);
+		return $value;
+	}
+}
+
 if (!function_exists('get_option')) {
 	function get_option ($option) {
 		return get_settings($option);
@@ -82,17 +89,21 @@ function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selec
 	if (function_exists('wp_category_checklist')) :
 		wp_category_checklist($post_id, $descendents_and_self, $selected_cats);
 	else :
-		global $checked_categories;
-
 		// selected_cats is an array of integer cat_IDs / term_ids for
 		// the categories that should be checked
-		$cats = array();
-		if ($post_id) : $cats = wp_get_post_categories($post_id);
-		else : $cats = $selected_cats;
-		endif;
+		global $post_ID;
+
+		$cats = get_nested_categories();
 		
-		$checked_categories = $cats;
-		dropdown_categories();
+		// Undo damage from usort() in WP 2.0
+		$dogs = array();
+		foreach ($cats as $cat) :
+			$dogs[$cat['cat_ID']] = $cat;
+		endforeach;
+		foreach ($selected_cats as $cat_id) :
+			$dogs[$cat_id]['checked'] = true;
+		endforeach;
+		write_nested_categories($dogs);
 	endif;
 }
 

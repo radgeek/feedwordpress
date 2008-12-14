@@ -711,7 +711,7 @@ class FeedWordPress {
 			$link_id = wp_insert_link(array(
 				"link_name" => $name,
 				"link_url" => $uri,
-				"link_category" => array($cat_id),
+				"link_category" => (fwp_test_wp_version(0, FWP_SCHEMA_21) ? $cat_id : array($cat_id)),
 				"link_rss" => $rss
 			));
 		} else { // WordPress 1.5.x
@@ -817,10 +817,10 @@ class FeedWordPress {
 					$term = wp_insert_term($cat, 'link_category');
 					$cat_id = $term['term_id'];
 				// WordPress 2.1, 2.2 category API. By the way, why the fuck is this API function only available in a wp-admin module?
-				elseif (function_exists('wp_insert_category')) : 
+				elseif (function_exists('wp_insert_category') and !fwp_test_wp_version(FWP_SCHEMA_20, FWP_SCHEMA_21)) : 
 					$cat_id = wp_insert_category(array('cat_name' => $cat));
 				// WordPress 1.5 and 2.0.x
-				elseif (!isset($wp_db_version) or $wp_db_version < FWP_SCHEMA_21) :
+				elseif (fwp_test_wp_version(0, FWP_SCHEMA_21)) :
 					$result = $wpdb->query("
 					INSERT INTO $wpdb->linkcategories
 					SET

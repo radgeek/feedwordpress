@@ -118,7 +118,7 @@ function fwp_tags_box ($tags) {
 function fwp_category_box ($checked, $object, $tags = array()) {
 	global $wp_db_version;
 
-	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) : // WordPress 2.5.x
+	if (fwp_test_wp_version(FWP_SCHEMA_25)) : // WordPress 2.5.x
 ?>
 <div id="category-adder" class="wp-hidden-children">
     <h4><a id="category-add-toggle" href="#category-add" class="hide-if-no-js" tabindex="3"><?php _e( '+ Add New Category' ); ?></a></h4>
@@ -143,7 +143,7 @@ function fwp_category_box ($checked, $object, $tags = array()) {
     </ul>
 </div>
 <?php
-	elseif (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_20) : // WordPress 2.x
+	elseif (fwp_test_wp_version(FWP_SCHEMA_20)) : // WordPress 2.x
 ?>
 		<div id="moremeta">
 		<div id="grabit" class="dbx-group">
@@ -152,17 +152,18 @@ function fwp_category_box ($checked, $object, $tags = array()) {
 			<div class="dbx-content">
 			<p style="font-size:smaller;font-style:bold;margin:0">Place <?php print $object; ?> under...</p>
 			<p id="jaxcat"></p>
-			<ul id="categorychecklist"><?php fwp_category_checklist(NULL, false, $checked); ?></ul></div>
+			<div id="categorychecklist"><?php fwp_category_checklist(NULL, false, $checked); ?></div>
+			</div>
 			</fieldset>
 		</div>
 		</div>
 <?php
 	else : // WordPress 1.5
 ?>
-		<fieldset id="categorydiv" style="width: 20%; margin-right: 2em">
+		<fieldset style="width: 60%;">
 		<legend><?php _e('Categories') ?></legend>
 		<p style="font-size:smaller;font-style:bold;margin:0">Place <?php print $object; ?> under...</p>
-		<div style="height: 20em"><?php fwp_category_checklist(NULL, false, $checked); ?></div>
+		<div style="height: 10em; overflow: scroll;"><?php fwp_category_checklist(NULL, false, $checked); ?></div>
 		</fieldset>
 <?php
 	endif;
@@ -180,11 +181,22 @@ function update_feeds_finish ($feed, $added, $dt) {
 function fwp_author_list () {
 	global $wpdb;
 	$ret = array();
-	$users = $wpdb->get_results("SELECT * FROM $wpdb->users ORDER BY display_name");
+
+	// display_name introduced in WP 2.0
+	if (fwp_test_wp_version(FWP_SCHEMA_20)) :
+		$name_column = 'display_name';
+	else :
+		$name_column = 'user_nickname';
+	endif;
+
+	$users = $wpdb->get_results("SELECT * FROM $wpdb->users ORDER BY {$name_column}");
 	if (is_array($users)) :
 		foreach ($users as $user) :
 			$id = (int) $user->ID;
-			$ret[$id] = $user->display_name;
+			$ret[$id] = $user->{$name_column};
+			if (strlen(trim($ret[$id])) == 0) :
+				$ret[$id] = $user->user_login;
+			endif;
 		endforeach;
 	endif;
 	return $ret;

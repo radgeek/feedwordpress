@@ -349,9 +349,11 @@ problem.</p>
 <td><p>When one of the categories on a syndicated post is a category that FeedWordPress has not encountered before ...</p>
 <ul style="margin: 0; padding:0; list-style:none">
 <li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar_category['create']; ?>/> create a new category</label></li>
+<?php if (fwp_test_wp_version(FWP_SCHEMA_23)) : ?>
 <li><label><input type="radio" name="unfamiliar_category" value="tag"<?php echo $unfamiliar_category['tag']; ?>/> create a new tag</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar_category['default']; ?>/> don't create new categories or tags</li>
-<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar_category['filter']; ?>/> don't create new categories or tags and don't syndicate posts unless they match at least one familiar category</label></li>
+<?php endif; ?>
+<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar_category['default']; ?>/> don't create new categories<?php if (fwp_test_wp_version(FWP_SCHEMA_23)) : ?> or tags<?php endif; ?></li>
+<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar_category['filter']; ?>/> don't create new categories<?php if (fwp_test_wp_version(FWP_SCHEMA_23)) : ?> or tags<?php endif; ?> and don't syndicate posts unless they match at least one familiar category</label></li>
 </ul></td></tr>
 </table>
 <?php

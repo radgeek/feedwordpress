@@ -303,9 +303,9 @@ jQuery(document).ready( function () {
 	endif;
 ?>
 <td>
-<strong><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit" class="edit"><?php echo wp_specialchars($link->link_name, 'both'); ?></a></strong>
-<div class="row-actions"><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit" class="edit"><?php _e('Edit'); ?></a>
-| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder" class="edit"><?php echo $caption; ?></a>
+<strong><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit"><?php echo wp_specialchars($link->link_name, 'both'); ?></a></strong>
+<div class="row-actions"><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit"><?php _e('Edit'); ?></a>
+| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder"><?php echo $caption; ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=Unsubscribe"><?php _e('Unsubscribe'); ?></a>
 | <a href="<?php echo wp_specialchars($link->link_url, 'both'); ?>"><?php _e('View')?></a>
 </div>
@@ -1004,9 +1004,11 @@ endif;
 <li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use the site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
 (currently <strong><?php echo FeedWordPress::on_unfamiliar('category'); ?></strong>)</label></li>
 <li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar['category']['create']; ?> /> create a new category</label></li>
+<?php if (fwp_test_wp_version(FWP_SCHEMA_23)) : ?>
 <li><label><input type="radio" name="unfamiliar_category" value="tag"<?php echo $unfamiliar['category']['tag']; ?>/> create a new tag</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories or tags</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar['category']['filter']; ?> /> don't create new categories or tags and don't syndicate posts unless they match at least one familiar category</label></li>
+<?php endif; ?>
+<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories<?php if (fwp_test_wp_version(FWP_SCHEMA_23)) : ?> or tags<?php endif; ?></label></li>
+<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar['category']['filter']; ?> /> don't create new categories<?php if (fwp_test_wp_version(FWP_SCHEMA_23)) : ?> or tags<?php endif; ?> and don't syndicate posts unless they match at least one familiar category</label></li>
 </ul></td>
 </tr>
 
