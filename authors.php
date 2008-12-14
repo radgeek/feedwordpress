@@ -258,8 +258,56 @@ function fwp_authors_page () {
 	<div class="icon32"><img src="<?php print htmlspecialchars(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></div>
 <?php endif; ?>
 <h2>Syndicated Author Settings<?php if (!is_null($link) and $link->found()) : ?>: <?php echo wp_specialchars($link->link->link_name, 1); ?><?php endif; ?></h2>
+<?php if (fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
+	<style type="text/css">
+	#post-search {
+		float: right;
+		margin:11px 12px 0;
+		min-width: 130px;
+		position:relative;
+	}
+	.fwpfs {
+		color: #dddddd;
+		background:#797979 url(<?php bloginfo('home') ?>/wp-admin/images/fav.png) repeat-x scroll left center;
+		border-color:#777777 #777777 #666666 !important; -moz-border-radius-bottomleft:12px;
+		-moz-border-radius-bottomright:12px;
+		-moz-border-radius-topleft:12px;
+		-moz-border-radius-topright:12px;
+		border-style:solid;
+		border-width:1px;
+		line-height:15px;
+		padding:3px 30px 4px 12px;
+	}
+	.fwpfs.slide-down {
+		border-bottom-color: #626262;
+		-moz-border-radius-bottomleft:0;
+		-moz-border-radius-bottomright:0;
+		-moz-border-radius-topleft:12px;
+		-moz-border-radius-topright:12px;
+		background-image:url(<?php bloginfo('home') ?>/wp-admin/images/fav-top.png);
+		background-position:0 top;
+		background-repeat:repeat-x;
+		border-bottom-style:solid;
+		border-bottom-width:1px;
+	}
+	</style>
+	
+	<script type="text/javascript">
+		jQuery(document).ready(function($){
+			$('.fwpfs').toggle(
+				function(){$('.fwpfs').removeClass('slideUp').addClass('slideDown'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideDown') ) { $('.fwpfs').addClass('slide-down'); }}, 10) },
+				function(){$('.fwpfs').removeClass('slideDown').addClass('slideUp'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideUp') ) { $('.fwpfs').removeClass('slide-down'); }}, 10) }
+			);
+			$('.fwpfs').bind(
+				'change',
+				function () { this.form.submit(); }
+			);
+			$('#post-search .button').css( 'display', 'none' );
+		});
+	</script>
+<?php endif; /* else : */?>
 <p id="post-search">
-<select name="link_id" style="max-width: 20.0em">
+<select name="link_id" class="fwpfs" style="max-width: 20.0em;">
   <option value="*"<?php if (is_null($link) or !$link->found()) : ?> selected="selected"<?php endif; ?>>- defaults for all feeds -</option>
 <?php if ($links) : foreach ($links as $ddlink) : ?>
   <option value="<?php print (int) $ddlink->link_id; ?>"<?php if (!is_null($link) and ($link->link->link_id==$ddlink->link_id)) : ?> selected="selected"<?php endif; ?>><?php print wp_specialchars($ddlink->link_name, 1); ?></option>
@@ -267,6 +315,7 @@ function fwp_authors_page () {
 </select>
 <input class="button" type="submit" name="go" value="<?php _e('Go') ?> &raquo;" />
 </p>
+<?php /* endif; */ ?>
 
 <?php if (!is_null($link) and $link->found()) : ?>
 	<p>These settings only affect posts syndicated from
