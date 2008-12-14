@@ -325,7 +325,6 @@ function fwp_authors_page () {
 	by settings for that specific feed.</p>
 <?php endif; ?>
 
-<h3>Assigning posts to authors</h3>
 <?php
 	$authorlist = fwp_author_list();
 ?>
@@ -418,7 +417,7 @@ if (is_object($link) and $link->found()) :
 </tr>
 <?php else : ?>
 <th scope="row">Fixing mis-matched authors:</th>
-<td><p>Take all the posts from this feed attributed to
+<td><p style="margin: 0.5em 0px">Take all the posts from this feed attributed to
 <select name="fix_mismatch_from">
 <?php foreach ($authorlist as $author_id => $author_name) : ?>
       <option value="<?php echo $author_id; ?>"><?php echo $author_name; ?></option>
@@ -441,6 +440,10 @@ and instead
 </tbody>
 </table>
 
+<p class="submit">
+<input class="button-primary" type="submit" name="save" value="Save Changes" />
+</p>
+
 <script type="text/javascript">
 	contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');
 <?php if (is_object($link) and $link->found()) : ?>
@@ -453,10 +456,6 @@ and instead
 	contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', 'block', /*checkbox=*/ true);
 <?php endif; ?>
 </script>
-
-<p class="submit">
-<input type="submit" name="save" value="Save Changes" />
-</p>
 </form>
 </div> <!-- class="wrap" -->
 	<?php
