@@ -96,6 +96,19 @@ function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selec
 	endif;
 }
 
+function fwp_time_elapsed ($ts) {
+	if (function_exists('human_time_diff')) :
+		if ($ts >= time()) :
+			$ret = __(human_time_diff($ts)." from now");
+		else :
+			$ret = __(human_time_diff($ts)." ago");
+		endif;
+	else :
+		$ret = strftime('%x %X', $ts);
+	endif;
+	return $ret;
+}
+
 ################################################################################
 ## UPGRADE INTERFACE: Have users upgrade DB from older versions of FWP #########
 ################################################################################

@@ -281,13 +281,12 @@ jQuery(document).ready( function () {
 	<?php endif; ?>
 <thead>
 <tr>
-	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : $span = 3; ?>
-	<th class="check-column" scope="col"><input type="checkbox" <?php if (fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_26)) : ?>onclick="checkAll(document.getElementById('syndicated-links'));"<?php endif; ?> /></th>
-	<?php else : $span = 4; ?>
-	<?php endif; ?>
-<th width="20%" scope="col"><?php _e('Name'); ?></th>
-<th width="40%" scope="col"><?php _e('Feed'); ?></th>
-<th class="action-links" scope="col" colspan="<?php print $span; ?>"><?php _e('Action'); ?></th>
+<th class="check-column" scope="col"><?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
+<input type="checkbox" <?php if (fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_26)) : ?>onclick="checkAll(document.getElementById('syndicated-links'));"<?php endif; ?> />
+<?php endif; ?></th>
+<th scope="col"><?php _e('Name'); ?></th>
+<th scope="col"><?php _e('Feed'); ?></th>
+<th scope="col"><?php _e('Updated'); ?></th>
 </tr>
 </thead>
 
@@ -295,14 +294,24 @@ jQuery(document).ready( function () {
 <?php		if (count($links) > 0): foreach ($links as $link):
 			$alt_row = !$alt_row; ?>
 <tr<?php echo ($alt_row?' class="alternate"':''); ?>>
-	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
 <th class="check-column" scope="row"><input type="checkbox" name="link_ids[]" value="<?php echo $link->link_id; ?>" /></th>
-	<?php endif; ?>
-
-<td><a href="<?php echo wp_specialchars($link->link_url, 'both'); ?>"><?php echo wp_specialchars($link->link_name, 'both'); ?></a></td>
+<?php
+	if (strlen($link->link_rss) > 0):
+		$caption=__('Switch Feed');
+	else :
+		$caption=__('Find Feed');
+	endif;
+?>
+<td>
+<strong><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit" class="edit"><?php echo wp_specialchars($link->link_name, 'both'); ?></a></strong>
+<div class="row-actions"><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit" class="edit"><?php _e('Edit'); ?></a>
+| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder" class="edit"><?php echo $caption; ?></a>
+| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=Unsubscribe"><?php _e('Unsubscribe'); ?></a>
+| <a href="<?php echo wp_specialchars($link->link_url, 'both'); ?>"><?php _e('View')?></a>
+</div>
+</td>
 <?php 
 			if (strlen($link->link_rss) > 0):
-				$caption='Switch Feed';
 				$uri_bits = parse_url($link->link_rss);
 				$uri_bits['host'] = preg_replace('/^www\./i', '', $uri_bits['host']);
 				$display_uri =
@@ -313,26 +322,37 @@ jQuery(document).ready( function () {
 					.(isset($uri_bits['query'])?'?'.$uri_bits['query']:'');
 				if (strlen($display_uri) > 32) : $display_uri = substr($display_uri, 0, 32).'&#8230;'; endif;
 ?>
-				<td>
-				<strong><a href="<?php echo wp_specialchars($link->link_rss, 'both'); ?>"><?php echo wp_specialchars($display_uri, 'both'); ?></a></strong></td>
-<?php
-			else:
-				$caption='Find Feed';
-?>
+				<td><a href="<?php echo wp_specialchars($link->link_rss, 'both'); ?>"><?php echo wp_specialchars($display_uri, 'both'); ?></a></td>
+			<?php else: ?>
 				<td style="background-color:#FFFFD0"><p><strong>no
 				feed assigned</strong></p></td>
-<?php
+			<?php endif; ?>
+
+			<td><?php
+			$sLink =& new SyndicatedLink($link->link_id);
+			if (isset($sLink->settings['update/last'])) :
+				print fwp_time_elapsed($sLink->settings['update/last']);
+			else :
+				_e('None yet');
 			endif;
+
+			print "<div style='font-style:italic;size:0.9em'>Ready for next update ";
+			if (isset($sLink->settings['update/ttl']) and is_numeric($sLink->settings['update/ttl'])) :
+				if (isset($sLink->settings['update/timed']) and $sLink->settings['update/timed']=='automatically') :
+					$next = $sLink->settings['update/last'] + ((int) $sLink->settings['update/ttl'] * 60);
+					print fwp_time_elapsed($next);
+				else :
+					echo "every ".$sLink->settings['update/ttl']." minute".(($sLink->settings['update/ttl']!=1)?"s":"");
+				endif;
+			else:
+				echo "as soon as possible";
+			endif;
+			print "</div>";
 ?>
-			<td><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit" class="edit"><?php _e('Edit')?></a></td>
-			<td><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder" class="edit"><?php echo $caption; ?></a></td>
-			<td><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=Unsubscribe" class="delete"><?php _e('Unsubscribe'); ?></a></td>
-			<?php if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
-			<td><input type="checkbox" name="link_ids[]" value="<?php echo $link->link_id; ?>" /></td>
+			</td>
+		</tr>
 <?php
-			endif;
-			echo "\n\t</tr>";
-		endforeach;
+			endforeach;
 		else :
 ?>
 <tr><td colspan="<?php print $span+2; ?>"><p>There are no websites currently listed for syndication.</p></td></tr>
@@ -900,7 +920,7 @@ function fwp_linkedit_page () {
 	<th width="20%"><?php _e('Last update') ?>:</th>
 	<td colspan="2"><?php
 		if (isset($link->settings['update/last'])) :
-			echo strftime('%x %X', $link->settings['update/last'])." ";
+			echo fwp_time_elapsed($link->settings['update/last'])." ";
 		else :
 			echo " none yet";
 		endif;
