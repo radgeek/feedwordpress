@@ -17,8 +17,13 @@ Changes from 2008.1105 to 2008.1214
 	WordPress 2.7 interface (including a new logo and a number of small
 	interface tweaks).
 
-*	BUG WITH TAGS FOR SYNDICATED ARTICLES UNDER SYNDICATION --> SETTINGS
-	FIXED: Several users encountered a bug involving the 
+*	BUG WITH TAGS FOR SYNDICATED ARTICLES FIXED: Several users encountered a
+	bug with the option to add tags to all syndicated posts under
+	Syndication --> Settings -- if you told FeedWordPress to add more than
+	one tag to all syndicated posts, instead of doing so correctly, it would
+	add a *single* tag instead, whose name was composed of the names of all
+	the tags you asked it to add. This bug was the result of nothing more
+	dignified than a typographical error on my part. It has now been fixed.
 
 *	MORE INFORMATION AVAILABLE WHEN FEEDWORDPRESS CAN'T FIND A FEED: When
 	you enter a URL for a new syndication source, FeedWordPress uses a
