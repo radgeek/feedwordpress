@@ -1175,6 +1175,7 @@ endif; ?>
 <?php fwp_option_box_closer(); ?>
 
 <?php fwp_linkedit_periodic_submit(); ?>
+<?php fwp_linkedit_single_submit_closer(); ?>
 </div> <!-- id="post-body" -->
 </div> <!-- id="poststuff" -->
 </div>
