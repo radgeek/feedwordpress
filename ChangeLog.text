@@ -1,6 +1,13 @@
 FeedWordPress Change Log
 ========================
 
+Changes from 2008.1214 to Trunk
+-------------------------------
+*	FEEDFINDER PERFORMANCE IMPROVEMENT: FeedWordPress's FeedFinder class
+	now uses `array_unique()` to make sure that it doesn't waste time
+	repeatedly iterating over and polling the same URI. Props to Camilo
+	(<http://projects.radgeek.com/2008/12/14/feedwordpress-20081214/#comment-20090122160414>).
+
 Changes from 2008.1105 to 2008.1214
 -----------------------------------
 

@@ -7,7 +7,7 @@ Version: 2008.1214
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
-Last modified: 2008-12-14 4:29pm PST
+Last modified: 2009-01-22 6:52pm PST
 */
 
 # This uses code derived from:
@@ -2551,6 +2551,10 @@ class FeedFinder {
 				
 				// If all that failed, look harder
 				if (count($href) == 0) $href = $this->_a_href_feeds(FALSE);
+
+				// Our search may turn up duplicate URIs. We only need to do any given URI once.
+				// Props to Camilo <http://projects.radgeek.com/2008/12/14/feedwordpress-20081214/#comment-20090122160414>
+				$href = array_unique($href);
 
 				// Verify feeds and resolve relative URIs
 				foreach ($href as $u) {
