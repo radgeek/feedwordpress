@@ -164,7 +164,8 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	
 	# Admin menu
 	add_action('admin_menu', 'fwp_add_pages');
-	
+	add_action('admin_notices', 'fwp_check_magpie');
+
 	# Inbound XML-RPC update methods
 	add_filter('xmlrpc_methods', 'feedwordpress_xmlrpc_hook');
 	
@@ -190,6 +191,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 		
 	# Cron-less auto-update. Hooray!
 	add_action('init', 'feedwordpress_auto_update');
+	add_action('init', 'feedwordpress_check_for_magpie_fix');
 	
 	# Default sanitizers
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'sanitize_content'), 0, 2);
@@ -198,6 +200,29 @@ else :
 	# Hook in the menus, which will just point to the upgrade interface
 	add_action('admin_menu', 'fwp_add_pages');
 endif; // if (!FeedWordPress::needs_upgrade())
+
+function feedwordpress_check_for_magpie_fix () {
+	if (isset($_POST['action']) and $_POST['action']=='fix_magpie_version') :
+		$back_to = $_SERVER['REQUEST_URI'];
+		if (isset($_POST['ignore'])) :
+			// kill error message by telling it to expect whatever we've got
+			update_option('feedwordpress_expected_magpie', FeedWordPress::magpie_version());
+			$ret = 'ignored';
+		elseif (isset($_POST['upgrade'])) :
+			$source = dirname(__FILE__)."/MagpieRSS-upgrade/rss.php";
+			$destination = ABSPATH . WPINC . '/rss.php';
+			$success = @copy($source, $destination);
+			$ret = (int) $success;
+		endif;
+
+		if (strpos($back_to, '?')===false) : $sep = '?';
+		else : $sep = '&';
+		endif;
+
+		header("Location: {$back_to}{$sep}feedwordpress_magpie_fix=".$ret);
+		exit;
+	endif;
+} /* feedwordpress_check_for_magpie_fix() */
 
 function feedwordpress_auto_update () {
 	if (FeedWordPress::stale()) :
@@ -444,7 +469,90 @@ function fwp_add_pages () {
 	add_submenu_page($fwp_path.'/syndication.php', $longoptions, $options, $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
 
 	add_options_page($longoptions, 'Syndication', $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
-} // function fwp_add_pages () */
+} /* function fwp_add_pages () */
+
+define('DEFAULT_EXPECTED_MAGPIE_VERSION', '0.85');
+function fwp_check_magpie () {
+	if (isset($_REQUEST['feedwordpress_magpie_fix'])) :
+		if ($_REQUEST['feedwordpress_magpie_fix']=='ignored') :
+?>
+<div class="updated fade">
+<p>O.K., we'll ignore the problem for now. FeedWordPress will not display any
+more error messages.</p>
+</div>
+<?php
+		elseif ((bool) $_REQUEST['feedwordpress_magpie_fix']) :
+?>
+<div class="updated fade">
+<p>Congratulations! Your MagpieRSS has been successfully upgraded to the version
+shipped with FeedWordPress.</p>
+</div>
+<?php
+		else :
+			$source = dirname(__FILE__)."/MagpieRSS-upgrade/rss.php";
+			$destination = ABSPATH . WPINC . '/rss.php';
+			$cmd = "cp '".htmlspecialchars(addslashes($source))."' '".htmlspecialchars(addslashes($destination))."'";
+			$cmd = wordwrap($cmd, /*width=*/ 75, /*break=*/ " \\\n\t");
+
+?>
+<div class="error">
+<p><strong>FeedWordPress was unable to automatically upgrade your copy of MagpieRSS.</strong></p>
+<p>It's likely that you need to change the file permissions on <code><?php print htmlspecialchars($source); ?></code>
+to allow FeedWordPress to overwrite it.</p>
+<p><strong>To perform the upgrade manually,</strong> you can
+use a SFTP or FTP client to upload a copy of <code>rss.php</code> from the
+<code>MagpieRSS-upgrades/</code> directory of your FeedWordPress archive so that
+it overwrites <code><?php print htmlspecialchars($destination); ?></code>. Or,
+if your web host provides shell access, you can issue the following command from
+a command prompt to perform the upgrade:</p>
+<pre>
+<samp>$</samp> <kbd><?php print $cmd; ?></kbd>
+</pre>
+<p><strong>If you've fixed the file permissions,</strong> you can try the
+automatic upgrade again.</p>
+
+<?php			feedwordpress_upgrade_old_and_busted_buttons(); ?>
+</div>
+<?php
+		endif;
+	else :
+		$magpie_version = FeedWordPress::magpie_version();
+	
+		$exp = get_option('feedwordpress_expected_magpie');
+		if ($exp) : $expected = array($exp, DEFAULT_EXPECTED_MAGPIE_VERSION);
+		else : $expected = array(DEFAULT_EXPECTED_MAGPIE_VERSION);
+		endif;
+
+		if (in_array($magpie_version, $expected)) :
+			if ($magpie_version != $exp) :
+				update_option('feedwordpress_expected_magpie', $magpie_version);
+			endif;
+		else :
+			print '<div class="error">';
+?>
+<p style="font-style: italic"><strong>FeedWordPress has detected that you are currently using a version of
+MagpieRSS other than the upgraded version that ships with FeedWordPress.</strong></p>
+<p>It is <strong>strongly recommended</strong> that you install the upgraded
+version of MagpieRSS supplied with FeedWordPress. The version of
+MagpieRSS that ships with WordPress is very old and buggy, and
+encounters a number of errors when trying to parse modern Atom
+and RSS feeds.</p>
+<?php
+			feedwordpress_upgrade_old_and_busted_buttons();
+			print '</div>';
+		endif;
+	endif;
+}
+
+function feedwordpress_upgrade_old_and_busted_buttons() {
+?>
+<form action="" method="post">
+<input type="hidden" name="action" value="fix_magpie_version" />
+<input class="button-secondary" type="submit" name="ignore" value="<?php _e('Ignore this problem'); ?>" />
+<input class="button-primary" type="submit" name="upgrade" value="<?php _e('Upgrade'); ?>" />
+</form>
+<?php
+}
 
 ################################################################################
 ## fwp_hold_pings() and fwp_release_pings(): Outbound XML-RPC ping reform   ####
@@ -942,6 +1050,13 @@ class FeedWordPress {
 		");
 	} /* FeedWordPress::create_guid_index () */
 	
+	function magpie_version () {
+		if (!defined('MAGPIE_VERSION')) : $magpie_version = $GLOBALS['wp_version'].'-default';
+		else : $magpie_version = MAGPIE_VERSION;
+		endif;
+		return $magpie_version;
+	}
+
 	# Utility functions for handling text settings
 	function negative ($f, $setting) {
 		$nego = array ('n', 'no', 'f', 'false');
