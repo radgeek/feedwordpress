@@ -1328,96 +1328,81 @@ class SyndicatedPost {
 	
 	function insert_new () {
 		global $wpdb, $wp_db_version;
-		
-		// Why the fuck doesn't wp_insert_post already do this?
-		foreach ($this->post as $key => $value) :
-			if (is_string($value)) :
-				$dbpost[$key] = $wpdb->escape($value);
-			else :
-				$dbpost[$key] = $value;
-			endif;
-		endforeach;
 
-		if (strlen($dbpost['post_title'].$dbpost['post_content'].$dbpost['post_excerpt']) == 0) :
-			// FIXME: Option for filtering out empty posts
-		endif;
-		if (strlen($dbpost['post_title'])==0) :
-			$dbpost['post_title'] = $this->post['meta']['syndication_source']
-				.' '.gmdate('Y-m-d H:i:s', $this->published() + $offset);
-			// FIXME: Option for what to fill a blank title with...
-		endif;
-
-		if ($this->use_api('wp_insert_post')) :
-			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
-
-			// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
-			add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
-			
-			// Kludge to prevent kses filters from stripping the
-			// content of posts when updating without a logged in
-			// user who has `unfiltered_html` capability.
-			add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
-			
-			$this->_wp_id = wp_insert_post($dbpost);
-
-			// Turn off ridiculous fucking kludges #1 and #2
-			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
-			remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
-
-			$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
-
-			// Unfortunately, as of WordPress 2.3, wp_insert_post()
-			// *still* offers no way to use a guid of your choice,
-			// and munges your post modified timestamp, too.
-			$result = $wpdb->query("
-				UPDATE $wpdb->posts
-				SET
-					guid='{$dbpost['guid']}',
-					post_modified='{$dbpost['post_modified']}',
-					post_modified_gmt='{$dbpost['post_modified_gmt']}'
-				WHERE ID='{$this->_wp_id}'
-			");
-		else :
-			# The right way to do this is the above. But, alas,
-			# in earlier versions of WordPress, wp_insert_post has
-			# too much behavior (mainly related to pings) that can't
-			# be overridden. In WordPress 1.5, it's enough of a
-			# resource hog to make PHP segfault after inserting
-			# 50-100 posts. This can get pretty annoying, especially
-			# if you are trying to update your feeds for the first
-			# time.
-
-			$result = $wpdb->query("
-			INSERT INTO $wpdb->posts
-			SET
-				guid = '{$dbpost['guid']}',
-				post_author = '{$dbpost['post_author']}',
-				post_date = '{$dbpost['post_date']}',
-				post_date_gmt = '{$dbpost['post_date_gmt']}',
-				post_content = '{$dbpost['post_content']}',"
-				.(isset($dbpost['post_excerpt']) ? "post_excerpt = '{$dbpost['post_excerpt']}'," : "")."
-				post_title = '{$dbpost['post_title']}',
-				post_name = '{$dbpost['post_name']}',
-				post_modified = '{$dbpost['post_modified']}',
-				post_modified_gmt = '{$dbpost['post_modified_gmt']}',
-				comment_status = '{$dbpost['comment_status']}',
-				ping_status = '{$dbpost['ping_status']}',
-				post_status = '{$dbpost['post_status']}'
-			");
-			$this->_wp_id = $wpdb->insert_id;
-
-			$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
-
-			// WordPress 1.5.x - 2.0.x
-			wp_set_post_cats('1', $this->wp_id(), $this->post['post_category']);
+		$dbpost = $this->validate_post(/*new=*/ true);
+		if (!is_null($dbpost)) :
+			if ($this->use_api('wp_insert_post')) :
+				$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
 	
-			// Since we are not going through official channels, we need to
-			// manually tell WordPress that we've published a new post.
-			// We need to make sure to do this in order for FeedWordPress
-			// to play well  with the staticize-reloaded plugin (something
-			// that a large aggregator website is going to *want* to be
-			// able to use).
-			do_action('publish_post', $this->_wp_id);
+				// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
+				add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+				
+				// Kludge to prevent kses filters from stripping the
+				// content of posts when updating without a logged in
+				// user who has `unfiltered_html` capability.
+				add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
+				
+				$this->_wp_id = wp_insert_post($dbpost);
+	
+				// Turn off ridiculous fucking kludges #1 and #2
+				remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+				remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
+	
+				$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
+	
+				// Unfortunately, as of WordPress 2.3, wp_insert_post()
+				// *still* offers no way to use a guid of your choice,
+				// and munges your post modified timestamp, too.
+				$result = $wpdb->query("
+					UPDATE $wpdb->posts
+					SET
+						guid='{$dbpost['guid']}',
+						post_modified='{$dbpost['post_modified']}',
+						post_modified_gmt='{$dbpost['post_modified_gmt']}'
+					WHERE ID='{$this->_wp_id}'
+				");
+			else :
+				# The right way to do this is the above. But, alas,
+				# in earlier versions of WordPress, wp_insert_post has
+				# too much behavior (mainly related to pings) that can't
+				# be overridden. In WordPress 1.5, it's enough of a
+				# resource hog to make PHP segfault after inserting
+				# 50-100 posts. This can get pretty annoying, especially
+				# if you are trying to update your feeds for the first
+				# time.
+	
+				$result = $wpdb->query("
+				INSERT INTO $wpdb->posts
+				SET
+					guid = '{$dbpost['guid']}',
+					post_author = '{$dbpost['post_author']}',
+					post_date = '{$dbpost['post_date']}',
+					post_date_gmt = '{$dbpost['post_date_gmt']}',
+					post_content = '{$dbpost['post_content']}',"
+					.(isset($dbpost['post_excerpt']) ? "post_excerpt = '{$dbpost['post_excerpt']}'," : "")."
+					post_title = '{$dbpost['post_title']}',
+					post_name = '{$dbpost['post_name']}',
+					post_modified = '{$dbpost['post_modified']}',
+					post_modified_gmt = '{$dbpost['post_modified_gmt']}',
+					comment_status = '{$dbpost['comment_status']}',
+					ping_status = '{$dbpost['ping_status']}',
+					post_status = '{$dbpost['post_status']}'
+				");
+				$this->_wp_id = $wpdb->insert_id;
+	
+				$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
+	
+				// WordPress 1.5.x - 2.0.x
+				wp_set_post_cats('1', $this->wp_id(), $this->post['post_category']);
+		
+				// Since we are not going through official channels, we need to
+				// manually tell WordPress that we've published a new post.
+				// We need to make sure to do this in order for FeedWordPress
+				// to play well  with the staticize-reloaded plugin (something
+				// that a large aggregator website is going to *want* to be
+				// able to use).
+				do_action('publish_post', $this->_wp_id);
+			endif;
 		endif;
 	} /* SyndicatedPost::insert_new() */
 
@@ -1425,78 +1410,106 @@ class SyndicatedPost {
 		global $wpdb;
 
 		// Why the fuck doesn't wp_insert_post already do this?
-		$dbpost = array();
+		$dbpost = $this->normalize_post(/*new=*/ false);
+		if (!is_null($dbpost)) :
+			if ($this->use_api('wp_insert_post')) :
+				$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
+	
+				// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
+				add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+	
+				// Kludge to prevent kses filters from stripping the
+				// content of posts when updating without a logged in
+				// user who has `unfiltered_html` capability.
+				add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
+	
+				$this->_wp_id = wp_insert_post($dbpost);
+	
+				// Turn off ridiculous fucking kludges #1 and #2
+				remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+				remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
+	
+				$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
+	
+				// Unfortunately, as of WordPress 2.3, wp_insert_post()
+				// munges your post modified timestamp.
+				$result = $wpdb->query("
+					UPDATE $wpdb->posts
+					SET
+						post_modified='{$dbpost['post_modified']}',
+						post_modified_gmt='{$dbpost['post_modified_gmt']}'
+					WHERE ID='{$this->_wp_id}'
+				");
+			else :
+	
+				$result = $wpdb->query("
+				UPDATE $wpdb->posts
+				SET
+					post_author = '{$dbpost['post_author']}',
+					post_content = '{$dbpost['post_content']}',"
+					.(isset($dbpost['post_excerpt']) ? "post_excerpt = '{$dbpost['post_excerpt']}'," : "")."
+					post_title = '{$dbpost['post_title']}',
+					post_name = '{$dbpost['post_name']}',
+					post_modified = '{$dbpost['post_modified']}',
+					post_modified_gmt = '{$dbpost['post_modified_gmt']}'
+				WHERE guid='{$dbpost['guid']}'
+				");
+		
+				// WordPress 2.1.x and up
+				if (function_exists('wp_set_post_categories')) :
+					wp_set_post_categories($this->wp_id(), $this->post['post_category']);
+				// WordPress 1.5.x - 2.0.x
+				elseif (function_exists('wp_set_post_cats')) :
+					wp_set_post_cats('1', $this->wp_id(), $this->post['post_category']);
+				// This should never happen.
+				else :
+					FeedWordPress::critical_bug(__CLASS__.'::'.__FUNCTION.'(): no post categorizing function', array("dbpost" => $dbpost, "this" => $this), __LINE__);
+				endif;
+		
+				// Since we are not going through official channels, we need to
+				// manually tell WordPress that we've published a new post.
+				// We need to make sure to do this in order for FeedWordPress
+				// to play well  with the staticize-reloaded plugin (something
+				// that a large aggregator website is going to *want* to be
+				// able to use).
+				do_action('edit_post', $this->post['ID']);
+			endif;
+		endif;
+	} /* SyndicatedPost::update_existing() */
+
+	/**
+	 * SyndicatedPost::normalize_post()
+	 *
+	 * @param bool $new If true, this post is to be inserted anew. If false, it is an update of an existing post.
+	 * @return array A normalized representation of the post ready to be inserted into the database or sent to the WordPress API functions
+	 */
+	function normalize_post ($new = true) {
+		global $wpdb;
+
+		$out = array();
+
+		// Why the fuck doesn't wp_insert_post already do this?
 		foreach ($this->post as $key => $value) :
 			if (is_string($value)) :
-				$dbpost[$key] = $wpdb->escape($value);
+				$out[$key] = $wpdb->escape($value);
 			else :
-				$dbpost[$key] = $value;
+				$out[$key] = $value;
 			endif;
 		endforeach;
 
-		if ($this->use_api('wp_insert_post')) :
-			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
-
-			// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
-			add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
-
-			// Kludge to prevent kses filters from stripping the
-			// content of posts when updating without a logged in
-			// user who has `unfiltered_html` capability.
-			add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
-
-			$this->_wp_id = wp_insert_post($dbpost);
-
-			// Turn off ridiculous fucking kludges #1 and #2
-			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
-			remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
-
-			$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
-
-			// Unfortunately, as of WordPress 2.3, wp_insert_post()
-			// munges your post modified timestamp.
-			$result = $wpdb->query("
-				UPDATE $wpdb->posts
-				SET
-					post_modified='{$dbpost['post_modified']}',
-					post_modified_gmt='{$dbpost['post_modified_gmt']}'
-				WHERE ID='{$this->_wp_id}'
-			");
-		else :
-
-			$result = $wpdb->query("
-			UPDATE $wpdb->posts
-			SET
-				post_author = '{$dbpost['post_author']}',
-				post_content = '{$dbpost['post_content']}',"
-				.(isset($dbpost['post_excerpt']) ? "post_excerpt = '{$dbpost['post_excerpt']}'," : "")."
-				post_title = '{$dbpost['post_title']}',
-				post_name = '{$dbpost['post_name']}',
-				post_modified = '{$dbpost['post_modified']}',
-				post_modified_gmt = '{$dbpost['post_modified_gmt']}'
-			WHERE guid='{$dbpost['guid']}'
-			");
-	
-			// WordPress 2.1.x and up
-			if (function_exists('wp_set_post_categories')) :
-				wp_set_post_categories($this->wp_id(), $this->post['post_category']);
-			// WordPress 1.5.x - 2.0.x
-			elseif (function_exists('wp_set_post_cats')) :
-				wp_set_post_cats('1', $this->wp_id(), $this->post['post_category']);
-			// This should never happen.
-			else :
-				FeedWordPress::critical_bug(__CLASS__.'::'.__FUNCTION.'(): no post categorizing function', array("dbpost" => $dbpost, "this" => $this), __LINE__);
-			endif;
-	
-			// Since we are not going through official channels, we need to
-			// manually tell WordPress that we've published a new post.
-			// We need to make sure to do this in order for FeedWordPress
-			// to play well  with the staticize-reloaded plugin (something
-			// that a large aggregator website is going to *want* to be
-			// able to use).
-			do_action('edit_post', $this->post['ID']);
+		if (strlen($out['post_title'].$out['post_content'].$out['post_excerpt']) == 0) :
+			// FIXME: Option for filtering out empty posts
 		endif;
-	} /* SyndicatedPost::update_existing() */
+		if (strlen($out['post_title'])==0) :
+			$offset = (int) get_option('gmt_offset') * 60 * 60;
+			$out['post_title'] =
+				$this->post['meta']['syndication_source']
+				.' '.gmdate('Y-m-d H:i:s', $this->published() + $offset);
+			// FIXME: Option for what to fill a blank title with...
+		endif;
+
+		return $out;
+	}
 
 	/**
 	 * SyndicatedPost::validate_post_id()
