@@ -958,11 +958,16 @@ class FeedWordPress {
 	function critical_bug ($varname, $var, $line) {
 		global $wp_version;
 
+		if (defined('MAGPIE_VERSION')) : $mv = MAGPIE_VERSION;
+		else : $mv = 'WordPress '.$wp_version.' default.';
+		endif;
+
 		echo '<p>There may be a bug in FeedWordPress. Please <a href="'.FEEDWORDPRESS_AUTHOR_CONTACT.'">contact the author</a> and paste the following information into your e-mail:</p>';
 		echo "\n<plaintext>";
 		echo "Triggered at line # ".$line."\n";
 		echo "FeedWordPress version: ".FEEDWORDPRESS_VERSION."\n";
-		echo "WordPress version: $wp_version\n";
+		echo "MagpieRSS version: {$mv}\n";
+		echo "WordPress version: {$wp_version}\n";
 		echo "PHP version: ".phpversion()."\n";
 		echo "\n";
 		echo $varname.": "; var_dump($var); echo "\n";
@@ -1359,11 +1364,8 @@ class SyndicatedPost {
 			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
 			remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
 
-			// This should never happen.
-			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
-				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', array("dbpost" => $dbpost, "this" => $this), __LINE__);
-			endif;
-	
+			$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
+
 			// Unfortunately, as of WordPress 2.3, wp_insert_post()
 			// *still* offers no way to use a guid of your choice,
 			// and munges your post modified timestamp, too.
@@ -1404,10 +1406,7 @@ class SyndicatedPost {
 			");
 			$this->_wp_id = $wpdb->insert_id;
 
-			// This should never happen.
-			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
-				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', array("dbpost" => $dbpost, "this" => $this), __LINE__);
-			endif;
+			$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
 
 			// WordPress 1.5.x - 2.0.x
 			wp_set_post_cats('1', $this->wp_id(), $this->post['post_category']);
@@ -1452,10 +1451,7 @@ class SyndicatedPost {
 			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
 			remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
 
-			// This should never happen.
-			if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
-				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', array("dbpost" => $dbpost, "this" => $this), __LINE__);
-			endif;
+			$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
 
 			// Unfortunately, as of WordPress 2.3, wp_insert_post()
 			// munges your post modified timestamp.
@@ -1489,7 +1485,7 @@ class SyndicatedPost {
 				wp_set_post_cats('1', $this->wp_id(), $this->post['post_category']);
 			// This should never happen.
 			else :
-				FeedWordPress::critical_bug('SyndicatedPost (_wp_id problem)', array("dbpost" => $dbpost, "this" => $this), __LINE__);
+				FeedWordPress::critical_bug(__CLASS__.'::'.__FUNCTION.'(): no post categorizing function', array("dbpost" => $dbpost, "this" => $this), __LINE__);
 			endif;
 	
 			// Since we are not going through official channels, we need to
@@ -1502,6 +1498,30 @@ class SyndicatedPost {
 		endif;
 	} /* SyndicatedPost::update_existing() */
 
+	/**
+	 * SyndicatedPost::validate_post_id()
+	 *
+	 * @param array $dbpost An array representing the post we attempted to insert or update
+	 * @param mixed $ns A string or array representing the namespace (class, method) whence this method was called.
+	 */
+	function validate_post_id ($dbpost, $ns) {
+		if (is_array($ns)) : $ns = implode('::', $ns);
+		else : $ns = (string) $ns; endif;
+		
+		// This should never happen.
+		if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
+			FeedWordPress::critical_bug(
+				/*name=*/ $ns.'::_wp_id',
+				/*var =*/ array(
+					"\$this->_wp_id" => $this->_wp_id,
+					"\$dbpost" => $dbpost,
+					"\$this" => $this
+				),
+				/*line # =*/ __LINE__
+			);
+		endif;
+	} /* SyndicatedPost::validate_post_id() */
+	
 	/**
 	 * SyndicatedPost::fix_revision_meta() - Fixes the way WP 2.6+ fucks up
 	 * meta-data (authorship, etc.) when storing revisions of an updated
