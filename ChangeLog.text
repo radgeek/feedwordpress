@@ -3,6 +3,24 @@ FeedWordPress Change Log
 
 Changes from 2008.1214 to Trunk
 -------------------------------
+*	BLANK POSTS PROBLEM NO LONGER OCCURS WITH OLD AND BUSTED MAGPIERSS: Due
+	to the fact that I relied on a content normalization that occurs in my
+	upgraded version of MagpieRSS, but not in the old & busted version of
+	MagpieRSS that ships with WordPress, until this version, if you tried to
+	syndicate an Atom feed without having performed the (*strongly
+	recommended*) MagpieRSS upgrade, all of the posts would come up with
+	completely blank contents. That's not because MagpieRSS couldn't read
+	the data, but rather because the new Magpie version puts that data in a
+	location where the old version doesn't, and I was only looking in that
+	newer location. Now it checks for both, meaning that posts will continue
+	to display their contents even if you don't upgrade MagpieRSS. (But you
+	**really should** upgrade it, anyway.)
+
+*	OCCASIONAL FATAL ERROR ON UPDATE ELIMINATED: Under certain limited
+	conditions (specifically, when both the title and the content of a post
+	to be updated are empty), an attempt to update the post would result in
+	a fatal error. This has been fixed.
+
 *	FEEDFINDER PERFORMANCE IMPROVEMENT: FeedWordPress's FeedFinder class
 	now uses `array_unique()` to make sure that it doesn't waste time
 	repeatedly iterating over and polling the same URI. Props to Camilo
@@ -473,7 +491,7 @@ between version 0.98 of WordPress and the recently released WordPress 2.1.
 	in parse_w3cdtf(), some installations of PHP encountered problems with
 	FeedWordPress's attempt to date posts, which would cause some new posts
 	on Atom feeds to be dated as if they had apppeared in 1969 or 1970
-	(thus, effectively, never appearing on front apge at all). This bug in
+	(thus, effectively, never appearing on front page at all). This bug in
 	the date handling should now be fixed.
 
 *	PHP <?=...?> SHORT FORM ELIMINATED: some installations of PHP do not
@@ -557,7 +575,7 @@ Changes from 0.96 to 0.97
 	(comparing results from PHP only to other results from PHP, and results
 	from MySQL only to other results from MySQL).
 
-*	BUG FIX: Items dated Decembr 31, 1969 should appear less often. The
+*	BUG FIX: Items dated December 31, 1969 should appear less often. The
 	function for parsing W3C date-time format dates that ships with
 	MagpieRSS can only correctly parse fully-specified dates with a
 	fully-specified time, but valid W3C date-time format dates may omit the
@@ -584,7 +602,7 @@ Changes from 0.96 to 0.97
 	require an HTTP POST to take effect. I think I got pretty much
 	everything; if there's anything that I missed, let me know.
 
-	Further reading: [Sam Ruby 2005-05-06: This Stuff Matters]	(http://www.intertwingly.net/blog/2005/05/06/This-Stuff-Matters)
+	Further reading: [Sam Ruby 2005-05-06: This Stuff Matters](http://www.intertwingly.net/blog/2005/05/06/This-Stuff-Matters)
 
 *	BUG FIX: Categories applied by `cats` setting should no longer prevent
 	category-based filtering from working. In FeedWordPress, you can (1)

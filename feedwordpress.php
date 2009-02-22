@@ -7,7 +7,7 @@ Version: 2008.1214
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
-Last modified: 2009-01-22 6:52pm PST
+Last modified: 2009-02-21 9:09pm PST
 */
 
 # This uses code derived from:
@@ -1035,7 +1035,9 @@ class SyndicatedPost {
 
 			# Identify content and sanitize it.
 			# ---------------------------------
-			if (isset($this->item['xhtml']['body'])) :
+			if (isset($this->item['atom_content'])) :
+				$content = $this->item['atom_content'];
+			elseif (isset($this->item['xhtml']['body'])) :
 				$content = $this->item['xhtml']['body'];
 			elseif (isset($this->item['xhtml']['div'])) :
 				$content = $this->item['xhtml']['div'];
@@ -1329,7 +1331,7 @@ class SyndicatedPost {
 	function insert_new () {
 		global $wpdb, $wp_db_version;
 
-		$dbpost = $this->validate_post(/*new=*/ true);
+		$dbpost = $this->normalize_post(/*new=*/ true);
 		if (!is_null($dbpost)) :
 			if ($this->use_api('wp_insert_post')) :
 				$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
