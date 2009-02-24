@@ -170,7 +170,7 @@ if ($cont):
 		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 		<h2>Add a new syndicated site:</h2>
 		<div>
-		<label for="add-uri">Website or newsfeed:</label>
+		<label for="add-uri">Website or feed:</label>
 		<input type="text" name="lookup" id="add-uri" value="URI" size="64" />
 		<input type="hidden" name="action" value="feedfinder" />
 		</div>
@@ -512,10 +512,10 @@ function fwp_switchfeed_page () {
 		if (isset($_POST['link_id']) and ($_POST['link_id']==0)):
 			$link_id = FeedWordPress::syndicate_link($_REQUEST['feed_title'], $_REQUEST['feed_link'], $_REQUEST['feed']);
 			if ($link_id): ?>
-<div class="updated"><p><a href="<?php echo $_REQUEST['feed_link']; ?>"><?php echo wp_specialchars($_REQUEST['feed_title'], 'both'); ?></a>
-has been added as a contributing site, using the newsfeed at &lt;<a href="<?php echo $_REQUEST['feed']; ?>"><?php echo wp_specialchars($_REQUEST['feed'], 'both'); ?></a>&gt;.</p></div>
+<div class="updated"><p><a href="<?php echo stripslashes($_REQUEST['feed_link']); ?>"><?php echo wp_specialchars($_REQUEST['feed_title'], 'both'); ?></a>
+has been added as a contributing site, using the feed at &lt;<a href="<?php echo $_REQUEST['feed']; ?>"><?php echo wp_specialchars($_REQUEST['feed'], 'both'); ?></a>&gt;.</p></div>
 <?php			else: ?>
-<div class="updated"><p>There was a problem adding the newsfeed. [SQL: <?php echo wp_specialchars(mysql_error(), 'both'); ?>]</p></div>
+<div class="updated"><p>There was a problem adding the feed. [SQL: <?php echo wp_specialchars(mysql_error(), 'both'); ?>]</p></div>
 <?php			endif;
 		elseif (isset($_POST['link_id'])):
 			// Update link_rss
