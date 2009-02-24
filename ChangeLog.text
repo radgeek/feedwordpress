@@ -12,6 +12,20 @@ Changes from 2008.1214 to Trunk
 	FeedWordPress will offer some guidance on how to perform the upgrade
 	manually.
 
+*	"ARE YOU SURE?" FATAL ERROR ELIMINATED AND SECURITY IMPROVED: Under
+	certain circumstances (for example, when users have configured their
+	browser or proxy not to send HTTP Referer headers, for privacy or other
+	reasons), many features in the FeedWordPress administrative interface
+	(such as adding new feeds or changing settings) would hit a fatal error,
+	displaying only a cryptic message reading "Are you sure?" and a blank
+	page following it. This problem has been eliminated by taking advantage
+	of WordPress's nonce functions, which allow the security check which
+	ran into this error to work properly even without receiving an HTTP
+	Referer header. (N.B.: WordPress's nonce functions were first introduced
+	in WordPress 2.0.3. If you're using FeedWordPress with an older version
+	of WordPress, there's no fix for this problem: you'll just need to turn
+	Referer headers back on. Sorry.)
+
 *	BLANK POSTS PROBLEM NO LONGER OCCURS WITH OLD AND BUSTED MAGPIERSS: Due
 	to the fact that I relied on a content normalization that occurs in my
 	upgraded version of MagpieRSS, but not in the old & busted version of

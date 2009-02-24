@@ -167,6 +167,7 @@ if ($cont):
 		<?php if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
 		<div class="wrap">
 		<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
+		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 		<h2>Add a new syndicated site:</h2>
 		<div>
 		<label for="add-uri">Website or newsfeed:</label>
@@ -190,6 +191,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	$updateFeedsNow = __('Update feeds now');
 ?>
 	<form action="" method="POST">
+	<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 	<?php if (fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) : ?>
 		<div id="rightnow">
 		<h3 class="reallynow"><span><?php print $updateFeedsNow; ?></span>
@@ -240,6 +242,8 @@ function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
 	<?php endif; ?>
 
 	<form id="syndicated-links" action="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/<?php echo basename(__FILE__); ?>" method="post">
+	<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
+
 <?php	$alt_row = true; ?>
 
 	<?php if (fwp_test_wp_version(FWP_SCHEMA_25)) : ?>
@@ -424,6 +428,7 @@ function fwp_feedfinder_page () {
 			endif;
 ?>
 				<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
+				<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_switchfeed'); ?></div>
 				<fieldset style="clear: both">
 				<legend><?php echo $rss->feed_type; ?> <?php echo $rss->feed_version; ?> feed</legend>
 
@@ -481,6 +486,9 @@ function fwp_feedfinder_page () {
 	</div>
 
 	<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
+	<div><?php
+		FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds');
+	?></div>
 	<div class="wrap">
 	<h2>Use another feed</h2>
 	<div><label>Feed:</label>
@@ -497,11 +505,11 @@ function fwp_feedfinder_page () {
 function fwp_switchfeed_page () {
 	global $wpdb, $wp_db_version;
 
-	check_admin_referer();
+	// If this is a POST, validate source and user credentials
+	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_switchfeed', /*capability=*/ 'manage_links');
+
 	if (!isset($_REQUEST['Cancel'])):
-		if (!current_user_can('manage_links')):
-			die (__("Cheatin' uh ?"));
-		elseif (isset($_REQUEST['link_id']) and ($_REQUEST['link_id']==0)):
+		if (isset($_POST['link_id']) and ($_POST['link_id']==0)):
 			$link_id = FeedWordPress::syndicate_link($_REQUEST['feed_title'], $_REQUEST['feed_link'], $_REQUEST['feed']);
 			if ($link_id): ?>
 <div class="updated"><p><a href="<?php echo $_REQUEST['feed_link']; ?>"><?php echo wp_specialchars($_REQUEST['feed_title'], 'both'); ?></a>
@@ -509,7 +517,7 @@ has been added as a contributing site, using the newsfeed at &lt;<a href="<?php 
 <?php			else: ?>
 <div class="updated"><p>There was a problem adding the newsfeed. [SQL: <?php echo wp_specialchars(mysql_error(), 'both'); ?>]</p></div>
 <?php			endif;
-		elseif (isset($_REQUEST['link_id'])):
+		elseif (isset($_POST['link_id'])):
 			// Update link_rss
 			$result = $wpdb->query("
 			UPDATE $wpdb->links
@@ -537,7 +545,8 @@ updated to &lt;<a href="<?php echo $_REQUEST['feed']; ?>"><?php echo wp_specialc
 function fwp_linkedit_page () {
 	global $wpdb, $wp_db_version;
 
-	check_admin_referer(); // Make sure we arrived here from the Dashboard
+	// If this is a POST, validate source and user credentials
+	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_linkedit', /*capability=*/ 'manage_links');
 
 	$special_settings = array ( /* Regular expression syntax is OK here */
 		'cats',
@@ -559,9 +568,7 @@ function fwp_linkedit_page () {
 		'link/.*',
 	);
 
-	if (!current_user_can('manage_links')) :
-		die (__("Cheatin' uh ?"));
-	elseif (isset($_REQUEST['feedfinder'])) :
+	if (isset($_REQUEST['feedfinder'])) :
 		return fwp_feedfinder_page(); // re-route to Feed Finder page
 	else :
 		$link_id = (int) $_REQUEST['link_id'];
@@ -866,6 +873,7 @@ function fwp_linkedit_page () {
 
 <form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 <div class="wrap">
+<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_linkedit'); ?>
 <input type="hidden" name="link_id" value="<?php echo $link_id; ?>" />
 <input type="hidden" name="action" value="linkedit" />
 <input type="hidden" name="save" value="link" />
@@ -1187,14 +1195,13 @@ endif; ?>
 function fwp_multidelete_page () {
 	global $wpdb;
 
-	check_admin_referer(); // Make sure the referers are kosher
+	// If this is a POST, validate source and user credentials
+	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_feeds', /*capability=*/ 'manage_links');
 
 	$link_ids = (isset($_REQUEST['link_ids']) ? $_REQUEST['link_ids'] : array());
 	if (isset($_REQUEST['link_id'])) : array_push($link_ids, $_REQUEST['link_id']); endif;
 
-	if (!current_user_can('manage_links')):
-		die (__("Cheatin' uh ?"));
-	elseif (isset($GLOBALS['fwp_post']['confirm']) and $GLOBALS['fwp_post']['confirm']=='Delete'):
+	if (isset($GLOBALS['fwp_post']['confirm']) and $GLOBALS['fwp_post']['confirm']=='Delete'):
 		foreach ($GLOBALS['fwp_post']['link_action'] as $link_id => $what) :
 			$do_it[$what][] = $link_id;
 		endforeach;
@@ -1277,6 +1284,7 @@ function fwp_multidelete_page () {
 ?>
 <form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 <div class="wrap">
+<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
 <input type="hidden" name="action" value="Unsubscribe" />
 <input type="hidden" name="confirm" value="Delete" />
 

@@ -4,8 +4,8 @@ require_once(dirname(__FILE__) . '/admin-ui.php');
 function fwp_authors_page () {
 	global $wpdb, $wp_db_version;
 
-	check_admin_referer(); // Make sure we arrived here from the Dashboard
-	
+	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_author_settings', /*capability=*/ 'manage_links');
+
 	if (isset($GLOBALS['fwp_post']['save']) or isset($GLOBALS['fwp_post']['fix_mismatch'])) :
 		$link_id = $_REQUEST['save_link_id'];
 	elseif (isset($_REQUEST['link_id'])) :
@@ -21,12 +21,145 @@ function fwp_authors_page () {
 	endif;
 
 	$mesg = null;
-	if (!current_user_can('manage_links')) :
-		die (__("Cheatin' uh ?"));
-	else :
-		if (isset($GLOBALS['fwp_post']['fix_mismatch'])) :
-			if ('newuser'==$GLOBALS['fwp_post']['fix_mismatch_to']) :
-				$newuser_name = trim($GLOBALS['fwp_post']['fix_mismatch_to_newuser']);
+
+	if (isset($GLOBALS['fwp_post']['fix_mismatch'])) :
+		if ('newuser'==$GLOBALS['fwp_post']['fix_mismatch_to']) :
+			$newuser_name = trim($GLOBALS['fwp_post']['fix_mismatch_to_newuser']);
+			if (strlen($newuser_name) > 0) :
+				$userdata = array();
+				$userdata['ID'] = NULL;
+				
+				$userdata['user_login'] = sanitize_user($newuser_name);
+				$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
+				
+				$userdata['user_nicename'] = sanitize_title($newuser_name);
+				$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
+				
+				$userdata['display_name'] = $wpdb->escape($newuser_name);
+
+				$newuser_id = wp_insert_user($userdata);
+				if (is_numeric($newuser_id)) :
+					$fix_mismatch_to_id = $newuser_id;
+				else :
+					// TODO: Add some error detection and reporting
+				endif;
+			else :
+				// TODO: Add some error reporting
+			endif;			
+		else :
+			$fix_mismatch_to_id = $GLOBALS['fwp_post']['fix_mismatch_to'];
+		endif;
+		$fix_mismatch_from_id = (int) $GLOBALS['fwp_post']['fix_mismatch_from'];
+		if (is_numeric($fix_mismatch_from_id)) :
+			// Make a list of all the items by this author syndicated from this feed...
+			$post_ids = $wpdb->get_col("
+			SELECT {$wpdb->posts}.id
+			FROM {$wpdb->posts}, {$wpdb->postmeta}
+			WHERE ({$wpdb->posts}.id = {$wpdb->postmeta}.post_id)
+			AND {$wpdb->postmeta}.meta_key = 'syndication_feed_id'
+			AND {$wpdb->postmeta}.meta_value = '{$link_id}'
+			AND {$wpdb->posts}.post_author = '{$fix_mismatch_from_id}'
+			");
+			
+			if (count($post_ids) > 0) :
+				// Re-assign them all to the correct author
+				if (is_numeric($fix_mismatch_to_id)) : // re-assign to a particular user
+					$post_set = "(".implode(",", $post_ids).")";
+					
+					// Getting the revisions too, if there are any
+					if (fwp_test_wp_version(FWP_SCHEMA_26)) :
+						$parent_in_clause = "OR {$wpdb->posts}.post_parent IN $post_set";
+					else :
+						$parent_in_clause = '';
+					endif;
+					
+					$wpdb->query("
+					UPDATE {$wpdb->posts}
+					SET post_author='{$fix_mismatch_to_id}'
+					WHERE ({$wpdb->posts}.id IN $post_set
+					$parent_in_clause)
+					");
+					$mesg = "Re-assigned ".count($post_ids)." post".((count($post_ids)==1)?'':'s').".";
+
+				// ... and kill them all
+				elseif ($fix_mismatch_to_id=='filter') :
+					foreach ($post_ids as $post_id) :
+						wp_delete_post($post_id);
+					endforeach;						
+					$mesg = "Deleted ".count($post_ids)." post".((count($post_ids)==1)?'':'s').".";
+				endif;
+			else :
+				$mesg = "Couldn't find any posts that matched your criteria.";
+			endif;
+		endif;
+	elseif (isset($GLOBALS['fwp_post']['save'])) :
+		if (is_object($link) and $link->found()) :
+			$alter = array ();
+
+			// Unfamiliar author rule
+			if (isset($GLOBALS['fwp_post']["unfamiliar_author"])) :
+				if ('site-default'==$GLOBALS['fwp_post']["unfamiliar_author"]) :
+					unset($link->settings["unfamiliar author"]);
+				elseif ('newuser'==$GLOBALS['fwp_post']["unfamiliar_author"]) :
+					$newuser_name = trim($GLOBALS['fwp_post']["unfamiliar_author_newuser"]);
+					$link->map_name_to_new_user(/*name=*/ NULL, $newuser_name);
+				else :
+					$link->settings["unfamiliar author"] = $GLOBALS['fwp_post']["unfamiliar_author"];
+				endif;
+			endif;
+			
+			// Handle author mapping rules
+			if (isset($GLOBALS['fwp_post']['author_rules_name']) and isset($GLOBALS['fwp_post']['author_rules_action'])) :
+				unset($link->settings['map authors']);
+				foreach ($GLOBALS['fwp_post']['author_rules_name'] as $key => $name) :
+					// Normalize for case and whitespace
+					$name = strtolower(trim($name));
+					$author_action = strtolower(trim($GLOBALS['fwp_post']['author_rules_action'][$key]));
+					
+					if (strlen($name) > 0) :
+						if ('newuser' == $author_action) :
+							$newuser_name = trim($GLOBALS['fwp_post']['author_rules_newuser'][$key]);
+							$link->map_name_to_new_user($name, $newuser_name);
+						else :
+							$link->settings['map authors']['name'][$name] = $author_action;
+						endif;
+					endif;
+				endforeach;
+			endif;
+
+			if (isset($GLOBALS['fwp_post']['add_author_rule_name']) and isset($GLOBALS['fwp_post']['add_author_rule_action'])) :
+				$name = strtolower(trim($GLOBALS['fwp_post']['add_author_rule_name']));
+				$author_action = strtolower(trim($GLOBALS['fwp_post']['add_author_rule_action']));
+				if (strlen($name) > 0) :
+					if ('newuser' == $author_action) :
+						$newuser_name = trim($GLOBALS['fwp_post']['add_author_rule_newuser']);
+						$link->map_name_to_new_user($name, $newuser_name);
+					else :
+						$link->settings['map authors']['name'][$name] = $author_action;
+					endif;
+				endif;
+			endif;
+
+			$alter[] = "link_notes = '".$wpdb->escape($link->settings_to_notes())."'";
+
+			$alter_set = implode(", ", $alter);
+
+			// issue update query
+			$result = $wpdb->query("
+			UPDATE $wpdb->links
+			SET $alter_set
+			WHERE link_id='$link_id'
+			");
+			$updated_link = true;
+
+			// reload link information from DB
+			if (function_exists('clean_bookmark_cache')) :
+				clean_bookmark_cache($link_id);
+			endif;
+			$link =& new SyndicatedLink($link_id);
+		else :
+			if ('newuser'==$GLOBALS['fwp_post']['unfamiliar_author']) :
+				$newuser_name = trim($GLOBALS['fwp_post']['unfamiliar_author_newuser']);
 				if (strlen($newuser_name) > 0) :
 					$userdata = array();
 					$userdata['ID'] = NULL;
@@ -41,7 +174,7 @@ function fwp_authors_page () {
 
 					$newuser_id = wp_insert_user($userdata);
 					if (is_numeric($newuser_id)) :
-						$fix_mismatch_to_id = $newuser_id;
+						update_option('feedwordpress_unfamiliar_author', $newuser_id);
 					else :
 						// TODO: Add some error detection and reporting
 					endif;
@@ -49,176 +182,41 @@ function fwp_authors_page () {
 					// TODO: Add some error reporting
 				endif;			
 			else :
-				$fix_mismatch_to_id = $GLOBALS['fwp_post']['fix_mismatch_to'];
+				update_option('feedwordpress_unfamiliar_author', $GLOBALS['fwp_post']['unfamiliar_author']);
 			endif;
-			$fix_mismatch_from_id = (int) $GLOBALS['fwp_post']['fix_mismatch_from'];
-			if (is_numeric($fix_mismatch_from_id)) :
-				// Make a list of all the items by this author syndicated from this feed...
-				$post_ids = $wpdb->get_col("
-				SELECT {$wpdb->posts}.id
-				FROM {$wpdb->posts}, {$wpdb->postmeta}
-				WHERE ({$wpdb->posts}.id = {$wpdb->postmeta}.post_id)
-				AND {$wpdb->postmeta}.meta_key = 'syndication_feed_id'
-				AND {$wpdb->postmeta}.meta_value = '{$link_id}'
-				AND {$wpdb->posts}.post_author = '{$fix_mismatch_from_id}'
-				");
-				
-				if (count($post_ids) > 0) :
-					// Re-assign them all to the correct author
-					if (is_numeric($fix_mismatch_to_id)) : // re-assign to a particular user
-						$post_set = "(".implode(",", $post_ids).")";
-						
-						// Getting the revisions too, if there are any
-						if (fwp_test_wp_version(FWP_SCHEMA_26)) :
-							$parent_in_clause = "OR {$wpdb->posts}.post_parent IN $post_set";
-						else :
-							$parent_in_clause = '';
-						endif;
-						
-						$wpdb->query("
-						UPDATE {$wpdb->posts}
-						SET post_author='{$fix_mismatch_to_id}'
-						WHERE ({$wpdb->posts}.id IN $post_set
-						$parent_in_clause)
-						");
-						$mesg = "Re-assigned ".count($post_ids)." post".((count($post_ids)==1)?'':'s').".";
 
-					// ... and kill them all
-					elseif ($fix_mismatch_to_id=='filter') :
-						foreach ($post_ids as $post_id) :
-							wp_delete_post($post_id);
-						endforeach;						
-						$mesg = "Deleted ".count($post_ids)." post".((count($post_ids)==1)?'':'s').".";
-					endif;
-				else :
-					$mesg = "Couldn't find any posts that matched your criteria.";
-				endif;
-			endif;
-		elseif (isset($GLOBALS['fwp_post']['save'])) :
-			if (is_object($link) and $link->found()) :
-				$alter = array ();
-	
-				// Unfamiliar author rule
-				if (isset($GLOBALS['fwp_post']["unfamiliar_author"])) :
-					if ('site-default'==$GLOBALS['fwp_post']["unfamiliar_author"]) :
-						unset($link->settings["unfamiliar author"]);
-					elseif ('newuser'==$GLOBALS['fwp_post']["unfamiliar_author"]) :
-						$newuser_name = trim($GLOBALS['fwp_post']["unfamiliar_author_newuser"]);
-						$link->map_name_to_new_user(/*name=*/ NULL, $newuser_name);
-					else :
-						$link->settings["unfamiliar author"] = $GLOBALS['fwp_post']["unfamiliar_author"];
-					endif;
-				endif;
-				
-				// Handle author mapping rules
-				if (isset($GLOBALS['fwp_post']['author_rules_name']) and isset($GLOBALS['fwp_post']['author_rules_action'])) :
-					unset($link->settings['map authors']);
-					foreach ($GLOBALS['fwp_post']['author_rules_name'] as $key => $name) :
-						// Normalize for case and whitespace
-						$name = strtolower(trim($name));
-						$author_action = strtolower(trim($GLOBALS['fwp_post']['author_rules_action'][$key]));
-						
-						if (strlen($name) > 0) :
-							if ('newuser' == $author_action) :
-								$newuser_name = trim($GLOBALS['fwp_post']['author_rules_newuser'][$key]);
-								$link->map_name_to_new_user($name, $newuser_name);
-							else :
-								$link->settings['map authors']['name'][$name] = $author_action;
-							endif;
-						endif;
-					endforeach;
-				endif;
-	
-				if (isset($GLOBALS['fwp_post']['add_author_rule_name']) and isset($GLOBALS['fwp_post']['add_author_rule_action'])) :
-					$name = strtolower(trim($GLOBALS['fwp_post']['add_author_rule_name']));
-					$author_action = strtolower(trim($GLOBALS['fwp_post']['add_author_rule_action']));
-					if (strlen($name) > 0) :
-						if ('newuser' == $author_action) :
-							$newuser_name = trim($GLOBALS['fwp_post']['add_author_rule_newuser']);
-							$link->map_name_to_new_user($name, $newuser_name);
-						else :
-							$link->settings['map authors']['name'][$name] = $author_action;
-						endif;
-					endif;
-				endif;
-	
-				$alter[] = "link_notes = '".$wpdb->escape($link->settings_to_notes())."'";
-	
-				$alter_set = implode(", ", $alter);
-	
-				// issue update query
-				$result = $wpdb->query("
-				UPDATE $wpdb->links
-				SET $alter_set
-				WHERE link_id='$link_id'
-				");
-				$updated_link = true;
-	
-				// reload link information from DB
-				if (function_exists('clean_bookmark_cache')) :
-					clean_bookmark_cache($link_id);
-				endif;
-				$link =& new SyndicatedLink($link_id);
+			if (isset($GLOBALS['fwp_post']['match_author_by_email']) and $GLOBALS['fwp_post']['match_author_by_email']=='yes') :
+				update_option('feedwordpress_do_not_match_author_by_email', 'no');
 			else :
-				if ('newuser'==$GLOBALS['fwp_post']['unfamiliar_author']) :
-					$newuser_name = trim($GLOBALS['fwp_post']['unfamiliar_author_newuser']);
-					if (strlen($newuser_name) > 0) :
-						$userdata = array();
-						$userdata['ID'] = NULL;
-						
-						$userdata['user_login'] = sanitize_user($newuser_name);
-						$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
-						
-						$userdata['user_nicename'] = sanitize_title($newuser_name);
-						$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
-						
-						$userdata['display_name'] = $wpdb->escape($newuser_name);
-	
-						$newuser_id = wp_insert_user($userdata);
-						if (is_numeric($newuser_id)) :
-							update_option('feedwordpress_unfamiliar_author', $newuser_id);
-						else :
-							// TODO: Add some error detection and reporting
-						endif;
-					else :
-						// TODO: Add some error reporting
-					endif;			
-				else :
-					update_option('feedwordpress_unfamiliar_author', $GLOBALS['fwp_post']['unfamiliar_author']);
-				endif;
-	
-				if (isset($GLOBALS['fwp_post']['match_author_by_email']) and $GLOBALS['fwp_post']['match_author_by_email']=='yes') :
-					update_option('feedwordpress_do_not_match_author_by_email', 'no');
-				else :
-					update_option('feedwordpress_do_not_match_author_by_email', 'yes');
-				endif;
-	
-				if (isset($GLOBALS['fwp_post']['null_emails'])) :
-					update_option('feedwordpress_null_email_set', $GLOBALS['fwp_post']['null_emails']);
-				endif;
-				
-				$updated_link = true;
+				update_option('feedwordpress_do_not_match_author_by_email', 'yes');
 			endif;
-		else :
-			$updated_link = false;
-		endif;
 
-		$unfamiliar = array ('create' => '','default' => '','filter' => '');
-
-		if (is_object($link) and $link->found()) :
-			if (is_string($link->settings["unfamiliar author"])) :
-				$key = $link->settings["unfamiliar author"];
-			else:
-				$key = 'site-default';
+			if (isset($GLOBALS['fwp_post']['null_emails'])) :
+				update_option('feedwordpress_null_email_set', $GLOBALS['fwp_post']['null_emails']);
 			endif;
-		else :
-			$key = FeedWordPress::on_unfamiliar('author');
+			
+			$updated_link = true;
 		endif;
+	else :
+		$updated_link = false;
+	endif;
 
-		$unfamiliar[$key] = ' selected="selected"';
+	$unfamiliar = array ('create' => '','default' => '','filter' => '');
 
-		$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
-		$null_emails = FeedWordPress::null_email_set();
+	if (is_object($link) and $link->found()) :
+		if (is_string($link->settings["unfamiliar author"])) :
+			$key = $link->settings["unfamiliar author"];
+		else:
+			$key = 'site-default';
+		endif;
+	else :
+		$key = FeedWordPress::on_unfamiliar('author');
+	endif;
+
+	$unfamiliar[$key] = ' selected="selected"';
+
+	$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
+	$null_emails = FeedWordPress::null_email_set();
 ?>
 <script type="text/javascript">
 	function contextual_appearance (item, appear, disappear, value, visibleStyle, checkbox) {
@@ -247,11 +245,20 @@ function fwp_authors_page () {
 
 <div class="wrap">
 <form style="position: relative" action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
-<?php if (is_numeric($link_id) and $link_id) : ?>
+<div><?php
+	FeedWordPressCompatibility::stamp_nonce('feedwordpress_author_settings');
+
+	if (is_numeric($link_id) and $link_id) :
+?>
 <input type="hidden" name="save_link_id" value="<?php echo $link_id; ?>" />
-<?php else : ?>
+<?php
+	else :
+?>
 <input type="hidden" name="save_link_id" value="*" />
-<?php endif; ?>
+<?php
+	endif;
+?>
+</div>
 
 <?php $links = FeedWordPress::syndicated_links(); ?>
 <?php if (fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
@@ -458,8 +465,7 @@ and instead
 </script>
 </form>
 </div> <!-- class="wrap" -->
-	<?php
-	endif;
+<?php
 } /* function fwp_authors_page () */
 
 	fwp_authors_page();

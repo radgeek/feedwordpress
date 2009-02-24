@@ -7,7 +7,7 @@ Version: 2008.1214
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
-Last modified: 2009-02-21 9:09pm PST
+Last modified: 2009-02-24 10:39am PST
 */
 
 # This uses code derived from:
@@ -203,6 +203,8 @@ endif; // if (!FeedWordPress::needs_upgrade())
 
 function feedwordpress_check_for_magpie_fix () {
 	if (isset($_POST['action']) and $_POST['action']=='fix_magpie_version') :
+		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_fix_magpie', /*capability=*/ 'edit_files');
+
 		$back_to = $_SERVER['REQUEST_URI'];
 		if (isset($_POST['ignore'])) :
 			// kill error message by telling it to expect whatever we've got
@@ -528,11 +530,18 @@ automatic upgrade again.</p>
 				update_option('feedwordpress_expected_magpie', $magpie_version);
 			endif;
 		else :
+			if (current_user_can('edit_files')) :
+				$youAre = 'you are';
+				$itIsRecommendedThatYou = 'It is <strong>strongly recommended</strong> that you';
+			else :
+				$youAre = 'this site is';
+				$itIsRecommendedThatYou = 'You may want to contact the administrator of the site; it is <strong>strongly recommended</strong> that they';
+			endif;
 			print '<div class="error">';
 ?>
-<p style="font-style: italic"><strong>FeedWordPress has detected that you are currently using a version of
+<p style="font-style: italic"><strong>FeedWordPress has detected that <?php print $youAre; ?> currently using a version of
 MagpieRSS other than the upgraded version that ships with FeedWordPress.</strong></p>
-<p>It is <strong>strongly recommended</strong> that you install the upgraded
+<p><?php print $itIsRecommendedThatYou; ?> install the upgraded
 version of MagpieRSS supplied with FeedWordPress. The version of
 MagpieRSS that ships with WordPress is very old and buggy, and
 encounters a number of errors when trying to parse modern Atom
@@ -545,13 +554,16 @@ and RSS feeds.</p>
 }
 
 function feedwordpress_upgrade_old_and_busted_buttons() {
+	if (current_user_can('edit_files')) :
 ?>
-<form action="" method="post">
+<form action="" method="post"><div>
+<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_fix_magpie'); ?>
 <input type="hidden" name="action" value="fix_magpie_version" />
 <input class="button-secondary" type="submit" name="ignore" value="<?php _e('Ignore this problem'); ?>" />
 <input class="button-primary" type="submit" name="upgrade" value="<?php _e('Upgrade'); ?>" />
-</form>
+</div></form>
 <?php
+	endif;
 }
 
 ################################################################################

@@ -9,138 +9,130 @@ function fwp_syndication_options_page () {
 		return;
 	endif;
 
+	// If this is a POST, validate source and user credentials
+	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_options', /*capability=*/ 'manage_options');
+
 	if (isset($_POST['create_index'])) :
-		check_admin_referer();
-		if (!current_user_can('manage_options')) :
-			die (__("Cheatin' uh ?"));
-		else :
-			FeedWordPress::create_guid_index();
+		FeedWordPress::create_guid_index();
 ?>
 <div class="updated">
 <p><?php _e('Index created on database table.')?></p>
 </div>
 <?php
-		endif;
 	endif;
 
 	if (isset($_POST['submit']) or isset($_POST['create_index'])) :
-		check_admin_referer();
-
-		if (!current_user_can('manage_options')):
-			die (__("Cheatin' uh ?"));
-		else:
-			update_option('feedwordpress_cat_id', $_REQUEST['syndication_category']);
-			update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
-			update_option('feedwordpress_use_aggregator_source_data', $_REQUEST['use_aggregator_source_data']);
-			update_option('feedwordpress_formatting_filters', $_REQUEST['formatting_filters']);
-			update_option('feedwordpress_update_logging', $_REQUEST['update_logging']);
+		update_option('feedwordpress_cat_id', $_REQUEST['syndication_category']);
+		update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
+		update_option('feedwordpress_use_aggregator_source_data', $_REQUEST['use_aggregator_source_data']);
+		update_option('feedwordpress_formatting_filters', $_REQUEST['formatting_filters']);
+		update_option('feedwordpress_update_logging', $_REQUEST['update_logging']);
 			
-			if ('newuser'==$_REQUEST['unfamiliar_author']) :
-				$newuser_name = trim($_REQUEST['unfamiliar_author_newuser']);
-				if (strlen($newuser_name) > 0) :
-					$userdata = array();
-					$userdata['ID'] = NULL;
-					
-					$userdata['user_login'] = sanitize_user($newuser_name);
-					$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
-					
-					$userdata['user_nicename'] = sanitize_title($newuser_name);
-					$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
-					
-					$userdata['display_name'] = $wpdb->escape($newuser_name);
+		if ('newuser'==$_REQUEST['unfamiliar_author']) :
+			$newuser_name = trim($_REQUEST['unfamiliar_author_newuser']);
+			if (strlen($newuser_name) > 0) :
+				$userdata = array();
+				$userdata['ID'] = NULL;
+				
+				$userdata['user_login'] = sanitize_user($newuser_name);
+				$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
+				
+				$userdata['user_nicename'] = sanitize_title($newuser_name);
+				$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
+				
+				$userdata['display_name'] = $wpdb->escape($newuser_name);
 
-					$newuser_id = wp_insert_user($userdata);
-					if (is_numeric($newuser_id)) :
-						update_option('feedwordpress_unfamiliar_author', $newuser_id);
-					else :
-						// TODO: Add some error detection and reporting
-					endif;
+				$newuser_id = wp_insert_user($userdata);
+				if (is_numeric($newuser_id)) :
+					update_option('feedwordpress_unfamiliar_author', $newuser_id);
 				else :
-					// TODO: Add some error reporting
-				endif;			
+					// TODO: Add some error detection and reporting
+				endif;
 			else :
-				update_option('feedwordpress_unfamiliar_author', $_REQUEST['unfamiliar_author']);
-			endif;
+				// TODO: Add some error reporting
+			endif;			
+		else :
+			update_option('feedwordpress_unfamiliar_author', $_REQUEST['unfamiliar_author']);
+		endif;
 
-			if (isset($_REQUEST['match_author_by_email']) and $_REQUEST['match_author_by_email']=='yes') :
-				update_option('feedwordpress_do_not_match_author_by_email', 'no');
-			else :
-				update_option('feedwordpress_do_not_match_author_by_email', 'yes');
-			endif;
+		if (isset($_REQUEST['match_author_by_email']) and $_REQUEST['match_author_by_email']=='yes') :
+			update_option('feedwordpress_do_not_match_author_by_email', 'no');
+		else :
+			update_option('feedwordpress_do_not_match_author_by_email', 'yes');
+		endif;
 
-			if (isset($_REQUEST['null_emails'])) :
-				update_option('feedwordpress_null_email_set', $_REQUEST['null_emails']);
-			endif;
+		if (isset($_REQUEST['null_emails'])) :
+			update_option('feedwordpress_null_email_set', $_REQUEST['null_emails']);
+		endif;
 
-			update_option('feedwordpress_unfamiliar_category', $_REQUEST['unfamiliar_category']);
-			update_option('feedwordpress_syndicated_post_status', $_REQUEST['post_status']);
-			update_option('feedwordpress_automatic_updates', ($_POST['automatic_updates']=='yes'));
-			update_option('feedwordpress_update_time_limit', ($_POST['update_time_limit']=='yes')?(int) $_POST['time_limit_seconds']:0);
-			update_option('feedwordpress_freshness',  ($_POST['freshness_interval']*60));
+		update_option('feedwordpress_unfamiliar_category', $_REQUEST['unfamiliar_category']);
+		update_option('feedwordpress_syndicated_post_status', $_REQUEST['post_status']);
+		update_option('feedwordpress_automatic_updates', ($_POST['automatic_updates']=='yes'));
+		update_option('feedwordpress_update_time_limit', ($_POST['update_time_limit']=='yes')?(int) $_POST['time_limit_seconds']:0);
+		update_option('feedwordpress_freshness',  ($_POST['freshness_interval']*60));
 
-			// Categories
+		// Categories
+		$cats = array();
+		if (isset($_POST['post_category'])) :
 			$cats = array();
-			if (isset($_POST['post_category'])) :
-				$cats = array();
-				foreach ($_POST['post_category'] as $cat_id) :
-					$cats[] = '{#'.$cat_id.'}';
-				endforeach;
-			endif;
+			foreach ($_POST['post_category'] as $cat_id) :
+				$cats[] = '{#'.$cat_id.'}';
+			endforeach;
+		endif;
 
-			if (!empty($cats)) :
-				update_option('feedwordpress_syndication_cats', implode(FEEDWORDPRESS_CAT_SEPARATOR, $cats));
-			else :
-				delete_option('feedwordpress_syndication_cats');
-			endif;
+		if (!empty($cats)) :
+			update_option('feedwordpress_syndication_cats', implode(FEEDWORDPRESS_CAT_SEPARATOR, $cats));
+		else :
+			delete_option('feedwordpress_syndication_cats');
+		endif;
 
-			// Tags
-			if (isset($_REQUEST['tags_input'])) :
-				$tags = explode(",", $_REQUEST['tags_input']);
-			else :
-				$tags =  array();
-			endif;
-			
-			if (!empty($tags)) :
-				update_option('feedwordpress_syndication_tags', implode(FEEDWORDPRESS_CAT_SEPARATOR, $tags));
-			else :
-				delete_option('feedwordpress_syndication_tags');
-			endif;
+		// Tags
+		if (isset($_REQUEST['tags_input'])) :
+			$tags = explode(",", $_REQUEST['tags_input']);
+		else :
+			$tags =  array();
+		endif;
+		
+		if (!empty($tags)) :
+			update_option('feedwordpress_syndication_tags', implode(FEEDWORDPRESS_CAT_SEPARATOR, $tags));
+		else :
+			delete_option('feedwordpress_syndication_tags');
+		endif;
 
-			if (isset($_REQUEST['comment_status']) and ($_REQUEST['comment_status'] == 'open')) :
-				update_option('feedwordpress_syndicated_comment_status', 'open');
-			else :
-				update_option('feedwordpress_syndicated_comment_status', 'closed');
-			endif;
+		if (isset($_REQUEST['comment_status']) and ($_REQUEST['comment_status'] == 'open')) :
+			update_option('feedwordpress_syndicated_comment_status', 'open');
+		else :
+			update_option('feedwordpress_syndicated_comment_status', 'closed');
+		endif;
 
-			if (isset($_REQUEST['ping_status']) and ($_REQUEST['ping_status'] == 'open')) :
-				update_option('feedwordpress_syndicated_ping_status', 'open');
-			else :
-				update_option('feedwordpress_syndicated_ping_status', 'closed');
-			endif;
-			
-			if (isset($_REQUEST['hardcode_name']) and ($_REQUEST['hardcode_name'] == 'no')) :
-				update_option('feedwordpress_hardcode_name', 'no');
-			else :
-				update_option('feedwordpress_hardcode_name', 'yes');
-			endif;
-			
-			if (isset($_REQUEST['hardcode_description']) and ($_REQUEST['hardcode_description'] == 'no')) :
-				update_option('feedwordpress_hardcode_description', 'no');
-			else :
-				update_option('feedwordpress_hardcode_description', 'yes');
-			endif;
+		if (isset($_REQUEST['ping_status']) and ($_REQUEST['ping_status'] == 'open')) :
+			update_option('feedwordpress_syndicated_ping_status', 'open');
+		else :
+			update_option('feedwordpress_syndicated_ping_status', 'closed');
+		endif;
+		
+		if (isset($_REQUEST['hardcode_name']) and ($_REQUEST['hardcode_name'] == 'no')) :
+			update_option('feedwordpress_hardcode_name', 'no');
+		else :
+			update_option('feedwordpress_hardcode_name', 'yes');
+		endif;
+		
+		if (isset($_REQUEST['hardcode_description']) and ($_REQUEST['hardcode_description'] == 'no')) :
+			update_option('feedwordpress_hardcode_description', 'no');
+		else :
+			update_option('feedwordpress_hardcode_description', 'yes');
+		endif;
 
-			if (isset($_REQUEST['hardcode_url']) and ($_REQUEST['hardcode_url'] == 'no')) :
-				update_option('feedwordpress_hardcode_url', 'no');
-			else :
-				update_option('feedwordpress_hardcode_url', 'yes');
-			endif;
+		if (isset($_REQUEST['hardcode_url']) and ($_REQUEST['hardcode_url'] == 'no')) :
+			update_option('feedwordpress_hardcode_url', 'no');
+		else :
+			update_option('feedwordpress_hardcode_url', 'yes');
+		endif;
 ?>
 <div class="updated">
 <p><?php _e('Options saved.')?></p>
 </div>
 <?php
-		endif;
 	endif;
 
 	$cat_id = FeedWordPress::link_category_id();
@@ -239,7 +231,10 @@ function fwp_syndication_options_page () {
 <h2>Syndication <?php print $options; ?></h2>
 <div id="poststuff">
 <form action="" method="post">
-<?php fwp_linkedit_single_submit(); ?>
+<?php
+	FeedWordPressCompatibility::stamp_nonce('feedwordpress_options');
+	fwp_linkedit_single_submit();
+?>
 <div id="post-body">
 <?php fwp_option_box_opener('Syndicated Feeds', 'syndicatedfeedsdiv'); ?>
 <table class="editform" width="100%" cellspacing="2" cellpadding="5">

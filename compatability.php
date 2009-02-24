@@ -15,6 +15,34 @@ function fwp_test_wp_version ($floor, $ceiling = NULL) {
 	return $good;
 } /* function fwp_test_wp_version () */
 
+class FeedWordPressCompatibility {
+	/*static*/ function validate_http_request ($action = -1, $capability = null) {
+		// Only worry about this if we're using a method with significant side-effects
+		if (strtoupper($_SERVER['REQUEST_METHOD']) == 'POST') :
+			// Limit post by user capabilities
+			if (!is_null($capability) and !current_user_can($capability)) :
+				wp_die(__('Cheatin&#8217; uh?'));
+			endif;
+
+			// If check_admin_referer() checks a nonce.
+			if (function_exists('wp_verify_nonce')) :
+				check_admin_referer($action);
+
+			// No nonces means no checking nonces.
+			else :
+				check_admin_referer();
+			endif;
+		endif;
+	} /* FeedWordPressCompatibility::validate_http_request() */
+	
+	/*static*/ function stamp_nonce ($action = -1) {
+		// stamp form with hidden fields for a nonce in WP 2.0.3 & later
+		if (function_exists('wp_nonce_field')) :
+			wp_nonce_field($action);
+		endif;
+	} /* FeedWordPressCompatibility::stamp_nonce() */
+} /* class FeedWordPressCompatibility */
+
 if (!function_exists('stripslashes_deep')) {
 	function stripslashes_deep($value) {
 		$value = is_array($value) ? array_map('stripslashes_deep', $value) : stripslashes($value);
@@ -44,6 +72,9 @@ if (!function_exists('current_user_can')) {
 			break;
 		case 'manage_links':
 			$can = ($user_level >= 5);
+			break;
+		case 'edit_files':
+			$can = ($user_level >= 9);
 			break;
 		endswitch;
 		return $can;
@@ -83,7 +114,13 @@ if (!function_exists('wp_insert_user')) {
 		
 		return $id;
 	}
-}
+} /* if (!function_exists('wp_insert_user')) */
+
+if (!function_exists('wp_die')) {
+	function wp_die ( $message, $title = '', $args = array() ) {
+		die($message);
+	} /* wp_die() */
+} /* if */
 
 function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selected_cats = false) {
 	if (function_exists('wp_category_checklist')) :
@@ -163,6 +200,7 @@ like me you may want to back up your database before you proceed.</p>
 <p>This may take several minutes for a large installation.</p>
 
 <form action="" method="post">
+<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_upgrade'); ?>
 <div class="submit"><input type="submit" name="action" value="Upgrade" /></div>
 </form>
 </div>
