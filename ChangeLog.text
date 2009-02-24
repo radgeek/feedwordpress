@@ -3,6 +3,15 @@ FeedWordPress Change Log
 
 Changes from 2008.1214 to Trunk
 -------------------------------
+*	MAGPIERSS VERSION CHECK AND UPGRADE FEATURE: FeedWordPress will attempt
+	to determine whether or not you are using the upgraded version of
+	MagpieRSS that comes packaged with FeedWordPress. If not, it will throw
+	an error on admin pages, and, if you are a site administrator, it will
+	give you the option to ignore the error message, or to attempt an
+	automatic upgrade (using a native file copy). If the file copy fails,
+	FeedWordPress will offer some guidance on how to perform the upgrade
+	manually.
+
 *	BLANK POSTS PROBLEM NO LONGER OCCURS WITH OLD AND BUSTED MAGPIERSS: Due
 	to the fact that I relied on a content normalization that occurs in my
 	upgraded version of MagpieRSS, but not in the old & busted version of
