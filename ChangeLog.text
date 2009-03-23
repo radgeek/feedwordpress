@@ -3,6 +3,16 @@ FeedWordPress Change Log
 
 Changes from 2008.1214 to Trunk
 -------------------------------
+*	BUGFIX: INTERFACE OPTION FOR SETTING SYNDICATED POST PUBLICATION STATUS
+	ON A FEED-BY-FEED BASIS HAS BEEN RESTORED: Due to a version-checking
+	bug, users of WordPress 2.7.x lost an option from the "Edit a syndicated
+	feed" interface which allowed them to determine whether newly syndicated
+	posts should be published immediately, held as "Pending Review," saved
+	as drafts, or saved as private posts. (The option to change this
+	setting globally remained in place, but users could no longer set it on
+	a feed-by-feed basis.) The version-checking bug has been fixed, and the
+	option has been restored.
+
 *	MAGPIERSS VERSION CHECK AND UPGRADE FEATURE: FeedWordPress will attempt
 	to determine whether or not you are using the upgraded version of
 	MagpieRSS that comes packaged with FeedWordPress. If not, it will throw

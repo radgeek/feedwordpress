@@ -977,7 +977,7 @@ flip_hardcode('url');
 <?php fwp_linkedit_periodic_submit(); ?>
 
 <?php
-if (!(isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25)) :
+if (!fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) :
 	fwp_option_box_opener('Syndicated Posts', 'syndicatedpostsdiv', 'postbox');
 ?>
 <table class="editform" width="75%" cellspacing="2" cellpadding="5">
