@@ -1146,7 +1146,12 @@ endif; ?>
 <?php fwp_option_box_closer(); ?>
 <?php fwp_linkedit_periodic_submit(); ?>
 
-<?php fwp_option_box_opener('Custom Settings (for use in templates)', 'postcustom', 'postbox'); ?>
+<?php fwp_option_box_opener('Custom Feed Settings (for use in templates)', 'postcustom', 'postbox'); ?>
+<p class="setting-description">These custom settings are special fields for the <strong>feed</strong> you are
+syndicating, to be retrieved in templates using the <code>get_feed_meta()</code> function. They do not create
+custom fields on syndicated <strong>posts</strong>. If you want to create custom fields that are applied to each
+individual post from this feed, set up the settings in <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndicated-posts.php&amp;link_id=<?php print $link_id; ?>">Syndicated Posts</a>.</p>
+
 <div id="postcustomstuff">
 <table id="meta-list" cellpadding="3">
 	<tr>

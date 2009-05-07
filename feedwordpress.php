@@ -3,11 +3,11 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://projects.radgeek.com/feedwordpress
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2008.1214
+Version: 2009.0507
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
-Last modified: 2009-02-24 10:39am PST
+Last modified: 2009-05-07 2:25pm PDT
 */
 
 # This uses code derived from:
@@ -29,7 +29,7 @@ Last modified: 2009-02-24 10:39am PST
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2008.1214');
+define ('FEEDWORDPRESS_VERSION', '2009.0507');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
@@ -1215,6 +1215,24 @@ class SyndicatedPost {
 
 			// Unique ID (hopefully a unique tag: URI); failing that, the permalink
 			$this->post['guid'] = apply_filters('syndicated_item_guid', $this->guid(), $this);
+
+			// User-supplied custom settings to apply to each post. Do first so that FWP-generated custom settings will overwrite if necessary; thus preventing any munging
+			$default_custom_settings = get_option('feedwordpress_custom_settings');
+			if ($default_custom_settings) :
+				$default_custom_settings = unserialize($default_custom_settings);
+			endif;
+			if (!is_array($default_custom_settings)) :
+				$default_custom_settings = array();
+			endif;
+			
+			$custom_settings = $this->link->settings['postmeta'];
+			if ($custom_settings) :
+				$custom_settings = unserialize($custom_settings);
+			endif;
+			if (!is_array($custom_settings)) :
+				$custom_settings = array();
+			endif;
+			$this->post['meta'] = array_merge($default_custom_settings, $custom_settings);
 
 			// RSS 2.0 / Atom 1.0 enclosure support
 			if ( isset($this->item['enclosure#']) ) :

@@ -3,6 +3,32 @@ FeedWordPress Change Log
 
 Changes from 2008.1214 to Trunk
 -------------------------------
+*	INTERFACE RESTRUCTURING: In order to avoid settings posts from becoming too
+	crowded, and to modularize and better organize the user interface, a new "Posts"
+	subpage has been created under the "Syndication" menu,  which controls settings
+	for individal syndicated posts (such as publication status, comment and ping
+	status, whether or not to use the original location of the post as the permalink,
+	whether or not to expose posts to formatting filters, and so on), both at the global
+	default level and for individual syndicated feeds.
+
+*	FEATURE: MAGPIERSS VERSION CHECK AND UPGRADE: FeedWordPress will attempt
+	to determine whether or not you are using the upgraded version of
+	MagpieRSS that comes packaged with FeedWordPress. If not, it will throw
+	an error on admin pages, and, if you are a site administrator, it will
+	give you the option to ignore the error message, or to attempt an
+	automatic upgrade (using a native file copy). If the file copy fails,
+	FeedWordPress will offer some guidance on how to perform the upgrade
+	manually.
+	
+*	FEATURE: ADD CUSTOM SETTINGS TO EACH SYNDICATED POST: FeedWordPress
+	has long had an interface for creating custom settings for each syndicated *feed*
+	which could be retrieved in templates using the get_feed_meta() template function.
+	But it had no feature for adding custom fields to each individual syndicated
+	*post*. In response to requests from users, I have added the ability to apply
+	custom fields to each individual syndicated post, using the new Syndication -->
+	Posts subpage. You can set up custom fields to be applied to every syndicated
+	post, or custom fields to be applied to syndicated posts from a particular feed.
+
 *	BUGFIX: INTERFACE OPTION FOR SETTING SYNDICATED POST PUBLICATION STATUS
 	ON A FEED-BY-FEED BASIS HAS BEEN RESTORED: Due to a version-checking
 	bug, users of WordPress 2.7.x lost an option from the "Edit a syndicated
@@ -13,16 +39,7 @@ Changes from 2008.1214 to Trunk
 	a feed-by-feed basis.) The version-checking bug has been fixed, and the
 	option has been restored.
 
-*	MAGPIERSS VERSION CHECK AND UPGRADE FEATURE: FeedWordPress will attempt
-	to determine whether or not you are using the upgraded version of
-	MagpieRSS that comes packaged with FeedWordPress. If not, it will throw
-	an error on admin pages, and, if you are a site administrator, it will
-	give you the option to ignore the error message, or to attempt an
-	automatic upgrade (using a native file copy). If the file copy fails,
-	FeedWordPress will offer some guidance on how to perform the upgrade
-	manually.
-
-*	"ARE YOU SURE?" FATAL ERROR ELIMINATED AND SECURITY IMPROVED: Under
+*	BUGFIX: "ARE YOU SURE?" FATAL ERROR ELIMINATED AND SECURITY IMPROVED: Under
 	certain circumstances (for example, when users have configured their
 	browser or proxy not to send HTTP Referer headers, for privacy or other
 	reasons), many features in the FeedWordPress administrative interface

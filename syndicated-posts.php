@@ -26,8 +26,24 @@ function fwp_posts_page () {
 	// Process POST request, if any /////////////////
 	////////////////////////////////////////////////
 	if (isset($GLOBALS['fwp_post']['save'])) :
+		// custom post  settings
+		foreach ($GLOBALS['fwp_post']['notes'] as $mn) :
+			$mn['key0'] = trim($mn['key0']);
+			$mn['key1'] = trim($mn['key1']);
+
+			if (strlen($mn['key0']) > 0) :
+				unset($custom_settings[$mn['key0']]); // out with the old
+			endif;
+			
+			if (($mn['action']=='update') and (strlen($mn['key1']) > 0)) :
+				$custom_settings[$mn['key1']] = $mn['value']; // in with the new
+			endif;
+		endforeach;
+
 		if (is_object($link) and $link->found()) :
 			$alter = array ();
+
+			$link->settings['postmeta'] = serialize($custom_settings);
 
 			// Post status, comment status, ping status
 			foreach (array('post', 'comment', 'ping') as $what) :
@@ -64,6 +80,8 @@ function fwp_posts_page () {
 				update_option('feedwordpress_syndicated_post_status', $GLOBALS['fwp_post']['feed_post_status']);
 			endif;
 			
+			update_option('feedwordpress_custom_settings', serialize($custom_settings));
+
 			update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
 			update_option('feedwordpress_use_aggregator_source_data', $_REQUEST['use_aggregator_source_data']);
 			update_option('feedwordpress_formatting_filters', $_REQUEST['formatting_filters']);
@@ -119,6 +137,15 @@ function fwp_posts_page () {
 				$status[$what]['site-default'] = ' checked="checked"';
 			endif;
 		endforeach;
+		
+		$custom_settings = $link->settings["postmeta"];
+		if ($custom_settings) :
+			$custom_settings = unserialize($custom_settings);
+		endif;
+		
+		if (!is_array($custom_settings)) :
+			$custom_settings = array();
+		endif;
 	else :
 		$thePostsPhrase = __('syndicated posts');
 
@@ -129,8 +156,16 @@ function fwp_posts_page () {
 		$munge_permalink = get_option('feedwordpress_munge_permalink');
 		$formatting_filters = get_option('feedwordpress_formatting_filters');
 		$use_aggregator_source_data = get_option('feedwordpress_use_aggregator_source_data');
-	endif;
 
+		$custom_settings = get_option('feedwordpress_custom_settings');
+		if ($custom_settings) :
+			$custom_settings = unserialize($custom_settings);
+		endif;
+
+		if (!is_array($custom_settings)) :
+			$custom_settings = array();
+		endif;
+	endif;
 	$unfamiliar[$key] = ' selected="selected"';
 
 	$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
@@ -362,6 +397,41 @@ endif;
 	fwp_option_box_closer();
 	fwp_linkedit_periodic_submit();
 ?>
+
+<?php fwp_option_box_opener('Custom Settings (to apply to each syndicated post)', 'postcustom', 'postbox'); ?>
+<div id="postcustomstuff">
+<table id="meta-list" cellpadding="3">
+	<tr>
+	<th>Key</th>
+	<th>Value</th>
+	<th>Action</th>
+	</tr>
+
+<?php
+	$i = 0;
+	foreach ($custom_settings as $key => $value) :
+?>
+		<tr style="vertical-align:top">
+		<th width="30%" scope="row"><input type="hidden" name="notes[<?php echo $i; ?>][key0]" value="<?php echo wp_specialchars($key, 'both'); ?>" />
+		<input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo $i; ?>][key1]" value="<?php echo wp_specialchars($key, 'both'); ?>" /></th>
+		<td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo wp_specialchars($value, 'both'); ?></textarea></td>
+		<td width="10%"><select name="notes[<?php echo $i; ?>][action]">
+		<option value="update">save changes</option>
+		<option value="delete">delete this setting</option>
+		</select></td>
+		</tr>
+<?php
+		$i++;
+	endforeach;
+?>
+	<tr>
+	<th scope="row"><input type="text" size="10" name="notes[<?php echo $i; ?>][key1]" value="" /></th>
+	<td><textarea name="notes[<?php echo $i; ?>][value]" rows="2" cols="40"></textarea></td>
+	<td><em>add new setting...</em><input type="hidden" name="notes[<?php echo $i; ?>][action]" value="update" /></td>
+	</tr>
+</table>
+<?php fwp_option_box_closer(); ?>
+
 </div>
 </div>
 
