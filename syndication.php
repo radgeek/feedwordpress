@@ -313,7 +313,7 @@ jQuery(document).ready( function () {
 <strong><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit"><?php echo wp_specialchars($link->link_name, 'both'); ?></a></strong>
 <div class="row-actions"><div><strong>Settings &gt;</strong>
 <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit"><?php _e('General'); ?></a>
-| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndicated-posts.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Posts'); ?></a>
+| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Posts'); ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/authors.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Authors'); ?></a></div>
 <div><strong>Actions &gt;</strong>
 <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder"><?php echo $caption; ?></a>
@@ -646,18 +646,6 @@ function fwp_linkedit_page () {
 					endforeach;
 				endif;
 
-				// Post status, comment status, ping status
-				foreach (array('post', 'comment', 'ping') as $what) :
-					$sfield = "feed_{$what}_status";
-					if (isset($GLOBALS['fwp_post'][$sfield])) :
-						if ($GLOBALS['fwp_post'][$sfield]=='site-default') :
-							unset($link->settings["{$what} status"]);
-						else :
-							$link->settings["{$what} status"] = $GLOBALS['fwp_post'][$sfield];
-						endif;
-					endif;
-				endforeach;
-
 				// Unfamiliar author, unfamiliar categories
 				foreach (array("author", "category") as $what) :
 					$sfield = "unfamiliar_{$what}";
@@ -692,78 +680,6 @@ function fwp_linkedit_page () {
 						endif;
 					endif;
 				endforeach;
-				
-				// Handle author mapping rules
-				if (isset($GLOBALS['fwp_post']['author_rules_name']) and isset($GLOBALS['fwp_post']['author_rules_action'])) :
-					unset($link->settings['map authors']);
-					foreach ($GLOBALS['fwp_post']['author_rules_name'] as $key => $name) :
-						// Normalize for case and whitespace
-						$name = strtolower(trim($name));
-						$author_action = strtolower(trim($GLOBALS['fwp_post']['author_rules_action'][$key]));
-						
-						if (strlen($name) > 0) :
-							if ('newuser' == $author_action) :
-								$newuser_name = trim($GLOBALS['fwp_post']['author_rules_newuser'][$key]);
-								if (strlen($newuser_name) > 0) :
-									$userdata = array();
-									$userdata['ID'] = NULL;
-									
-									$userdata['user_login'] = sanitize_user($newuser_name);
-									$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
-									
-									$userdata['user_nicename'] = sanitize_title($newuser_name);
-									$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
-									
-									$userdata['display_name'] = $wpdb->escape($newuser_name);
-	
-									$newuser_id = wp_insert_user($userdata);
-									if (is_numeric($newuser_id)) :
-										$link->settings['map authors']['name'][$name] = $newuser_id;
-									else :
-										// TODO: Add some error detection and reporting
-									endif;
-								else :
-									// TODO: Add some error reporting
-								endif;
-							else :
-								$link->settings['map authors']['name'][$name] = $author_action;
-							endif;
-						endif;
-					endforeach;
-				endif;
-
-				if (isset($GLOBALS['fwp_post']['add_author_rule_name']) and isset($GLOBALS['fwp_post']['add_author_rule_action'])) :
-					$name = strtolower(trim($GLOBALS['fwp_post']['add_author_rule_name']));
-					$author_action = strtolower(trim($GLOBALS['fwp_post']['add_author_rule_action']));
-					if (strlen($name) > 0) :
-						if ('newuser' == $author_action) :
-							$newuser_name = trim($GLOBALS['fwp_post']['add_author_rule_newuser']);
-							if (strlen($newuser_name) > 0) :
-								$userdata = array();
-								$userdata['ID'] = NULL;
-								
-								$userdata['user_login'] = sanitize_user($newuser_name);
-								$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
-								
-								$userdata['user_nicename'] = sanitize_title($newuser_name);
-								$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
-								
-								$userdata['display_name'] = $wpdb->escape($newuser_name);
-
-								$newuser_id = wp_insert_user($userdata);
-								if (is_numeric($newuser_id)) :
-									$link->settings['map authors']['name'][$name] = $newuser_id;
-								else :
-									// TODO: Add some error detection and reporting
-								endif;
-							else :
-								// TODO: Add some error reporting
-							endif;
-						else :
-							$link->settings['map authors']['name'][$name] = $author_action;
-						endif;
-					endif;
-				endif;
 
 				if (isset($GLOBALS['fwp_post']['cat_split'])) :
 					if (strlen(trim($GLOBALS['fwp_post']['cat_split'])) > 0) :
@@ -803,22 +719,6 @@ function fwp_linkedit_page () {
 			$post_status_global = get_option('feedwordpress_syndicated_post_status');
 			$comment_status_global = get_option('feedwordpress_syndicated_comment_status');
 			$ping_status_global = get_option('feedwordpress_syndicated_ping_status');
-			
-			$status['post'] = array('publish' => '', 'private' => '', 'draft' => '', 'site-default' => '');
-			if (SyndicatedPost::use_api('post_status_pending')) :
-				$status['post']['pending'] = '';
-			endif;
-
-			$status['comment'] = array('open' => '', 'closed' => '', 'site-default' => '');
-			$status['ping'] = array('open' => '', 'closed' => '', 'site-default' => '');
-
-			foreach (array('post', 'comment', 'ping') as $what) :
-				if (isset($link->settings["{$what} status"])) :
-					$status[$what][$link->settings["{$what} status"]] = ' checked="checked"';
-				else :
-					$status[$what]['site-default'] = ' checked="checked"';
-				endif;
-			endforeach;
 
 			$unfamiliar['author'] = array ('create' => '','default' => '','filter' => '');
 			$unfamiliar['category'] = array ('create'=>'','tag' => '','default'=>'','filter'=>'');
@@ -851,23 +751,6 @@ function fwp_linkedit_page () {
 		o = document.getElementById('basics-hardcode-'+item);
 		if (o.value=='yes') { ed.style.display='inline'; view.style.display='none'; }
 		else { ed.style.display='none'; view.style.display='inline'; }
-	}
-	function flip_newuser (item) {
-		rollup=document.getElementById(item);
-		newuser=document.getElementById(item+'-newuser');
-		sitewide=document.getElementById(item+'-default');
-		if (rollup) {
-			if ('newuser'==rollup.value) {
-				if (newuser) newuser.style.display='block';
-				if (sitewide) sitewide.style.display='none';
-			} else if ('site-default'==rollup.value) {
-				if (newuser) newuser.style.display='none';
-				if (sitewide) sitewide.style.display='block';
-			} else {
-				if (newuser) newuser.style.display='none';
-				if (sitewide) sitewide.style.display='none';
-			}
-		}
 	}
 </script>
 
@@ -982,29 +865,11 @@ flip_hardcode('url');
 
 <?php
 if (!fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) :
-	fwp_option_box_opener('Syndicated Posts', 'syndicatedpostsdiv', 'postbox');
+	fwp_option_box_opener('Syndicated Posts, Comments & Pings', 'syndicatedpostsdiv', 'postbox');
 ?>
-<table class="editform" width="75%" cellspacing="2" cellpadding="5">
-<tr><th width="27%" scope="row" style="vertical-align:top">Publication:</th>
-<td width="73%" style="vertical-align:top"><ul style="margin:0; list-style:none">
-<li><label><input type="radio" name="feed_post_status" value="site-default"
-<?php echo $status['post']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
-(currently: <strong><?php echo ($post_status_global ? $post_status_global : 'publish'); ?></strong>)</label></li>
-<li><label><input type="radio" name="feed_post_status" value="publish"
-<?php echo $status['post']['publish']; ?> /> Publish posts from this feed immediately</label></li>
-
-<?php if (SyndicatedPost::use_api('post_status_pending')) : ?>
-<li><label><input type="radio" name="feed_post_status" value="pending"
-<?php echo $status['post']['pending']; ?>/> Hold posts from this feed for review; mark as Pending</label></li>
-<?php endif; ?>
-
-<li><label><input type="radio" name="feed_post_status" value="draft"
-<?php echo $status['post']['draft']; ?> /> Save posts from this feed as drafts</label></li>
-<li><label><input type="radio" name="feed_post_status" value="private"
-<?php echo $status['post']['private']; ?> /> Save posts from this feed as private posts</label></li>
-</ul></td>
-</tr>
-</table>
+<p>Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php&amp;link_id=<?php echo $link_id; ?>"><?php _e('Posts'); ?></a>
+settings page to set up how new posts from this feed will be published, whether they will accept
+comments and pings, any custom fields that should be set on each post, etc.</p>
 <?php
 	fwp_option_box_closer();
 	fwp_linkedit_periodic_submit();
@@ -1052,109 +917,17 @@ if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
 endif; ?>
 
 <?php fwp_option_box_opener('Syndicated Authors', 'authordiv', 'postbox'); ?>
-<?php $authorlist = fwp_author_list(); ?>
-<table>
-<tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by authors that haven't been syndicated before:</th></tr>
-<tr>
-  <th style="text-align: left">Posts by new authors</th>
-  <td> 
-  <select id="unfamiliar-author" name="unfamiliar_author" onchange="flip_newuser('unfamiliar-author');">
-    <option value="site-default"<?php if (!isset($link->settings['unfamiliar author'])) : ?>selected="selected"<?php endif; ?>>are handled using site-wide settings</option>
-    <option value="create"<?php if ('create'==$link->settings['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>create a new author account</option>
-    <?php foreach ($authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>"<?php if ($author_id==$link->settings['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>are assigned to <?php echo $author_name; ?></option>
-    <?php endforeach; ?>
-    <option value="newuser">will be assigned to a new user...</option>
-    <option value="filter"<?php if ('filter'==$link->settings['unfamiliar author']) : ?>selected="selected"<?php endif; ?>>get filtered out</option>
-  </select>
-  </td>
-  <td>
-  <div id="unfamiliar-author-default">Site-wide settings can be set in <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a></div>
-  <div id="unfamiliar-author-newuser">named <input type="text" name="unfamiliar_author_newuser" value="" /></div>
-  </td>
-</tr>
-
-<tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by specific authors. Blank out a name to delete the rule.</th></tr>
-
-<?php if (isset($link->settings['map authors'])) : $i=0; foreach ($link->settings['map authors'] as $author_rules) : foreach ($author_rules as $author_name => $author_action) : $i++; ?>
-<tr>
-  <th style="text-align: left">Posts by <input type="text" name="author_rules_name[]" value="<?php echo htmlspecialchars($author_name); ?>" /></th>
-  <td>
-  <select id="author-rules-<?php echo $i; ?>" name="author_rules_action[]" onchange="flip_newuser('author-rules-<?php echo $i; ?>');">
-    <?php foreach ($authorlist as $local_author_id => $local_author_name) : ?>
-    <option value="<?php echo $local_author_id; ?>"<?php if ($local_author_id==$author_action) : echo ' selected="selected"'; endif; ?>>are assigned to <?php echo $local_author_name; ?></option>
-    <?php endforeach; ?>
-    <option value="newuser">will be assigned to a new user...</option>
-    <option value="filter"<?php if ('filter'==$author_action) : echo ' selected="selected"'; endif; ?>>get filtered out</option>
-  </select>
-  </td>
-  <td><div id="author-rules-<?php echo $i; ?>-newuser">named <input type="text" name="author_rules_newuser[]" value="" /></div></td>
-</tr>
-<?php endforeach; endforeach; endif; ?>
-
-<tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">Fill in to set up a new rule:</th></tr>
-
-<tr>
-  <th style="text-align: left">Posts by <input type="text" name="add_author_rule_name" /></th>
-  <td>
-    <select id="add-author-rule" name="add_author_rule_action" onchange="flip_newuser('add-author-rule');">
-      <?php foreach ($authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>">are assigned to <?php echo $author_name; ?></option>
-      <?php endforeach; ?>
-      <option value="newuser">will be assigned to a new user...</option>
-      <option value="filter">get filtered out</option>
-    </select>
-  </td>
-  <td><div id="add-author-rule-newuser">named <input type="text" name="add_author_rule_newuser" value="" /></div></td>
-</tr>
-
-</table>
+<p>Use the <a
+href="admin.php?page=<?php print $GLOBALS['fwp_path']
+?>/authors.php&amp;link_id=<?php echo $link_id; ?>"><?php _e('Authors');
+?></a> settings page to set up how new posts from this feed will be assigned to authors.</p>
 <?php fwp_option_box_closer(); ?>
-
-<script>
-	flip_newuser('unfamiliar-author');
-<?php for ($j=1; $j<=$i; $j++) : ?>
-	flip_newuser('author-rules-<?php echo $j; ?>');
-<?php endfor; ?>
-	flip_newuser('add-author-rule');
-</script>
-
-<?php
-	fwp_linkedit_periodic_submit();
-	fwp_option_box_opener('Comments & Pings', 'commentstatusdiv', 'postbox');
-?>
-<table class="editform" width="75%" cellspacing="2" cellpadding="5">
-<tr><th width="27%" scope="row" style="vertical-align:top"><?php print __('Comments'); ?>:</th>
-<td width="73%"><ul style="margin:0; list-style:none">
-<li><label><input type="radio" name="feed_comment_status" value="site-default"
-<?php echo $status['comment']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
-(currently: <strong><?php echo ($comment_status_global ? $comment_status_global : 'closed'); ?>)</strong></label></li>
-<li><label><input type="radio" name="feed_comment_status" value="open"
-<?php echo $status['comment']['open']; ?> /> Allow comments on syndicated posts from this feed</label></li>
-<li><label><input type="radio" name="feed_comment_status" value="closed"
-<?php echo $status['comment']['closed']; ?> /> Don't allow comments on syndicated posts from this feed</label></li>
-</ul></td></tr>
-
-<tr><th width="27%" scope="row" style="vertical-align:top"><?php print __('Pings'); ?>:</th>
-<td width="73%"><ul style="margin:0; list-style:none">
-<li><label><input type="radio" name="feed_ping_status" value="site-default"
-<?php echo $status['ping']['site-default']; ?> /> Use site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
-(currently: <strong><?php echo ($ping_status_global ? $ping_status_global : 'closed'); ?>)</strong></label></li>
-<li><label><input type="radio" name="feed_ping_status" value="open"
-<?php echo $status['ping']['open']; ?> /> Accept pings on syndicated posts from this feed</label></li>
-<li><label><input type="radio" name="feed_ping_status" value="closed"
-<?php echo $status['ping']['closed']; ?> /> Don't accept pings on syndicated posts from this feed</label></li>
-</ul></td></tr>
-
-</table>
-<?php fwp_option_box_closer(); ?>
-<?php fwp_linkedit_periodic_submit(); ?>
 
 <?php fwp_option_box_opener('Custom Feed Settings (for use in templates)', 'postcustom', 'postbox'); ?>
 <p class="setting-description">These custom settings are special fields for the <strong>feed</strong> you are
 syndicating, to be retrieved in templates using the <code>get_feed_meta()</code> function. They do not create
 custom fields on syndicated <strong>posts</strong>. If you want to create custom fields that are applied to each
-individual post from this feed, set up the settings in <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndicated-posts.php&amp;link_id=<?php print $link_id; ?>">Syndicated Posts</a>.</p>
+individual post from this feed, set up the settings in <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php&amp;link_id=<?php print $link_id; ?>">Syndicated Posts</a>.</p>
 
 <div id="postcustomstuff">
 <table id="meta-list" cellpadding="3">
