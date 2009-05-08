@@ -311,10 +311,14 @@ jQuery(document).ready( function () {
 ?>
 <td>
 <strong><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit"><?php echo wp_specialchars($link->link_name, 'both'); ?></a></strong>
-<div class="row-actions"><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit"><?php _e('Edit'); ?></a>
-| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder"><?php echo $caption; ?></a>
+<div class="row-actions"><div><strong>Settings &gt;</strong>
+<a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit"><?php _e('General'); ?></a>
+| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndicated-posts.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Posts'); ?></a>
+| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/authors.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Authors'); ?></a></div>
+<div><strong>Actions &gt;</strong>
+<a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder"><?php echo $caption; ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=Unsubscribe"><?php _e('Unsubscribe'); ?></a>
-| <a href="<?php echo wp_specialchars($link->link_url, 'both'); ?>"><?php _e('View')?></a>
+| <a href="<?php echo wp_specialchars($link->link_url, 'both'); ?>"><?php _e('View')?></a></div>
 </div>
 </td>
 <?php 
