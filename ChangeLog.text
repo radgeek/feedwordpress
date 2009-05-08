@@ -10,15 +10,6 @@ Changes from 2008.1214 to Trunk
 	status, whether or not to use the original location of the post as the permalink,
 	whether or not to expose posts to formatting filters, and so on), both at the global
 	default level and for individual syndicated feeds.
-
-*	FEATURE: MAGPIERSS VERSION CHECK AND UPGRADE: FeedWordPress will attempt
-	to determine whether or not you are using the upgraded version of
-	MagpieRSS that comes packaged with FeedWordPress. If not, it will throw
-	an error on admin pages, and, if you are a site administrator, it will
-	give you the option to ignore the error message, or to attempt an
-	automatic upgrade (using a native file copy). If the file copy fails,
-	FeedWordPress will offer some guidance on how to perform the upgrade
-	manually.
 	
 *	FEATURE: ADD CUSTOM SETTINGS TO EACH SYNDICATED POST: FeedWordPress
 	has long had an interface for creating custom settings for each syndicated *feed*
@@ -28,6 +19,28 @@ Changes from 2008.1214 to Trunk
 	custom fields to each individual syndicated post, using the new Syndication -->
 	Posts subpage. You can set up custom fields to be applied to every syndicated
 	post, or custom fields to be applied to syndicated posts from a particular feed.
+
+*	FEATURE: MAGPIERSS VERSION CHECK AND UPGRADE: FeedWordPress will attempt
+	to determine whether or not you are using the upgraded version of
+	MagpieRSS that comes packaged with FeedWordPress. If not, it will throw
+	an error on admin pages, and, if you are a site administrator, it will
+	give you the option to ignore the error message, or to attempt an
+	automatic upgrade (using a native file copy). If the file copy fails,
+	FeedWordPress will offer some guidance on how to perform the upgrade
+	manually.
+
+*	BLANK POSTS PROBLEM NO LONGER OCCURS WITH OLD & BUSTED MAGPIERSS: Due
+	to the fact that I relied on a content normalization that occurs in my
+	upgraded version of MagpieRSS, but not in the old & busted version of
+	MagpieRSS that ships with WordPress, until this version, if you tried to
+	syndicate an Atom feed without having performed the (*strongly
+	recommended*) MagpieRSS upgrade, all of the posts would come up with
+	completely blank contents. That's not because MagpieRSS couldn't read
+	the data, but rather because the new Magpie version puts that data in a
+	location where the old version doesn't, and I was only looking in that
+	newer location. Now it checks for both, meaning that posts will continue
+	to display their contents even if you don't upgrade MagpieRSS. (But you
+	**really should** upgrade it, anyway.)
 
 *	BUGFIX: INTERFACE OPTION FOR SETTING SYNDICATED POST PUBLICATION STATUS
 	ON A FEED-BY-FEED BASIS HAS BEEN RESTORED: Due to a version-checking
@@ -53,21 +66,8 @@ Changes from 2008.1214 to Trunk
 	of WordPress, there's no fix for this problem: you'll just need to turn
 	Referer headers back on. Sorry.)
 
-*	BLANK POSTS PROBLEM NO LONGER OCCURS WITH OLD AND BUSTED MAGPIERSS: Due
-	to the fact that I relied on a content normalization that occurs in my
-	upgraded version of MagpieRSS, but not in the old & busted version of
-	MagpieRSS that ships with WordPress, until this version, if you tried to
-	syndicate an Atom feed without having performed the (*strongly
-	recommended*) MagpieRSS upgrade, all of the posts would come up with
-	completely blank contents. That's not because MagpieRSS couldn't read
-	the data, but rather because the new Magpie version puts that data in a
-	location where the old version doesn't, and I was only looking in that
-	newer location. Now it checks for both, meaning that posts will continue
-	to display their contents even if you don't upgrade MagpieRSS. (But you
-	**really should** upgrade it, anyway.)
-
-*	OCCASIONAL FATAL ERROR ON UPDATE ELIMINATED: Under certain limited
-	conditions (specifically, when both the title and the content of a post
+*	BUGFIX: OCCASIONAL FATAL ERROR ON UPDATE ELIMINATED: Under certain
+	limited conditions (specifically, when both the title and the content of a post
 	to be updated are empty), an attempt to update the post would result in
 	a fatal error. This has been fixed.
 
