@@ -107,7 +107,6 @@ function fwp_posts_page () {
 	////////////////////////////////////////////////
 	// Get defaults from database //////////////////
 	////////////////////////////////////////////////
-	$unfamiliar = array ('create' => '','default' => '','filter' => '');
 
 	$post_status_global = get_option('feedwordpress_syndicated_post_status');
 	if (!$post_status_global) : $post_status_global = 'publish'; endif;
@@ -166,10 +165,6 @@ function fwp_posts_page () {
 			$custom_settings = array();
 		endif;
 	endif;
-	$unfamiliar[$key] = ' selected="selected"';
-
-	$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
-	$null_emails = FeedWordPress::null_email_set();
 ?>
 <script type="text/javascript">
 	function contextual_appearance (item, appear, disappear, value, visibleStyle, checkbox) {
@@ -191,7 +186,7 @@ function fwp_posts_page () {
 </script>
 
 <?php if ($updated_link) : ?>
-<div class="updated"><p>Syndicated author settings updated.</p></div>
+<div class="updated"><p>Syndicated posts settings updated.</p></div>
 <?php elseif (!is_null($mesg)) : ?>
 <div class="updated"><p><?php print wp_specialchars($mesg, 1); ?></p></div>
 <?php endif; ?>
@@ -438,19 +433,6 @@ endif;
 <p class="submit">
 <input class="button-primary" type="submit" name="save" value="Save Changes" />
 </p>
-
-<script type="text/javascript">
-	contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');
-<?php if (is_object($link) and $link->found()) : ?>
-<?php 	for ($j=1; $j<=$i; $j++) : ?>
-	contextual_appearance('author-rules-<?php echo $j; ?>', 'author-rules-<?php echo $j; ?>-newuser', 'author-rules-<?php echo $j; ?>-default', 'newuser', 'inline');
-<?php 	endfor; ?>
-	contextual_appearance('add-author-rule', 'add-author-rule-newuser', 'add-author-rule-default', 'newuser', 'inline');
-	contextual_appearance('fix-mismatch-to', 'fix-mismatch-to-newuser', null, 'newuser', 'inline');
-<?php else : ?>
-	contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', 'block', /*checkbox=*/ true);
-<?php endif; ?>
-</script>
 </form>
 </div> <!-- class="wrap" -->
 <?php
