@@ -864,7 +864,6 @@ flip_hardcode('url');
 <?php fwp_linkedit_periodic_submit(); ?>
 
 <?php
-if (!fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) :
 	fwp_option_box_opener('Syndicated Posts, Comments & Pings', 'syndicatedpostsdiv', 'postbox');
 ?>
 <p>Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php&amp;link_id=<?php echo $link_id; ?>"><?php _e('Posts'); ?></a>
@@ -873,7 +872,6 @@ comments and pings, any custom fields that should be set on each post, etc.</p>
 <?php
 	fwp_option_box_closer();
 	fwp_linkedit_periodic_submit();
-endif;
 
 	fwp_option_box_opener(__('Categories'), 'categorydiv', 'postbox');
 	fwp_category_box($dogs, 'all syndicated posts from this feed');
