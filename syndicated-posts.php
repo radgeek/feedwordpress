@@ -199,7 +199,7 @@ function fwp_posts_page () {
 <div class="wrap">
 <form style="position: relative" action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 <div><?php
-	FeedWordPressCompatibility::stamp_nonce('feedwordpress_author_settings');
+	FeedWordPressCompatibility::stamp_nonce('feedwordpress_posts_settings');
 
 	if (is_numeric($link_id) and $link_id) :
 ?>
