@@ -4,24 +4,7 @@ function fwp_linkedit_single_submit ($status = NULL) {
 ?>
 <div class="submitbox" id="submitlink">
 <div id="previewview"></div>
-<div class="inside">
-<?php if (!is_null($status)) : ?>
-	<p><strong>Publication</strong></p>
-	<p>When a new post is syndicated from this feed...</p>
-	<select name="feed_post_status">
-	<option value="site-default" <?php echo $status['post']['site-default']; ?>> Use
-	Syndication Options setting</option>
-	<option value="publish" <?php echo $status['post']['publish']; ?>>Publish it immediately</option>
-	
-	<?php if (SyndicatedPost::use_api('post_status_pending')) : ?>
-	<option value="pending" <?php echo $status['post']['pending']; ?>>Hold it Pending Review</option>
-	<?php endif; ?>
-	
-	<option value="draft" <?php echo $status['post']['draft']; ?>>Save it as a draft</option>
-	<option value="private" <?php echo $status['post']['private']; ?>>Keep it private</option>
-	</select>
-<?php endif; ?>
-</div>
+<div class="inside"></div>
 
 <p class="submit">
 <input type="submit" name="submit" value="<?php _e('Save') ?>" />
