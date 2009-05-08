@@ -4,7 +4,7 @@ require_once(dirname(__FILE__) . '/admin-ui.php');
 function fwp_posts_page () {
 	global $wpdb, $wp_db_version;
 
-	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_author_settings', /*capability=*/ 'manage_links');
+	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_posts_settings', /*capability=*/ 'manage_links');
 
 	if (isset($GLOBALS['fwp_post']['save']) or isset($GLOBALS['fwp_post']['fix_mismatch'])) :
 		$link_id = $_REQUEST['save_link_id'];
