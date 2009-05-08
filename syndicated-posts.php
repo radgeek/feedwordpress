@@ -398,7 +398,7 @@ endif;
 	fwp_linkedit_periodic_submit();
 ?>
 
-<?php fwp_option_box_opener('Custom Settings (to apply to each syndicated post)', 'postcustom', 'postbox'); ?>
+<?php fwp_option_box_opener('Custom Post Settings (to apply to each syndicated post)', 'postcustom', 'postbox'); ?>
 <div id="postcustomstuff">
 <table id="meta-list" cellpadding="3">
 	<tr>
