@@ -23,93 +23,10 @@ function fwp_syndication_options_page () {
 
 	if (isset($_POST['submit']) or isset($_POST['create_index'])) :
 		update_option('feedwordpress_cat_id', $_REQUEST['syndication_category']);
-		update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
-		update_option('feedwordpress_use_aggregator_source_data', $_REQUEST['use_aggregator_source_data']);
-		update_option('feedwordpress_formatting_filters', $_REQUEST['formatting_filters']);
 		update_option('feedwordpress_update_logging', $_REQUEST['update_logging']);
-			
-		if ('newuser'==$_REQUEST['unfamiliar_author']) :
-			$newuser_name = trim($_REQUEST['unfamiliar_author_newuser']);
-			if (strlen($newuser_name) > 0) :
-				$userdata = array();
-				$userdata['ID'] = NULL;
-				
-				$userdata['user_login'] = sanitize_user($newuser_name);
-				$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
-				
-				$userdata['user_nicename'] = sanitize_title($newuser_name);
-				$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
-				
-				$userdata['display_name'] = $wpdb->escape($newuser_name);
-
-				$newuser_id = wp_insert_user($userdata);
-				if (is_numeric($newuser_id)) :
-					update_option('feedwordpress_unfamiliar_author', $newuser_id);
-				else :
-					// TODO: Add some error detection and reporting
-				endif;
-			else :
-				// TODO: Add some error reporting
-			endif;			
-		else :
-			update_option('feedwordpress_unfamiliar_author', $_REQUEST['unfamiliar_author']);
-		endif;
-
-		if (isset($_REQUEST['match_author_by_email']) and $_REQUEST['match_author_by_email']=='yes') :
-			update_option('feedwordpress_do_not_match_author_by_email', 'no');
-		else :
-			update_option('feedwordpress_do_not_match_author_by_email', 'yes');
-		endif;
-
-		if (isset($_REQUEST['null_emails'])) :
-			update_option('feedwordpress_null_email_set', $_REQUEST['null_emails']);
-		endif;
-
-		update_option('feedwordpress_unfamiliar_category', $_REQUEST['unfamiliar_category']);
-		update_option('feedwordpress_syndicated_post_status', $_REQUEST['post_status']);
 		update_option('feedwordpress_automatic_updates', ($_POST['automatic_updates']=='yes'));
 		update_option('feedwordpress_update_time_limit', ($_POST['update_time_limit']=='yes')?(int) $_POST['time_limit_seconds']:0);
 		update_option('feedwordpress_freshness',  ($_POST['freshness_interval']*60));
-
-		// Categories
-		$cats = array();
-		if (isset($_POST['post_category'])) :
-			$cats = array();
-			foreach ($_POST['post_category'] as $cat_id) :
-				$cats[] = '{#'.$cat_id.'}';
-			endforeach;
-		endif;
-
-		if (!empty($cats)) :
-			update_option('feedwordpress_syndication_cats', implode(FEEDWORDPRESS_CAT_SEPARATOR, $cats));
-		else :
-			delete_option('feedwordpress_syndication_cats');
-		endif;
-
-		// Tags
-		if (isset($_REQUEST['tags_input'])) :
-			$tags = explode(",", $_REQUEST['tags_input']);
-		else :
-			$tags =  array();
-		endif;
-		
-		if (!empty($tags)) :
-			update_option('feedwordpress_syndication_tags', implode(FEEDWORDPRESS_CAT_SEPARATOR, $tags));
-		else :
-			delete_option('feedwordpress_syndication_tags');
-		endif;
-
-		if (isset($_REQUEST['comment_status']) and ($_REQUEST['comment_status'] == 'open')) :
-			update_option('feedwordpress_syndicated_comment_status', 'open');
-		else :
-			update_option('feedwordpress_syndicated_comment_status', 'closed');
-		endif;
-
-		if (isset($_REQUEST['ping_status']) and ($_REQUEST['ping_status'] == 'open')) :
-			update_option('feedwordpress_syndicated_ping_status', 'open');
-		else :
-			update_option('feedwordpress_syndicated_ping_status', 'closed');
-		endif;
 		
 		if (isset($_REQUEST['hardcode_name']) and ($_REQUEST['hardcode_name'] == 'no')) :
 			update_option('feedwordpress_hardcode_name', 'no');
@@ -136,13 +53,8 @@ function fwp_syndication_options_page () {
 	endif;
 
 	$cat_id = FeedWordPress::link_category_id();
-	$munge_permalink = get_option('feedwordpress_munge_permalink');
-	$use_aggregator_source_data = get_option('feedwordpress_use_aggregator_source_data');
-	$formatting_filters = get_option('feedwordpress_formatting_filters');
 	$update_logging = get_option('feedwordpress_update_logging');
-
 	$update_time_limit = (int) get_option('feedwordpress_update_time_limit');
-
 	$automatic_updates = get_option('feedwordpress_automatic_updates');
 
 	$freshness_interval = get_option('feedwordpress_freshness');
@@ -154,25 +66,6 @@ function fwp_syndication_options_page () {
 	$hardcode_name = get_option('feedwordpress_hardcode_name');
 	$hardcode_description = get_option('feedwordpress_hardcode_description');
 	$hardcode_url = get_option('feedwordpress_hardcode_url');
-
-	$post_status = get_option("feedwordpress_syndicated_post_status"); // default="publish"
-	$comment_status = get_option("feedwordpress_syndicated_comment_status"); // default="closed"
-	$ping_status = get_option("feedwordpress_syndicated_ping_status"); // default="closed"
-
-	$unfamiliar_author = array ('create' => '','default' => '','filter' => '');
-	$ua = FeedWordPress::on_unfamiliar('author');
-	if (is_string($ua) and array_key_exists($ua, $unfamiliar_author)) :
-		$unfamiliar_author[$ua] = ' checked="checked"';
-	endif;
-	
-	$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
-	$null_emails = FeedWordPress::null_email_set();
-	
-	$unfamiliar_category = array ('create'=>'','default'=>'','filter'=>'', 'tag'=>'');
-	$uc = FeedWordPress::on_unfamiliar('category');
-	if (is_string($uc) and array_key_exists($uc, $unfamiliar_category)) :
-		$unfamiliar_category[$uc] = ' checked="checked"';
-	endif;
 	
 	if (isset($wp_db_version) and $wp_db_version >= 4772) :
 		$results = get_categories('type=link');
@@ -291,145 +184,9 @@ function fwp_syndication_options_page () {
 <?php fwp_option_box_closer(); ?>
 
 <?php
-	fwp_option_box_opener(__('Syndicated Posts'), 'syndicatedpostsdiv');
-?>
-<table class="editform" width="75%" cellspacing="2" cellpadding="5">
-<tr style="vertical-align: top"><th width="44%" scope="row">Publication:</th>
-<td width="56%"><ul style="margin: 0; padding: 0; list-style:none">
-<li><label><input type="radio" name="post_status" value="publish"<?php echo (!$post_status or $post_status=='publish')?' checked="checked"':''; ?> /> Publish syndicated posts immediately</label></li>
-<?php if (SyndicatedPost::use_api('post_status_pending')) : ?>
-<li><label><input type="radio" name="post_status" value="pending"<?php echo ($post_status=='pending')?' checked="checked"':''; ?> /> Hold syndicated posts for review; mark as Pending</label></li>
-<?php endif; ?>
-<li><label><input type="radio" name="post_status" value="draft"<?php echo ($post_status=='draft')?' checked="checked"':''; ?> /> Save syndicated posts as drafts</label></li>
-<li><label><input type="radio" name="post_status" value="private"<?php echo ($post_status=='private')?' checked="checked"':''; ?> /> Save syndicated posts as private posts</label></li>
-</ul></td></tr>
-
-<tr style="vertical-align: top"><th width="44%" scope="row">Permalinks point to:</th>
-<td width="56%"><select name="munge_permalink" size="1">
-<option value="yes"<?php echo ($munge_permalink=='yes')?' selected="selected"':''; ?>>original website</option>
-<option value="no"<?php echo ($munge_permalink=='no')?' selected="selected"':''; ?>>this website</option>
-</select></td></tr>
-
-<tr style="vertical-align: top"><th width="44%" scope="row">Posts from aggregator feeds:</th>
-<td width="56%"><ul style="margin: 0; padding: 0; list-style: none;">
-<li><label><input type="radio" name="use_aggregator_source_data" value="no"<?php echo ($use_aggregator_source_data!="yes")?' checked="checked"':''; ?>> Give the aggregator itself as the source of posts from an aggregator feed.</label></li>
-<li><label><input type="radio" name="use_aggregator_source_data" value="yes"<?php echo ($use_aggregator_source_data=="yes")?' checked="checked"':''; ?>> Give the original source of the post as the source, not the aggregator.</label></li>
-</ul>
-<p>Some feeds (for example, those produced by FeedWordPress) aggregate content from several different sources, and include information about the original source of the post.
-This setting controls what FeedWordPress will give as the source of posts from
-such an aggregator feed.</p>
-</td></tr>
-
-<tr style="vertical-align:top"><th width="44%" scope="row">Formatting filters:</th>
-<td width="56%">
-<select name="formatting_filters" size="1">
-<option value="no"<?php echo ($formatting_filters!='yes')?' selected="selected"':''; ?>>Protect syndicated posts from formatting filters</option>
-<option value="yes"<?php echo ($formatting_filters=='yes')?' selected="selected"':''; ?>>Expose syndicated posts to formatting filters</option>
-</select>
-<p>If you have trouble getting plugins to work that are supposed to insert
-elements after posts (like relevant links or a social networking
-<q>Share This</q> button), try changing this option to see if it fixes your
-problem.</p>
-</td></tr>
-</table>
-<?php
-	fwp_option_box_closer();
-	fwp_linkedit_periodic_submit();
-
-	fwp_option_box_opener(__('Categories for syndicated posts'), 'categorydiv', 'postbox');
-	fwp_category_box($dogs, '<em>all syndicated posts</em>');
-?>
-<table class="editform" width="75%" cellspacing="2" cellpadding="5">
-<tr style="vertical-align: top"><th width="27%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
-<td><p>When one of the categories on a syndicated post is a category that FeedWordPress has not encountered before ...</p>
-<ul style="margin: 0; padding:0; list-style:none">
-<li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar_category['create']; ?>/> create a new category</label></li>
-<?php if (fwp_test_wp_version(FWP_SCHEMA_23)) : ?>
-<li><label><input type="radio" name="unfamiliar_category" value="tag"<?php echo $unfamiliar_category['tag']; ?>/> create a new tag</label></li>
-<?php endif; ?>
-<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar_category['default']; ?>/> don't create new categories<?php if (fwp_test_wp_version(FWP_SCHEMA_23)) : ?> or tags<?php endif; ?></li>
-<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar_category['filter']; ?>/> don't create new categories<?php if (fwp_test_wp_version(FWP_SCHEMA_23)) : ?> or tags<?php endif; ?> and don't syndicate posts unless they match at least one familiar category</label></li>
-</ul></td></tr>
-</table>
-<?php
-	fwp_option_box_closer();
-	fwp_linkedit_periodic_submit();
-
-if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
-	fwp_tags_box($tags);
-	fwp_linkedit_periodic_submit();
-endif;
-
-	fwp_option_box_opener(__('Comments & Pings'), 'commentstatus', 'postbox');
-?>
-<table class="editform" width="75%" cellspacing="2" cellpadding="5">
-<tr style="vertical-align: top"><th width="44%" scope="row"><?php print __('Comments') ?>:</th>
-<td width="56%"><ul style="margin: 0; padding: 0; list-style:none">
-<li><label><input type="radio" name="comment_status" value="open"<?php echo ($comment_status=='open')?' checked="checked"':''; ?> /> Allow comments on syndicated posts</label></li>
-<li><label><input type="radio" name="comment_status" value="closed"<?php echo ($comment_status!='open')?' checked="checked"':''; ?> /> Don't allow comments on syndicated posts</label></li>
-</ul></td></tr>
-
-<tr style="vertical-align: top"><th width="44%" scope="row"><?php print __('Pings') ?>:</th>
-<td width="56%"><ul style="margin:0; padding: 0; list-style:none">
-<li><label><input type="radio" name="ping_status" value="open"<?php echo ($ping_status=='open')?' checked="checked"':''; ?> /> Accept pings on syndicated posts</label></li>
-<li><label><input type="radio" name="ping_status" value="closed"<?php echo ($ping_status!='open')?' checked="checked"':''; ?> /> Don't accept pings on syndicated posts</label></li>
-</ul></td></tr>
-</table>
-<?php
-	fwp_option_box_closer();
-	fwp_linkedit_periodic_submit();
-
-	fwp_option_box_opener('Syndicated Authors', 'authordiv', 'postbox');
-
-	$unfamiliar_author = FeedWordPress::on_unfamiliar('author');
-	$authorlist = fwp_author_list();
-?>
-<table>
-<tr><th colspan="3" style="text-align: left; padding-top: 1.0em; border-bottom: 1px dotted black;">For posts by authors that haven't been syndicated before:</th></tr>
-<tr style="vertical-align: top">
-  <th style="text-align: left">Posts by new authors</th>
-  <td> 
-  <select style="max-width: 16.0em;" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser');">
-    <option value="create"<?php if ('create'==$unfamiliar_author) : ?>selected="selected"<?php endif; ?>>create a new author account</option>
-    <?php foreach ($authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>"<?php if ($author_id==$unfamiliar_author) : ?>selected="selected"<?php endif; ?>>are assigned to <?php echo $author_name; ?></option>
-    <?php endforeach; ?>
-    <option value="newuser">will be assigned to a user named...</option>
-    <option value="filter"<?php if ('filter'==$unfamiliar_author) : ?>selected="selected"<?php endif; ?>>get filtered out</option>
-  </select>
-  </td>
-  <td>
-  <div id="unfamiliar-author-newuser"><input type="text" name="unfamiliar_author_newuser" value="" /></div>
-  </td>
-</tr>
-<tr><td></td>
-<td colspan="2">
-<p>This is a default setting. You can override it for one or more particular feeds using the Edit link in <a href="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/syndication.php">Syndicated Sites</a></p>
-</td>
-</table>
-
-<script type="text/javascript">
-	contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser');
-</script>
-
-<h4>Matching Authors</h4>
-<ul style="list-style: none; margin: 0; padding: 0;">
-<li><div><label><input id="match-author-by-email" type="checkbox" name="match_author_by_email" value="yes" <?php if ($match_author_by_email) : ?>checked="checked" <?php endif; ?>onchange="contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', /*checkbox=*/ true);" /> Treat syndicated authors with the same e-mail address as the same author.</label></div>
-<div id="unless-null-email">
-<p>Unless the e-mail address is one of the following anonymous e-mail addresses:</p>
-<textarea name="null_emails" rows="3" style="width: 100%">
-<?php print implode("\n", $null_emails); ?>
-</textarea>
-</div></li>
-</ul>
-
-<script type="text/javascript">
-contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', /*checkbox=*/ true);
-</script>
-
-<?php
-	fwp_option_box_closer();
-	fwp_linkedit_periodic_submit();
+	FeedWordPressSettingsUI::instead_of_posts_box();
+	FeedWordPressSettingsUI::instead_of_authors_box();
+	FeedWordPressSettingsUI::instead_of_categories_box();
 	
 	fwp_option_box_opener('Back End', 'backenddiv', 'postbox');
 ?>

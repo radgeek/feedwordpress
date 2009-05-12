@@ -185,6 +185,70 @@ function fwp_author_list () {
 	return $ret;
 }
 
+class FeedWordPressSettingsUI {
+	function instead_of_posts_box ($link_id = null) {
+		fwp_option_box_opener('Syndicated Posts, Comments & Pings', 'syndicatedpostsdiv', 'postbox');
+		if (!is_null($link_id)) :
+			$from_this_feed = 'from this feed';
+			$by_default = '';
+			$id_param = "&amp;link_id=".$link_id;
+		else :
+			$from_this_feed = 'from syndicated feeds';
+			$by_default = " by default";
+			$id_param = "";
+		endif;
+?>
+<p>Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php<?php print $id_param; ?>"><?php _e('Posts'); ?></a>
+settings page to set up how new posts <?php print $from_this_feed; ?> will be published<?php $by_default; ?>, whether they will accept
+comments and pings, any custom fields that should be set on each post, etc.</p>
+<?php
+		fwp_option_box_closer();
+	} /* FeedWordPressSettingsUI::instead_of_posts_box () */
+	
+	function instead_of_authors_box ($link_id = null) {
+		if (!is_null($link_id)) :
+			$from_this_feed = 'from this feed';
+			$by_default = '';
+			$id_param = "&amp;link_id=".$link_id;
+		else :
+			$from_this_feed = 'from syndicated feeds';
+			$by_default = " by default";
+			$id_param = "";
+		endif;
+
+		fwp_option_box_opener('Syndicated Authors', 'authordiv', 'postbox')
+?>
+<p>Use the <a
+href="admin.php?page=<?php print $GLOBALS['fwp_path']
+?>/authors-page.php<?php print $id_param; ?>"><?php _e('Authors');
+?></a> settings page to set up how new posts
+<?php print $from_this_feed; ?> will be assigned to
+authors.</p>
+<?php 
+		fwp_option_box_closer();
+	} /* FeedWordPressSettingsUI::instead_of_authors_box () */
+	
+	function instead_of_categories_box ($link_id = null) {
+		if (!is_null($link_id)) :
+			$from_this_feed = 'from this feed';
+			$by_default = '';
+			$id_param = "&amp;link_id=".$link_id;
+		else :
+			$from_this_feed = 'from syndicated feeds';
+			$by_default = " by default";
+			$id_param = "";
+		endif;
+		
+		fwp_option_box_opener(__('Categories & Tags'), 'categorydiv', 'postbox');
+?>
+<p>Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/categories-page.php<?php print $id_param; ?>"><?php _e('Categories & Tags'); ?></a>
+settings page to set up how new posts <?php print $from_this_feed; ?> are assigned categories or tags<?php print $by_default; ?>.</p>
+<?php
+		fwp_option_box_closer();
+	} /* FeedWordPressSettingsUI::instead_of_categories_box () */
+
+} /* class FeedWordPressSettingsUI */
+
 function fwp_insert_new_user ($newuser_name) {
 	global $wpdb;
 

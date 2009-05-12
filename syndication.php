@@ -315,6 +315,7 @@ jQuery(document).ready( function () {
 <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit"><?php _e('General'); ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Posts'); ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/authors-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Authors'); ?></a></div>
+| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/categories-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Categories &amp; Tags'); ?></a></div>
 <div><strong>Actions &gt;</strong>
 <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder"><?php echo $caption; ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=Unsubscribe"><?php _e('Unsubscribe'); ?></a>
@@ -628,67 +629,6 @@ function fwp_linkedit_page () {
 					$link->settings['update/hold'] = $GLOBALS['fwp_post']['update_schedule'];
 				endif;
 
-				// Categories
-				if (isset($GLOBALS['fwp_post']['post_category'])) :
-					$link->settings['cats'] = array();
-					foreach ($GLOBALS['fwp_post']['post_category'] as $cat_id) :
-						$link->settings['cats'][] = '{#'.$cat_id.'}';
-					endforeach;
-				else :
-					unset($link->settings['cats']);
-				endif;
-
-				// Tags
-				if (isset($GLOBALS['fwp_post']['tags_input'])) :
-					$link->settings['tags'] = array();
-					foreach (explode(',', $GLOBALS['fwp_post']['tags_input']) as $tag) :
-						$link->settings['tags'][] = trim($tag);
-					endforeach;
-				endif;
-
-				// Unfamiliar author, unfamiliar categories
-				foreach (array("author", "category") as $what) :
-					$sfield = "unfamiliar_{$what}";
-					if (isset($GLOBALS['fwp_post'][$sfield])) :
-						if ('site-default'==$GLOBALS['fwp_post'][$sfield]) :
-							unset($link->settings["unfamiliar {$what}"]);
-						elseif ('newuser'==$GLOBALS['fwp_post'][$sfield]) :
-							$newuser_name = trim($GLOBALS['fwp_post']["{$sfield}_newuser"]);
-							if (strlen($newuser_name) > 0) :
-								$userdata = array();
-								$userdata['ID'] = NULL;
-								
-								$userdata['user_login'] = sanitize_user($newuser_name);
-								$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
-								
-								$userdata['user_nicename'] = sanitize_title($newuser_name);
-								$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
-								
-								$userdata['display_name'] = $wpdb->escape($newuser_name);
-
-								$newuser_id = wp_insert_user($userdata);
-								if (is_numeric($newuser_id)) :
-									$link->settings["unfamiliar {$what}"] = $newuser_id;
-								else :
-									// TODO: Add some error detection and reporting
-								endif;
-							else :
-								// TODO: Add some error reporting
-							endif;
-						else :
-							$link->settings["unfamiliar {$what}"] = $GLOBALS['fwp_post'][$sfield];
-						endif;
-					endif;
-				endforeach;
-
-				if (isset($GLOBALS['fwp_post']['cat_split'])) :
-					if (strlen(trim($GLOBALS['fwp_post']['cat_split'])) > 0) :
-						$link->settings['cat_split'] = trim($GLOBALS['fwp_post']['cat_split']);
-					else :
-						unset($link->settings['cat_split']);
-					endif;
-				endif;
-
 				$alter[] = "link_notes = '".$wpdb->escape($link->settings_to_notes())."'";
 
 				$alter_set = implode(", ", $alter);
@@ -715,29 +655,6 @@ function fwp_linkedit_page () {
 			$link_name = wp_specialchars($db_link->link_name, 1);
 			$link_description = wp_specialchars($db_link->link_description, 'both');
 			$link_rss_uri = wp_specialchars($db_link->link_rss, 'both');
-			
-			$post_status_global = get_option('feedwordpress_syndicated_post_status');
-			$comment_status_global = get_option('feedwordpress_syndicated_comment_status');
-			$ping_status_global = get_option('feedwordpress_syndicated_ping_status');
-
-			$unfamiliar['author'] = array ('create' => '','default' => '','filter' => '');
-			$unfamiliar['category'] = array ('create'=>'','tag' => '','default'=>'','filter'=>'');
-
-			foreach (array('author', 'category') as $what) :
-				if (is_string($link->settings["unfamiliar {$what}"]) and
-				array_key_exists($link->settings["unfamiliar {$what}"], $unfamiliar[$what])) :
-					$key = $link->settings["unfamiliar {$what}"];
-				else:
-					$key = 'site-default';
-				endif;
-				$unfamiliar[$what][$key] = ' checked="checked"';
-			endforeach;
-
-			if (is_array($link->settings['cats'])) : $cats = $link->settings['cats'];
-			else : $cats = array();
-			endif;
-
-			$dogs = SyndicatedPost::category_ids($cats, /*unfamiliar=*/ NULL);
 		else :
 			die( __('Link not found.') ); 
 		endif;
@@ -864,64 +781,12 @@ flip_hardcode('url');
 <?php fwp_linkedit_periodic_submit(); ?>
 
 <?php
-	fwp_option_box_opener('Syndicated Posts, Comments & Pings', 'syndicatedpostsdiv', 'postbox');
+	FeedWordPressSettingsUI::instead_of_posts_box($link_id);
+	FeedWordPressSettingsUI::instead_of_authors_box($link_id);
+	FeedWordPressSettingsUI::instead_of_categories_box($link_id);
+
+	fwp_option_box_opener('Custom Feed Settings (for use in templates)', 'postcustom', 'postbox');
 ?>
-<p>Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php&amp;link_id=<?php echo $link_id; ?>"><?php _e('Posts'); ?></a>
-settings page to set up how new posts from this feed will be published, whether they will accept
-comments and pings, any custom fields that should be set on each post, etc.</p>
-<?php
-	fwp_option_box_closer();
-	fwp_linkedit_periodic_submit();
-
-	fwp_option_box_opener(__('Categories'), 'categorydiv', 'postbox');
-	fwp_category_box($dogs, 'all syndicated posts from this feed');
-?>
-<table>
-<tr>
-<th width="20%" scope="row" style="vertical-align:top">Unfamiliar categories:</th>
-<td width="80%"><p>When one of the categories on a syndicated post is a category that FeedWordPress has not encountered before ...</p>
-
-<ul style="margin: 0; list-style:none">
-<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['category']['site-default']; ?> /> use the site-wide setting from <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">Syndication Options</a>
-(currently <strong><?php echo FeedWordPress::on_unfamiliar('category'); ?></strong>)</label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="create"<?php echo $unfamiliar['category']['create']; ?> /> create a new category</label></li>
-<?php if (fwp_test_wp_version(FWP_SCHEMA_23)) : ?>
-<li><label><input type="radio" name="unfamiliar_category" value="tag"<?php echo $unfamiliar['category']['tag']; ?>/> create a new tag</label></li>
-<?php endif; ?>
-<li><label><input type="radio" name="unfamiliar_category" value="default"<?php echo $unfamiliar['category']['default']; ?> /> don't create new categories<?php if (fwp_test_wp_version(FWP_SCHEMA_23)) : ?> or tags<?php endif; ?></label></li>
-<li><label><input type="radio" name="unfamiliar_category" value="filter"<?php echo $unfamiliar['category']['filter']; ?> /> don't create new categories<?php if (fwp_test_wp_version(FWP_SCHEMA_23)) : ?> or tags<?php endif; ?> and don't syndicate posts unless they match at least one familiar category</label></li>
-</ul></td>
-</tr>
-
-<tr>
-<th width="20%" scope="row" style="vertical-align:top">Multiple categories:</th>
-<td width="80%"> 
-<input type="text" size="20" id="cat_split" name="cat_split" value="<?php if (isset($link->settings['cat_split'])) : echo htmlspecialchars($link->settings['cat_split']); endif; ?>" /><br/>
-Enter a <a href="http://us.php.net/manual/en/reference.pcre.pattern.syntax.php">Perl-compatible regular expression</a> here if the feed provides multiple
-categories in a single category element. The regular expression should match
-the characters used to separate one category from the next. If the feed uses
-spaces (like <a href="http://del.icio.us/">del.icio.us</a>), use the pattern "\s".
-If the feed does not provide multiple categories in a single element, leave this
-blank.</td>
-</tr>
-</table>
-<?php
-	fwp_option_box_closer();
-	fwp_linkedit_periodic_submit();
-	
-if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
-	fwp_tags_box($link->settings['tags']);
-	fwp_linkedit_periodic_submit();
-endif; ?>
-
-<?php fwp_option_box_opener('Syndicated Authors', 'authordiv', 'postbox'); ?>
-<p>Use the <a
-href="admin.php?page=<?php print $GLOBALS['fwp_path']
-?>/authors-page.php&amp;link_id=<?php echo $link_id; ?>"><?php _e('Authors');
-?></a> settings page to set up how new posts from this feed will be assigned to authors.</p>
-<?php fwp_option_box_closer(); ?>
-
-<?php fwp_option_box_opener('Custom Feed Settings (for use in templates)', 'postcustom', 'postbox'); ?>
 <p class="setting-description">These custom settings are special fields for the <strong>feed</strong> you are
 syndicating, to be retrieved in templates using the <code>get_feed_meta()</code> function. They do not create
 custom fields on syndicated <strong>posts</strong>. If you want to create custom fields that are applied to each
