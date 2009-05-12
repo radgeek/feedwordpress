@@ -185,3 +185,31 @@ function fwp_author_list () {
 	return $ret;
 }
 
+function fwp_insert_new_user ($newuser_name) {
+	global $wpdb;
+
+	$ret = null;
+	if (strlen($newuser_name) > 0) :
+		$userdata = array();
+		$userdata['ID'] = NULL;
+		
+		$userdata['user_login'] = sanitize_user($newuser_name);
+		$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
+		
+		$userdata['user_nicename'] = sanitize_title($newuser_name);
+		$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
+		
+		$userdata['display_name'] = $wpdb->escape($newuser_name);
+
+		$newuser_id = wp_insert_user($userdata);
+		if (is_numeric($newuser_id)) :
+			$ret = $newuser_id;
+		else :
+			// TODO: Add some error detection and reporting
+		endif;
+	else :
+		// TODO: Add some error reporting
+	endif;
+	return $ret;
+} /* fwp_insert_new_user () */
+
