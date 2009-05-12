@@ -686,6 +686,7 @@ function fwp_linkedit_page () {
 <?php if (fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
 	<div class="icon32"><img src="<?php print htmlspecialchars(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></div>
 <?php endif; ?>
+
 <h2><?php _e('Feed settings'); ?><?php if (!is_null($link) and $link->found()) : ?>: <?php echo wp_specialchars($link->link->link_name, 1); ?><?php endif; ?></h2>
 
 <div id="poststuff">
