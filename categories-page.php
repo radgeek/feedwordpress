@@ -281,7 +281,7 @@ function fwp_categories_page () {
 
 <ul class="options">
 <?php if (is_object($link) and ($link->found())) : ?>
-<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['site-default']; ?> /> use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">site-wide setting</a>
+<li><label><input type="radio" name="unfamiliar_category" value="site-default"<?php echo $unfamiliar['site-default']; ?> /> use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename(__FILE__); ?>">site-wide setting</a>
 (currently <strong><?php echo FeedWordPress::on_unfamiliar('category'); ?></strong>)</label></li>
 <?php endif; ?>
 

@@ -296,7 +296,7 @@ function fwp_posts_page () {
 
 <?php if (is_object($link) and $link->found()) : ?>
 <li><label><input type="radio" name="feed_post_status" value="site-default"
-<?php echo $status['post']['site-default']; ?> /> Use <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">site-wide setting</a>
+<?php echo $status['post']['site-default']; ?> /> Use <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename(__FILE__); ?>">site-wide setting</a>
 (currently: <strong><?php echo ($post_status_global ? $post_status_global : 'publish'); ?></strong>)</label></li>
 <?php endif; ?>
 
@@ -368,7 +368,7 @@ endif;
 <td><ul class="options">
 <?php if (is_object($link) and $link->found()) : ?>
 <li><label><input type="radio" name="feed_comment_status" value="site-default"
-<?php echo $status['comment']['site-default']; ?> /> Use <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">site-wide setting</a>
+<?php echo $status['comment']['site-default']; ?> /> Use <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename(__FILE__); ?>">site-wide setting</a>
 (currently: <strong><?php echo $comment_status_global; ?></strong>)</label></li>
 <?php endif; ?>
 
@@ -380,7 +380,7 @@ endif;
 <td><ul class="options">
 <?php if (is_object($link) and $link->found()) : ?>
 <li><label><input type="radio" name="feed_ping_status" value="site-default"
-<?php echo $status['ping']['site-default']; ?> /> Use <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication-options.php">site-wide setting</a>
+<?php echo $status['ping']['site-default']; ?> /> Use <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename(__FILE__); ?>">site-wide setting</a>
 (currently: <strong><?php echo $ping_status_global; ?></strong>)</label></li>
 <?php endif; ?>
 
