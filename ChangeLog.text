@@ -3,22 +3,33 @@ FeedWordPress Change Log
 
 Changes from 2008.1214 to Trunk
 -------------------------------
-*	INTERFACE RESTRUCTURING: In order to avoid settings posts from becoming too
-	crowded, and to modularize and better organize the user interface, a new "Posts"
-	subpage has been created under the "Syndication" menu,  which controls settings
-	for individal syndicated posts (such as publication status, comment and ping
-	status, whether or not to use the original location of the post as the permalink,
-	whether or not to expose posts to formatting filters, and so on), both at the global
-	default level and for individual syndicated feeds.
+*	INTERFACE RESTRUCTURING: In order to avoid settings posts from becoming
+	too crowded, and to modularize and better organize the user interface,
+	new "Posts" and "Categories & Tags" subpages have been created under the
+	"Syndication" menu. "Posts" controls settings for individal syndicated
+	posts (such as publication status, comment and ping status, whether or
+	not to use the original location of the post as the permalink, whether
+	or not to expose posts to formatting filters, and so on). "Categories &
+	Tags" controls settings for assigning new syndicated posts to categories
+	and tags, such as categories or tags to apply to all syndicated posts,
+	and how to handle categories that do not yet exist in the WordPress
+	database. These subpages, like the Authors subpage, handle settings for
+	the global default level and for individual syndicated feeds.
+
+	Corresponding to these new subpages, the old Syndication Settings and
+	Feed Settings subpages have been cleaned up and simplified, and now only
+	link to the appropriate subpages for options that can be set in the
+	Posts, Authors, or Categories & Tags subpages.
 	
-*	FEATURE: ADD CUSTOM SETTINGS TO EACH SYNDICATED POST: FeedWordPress
-	has long had an interface for creating custom settings for each syndicated *feed*
-	which could be retrieved in templates using the get_feed_meta() template function.
-	But it had no feature for adding custom fields to each individual syndicated
-	*post*. In response to requests from users, I have added the ability to apply
-	custom fields to each individual syndicated post, using the new Syndication -->
-	Posts subpage. You can set up custom fields to be applied to every syndicated
-	post, or custom fields to be applied to syndicated posts from a particular feed.
+*	FEATURE: ADD CUSTOM SETTINGS TO EACH SYNDICATED POST: FeedWordPress has
+	long had an interface for creating custom settings for each syndicated
+	*feed* which could be retrieved in templates using the `get_feed_meta()`
+	template function. But it had no feature for adding custom fields to
+	each individual syndicated *post*. In response to requests from users, I
+	have added the ability to apply custom fields to each individual
+	syndicated post, using the new Syndication --> Posts subpage. You can
+	set up custom fields to be applied to every syndicated post, or custom
+	fields to be applied to syndicated posts from a particular feed.
 
 *	FEATURE: MAGPIERSS VERSION CHECK AND UPGRADE: FeedWordPress will attempt
 	to determine whether or not you are using the upgraded version of
@@ -52,24 +63,32 @@ Changes from 2008.1214 to Trunk
 	a feed-by-feed basis.) The version-checking bug has been fixed, and the
 	option has been restored.
 
-*	BUGFIX: "ARE YOU SURE?" FATAL ERROR ELIMINATED AND SECURITY IMPROVED: Under
-	certain circumstances (for example, when users have configured their
-	browser or proxy not to send HTTP Referer headers, for privacy or other
-	reasons), many features in the FeedWordPress administrative interface
-	(such as adding new feeds or changing settings) would hit a fatal error,
-	displaying only a cryptic message reading "Are you sure?" and a blank
-	page following it. This problem has been eliminated by taking advantage
-	of WordPress's nonce functions, which allow the security check which
-	ran into this error to work properly even without receiving an HTTP
-	Referer header. (N.B.: WordPress's nonce functions were first introduced
-	in WordPress 2.0.3. If you're using FeedWordPress with an older version
-	of WordPress, there's no fix for this problem: you'll just need to turn
-	Referer headers back on. Sorry.)
+*	BUGFIX: "ARE YOU SURE?" FATAL ERROR ELIMINATED AND SECURITY IMPROVED:
+	Under certain circumstances (for example, when users have configured
+	their browser or proxy not to send HTTP Referer headers, for privacy or
+	other reasons), many features in the FeedWordPress administrative
+	interface (such as adding new feeds or changing settings) would hit a
+	fatal error, displaying only a cryptic message reading "Are you sure?"
+	and a blank page following it. This problem has been eliminated by
+	taking advantage of WordPress's nonce functions, which allow the
+	security check which ran into this error to work properly even without
+	receiving an HTTP Referer header. (N.B.: WordPress's nonce functions
+	were first introduced in WordPress 2.0.3. If you're using FeedWordPress
+	with an older version of WordPress, there's no fix for this problem:
+	you'll just need to turn Referer headers back on. Sorry.)
 
 *	BUGFIX: OCCASIONAL FATAL ERROR ON UPDATE ELIMINATED: Under certain
-	limited conditions (specifically, when both the title and the content of a post
-	to be updated are empty), an attempt to update the post would result in
-	a fatal error. This has been fixed.
+	limited conditions (specifically, when both the title and the content of
+	a post to be updated are empty), an attempt to update the post would
+	result in a fatal error. This has been fixed.
+
+*	INTERFACE: "CONFIGURE SETTINGS" CONVENIENCE LINK ADDED TO CONFIRMATION
+	MESSAGE WHEN A NEW FEED IS ADDED: When you add a new subscription to
+	FeedWordPress, the message box that appears to confirm it now includes a
+	handy link to the feed's settings subpage, so that you can quickly set
+	up any special settings you may want to set up for the new feed, without
+	having to hunt through the list of all your other subscriptions to pick
+	out the new one.
 
 *	FEEDFINDER PERFORMANCE IMPROVEMENT: FeedWordPress's FeedFinder class
 	now uses `array_unique()` to make sure that it doesn't waste time

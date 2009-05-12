@@ -517,8 +517,9 @@ function fwp_switchfeed_page () {
 		if (isset($_POST['link_id']) and ($_POST['link_id']==0)):
 			$link_id = FeedWordPress::syndicate_link($_REQUEST['feed_title'], $_REQUEST['feed_link'], $_REQUEST['feed']);
 			if ($link_id): ?>
-<div class="updated"><p><a href="<?php echo stripslashes($_REQUEST['feed_link']); ?>"><?php echo wp_specialchars($_REQUEST['feed_title'], 'both'); ?></a>
-has been added as a contributing site, using the feed at &lt;<a href="<?php echo $_REQUEST['feed']; ?>"><?php echo wp_specialchars($_REQUEST['feed'], 'both'); ?></a>&gt;.</p></div>
+<div class="updated"><p><a href="<?php echo stripslashes($_REQUEST['feed_link']); ?>"><?php echo wp_specialchars(stripslashes($_REQUEST['feed_title']), 'both'); ?></a>
+has been added as a contributing site, using the feed at &lt;<a href="<?php echo stripslashes($_REQUEST['feed']); ?>"><?php echo wp_specialchars(stripslashes($_REQUEST['feed']), 'both'); ?></a>&gt;.
+| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link_id; ?>&amp;action=linkedit">Configure settings</a>.</div>
 <?php			else: ?>
 <div class="updated"><p>There was a problem adding the feed. [SQL: <?php echo wp_specialchars(mysql_error(), 'both'); ?>]</p></div>
 <?php			endif;
