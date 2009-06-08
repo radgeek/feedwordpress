@@ -26,8 +26,10 @@ function fwp_syndication_options_page () {
 		update_option('feedwordpress_update_logging', $_REQUEST['update_logging']);
 		update_option('feedwordpress_automatic_updates', ($_POST['automatic_updates']=='yes'));
 		update_option('feedwordpress_update_time_limit', ($_POST['update_time_limit']=='yes')?(int) $_POST['time_limit_seconds']:0);
-		update_option('feedwordpress_freshness',  ($_POST['freshness_interval']*60));
-		
+
+		$freshness_interval = (isset($_POST['freshness_interval']) ? (int) $_POST['freshness_interval'] : 10);
+		update_option('feedworidpress_freshness', $freshness_interval*60);
+
 		if (isset($_REQUEST['hardcode_name']) and ($_REQUEST['hardcode_name'] == 'no')) :
 			update_option('feedwordpress_hardcode_name', 'no');
 		else :
@@ -151,12 +153,11 @@ function fwp_syndication_options_page () {
 </tr>
 
 <tr style="vertical-align: top">
-<th width="33%" scope="row">Check for feeds ready to be polled for updates:</th>
-<td width="67%"><select name="automatic_updates" size="1" onchange="if (this.value=='yes') { disp = 'inline'; } else { disp = 'none'; }; el=document.getElementById('automatic-update-interval-span'); if (el) el.style.display=disp;">
+<th width="33%" scope="row">Check for updates:</th>
+<td width="67%"><select name="automatic_updates" size="1">
 <option value="yes"<?php echo ($automatic_updates)?' selected="selected"':''; ?>>automatically</option>
 <option value="no"<?php echo (!$automatic_updates)?' selected="selected"':''; ?>>only when I request</option>
 </select>
-<span id="automatic-update-interval-span" style="display: <?php echo $automatic_updates?'inline':'none';?>"><label for="automatic-update-interval">every</label> <input id="automatic-update-interval" name="freshness_interval" value="<?php echo $freshness_interval; ?>" size="4" /> minutes.</span>
 </td>
 </tr>
 

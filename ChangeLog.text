@@ -90,6 +90,24 @@ Changes from 2008.1214 to Trunk
 	having to hunt through the list of all your other subscriptions to pick
 	out the new one.
 
+*	INTERFACE: SIMPLIFYING AND CLARIFYING AUTOMATIC UPDATES SETTINGS. I have
+	removed an interval setting for the cronless automatic updates which has
+	confused many FeedWordPress users. In past versions of FWP, when you
+	turned on automatic updates, you would be presented with a time interval
+	setting which controlled how often FeedWordPress would check for feeds
+	ready to be polled for updates. (That is, it DID NOT control how often
+	feeds *would be polled*; it controlled how often FeedWordPress would
+	*check* for feeds that *had become ready to poll*. The schedule on which
+	feeds became ready for polling was still controlled either by requests
+	encoded in elements within the feed itself, or else according to an
+	internal calculation within FeedWordPress, averaging out to about 1 hour,
+	if the feed did not include any scheduling request elements.) Since many
+	users very often (and understandably) confused the purpose of this
+	setting, and since the setting is for a feature that's actually very
+	unlikely to require any manual control by the user, I have removed the
+	setting; FeedWordPress now simply uses the default value of checking for
+	feeds to poll every 10 minutes.
+
 *	FEEDFINDER PERFORMANCE IMPROVEMENT: FeedWordPress's FeedFinder class
 	now uses `array_unique()` to make sure that it doesn't waste time
 	repeatedly iterating over and polling the same URI. Props to Camilo
