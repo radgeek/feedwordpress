@@ -70,7 +70,10 @@ function fwp_syndication_options_page () {
 	$hardcode_url = get_option('feedwordpress_hardcode_url');
 	
 	if (isset($wp_db_version) and $wp_db_version >= 4772) :
-		$results = get_categories('type=link');
+		$results = get_categories(array(
+			"type" => 'link',
+			"hide_empty" => false,	
+		));
 		
 		// Guarantee that the Contributors category will be in the drop-down chooser, even if it is empty.
 		$found_link_category_id = false;
@@ -136,19 +139,21 @@ function fwp_syndication_options_page () {
 <tr>
 <th width="33%" scope="row">Syndicated Link category:</th>
 <td width="67%"><?php
-		echo "\n<select name=\"syndication_category\" size=\"1\">";
-		foreach ($results as $row) {
-			if (!isset($row->cat_id)) { $row->cat_id = $row->cat_ID; }
-			
-			echo "\n\t<option value=\"$row->cat_id\"";
-			if ($row->cat_id == $cat_id)
-				echo " selected='selected'";
-			echo ">$row->cat_id: ".wp_specialchars($row->cat_name);
-			if ('Y' == $row->auto_toggle)
-				echo ' (auto toggle)';
-			echo "</option>\n";
-		}
-		echo "\n</select>\n";
+	echo "\n<select name=\"syndication_category\" size=\"1\">";
+	foreach ($results as $row) :
+		if (!isset($row->cat_id)) : $row->cat_id = $row->cat_ID; endif;
+	
+		echo "\n\t<option value=\"$row->cat_id\"";
+		if ($row->cat_id == $cat_id) :
+			echo " selected='selected'";
+		endif;
+		echo ">$row->cat_id: ".wp_specialchars($row->cat_name);
+		if ('Y' == $row->auto_toggle) :
+			echo ' (auto toggle)';
+		endif;
+		echo "</option>\n";
+	endforeach;
+	echo "\n</select>\n";
 ?></td>
 </tr>
 

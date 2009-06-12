@@ -929,10 +929,10 @@ class FeedWordPress {
 			if (function_exists('is_term')) :
 				$cat_id = is_term($cat, 'link_category');
 			// WordPress 2.1 and 2.2 use a common table for both link and post categories
-			elseif (isset($wp_db_version) and ($wp_db_version >= FWP_SCHEMA_21 and $wp_db_version < FWP_SCHEMA_23) ) :
+			elseif (fwp_test_wp_version(FWP_SCHEMA_21, FWP_SCHEMA_23)) :
 				$cat_id = $wpdb->get_var("SELECT cat_id FROM {$wpdb->categories} WHERE cat_name='$cat'");
 			// WordPress 1.5 and 2.0.x have a separate table for link categories
-			elseif (!isset($wp_db_version) or $wp_db_version < FWP_SCHEMA_21) :
+			elseif (fwp_test_wp_version(0, FWP_SCHEMA_21)):
 				$cat_id = $wpdb->get_var("SELECT cat_id FROM {$wpdb->linkcategories} WHERE cat_name='$cat'");
 			// This should never happen.
 			else :
