@@ -2270,22 +2270,26 @@ class SyndicatedPost {
 	} /* function SyndicatedPost::resolve_relative_uris () */
 
 	var $strip_attrs = array (
-		      array('[a-z]+', 'style'),
-		      array('[a-z]+', 'target'),
+		array('[a-z]+', 'target'),
+//		array('[a-z]+', 'style'),
+//		array('[a-z]+', 'on[a-z]+',
 	);
+
+	function strip_attribute_from_tag ($refs) {
+		$tag = FeedWordPressHTML::attributeMatch($refs);
+		return $tag['before_attribute'].$tag['after_attribute'];
+	}
+
 	function sanitize_content ($content, $obj) {
-		# FeedWordPress used to resolve URIs relative to the
-		# feed URI. It now relies on the xml:base support
-		# baked in to the MagpieRSS upgrade. So all we do here
-		# now is to sanitize problematic attributes.
-		#
 		# This kind of sucks. I intend to replace it with
 		# lib_filter sometime soon.
 		foreach ($obj->strip_attrs as $pair):
 			list($tag,$attr) = $pair;
-			$content = preg_replace (
-				":(<$tag [^>]*)($attr=(\"[^\">]*\"|[^>\\s]+))([^>]*>):i",
-				"\\1\\4",
+			$pattern = FeedWordPressHTML::attributeRegex($tag, $attr);
+
+			$content = preg_replace_callback (
+				$pattern,
+				array(&$obj, 'strip_attribute_from_tag'),
 				$content
 			);
 		endforeach;

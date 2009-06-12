@@ -2,13 +2,13 @@
 class FeedWordPressHTML {
 	function attributeRegex ($tag, $attr) {
 		return ":(
-		<($tag)\s+[^>]*
+		(<($tag)\s+[^>]*)
 		($attr)=
 		)
 		(
 			\s*(\"|')
-			(((?!\\5).)*)
-			\\5([^>]*>)
+			(((?!\\6).)*)
+			\\6([^>]*>)
 		|
 			\s*(((?!/>)[^\s>])*)
 			([^>]*>)
@@ -17,16 +17,18 @@ class FeedWordPressHTML {
 	} /* function FeedWordPressHTML::attributeRegex () */
 
 	function attributeMatch ($matches) {
-		$suffix = (isset($matches[11]) ? $matches[11] : $matches[8]);
-		$value = (isset($matches[9]) ? $matches[9] : $matches[6]);
+		$suffix = (isset($matches[12]) ? $matches[12] : $matches[9]);
+		$value = (isset($matches[10]) ? $matches[10] : $matches[7]);
 
 		return array(
-		"tag" => $matches[2],
-		"attribute" => $matches[3],
+		"tag" => $matches[3],
+		"attribute" => $matches[4],
 		"value" => $value,
-		"quote" => $matches[5],
-		"prefix" => $matches[1].$matches[5],
-		"suffix" => $matches[5].$suffix,
+		"quote" => $matches[6],
+		"prefix" => $matches[1].$matches[6],
+		"suffix" => $matches[6].$suffix,
+		"before_attribute" => $matches[2],
+		"after_attribute" => $suffix,
 		);
 	} /* function FeedWordPressHTML::attributeMatch () */
 } /* class FeedWordPressHTML */
