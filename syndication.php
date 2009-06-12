@@ -1,5 +1,6 @@
 <?php
 require_once(dirname(__FILE__) . '/admin-ui.php');
+require_once(dirname(__FILE__) . '/magpiemocklink.class.php');
 
 ################################################################################
 ## ADMIN MENU ADD-ONS: implement Dashboard management pages ####################
@@ -449,14 +450,18 @@ function fwp_feedfinder_page () {
 				<div>
 				<div style="float:right; background-color:#D0D0D0; color: black; width:45%; font-size:70%; border-left: 1px dotted #A0A0A0; padding-left: 0.5em; margin-left: 1.0em">
 <?php				if (count($rss->items) > 0): ?>
-					<?php $item = $rss->items[0]; ?>
+					<?php
+						// Prepare to display Sample Item
+						$link =& new MagpieMockLink($rss, $f);
+						$post =& new SyndicatedPost($rss->items[0], $link);
+					?>
 					<h3>Sample Item</h3>
 					<ul>
-					<li><strong>Title:</strong> <a href="<?php echo $item['link']; ?>"><?php echo $item['title']; ?></a></li>
-					<li><strong>Date:</strong> <?php echo isset($item['date_timestamp']) ? date('d-M-y g:i:s a', $item['date_timestamp']) : 'unknown'; ?></li>
+					<li><strong>Title:</strong> <a href="<?php echo $post->post['meta']['syndication_permalink']; ?>"><?php echo $post->post['post_title']; ?></a></li>
+					<li><strong>Date:</strong> <?php print date('d-M-y g:i:s a', $post->published()); ?></li>
 					</ul>
 					<div class="entry">
-					<?php echo (isset($item['content']['encoded'])?$item['content']['encoded']:$item['description']); ?>
+					<?php print $post->post['post_content']; ?>
 					</div>
 <?php				else: ?>
 					<h3>No Items</h3>
