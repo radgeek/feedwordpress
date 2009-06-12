@@ -33,7 +33,11 @@ define ('FEEDWORDPRESS_VERSION', '2009.0612');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
-define ('FEEDWORDPRESS_DEBUG', false);
+$feedwordpress_debug = get_option('feedwordpress_debug');
+if (is_string($feedwordpress_debug)) :
+	$feedwordpress_debug = ($feedwordpress_debug == 'yes');
+endif;
+define ('FEEDWORDPRESS_DEBUG', $feedwordpress_debug);
 
 define ('FEEDWORDPRESS_CAT_SEPARATOR_PATTERN', '/[:\n]/');
 define ('FEEDWORDPRESS_CAT_SEPARATOR', "\n");
@@ -165,6 +169,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	
 	# Admin menu
 	add_action('admin_menu', 'fwp_add_pages');
+	add_action('admin_notices', 'fwp_check_debug');
 	add_action('admin_notices', 'fwp_check_magpie');
 
 	# Inbound XML-RPC update methods
@@ -480,6 +485,28 @@ function fwp_add_pages () {
 
 	add_options_page($longoptions, 'Syndication', $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
 } /* function fwp_add_pages () */
+
+function fwp_check_debug () {
+	// This is a horrible fucking kludge that I have to do because the
+	// admin notice code is triggered before the code that updates the
+	// setting.
+	if (isset($_POST['feedwordpress_debug'])) :
+		$feedwordpress_debug = $_POST['feedwordpress_debug'];
+	else :
+		$feedwordpress_debug = get_option('feedwordpress_debug');
+	endif;
+	if ($feedwordpress_debug==='yes') :
+?>
+		<div class="error">
+<p><strong>FeedWordPress warning.</strong> Debugging mode is <strong>ON</strong>.
+While it remains on, FeedWordPress displays many diagnostic error messages,
+warnings, and notices that are ordinarily suppressed, and also turns off all
+caching of feeds. Use with caution: this setting is absolutely inappropriate
+for a production server.</p>
+		</div>
+<?php
+	endif;
+} /* function fwp_check_debug () */
 
 define('DEFAULT_EXPECTED_MAGPIE_VERSION', '0.85');
 function fwp_check_magpie () {
@@ -1576,7 +1603,15 @@ class SyndicatedPost {
 				// content of posts when updating without a logged in
 				// user who has `unfiltered_html` capability.
 				add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
-	
+
+				// Don't munge status fields that the user may have reset manually
+				if (function_exists('get_post_field')) :
+					$doNotMunge = array('post_status', 'comment_status', 'ping_status');
+					foreach ($doNotMunge as $field) :
+						$dbpost[$field] = get_post_field($field, $this->wp_id());
+					endforeach;
+				endif;
+
 				$this->_wp_id = wp_insert_post($dbpost);
 	
 				// Turn off ridiculous fucking kludges #1 and #2

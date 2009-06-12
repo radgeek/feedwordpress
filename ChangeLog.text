@@ -1,8 +1,11 @@
 FeedWordPress Change Log
 ========================
 
-Changes from 2008.1214 to Trunk
--------------------------------
+Changes from 2008.1214 to 2009.0612
+-----------------------------------
+*	WORDPRESS 2.8 COMPATIBILITY: FeedWordPress 2009.0612 has been tested for
+	compatibility with the recent version 2.8 release of WordPress.
+
 *	INTERFACE RESTRUCTURING: In order to avoid settings posts from becoming
 	too crowded, and to modularize and better organize the user interface,
 	new "Posts" and "Categories & Tags" subpages have been created under the
@@ -88,6 +91,20 @@ Changes from 2008.1214 to Trunk
 	were first introduced in WordPress 2.0.3. If you're using FeedWordPress
 	with an older version of WordPress, there's no fix for this problem:
 	you'll just need to turn Referer headers back on. Sorry.)
+
+*	BUGFIX: MANUALLY-ALTERED POST STATUS, COMMENT STATUS, AND PING STATUS NO
+	LONGER REVERTED BY POST UPDATES: If you manually altered the post status,
+	comment status, or ping status of a syndicated post from what it was set
+	to when first syndicated -- for example, if you had a feed that was set
+	to bring in new posts as "Pending Review," and you then marked some of
+	the pending posts as "Published" and others as "Unpublished" -- then
+	in previous versions of FeedWordPress, these manual changes to the
+	status would be lost -- so that, for example, your Published or Unpublished
+	articles would revert to Pending Review -- if the source feed made any
+	upates to the item. This could make the Pending Review feature both
+	unreliable and also extremely frustrating to work with. The good news is
+	that this bug has since been fixed: if you manually update the status
+	of a post, it will no longer be reverted if or when the post is updated.
 
 *	BUGFIX: OCCASIONAL FATAL ERROR ON UPDATE ELIMINATED: Under certain
 	limited conditions (specifically, when both the title and the content of

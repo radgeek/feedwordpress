@@ -24,6 +24,7 @@ function fwp_syndication_options_page () {
 	if (isset($_POST['submit']) or isset($_POST['create_index'])) :
 		update_option('feedwordpress_cat_id', $_REQUEST['syndication_category']);
 		update_option('feedwordpress_update_logging', $_REQUEST['update_logging']);
+		update_option('feedwordpress_debug', $_POST['feedwordpress_debug']);
 		update_option('feedwordpress_automatic_updates', ($_POST['automatic_updates']=='yes'));
 		update_option('feedwordpress_update_time_limit', ($_POST['update_time_limit']=='yes')?(int) $_POST['time_limit_seconds']:0);
 
@@ -56,6 +57,8 @@ function fwp_syndication_options_page () {
 
 	$cat_id = FeedWordPress::link_category_id();
 	$update_logging = get_option('feedwordpress_update_logging');
+	$feedwordpress_debug = (get_option('feedwordpress_debug')=='yes');
+
 	$update_time_limit = (int) get_option('feedwordpress_update_time_limit');
 	$automatic_updates = get_option('feedwordpress_automatic_updates');
 
@@ -204,6 +207,18 @@ function fwp_syndication_options_page () {
 <option value="no"<?php echo (($update_logging!='yes')?' selected="selected"':''); ?>>don't write to PHP logs</option>
 </select></td>
 </tr>
+<tr style="vertical-align: top">
+<th width="33%" scope="row">Debugging mode:</th>
+<td width="67%"><select name="feedwordpress_debug" size="1">
+<option value="yes"<?php echo ($feedwordpress_debug ? ' selected="selected"' : ''); ?>>on</option>
+<option value="no"<?php echo ($feedwordpress_debug ? '' : ' selected="selected"'); ?>>off</option>
+</select>
+<p>When debugging mode is <strong>ON</strong>, FeedWordPress displays many diagnostic error messages,
+warnings, and notices that are ordinarily suppressed, and turns off all caching of feeds. Use with
+caution: this setting is absolutely inappropriate for a production server.</p>
+</td>
+</tr>
+
 <tr style="vertical-align: top">
 <th width="33%" scope="row">Guid index:</th>
 <td width="67%"><input class="button" type="submit" name="create_index" value="Create index on guid column in posts database table" />
