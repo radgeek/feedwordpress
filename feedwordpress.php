@@ -393,7 +393,11 @@ $feedwordpress_the_syndicated_content = NULL;
 function feedwordpress_preserve_syndicated_content ($text) {
 	global $feedwordpress_the_syndicated_content;
 
-	if ( is_syndicated() and get_option('feedwordpress_formatting_filters') != 'yes' ) :
+	$globalExpose = (get_option('feedwordpress_formatting_filters') == 'yes');
+	$localExpose = get_post_custom_values('_feedwordpress_formatting_filters');
+	$expose = ($globalExpose or ((count($localExpose) > 0) and $localExpose[0]));
+
+	if ( is_syndicated() and !$expose ) :
 		$feedwordpress_the_syndicated_content = $text;
 	else :
 		$feedwordpress_the_syndicated_content = NULL;
