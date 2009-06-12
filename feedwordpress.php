@@ -2272,7 +2272,7 @@ class SyndicatedPost {
 	var $strip_attrs = array (
 		array('[a-z]+', 'target'),
 //		array('[a-z]+', 'style'),
-//		array('[a-z]+', 'on[a-z]+',
+//		array('[a-z]+', 'on[a-z]+'),
 	);
 
 	function strip_attribute_from_tag ($refs) {
