@@ -53,6 +53,18 @@ Changes from 2008.1214 to Trunk
 	to display their contents even if you don't upgrade MagpieRSS. (But you
 	**really should** upgrade it, anyway.)
 
+*	BUGFIX: Relative URI resolving for post content restored. Some time
+	back, I added support for resolving relative URIs against xml:base on
+	feeds that support it to the MagpieRSS upgrade in FeedWordPress. Then I
+	took out code that did the same thing from the main FeedWordPress code.
+	Of course, the problem is that some people, even though it is clearly
+	stupid or evil to do so, still include relative URIs for images or links
+	in posts on feed formats that do *not* adequately support xml:base
+	(notably, RSS 2.0 feeds). In response to a user request, I have added
+	this functionality back in, so that MagpieRSS will resolve any relative
+	URIs that it knows how to resolve using xml:base, and then FeedWordPress
+	will attempt to resolve any relative URIs that are left over afterwards.
+
 *	BUGFIX: INTERFACE OPTION FOR SETTING SYNDICATED POST PUBLICATION STATUS
 	ON A FEED-BY-FEED BASIS HAS BEEN RESTORED: Due to a version-checking
 	bug, users of WordPress 2.7.x lost an option from the "Edit a syndicated
