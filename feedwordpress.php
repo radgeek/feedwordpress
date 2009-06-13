@@ -7,7 +7,6 @@ Version: 2009.0612
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
-Last modified: 2009-05-07 2:25pm PDT
 */
 
 # This uses code derived from:

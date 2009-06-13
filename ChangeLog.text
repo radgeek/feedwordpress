@@ -56,7 +56,7 @@ Changes from 2008.1214 to 2009.0612
 	to display their contents even if you don't upgrade MagpieRSS. (But you
 	**really should** upgrade it, anyway.)
 
-*	BUGFIX: Relative URI resolving for post content restored. Some time
+*	BUGFIX: RELATIVE URI RESOLUTION FOR POST CONTENT RESTORED. Some time
 	back, I added support for resolving relative URIs against xml:base on
 	feeds that support it to the MagpieRSS upgrade in FeedWordPress. Then I
 	took out code that did the same thing from the main FeedWordPress code.
