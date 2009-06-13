@@ -1,0 +1,171 @@
+<?php
+################################################################################
+## class FeedFinder: find likely feeds using autodetection and/or guesswork ####
+################################################################################
+
+class FeedFinder {
+	var $uri = NULL;
+	var $_cache_uri = NULL;
+	
+	var $verify = FALSE;
+	
+	var $_data = NULL;
+	var $_error = NULL;
+	var $_head = NULL;
+
+	# -- Recognition patterns
+	var $_feed_types = array(
+		'application/rss+xml',
+		'text/xml',
+		'application/atom+xml',
+		'application/x.atom+xml',
+                'application/x-atom+xml'
+	);
+	var $_feed_markers = array('\\<feed', '\\<rss', 'xmlns="http://purl.org/rss/1.0');
+	var $_html_markers = array('\\<html');
+	var $_obvious_feed_url = array('[./]rss', '[./]rdf', '[./]atom', '[./]feed', '\.xml');
+	var $_maybe_feed_url = array ('rss', 'rdf', 'atom', 'feed', 'xml');
+
+	function FeedFinder ($uri = NULL, $verify = TRUE) {
+		$this->uri = $uri; $this->verify = $verify;
+	} /* FeedFinder::FeedFinder () */
+
+	function find ($uri = NULL) {
+		$ret = array ();
+		if (!is_null($this->data($uri))) {
+			if ($this->is_feed($uri)) {
+				$ret = array($this->uri);
+			} else {
+				// Assume that we have HTML or XHTML (even if we don't, who's it gonna hurt?)
+				// Autodiscovery is the preferred method
+				$href = $this->_link_rel_feeds();
+				
+				// ... but we'll also take the little orange buttons
+				$href = array_merge($href, $this->_a_href_feeds(TRUE));
+				
+				// If all that failed, look harder
+				if (count($href) == 0) $href = $this->_a_href_feeds(FALSE);
+
+				// Our search may turn up duplicate URIs. We only need to do any given URI once.
+				// Props to Camilo <http://projects.radgeek.com/2008/12/14/feedwordpress-20081214/#comment-20090122160414>
+				$href = array_unique($href);
+
+				// Verify feeds and resolve relative URIs
+				foreach ($href as $u) {
+					$the_uri = Relative_URI::resolve($u, $this->uri);
+					if ($this->verify) {
+						$feed =& new FeedFinder($the_uri);
+						if ($feed->is_feed()) $ret[] = $the_uri;
+						$feed = NULL;
+					} else {
+						$ret[] = $the_uri;
+					}
+				} /* foreach */
+			} /* if */
+		} /* if */
+		return array_unique($ret);
+	} /* FeedFinder::find () */
+
+	function data ($uri = NULL) {
+		$this->_get($uri);
+		return $this->_data;
+	}
+
+	function error () {
+		return $this->_error;
+	}
+	
+	function is_feed ($uri = NULL) {
+		$data = $this->data($uri);
+
+		return (
+			preg_match (
+				"\007(".implode('|',$this->_feed_markers).")\007i",
+				$data
+			) and !preg_match (
+				"\007(".implode('|',$this->_html_markers).")\007i",
+				$data
+			)
+		);
+	} /* FeedFinder::is_feed () */
+
+	# --- Private methods ---
+	function _get ($uri = NULL) {
+		if ($uri) $this->uri = $uri;
+
+		// Is the result not yet cached?
+		if ($this->_cache_uri !== $this->uri) :
+			$headers['Connection'] = 'close';
+			$headers['Accept'] = 'application/atom+xml application/rdf+xml application/rss+xml application/xml text/html */*';
+			$headers['User-Agent'] = 'feedfinder/1.2 (compatible; PHP FeedFinder) +http://projects.radgeek.com/feedwordpress';
+
+			// Use function provided by MagpieRSS package
+			$client = _fetch_remote_file($this->uri, $headers);
+			if (isset($client->error)) :
+				$this->_error = $client->error;
+			else :
+				$this->_error = NULL;
+			endif;
+			$this->_data = $client->results;
+
+			// Kilroy was here
+			$this->_cache_uri = $this->uri;
+		endif;
+	} /* FeedFinder::_get () */
+
+ 	function _link_rel_feeds () {
+		$links = $this->_tags('link');
+		$link_count = count($links);
+
+		// now figure out which one points to the RSS file
+		$href = array ();
+		for ($n=0; $n<$link_count; $n++) {
+			if (strtolower($links[$n]['rel']) == 'alternate') {
+				if (in_array(strtolower($links[$n]['type']), $this->_feed_types)) {
+					$href[] = $links[$n]['href'];
+				} /* if */
+			} /* if */
+		} /* for */
+		return $href;
+	}
+
+	function _a_href_feeds ($obvious = TRUE) {
+		$pattern = ($obvious ? $this->_obvious_feed_url : $this->_maybe_feed_url);
+
+		$links = $this->_tags('a');
+		$link_count = count($links);
+
+		// now figure out which one points to the RSS file
+		$href = array ();
+		for ($n=0; $n<$link_count; $n++) {
+			if (preg_match("\007(".implode('|',$pattern).")\007i", $links[$n]['href'])) {
+				$href[] = $links[$n]['href'];
+			} /* if */
+		} /* for */
+		return $href;
+	}
+
+	function _tags ($tag) {
+		$html = $this->data();
+    
+		// search through the HTML, save all <link> tags
+		// and store each link's attributes in an associative array
+		preg_match_all('/<'.$tag.'\s+(.*?)\s*\/?>/si', $html, $matches);
+		$links = $matches[1];
+		$ret = array();
+		$link_count = count($links);
+		for ($n=0; $n<$link_count; $n++) {
+			$attributes = preg_split('/\s+/s', $links[$n]);
+			foreach($attributes as $attribute) {
+				$att = preg_split('/\s*=\s*/s', $attribute, 2);
+				if (isset($att[1])) {
+					$att[1] = preg_replace('/([\'"]?)(.*)\1/', '$2', $att[1]);
+					$final_link[strtolower($att[0])] = $att[1];
+				} /* if */
+			} /* foreach */
+			$ret[$n] = $final_link;
+		} /* for */
+		return $ret;
+	}
+} /* class FeedFinder */
+

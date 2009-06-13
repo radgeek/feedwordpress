@@ -1,6 +1,7 @@
 <?php
 require_once(dirname(__FILE__) . '/admin-ui.php');
 require_once(dirname(__FILE__) . '/magpiemocklink.class.php');
+require_once(dirname(__FILE__) . '/feedfinder.class.php');
 
 ################################################################################
 ## ADMIN MENU ADD-ONS: implement Dashboard management pages ####################
@@ -490,7 +491,7 @@ function fwp_feedfinder_page () {
 		if (!is_null($f->error())) :
 			print " [".__('HTTP request error').": ".htmlspecialchars(trim($f->error()))."]";
 		endif;
-		print ". ".__('Try another URL')."</p>";
+		print ". ".__('Try another URL').".</p>";
 	endif;
 ?>
 	</div>
