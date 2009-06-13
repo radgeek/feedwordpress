@@ -115,12 +115,14 @@ function fwp_category_box ($checked, $object, $tags = array()) {
 </div>
 
 <ul id="category-tabs">
-	<li class="ui-tabs-selected"><a href="#categories-all" tabindex="3"><?php _e( 'All posts' ); ?></a>
+	<?php /* ui-tabs-selected in WP 2.7 CSS = tabs in WP 2.8 CSS. Thank you, o brilliant wordsmiths of the WordPress 2.8 stylesheet... */ ?>
+	<li class="ui-tabs-selected tabs"><a href="#categories-all" tabindex="3"><?php _e( 'All posts' ); ?></a>
         <p style="font-size:smaller;font-style:bold;margin:0">Give <?php print $object; ?> these categories</p>
 </li>
 </ul>
 
-<div id="categories-all" class="ui-tabs-panel">
+<?php /* ui-tabs-panel in WP 2.7 CSS = tabs-panel in WP 2.8 CSS. Thank you, o brilliant wordsmiths of the WordPress 2.8 stylesheet... */ ?>
+<div id="categories-all" class="ui-tabs-panel tabs-panel">
     <ul id="categorychecklist" class="list:category categorychecklist form-no-clear">
 	<?php fwp_category_checklist(NULL, false, $checked) ?>
     </ul>
