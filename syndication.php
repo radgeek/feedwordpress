@@ -3,6 +3,47 @@ require_once(dirname(__FILE__) . '/admin-ui.php');
 require_once(dirname(__FILE__) . '/magpiemocklink.class.php');
 require_once(dirname(__FILE__) . '/feedfinder.class.php');
 
+$FeedWordPressHTTPStatusMessages = array (
+	200 => 'OK. FeedWordPress had no problems retrieving the content at this URL but the content does not seem to be a feed, and does not seem to include links to any feeds.',
+	201 => 'Created',
+	202 => 'Accepted',
+	203 => 'Non-Authoritative information',
+	204 => 'No Content',
+	205 => 'Reset Content',
+	206 => 'Partial Content',
+	300 => 'Multiple Choices',
+	301 => 'Moved Permanently',
+	302 => 'Found',
+	303 => 'See Other',
+	304 => 'Not Modified',
+	305 => 'Use Proxy',
+	307 => 'Temporary Redirect',
+	400 => 'Bad Request',
+	401 => 'Unauthorized. This URL probably needs a username and password for you to access it.',
+	402 => 'Payment Required',
+	403 => 'Forbidden. The URL is not made available for the machine that FeedWordPress is running on.',
+	404 => 'Not Found. There is nothing at this URL. Have you checked the address for typos?',
+	405 => 'Method Not Allowed',
+	406 => 'Not Acceptable',
+	407 => 'Proxy Authentication Required',
+	408 => 'Request Timeout',
+	409 => 'Conflict',
+	410 => 'Gone. This URL is no longer available on this server and no forwarding address is known.',
+	411 => 'Length Required',
+	412 => 'Precondition Failed',
+	413 => 'Request Entity Too Large',
+	414 => 'Request URI Too Long',
+	415 => 'Unsupported Media Type',
+	416 => 'Requested Range Not Satisfiable',
+	417 => 'Expectation Failed',
+	500 => 'Internal Server Error. Something unexpected went wrong with the configuration of the server that hosts this URL. You might try again later to see if this issue has been resolved.',
+	501 => 'Not Implemented',
+	502 => 'Bad Gateway',
+	503 => 'Service Unavailable. The server is currently unable to handle the request due to a temporary overloading or maintenance of the server that hosts this URL. This is probably a temporary condition and you should try again later to see if the issue has been resolved.',
+	504 => 'Gateway Timeout',
+	505 => 'HTTP Version Not Supported',
+);
+
 ################################################################################
 ## ADMIN MENU ADD-ONS: implement Dashboard management pages ####################
 ################################################################################
@@ -388,6 +429,7 @@ jQuery(document).ready( function () {
 
 function fwp_feedfinder_page () {
 	global $wpdb;
+	global $FeedWordPressHTTPStatusMessages;
 
 	$lookup = (isset($_REQUEST['lookup'])?$_REQUEST['lookup']:NULL);
 
@@ -487,11 +529,26 @@ function fwp_feedfinder_page () {
 <?php
 		endforeach;
 	else:
-		print "<p><strong>".__('Error').":</strong> ".__("I couldn't find any feeds at").' <code><a href="'.htmlspecialchars($lookup).'">'.htmlspecialchars($lookup).'</a></code>';
-		if (!is_null($f->error())) :
-			print " [".__('HTTP request error').": ".htmlspecialchars(trim($f->error()))."]";
-		endif;
+		print "<p><strong>".__('Error').":</strong> ".__("FeedWordPress couldn't find any feeds at").' <code><a href="'.htmlspecialchars($lookup).'">'.htmlspecialchars($lookup).'</a></code>';
 		print ". ".__('Try another URL').".</p>";
+		
+		// Diagnostics
+		$httpObject = _wp_http_get_object();
+		$transports = $httpObject->_getTransport();
+		print "<div class=\"updated\" style=\"margin-left: 3.0em; margin-right: 3.0em;\">\n";
+		print "<h3>".__('Diagnostic information')."</h3>\n";
+		if (!is_null($f->error())) :
+			print "<h4>".__('HTTP request failure')."</h4>\n";
+			print "<p>".$f->error()."</p>\n";
+		else :
+			print "<h4>".__('HTTP request completed')."</h4>\n";
+			print "<p><strong>Status ".$f->status().":</strong> ".$FeedWordPressHTTPStatusMessages[$f->status()]."</p>\n";
+		endif;
+		print "<h4>".__('HTTP Transports available').":</h4>\n";
+		print "<ol>\n";
+		print "<li>".implode("</li>\n<li>", array_map('get_class', $transports))."</li>\n";
+		print "</ol>\n";
+		print "</div>\n";
 	endif;
 ?>
 	</div>

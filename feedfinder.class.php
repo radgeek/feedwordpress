@@ -9,6 +9,7 @@ class FeedFinder {
 	
 	var $verify = FALSE;
 	
+	var $_response = NULL;
 	var $_data = NULL;
 	var $_error = NULL;
 	var $_head = NULL;
@@ -71,6 +72,17 @@ class FeedFinder {
 		return $this->_data;
 	}
 
+	function status ($uri = NULL) {
+		$this->_get($uri);
+		
+		if (isset($this->_response->status)) :
+			$ret = $this->_response->status;
+		else :
+			$ret = NULL;
+		endif;
+		return $ret;
+	}
+
 	function error () {
 		return $this->_error;
 	}
@@ -106,6 +118,7 @@ class FeedFinder {
 			else :
 				$this->_error = NULL;
 			endif;
+			$this->_response = $client;
 			$this->_data = $client->results;
 
 			// Kilroy was here

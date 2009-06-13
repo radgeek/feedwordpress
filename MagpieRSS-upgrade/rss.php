@@ -4,7 +4,7 @@
  * Author:	Kellan Elliot-McCrea <kellan@protest.net>
  *		WordPress development team <http://www.wordpress.org/>
  *		Charles Johnson <technophilia@radgeek.com>
- * Version:	0.85wp (2007.11.21)
+ * Version:	2009.0613
  * License:	GPL
  *
  * Provenance:
@@ -1204,7 +1204,7 @@ endif;
     version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
 \*=======================================================================*/
 
-define('MAGPIE_VERSION', '0.85');
+define('MAGPIE_VERSION', '2009.0613');
 
 $MAGPIE_ERROR = "";
 
@@ -1401,12 +1401,12 @@ function _fetch_remote_file ($url, $headers = "" ) {
 		);
 
 		if ( is_wp_error($resp) ) :
-			$error = array_shift($resp->errors);
+			$error = $resp->get_error_messages();
 
 			$client = new stdClass;
 			$client->status = 500;
 			$client->response_code = 500;
-			$client->error = $error[0] . "\n"; //\n = Snoopy compatibility
+			$client->error = implode(" / ", $error). "\n"; //\n = Snoopy compatibility
 		else :
 			$client = new stdClass;
 			$client->status = $resp['response']['code'];
