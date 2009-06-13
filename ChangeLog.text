@@ -1,7 +1,7 @@
 FeedWordPress Change Log
 ========================
-Changes from 2009.0612 to Trunk
--------------------------------
+Changes from 2009.0612 to 2009.0613
+-----------------------------------
 *	INTERFACE/BUGFIX: WORDPRESS 2.8 CATEGORY BOX FIX. Thanks to a subtle
 	change in class names between the WordPress 2.7 and 2.8 stylesheets,
 	category boxes in the FeedWordPress settings interface tended to overflow
