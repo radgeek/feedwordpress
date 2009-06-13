@@ -213,8 +213,8 @@ function feedwordpress_check_for_magpie_fix () {
 
 		$back_to = $_SERVER['REQUEST_URI'];
 		if (isset($_POST['ignore'])) :
-			// kill error message by telling it to expect whatever we've got
-			update_option('feedwordpress_expected_magpie', FeedWordPress::magpie_version());
+			// kill error message by telling it we ignored the upgrade request for this version
+			update_option('feedwordpress_magpie_ignored_upgrade_to', EXPECTED_MAGPIE_VERSION);
 			$ret = 'ignored';
 		elseif (isset($_POST['upgrade'])) :
 			$source = dirname(__FILE__)."/MagpieRSS-upgrade/rss.php";
@@ -507,7 +507,7 @@ for a production server.</p>
 	endif;
 } /* function fwp_check_debug () */
 
-define('DEFAULT_EXPECTED_MAGPIE_VERSION', '2009.0613');
+define('EXPECTED_MAGPIE_VERSION', '2009.0613');
 function fwp_check_magpie () {
 	if (isset($_REQUEST['feedwordpress_magpie_fix'])) :
 		if ($_REQUEST['feedwordpress_magpie_fix']=='ignored') :
@@ -553,17 +553,9 @@ automatic upgrade again.</p>
 		endif;
 	else :
 		$magpie_version = FeedWordPress::magpie_version();
-	
-		$exp = get_option('feedwordpress_expected_magpie');
-		if ($exp) : $expected = array($exp, DEFAULT_EXPECTED_MAGPIE_VERSION);
-		else : $expected = array(DEFAULT_EXPECTED_MAGPIE_VERSION);
-		endif;
 
-		if (in_array($magpie_version, $expected)) :
-			if ($magpie_version != $exp) :
-				update_option('feedwordpress_expected_magpie', $magpie_version);
-			endif;
-		else :
+		$ignored = get_option('feedwordpress_magpie_ignored_upgrade_to');
+		if (EXPECTED_MAGPIE_VERSION != $magpie_version and EXPECTED_MAGPIE_VERSION != $ignored) :
 			if (current_user_can('edit_files')) :
 				$youAre = 'you are';
 				$itIsRecommendedThatYou = 'It is <strong>strongly recommended</strong> that you';
@@ -574,7 +566,11 @@ automatic upgrade again.</p>
 			print '<div class="error">';
 ?>
 <p style="font-style: italic"><strong>FeedWordPress has detected that <?php print $youAre; ?> currently using a version of
-MagpieRSS other than the upgraded version that ships with FeedWordPress.</strong></p>
+MagpieRSS other than the upgraded version that ships with this version of FeedWordPress.</strong></p>
+<ul>
+<li><strong>Currently running:</strong> MagpieRSS <?php print $magpie_version; ?></li>
+<li><strong>Version included with FeedWordPress <?php print FEEDWORDPRESS_VERSION; ?>:</strong> MagpieRSS <?php print EXPECTED_MAGPIE_VERSION; ?></li>
+</ul>
 <p><?php print $itIsRecommendedThatYou; ?> install the upgraded
 version of MagpieRSS supplied with FeedWordPress. The version of
 MagpieRSS that ships with WordPress is very old and buggy, and
