@@ -1,5 +1,20 @@
 FeedWordPress Change Log
 ========================
+Changes from 2009.0613 to 2009.0618
+-----------------------------------
+*	BUGFIX: MYSTERY ERRORS WITH WITH WP_Http_Fsockopen HTTP TRANSPORT
+	ELIMINATED: Thanks to a combination of a subtle bug in FeedWordPress,
+	and changes to the HTTP transport code in WordPress, a number of users
+	encountered an error in which any time they attempted to add a new feed
+	through the FeedFinder interface, FeedWordPress would fail and display
+	an HTTP request failure diagnostic message. The subtle bug has been
+	fixed, and with it, most of these errors should now be eliminated.
+	
+	Be sure to upgrade your MagpieRSS to the most recent MagpieRSS version
+	after you have insalled FeedWordPress 2009.0618, or this bug fix will
+	not take effect.
+
+
 Changes from 2009.0612 to 2009.0613
 -----------------------------------
 *	INTERFACE/BUGFIX: WORDPRESS 2.8 CATEGORY BOX FIX. Thanks to a subtle
