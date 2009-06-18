@@ -1253,7 +1253,7 @@ class SyndicatedPost {
 				$default_custom_settings = array();
 			endif;
 			
-			$custom_settings = $this->link->settings['postmeta'];
+			$custom_settings = (isset($this->link->settings['postmeta']) ? $this->link->settings['postmeta'] : null);
 			if ($custom_settings) :
 				$custom_settings = unserialize($custom_settings);
 			endif;
@@ -1318,8 +1318,8 @@ class SyndicatedPost {
 			$this->post['meta']['syndication_item_hash'] = $this->update_hash();
 
 			// Feed-by-feed options for author and category creation
-			$this->post['named']['unfamiliar']['author'] = $this->feedmeta['unfamiliar author'];
-			$this->post['named']['unfamiliar']['category'] = $this->feedmeta['unfamiliar category'];
+			$this->post['named']['unfamiliar']['author'] = (isset($this->feedmeta['unfamiliar author']) ? $this->feedmeta['unfamiliar author'] : null);
+			$this->post['named']['unfamiliar']['category'] = (isset($this->feedmeta['unfamiliar category']) ? $this->feedmeta['unfamiliar category'] : null);
 
 			// Categories: start with default categories, if any
 			$fc = get_option("feedwordpress_syndication_cats");
@@ -1329,7 +1329,7 @@ class SyndicatedPost {
 				$this->post['named']['preset/category'] = array();
 			endif;
 
-			if (is_array($this->feedmeta['cats'])) :
+			if (isset($this->feedmeta['cats']) and is_array($this->feedmeta['cats'])) :
 				$this->post['named']['preset/category'] = array_merge($this->post['named']['preset/category'], $this->feedmeta['cats']);
 			endif;
 
@@ -1358,7 +1358,7 @@ class SyndicatedPost {
 				$this->post['tags_input'] = array();
 			endif;
 			
-			if (is_array($this->feedmeta['tags'])) :
+			if (isset($this->feedmeta['tags']) and is_array($this->feedmeta['tags'])) :
 				$this->post['tags_input'] = array_merge($this->post['tags_input'], $this->feedmeta['tags']);
 			endif;
 

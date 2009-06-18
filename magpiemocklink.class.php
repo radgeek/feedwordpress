@@ -1,4 +1,6 @@
 <?php
+require_once(dirname(__FILE__) . '/syndicatedlink.class.php');
+
 class MagpieMockLink extends SyndicatedLink {
 	var $url;
 

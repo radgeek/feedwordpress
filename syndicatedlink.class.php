@@ -61,9 +61,10 @@ class SyndicatedLink {
 			// Read off feed settings from link_notes
 			$notes = explode("\n", $this->link->link_notes);
 			foreach ($notes as $note):
-				list($key, $value) = explode(": ", $note, 2);
-	
-				if (strlen($key) > 0) :
+				$pair = explode(": ", $note, 2);
+				$key = (isset($pair[0]) ? $pair[0] : null);
+				$value = (isset($pair[1]) ? $pair[1] : null);
+				if (!is_null($key) and !is_null($value)) :
 					// Unescape and trim() off the whitespace.
 					// Thanks to Ray Lischner for pointing out the
 					// need to trim off whitespace.
@@ -298,10 +299,10 @@ class SyndicatedLink {
 			$to_notes['update/processed'] = implode("\n", $to_notes['update/processed']);
 		endif;
 
-		if (is_array($to_notes['cats'])) :
+		if (isset($to_notes['cats']) and is_array($to_notes['cats'])) :
 			$to_notes['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['cats']);
 		endif;
-		if (is_array($to_notes['tags'])) :
+		if (isset($to_notes['tags']) and is_array($to_notes['tags'])) :
 			$to_notes['tags'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['tags']);
 		endif;
 
