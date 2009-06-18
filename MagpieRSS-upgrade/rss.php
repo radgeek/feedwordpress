@@ -4,7 +4,7 @@
  * Author:	Kellan Elliot-McCrea <kellan@protest.net>
  *		WordPress development team <http://www.wordpress.org/>
  *		Charles Johnson <technophilia@radgeek.com>
- * Version:	2009.0613
+ * Version:	2009.0618
  * License:	GPL
  *
  * Provenance:
@@ -1204,7 +1204,7 @@ endif;
     version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
 \*=======================================================================*/
 
-define('MAGPIE_VERSION', '2009.0613');
+define('MAGPIE_VERSION', '2009.0618');
 
 $MAGPIE_ERROR = "";
 
@@ -1392,6 +1392,9 @@ function magpie_error ($errormsg="") {
     Output:     an HTTP response object (see Snoopy.class.inc)  
 \*=======================================================================*/
 function _fetch_remote_file ($url, $headers = "" ) {
+	// Ensure that we have constants set up, since they are used below.
+	init();
+
 	// WordPress 2.7 has deprecated Snoopy. It's still there, for now, but
 	// I'd rather not rely on it.
 	if (function_exists('wp_remote_request')) :
