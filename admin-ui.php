@@ -86,8 +86,34 @@ function fwp_option_box_closer () {
 
 function fwp_tags_box ($tags) {
 	if (!is_array($tags)) : $tags = array(); endif;
+	
+	if (fwp_test_wp_version(FWP_SCHEMA_28)) : // WordPress 2.8+
 ?>
-<div id="tagsdiv" class="postbox">
+		<h3 class="hndle"><span>Tag Syndicated Posts</span></h3>
+		<div class="inside">
+		<div class="tagsdiv" id="post_tag">
+		<div class="jaxtag">
+		 <div class="nojs-tags hide-if-js">
+		  <p><?php _e('Add or remove tags'); ?></p>
+		  <textarea name="tax_input[post_tag]" class="the-tags" id="tax-input[post_tag]"><?php echo implode(",", $tags); ?></textarea>
+		 </div>
+		
+		 <span class="ajaxtag hide-if-no-js">
+			<label class="screen-reader-text" for="new-tag-post_tag"><?php _e('Tags'); ?></label>
+			<input type="text" id="new-tag-post_tag" name="newtag[post_tag]" class="newtag form-input-tip" size="16" autocomplete="off" value="<?php esc_attr_e('Add new tag'); ?>" />
+			<input type="button" class="button tagadd" value="<?php esc_attr_e('Add'); ?>" />
+		 </span>
+		</div>
+		<p class="howto"><?php echo __('Separate tags with commas.'); ?></p>
+		<div class="tagchecklist"></div>
+		</div>
+		<p class="tagcloud-link hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-post_tag"><?php printf( __('Choose from the most used tags in %s'), 'Post Tags'); ?></a></p>
+		</div>
+		
+<?php
+	else :
+?>
+	<div id="tagsdiv" class="postbox">
 	<h3><?php _e('Tags') ?></h3>
 	<p style="font-size:smaller;font-style:bold;margin:0">Place <?php print $object; ?> under...</p>
 	<div class="inside">
@@ -96,6 +122,7 @@ function fwp_tags_box ($tags) {
  	</div>
 </div>
 <?php
+	endif;
 }
 
 function fwp_category_box ($checked, $object, $tags = array()) {

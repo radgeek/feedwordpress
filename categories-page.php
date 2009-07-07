@@ -33,6 +33,15 @@ function fwp_categories_page () {
 			endforeach;
 		endif;
 
+		// Different variable names to cope with different WordPress AJAX UIs
+		$syndicatedTags = array();
+		if (isset($GLOBALS['fwp_post']['tax_input']['post_tag'])) :
+			$syndicatedTags = explode(",", $GLOBALS['fwp_post']['tax_input']['post_tag']);
+		elseif (isset($GLOBALS['fwp_post']['tags_input'])) :
+			$syndicatedTags = explode(",", $GLOBALS['fwp_post']['tags_input']);
+		endif;
+		$syndicatedTags = array_map('trim', $syndicatedTags);
+
 		if (is_object($link) and $link->found()) :
 			$alter = array ();
 
@@ -42,12 +51,7 @@ function fwp_categories_page () {
 			endif;
 
 			// Tags
-			if (isset($GLOBALS['fwp_post']['tags_input'])) :
-				$link->settings['tags'] = array();
-				foreach (explode(',', $GLOBALS['fwp_post']['tags_input']) as $tag) :
-					$link->settings['tags'][] = trim($tag);
-				endforeach;
-			endif;
+			$link->settings['tags'] = $syndicatedTags;
 
 			// Unfamiliar categories
 			if (isset($GLOBALS['fwp_post']["unfamiliar_category"])) :
@@ -93,14 +97,8 @@ function fwp_categories_page () {
 			endif;
 	
 			// Tags
-			if (isset($_REQUEST['tags_input'])) :
-				$tags = explode(",", $_REQUEST['tags_input']);
-			else :
-				$tags =  array();
-			endif;
-			
-			if (!empty($tags)) :
-				update_option('feedwordpress_syndication_tags', implode(FEEDWORDPRESS_CAT_SEPARATOR, $tags));
+			if (!empty($syndicatedTags)) :
+				update_option('feedwordpress_syndication_tags', implode(FEEDWORDPRESS_CAT_SEPARATOR, $syndicatedTags));
 			else :
 				delete_option('feedwordpress_syndication_tags');
 			endif;
