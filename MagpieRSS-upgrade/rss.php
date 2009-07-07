@@ -1326,7 +1326,8 @@ function fetch_rss ($url) {
         }
         
         // else fetch failed
-        
+        debug("MagpieRSS fetch failed [$errormsg]");
+
         // attempt to return cached object
         if ($rss) {
             if ( MAGPIE_DEBUG ) {
