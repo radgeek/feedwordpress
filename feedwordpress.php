@@ -1005,10 +1005,7 @@ class FeedWordPress {
 		if (!$fwp_db_version or $fwp_db_version < FEEDWORDPRESS_VERSION) :
 			// This is an older version or a fresh install. Does it
 			// require a database upgrade or database initialization?
-			if ($fwp_db_version > 0.96) :
-				// No. Just brand it with the new version.
-				update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
-			else :
+			if ($fwp_db_version <= 0.96) :
 				// Yes. Check to see whether this is a fresh install or an upgrade.
 				$syn = $wpdb->get_col("
 				SELECT post_id
@@ -1020,6 +1017,19 @@ class FeedWordPress {
 				else : // fresh install; brand it as ours
 					update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
 				endif;
+			elseif ($fwp_db_version < 2009.0707) :
+				// We need to clear out any busted AJAX crap
+				if (fwp_test_wp_version(FWP_SCHEMA_HAS_USERMETA)) :
+					$wpdb->query("
+					DELETE FROM $wpdb->usermeta
+					WHERE LOCATE('feedwordpress', meta_key)
+					AND LOCATE('box', meta_key);
+					");
+				endif;
+				update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
+			else :
+				// No. Just brand it with the new version.
+				update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
 			endif;
 		endif;
 		return $ret;
