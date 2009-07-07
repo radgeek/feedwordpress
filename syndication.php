@@ -58,6 +58,23 @@ else :
 	define('FWP_SYNDICATE_NEW', 'Syndicate »');
 endif;
 
+function feedwordpress_syndication_toggles () {
+?>
+		<script type="text/javascript">
+			jQuery(document).ready( function($) {
+				// In case someone got here first.
+				$('.postbox h3, .postbox .handlediv').unbind('click');
+				$('.postbox h3 a').unbind('click');
+				$('.hide-postbox-tog').unbind('click');
+				$('.columns-prefs input[type="radio"]').unbind('click');
+				$('.meta-box-sortables').sortable('destroy');
+				
+				postboxes.add_postbox_toggles('feedwordpresssyndication');
+			} );
+		</script>
+<?php
+}
+
 function fwp_dashboard_update_if_requested () {
 	global $wpdb;
 
@@ -173,32 +190,38 @@ if ($cont):
 	endif;
 
 	if (fwp_test_wp_version(FWP_SCHEMA_27)) :
-?>
-		<script type="text/javascript">
-			jQuery(document).ready( function($) {
-				// In case someone got here first.
-				$('.postbox h3, .postbox .handlediv').unbind('click');
-				$('.hide-postbox-tog').unbind('click');
-				$('.meta-box-sortables').sortable('destroy');
-
-				postboxes.add_postbox_toggles('feedwordpress_syndication');
-			} );
-		</script>
-<?php
+		if (fwp_test_wp_version(FWP_SCHEMA_27, FWP_SCHEMA_28)) :
+			$hook_it = 'admin_footer';
+		else : // WordPress 2.8+
+			$hook_it = 'admin_footer-feedwordpress/syndication.php';
+		endif;
+		add_action($hook_it, 'feedwordpress_syndication_toggles', /*priority=*/ 10000);
 		echo "<form style='display: none' method='get' action=''>\n<p>\n";
 		wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false );
 		wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false );
 		echo "</p>\n</form>\n";
 		
 		if ($links) :
-			add_meta_box('feedwordpress_update_box', __('Update feeds now'), 'fwp_syndication_manage_page_update_box', /*page=*/ 'feedwordpress_syndication', /*context =*/ 'normal');
+			add_meta_box(
+				/*id=*/ 'feedwordpress_update_box',
+				/*title=*/ __('Update feeds now'),
+				/*callback=*/ 'fwp_syndication_manage_page_update_box',
+				/*page=*/ 'feedwordpresssyndication',
+				/*context =*/ 'feedwordpresssyndication'
+			);
 		endif;
-		add_meta_box('feedwordpress_feeds_box', __('Syndicated sources'), 'fwp_syndication_manage_page_links_box', /*page=*/ 'feedwordpress_syndication', /*context =*/ 'normal');
+		add_meta_box(
+			/*id=*/ 'feedwordpress_feeds_box',
+			/*title=*/ __('Syndicated sources'),
+			/*callback=*/ 'fwp_syndication_manage_page_links_box',
+			/*page=*/ 'feedwordpresssyndication',
+			/*context =*/ 'feedwordpresssyndication'
+		);
 ?>
 	<div class="metabox-holder">		
-	<div id="feedwordpress-sortables" class="meta-box-sortables ui-sortable">
+	<div id="feedwordpresssyndication-sortables" class="meta-box-sortables ui-sortable">
 <?php
-		do_meta_boxes('feedwordpress_syndication', 'normal', NULL);
+		do_meta_boxes('feedwordpresssyndication', 'feedwordpresssyndication', NULL);
 	else :
 		if ($links): // only display Update panel if there are some links to update....
 			fwp_syndication_manage_page_update_box();
