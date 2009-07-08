@@ -269,8 +269,7 @@ function fwp_categories_page () {
 <div id="poststuff">
 <div id="post-body">
 <?php
-	fwp_option_box_opener(__('Categories'), 'categorydiv', 'postbox');
-	fwp_category_box($dogs, 'all syndicated posts'.((is_object($link) and $link->found()) ? ' from this feed':''));
+	fwp_option_box_opener("Feed Categories & Tags", 'fromfeeddiv', 'postbox');
 ?>
 <table class="edit-form">
 <tr>
@@ -311,9 +310,17 @@ blank.</p></td>
 <?php
 	fwp_option_box_closer();
 	fwp_linkedit_periodic_submit();
+?>
+<?php
+	fwp_option_box_opener(__('Categories'), 'categorydiv', 'postbox');
+	fwp_category_box($dogs, 'all syndicated posts'.((is_object($link) and $link->found()) ? ' from this feed':''));
+?>
+<?php
+	fwp_option_box_closer();
+	fwp_linkedit_periodic_submit();
 	
-if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
-	fwp_tags_box($tags);
+if (fwp_test_wp_version(FWP_SCHEMA_25)) :
+	fwp_tags_box($tags, 'all syndicated posts'.((is_object($link) and $link->found()) ? ' from this feed':''));
 	fwp_linkedit_periodic_submit();
 endif; ?>
 </div>

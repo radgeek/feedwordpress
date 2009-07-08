@@ -84,14 +84,16 @@ function fwp_option_box_closer () {
 	endif;
 }
 
-function fwp_tags_box ($tags) {
+function fwp_tags_box ($tags, $object) {
 	if (!is_array($tags)) : $tags = array(); endif;
 	
+	$desc = "<p style=\"font-size:smaller;font-style:bold;margin:0\">Tag $object as...</p>";
+
 	if (fwp_test_wp_version(FWP_SCHEMA_28)) : // WordPress 2.8+
+		fwp_option_box_opener(__('Tags'), 'tagsdiv', 'postbox');
 ?>
-		<h3 class="hndle"><span>Tag Syndicated Posts</span></h3>
-		<div class="inside">
-		<div class="tagsdiv" id="post_tag">
+			<?php print $desc; ?>
+			<div class="tagsdiv" id="post_tag">
 		<div class="jaxtag">
 		 <div class="nojs-tags hide-if-js">
 		  <p><?php _e('Add or remove tags'); ?></p>
@@ -109,18 +111,16 @@ function fwp_tags_box ($tags) {
 		</div>
 		<p class="tagcloud-link hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-post_tag"><?php printf( __('Choose from the most used tags in %s'), 'Post Tags'); ?></a></p>
 		</div>
-		
+		</div>
 <?php
 	else :
+		fwp_option_box_opener(__('Tags'), 'tagsdiv', 'postbox');
 ?>
-	<div id="tagsdiv" class="postbox">
-	<h3><?php _e('Tags') ?></h3>
-	<p style="font-size:smaller;font-style:bold;margin:0">Place <?php print $object; ?> under...</p>
-	<div class="inside">
-	<p id="jaxtag"><input type="text" name="tags_input" class="tags-input" id="tags-input" size="40" tabindex="3" value="<?php echo implode(",", $tags); ?>" /></p>
-	<div id="tagchecklist"></div>
- 	</div>
-</div>
+		<?php print $desc; ?>
+		<p id="jaxtag"><input type="text" name="tags_input" class="tags-input" id="tags-input" size="40" tabindex="3" value="<?php echo implode(",", $tags); ?>" /></p>
+		<div id="tagchecklist"></div>
+		</div>
+		</div>
 <?php
 	endif;
 }
