@@ -146,6 +146,9 @@ class MagpieRSS {
 	'http://madskills.com/public/xml/rss/module/trackback/' => 'trackback',
 	'http://web.resource.org/cc/' => 'cc',
 	'http://search.yahoo.com/mrss' => 'media',
+	'http://search.yahoo.com/mrss/' => 'media',
+	'http://video.search.yahoo.com/mrss' => 'media',
+	'http://video.search.yahoo.com/mrss/' => 'media',
     );
 
     var $_XMLBASE_RESOLVE = array (
