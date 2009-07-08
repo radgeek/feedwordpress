@@ -508,7 +508,7 @@ for a production server.</p>
 	endif;
 } /* function fwp_check_debug () */
 
-define('EXPECTED_MAGPIE_VERSION', '2009.0618');
+define('EXPECTED_MAGPIE_VERSION', '2009.0708');
 function fwp_check_magpie () {
 	if (isset($_REQUEST['feedwordpress_magpie_fix'])) :
 		if ($_REQUEST['feedwordpress_magpie_fix']=='ignored') :

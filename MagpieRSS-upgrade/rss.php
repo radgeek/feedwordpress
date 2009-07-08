@@ -4,7 +4,7 @@
  * Author:	Kellan Elliot-McCrea <kellan@protest.net>
  *		WordPress development team <http://www.wordpress.org/>
  *		Charles Johnson <technophilia@radgeek.com>
- * Version:	2009.0618
+ * Version:	2009.0708
  * License:	GPL
  *
  * Provenance:
@@ -1204,7 +1204,7 @@ endif;
     version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
 \*=======================================================================*/
 
-define('MAGPIE_VERSION', '2009.0618');
+define('MAGPIE_VERSION', '2009.0708');
 
 $MAGPIE_ERROR = "";
 
@@ -1401,8 +1401,8 @@ function _fetch_remote_file ($url, $headers = "" ) {
 	if (function_exists('wp_remote_request')) :
 		$resp = wp_remote_request($url, array(
 			'headers' => $headers,
-			'timeout' => MAGPIE_FETCH_TIME_OUT)
-		);
+			'timeout' => MAGPIE_FETCH_TIME_OUT
+		));
 
 		if ( is_wp_error($resp) ) :
 			$error = $resp->get_error_messages();
@@ -1439,46 +1439,44 @@ function _fetch_remote_file ($url, $headers = "" ) {
     Output:     parsed RSS object (see rss_parse)
 \*=======================================================================*/
 function _response_to_rss ($resp, $url = null) {
-    $rss = new MagpieRSS( $resp->results, MAGPIE_OUTPUT_ENCODING, MAGPIE_INPUT_ENCODING, MAGPIE_DETECT_ENCODING, $url );
-    
-    // if RSS parsed successfully       
-    if ( $rss and !$rss->ERROR) {
-	    $rss->http_status = $resp->status;
+	$rss = new MagpieRSS( $resp->results, MAGPIE_OUTPUT_ENCODING, MAGPIE_INPUT_ENCODING, MAGPIE_DETECT_ENCODING, $url );
 
-        // find Etag, and Last-Modified
-        foreach($resp->headers as $h) {
-            // 2003-03-02 - Nicola Asuni (www.tecnick.com) - fixed bug "Undefined offset: 1"
-            if (strpos($h, ": ")) {
-                list($field, $val) = explode(": ", $h, 2);
-            }
-            else {
-                $field = $h;
-                $val = "";
-            }
-            
-	    $rss->header[$field] = $val;
+	// if RSS parsed successfully       
+	if ( $rss and !$rss->ERROR) {
+		$rss->http_status = $resp->status;
 
-            if ( $field == 'ETag' ) {
-                $rss->etag = $val;
-            }
-            
-            if ( $field == 'Last-Modified' ) {
-                $rss->last_modified = $val;
-            }
-        }
-        
-        return $rss;    
-    } // else construct error message
-    else {
-        $errormsg = "Failed to parse RSS file.";
-        
-        if ($rss) {
-            $errormsg .= " (" . $rss->ERROR . ")";
-        }
-        error($errormsg);
-        
-        return false;
-    } // end if ($rss and !$rss->error)
+		// find Etag, and Last-Modified
+		foreach($resp->headers as $index => $h) {
+			if (is_string($index)) :
+				$field = $index;
+				$val = $h;
+			elseif (strpos($h, ": ")) :
+				list($field, $val) = explode(": ", $h, 2);
+			else :
+				$field = $h; $val = '';
+			endif;
+
+			$rss->header[$field] = $val;
+
+			if ( $field == 'ETag' ) :
+				$rss->etag = $val;
+			elseif ( $field == 'Last-Modified' ) :
+				$rss->last_modified = $val;
+			endif;
+		}
+
+		return $rss;    
+	} // else construct error message
+	else {
+		$errormsg = "Failed to parse RSS file.";
+
+		if ($rss) {
+			$errormsg .= " (" . $rss->ERROR . ")";
+		}
+		error($errormsg);
+		
+		return false;
+	} // end if ($rss and !$rss->error)
 }
 
 /*=======================================================================*\
