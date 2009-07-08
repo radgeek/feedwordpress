@@ -1,5 +1,29 @@
 FeedWordPress Change Log
 ========================
+Changes from 2009.0618 to 2009.0707
+-----------------------------------
+*	BUGFIX: WORDPRESS 2.8 AJAX COMPATIBILITY ISSUES RESOLVED (blank or
+	truncated "Syndicated Sites" administration page): Due to changes in the
+	AJAX interface elements between WordPress 2.7 and WordPress 2.8, several
+	FeedWordPress users encountered an issue where the front "Syndication"
+	page in the FeedWordPress administrative interface would come up blank,
+	without the normal "Syndicated Sites" list and "Update" control, or
+	sometimes wth the boxes visible but one or both of them truncated, with
+	only the title bar. This issue should now be resolved: with the new
+	version of FeedWordPress, the compatibility issue that caused the
+	disappearance should be eliminated, and if boxes are shown with only
+	their handle visible, you should once again be able to drop down the
+	rest of the box by clicking once on its title bar.
+
+*	BUGFIX: TAG SETTING WIDGET FIXED. Due to changes in interface elements
+	between WordPress 2.7 and WordPress 2.8, people using FeedWordPress with
+	WordPress 2.8 found that the widget for setting tags to be applied to
+	all syndicated posts, or all syndicated posts from a particular feed,
+	no longer displayed "Add" and "Remove" buttons for individual tags. This
+	issue has now been fixed, and the tagging widget should once again work
+	more or less exactly like the tagging widget for individual posts in the
+	normal WordPress admin interface.
+
 Changes from 2009.0613 to 2009.0618
 -----------------------------------
 *	BUGFIX: MYSTERY ERRORS WITH WITH WP_Http_Fsockopen HTTP TRANSPORT

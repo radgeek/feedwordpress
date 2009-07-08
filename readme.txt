@@ -3,8 +3,8 @@ Contributors: Charles Johnson
 Donate link: http://projects.radgeek.com/feedwordpress/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 1.5
-Tested up to: 2.8
-Stable tag: 2009.0618
+Tested up to: 2.8.1
+Stable tag: 2009.0707
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -23,13 +23,14 @@ to use at [Feminist Blogs](http://feministblogs.org/).
 
 FeedWordPress is designed with flexibility, ease of use, and ease of
 configuration in mind. You'll need a working installation of WordPress or
-WordPress MU (versions [2.7][], [2.6][], [2.5][], [2.3][], [2.2][], [2.1][], [2.0][] or
-[1.5][]), and also FTP or SFTP access to your web host. The ability to create
-cron jobs on your web host is helpful but not absolutely necessary. You *don't*
-need to tweak any plain-text configuration files and you *don't* need shell
-access to your web host to make it work. (Although, I should point out, web
-hosts that *don't* offer shell access are *bad web hosts*.)
+WordPress MU (versions [2.8][], [2.7][], [2.6][], [2.5][], [2.3][], [2.2][],
+[2.1][], [2.0][] or [1.5][]), and also FTP or SFTP access to your web host. The
+ability to create cron jobs on your web host is helpful but not absolutely
+necessary. You *don't* need to tweak any plain-text configuration files and you
+*don't* need shell access to your web host to make it work. (Although, I should
+point out, web hosts that *don't* offer shell access are *bad web hosts*.)
 
+  [2.8]: http://codex.wordpress.org/Version_2.8
   [2.7]: http://codex.wordpress.org/Version_2.7
   [2.6]: http://codex.wordpress.org/Version_2.6
   [2.5]: http://codex.wordpress.org/Version_2.5
@@ -43,16 +44,15 @@ hosts that *don't* offer shell access are *bad web hosts*.)
 
 To use FeedWordPress, you will need:
 
-* 	an installed and configured copy of WordPress version 2.6.x, 2.5.x,
-	2.3.x, 2.2.x, 2.1.x, 2.0.x, or 1.5.x. (FeedWordPress will also work with
-	the equivalent versions of WordPress MU.)
+* 	an installed and configured copy of WordPress version 2.x, or 1.5.x.
+	(FeedWordPress will also work with the equivalent versions of WordPress
+	MU.)
 
 *	FTP or SFTP access to your web host
 
 = New Installations =
 
-1.	Download the FeedWordPress archive in zip or gzipped tar format and
-	extract the files on your computer. 
+1.	Download the FeedWordPress archive and extract the files on your computer. 
 
 2.	Create a new directory named `feedwordpress` in the `wp-content/plugins`
 	directory of your WordPress installation. Use an FTP or SFTP client to
