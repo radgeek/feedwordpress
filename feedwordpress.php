@@ -478,7 +478,7 @@ function fwp_add_pages () {
 	endif;
 
 	call_user_func_array('add_menu_page', $menu);
-	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Posts', 'Posts', $fwp_capability['manage_options'], $fwp_path.'/posts-page.php');
+	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Posts & Links', 'Posts & Links', $fwp_capability['manage_options'], $fwp_path.'/posts-page.php');
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Authors', 'Authors', $fwp_capability['manage_options'], $fwp_path.'/authors-page.php');
 	add_submenu_page($fwp_path.'/syndication.php', 'Categories & Tags', 'Categories & Tags', $fwp_capability['manage_options'], $fwp_path.'/categories-page.php');
 	add_submenu_page($fwp_path.'/syndication.php', $longoptions, $options, $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');

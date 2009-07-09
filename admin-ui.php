@@ -216,7 +216,7 @@ function fwp_author_list () {
 
 class FeedWordPressSettingsUI {
 	function instead_of_posts_box ($link_id = null) {
-		fwp_option_box_opener('Syndicated Posts, Comments & Pings', 'syndicatedpostsdiv', 'postbox');
+		fwp_option_box_opener('Syndicated Posts, Links, Comments & Pings', 'syndicatedpostsdiv', 'postbox');
 		if (!is_null($link_id)) :
 			$from_this_feed = 'from this feed';
 			$by_default = '';
@@ -227,7 +227,7 @@ class FeedWordPressSettingsUI {
 			$id_param = "";
 		endif;
 ?>
-<p>Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php<?php print $id_param; ?>"><?php _e('Posts'); ?></a>
+<p>Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php<?php print $id_param; ?>"><?php _e('Posts & Links'); ?></a>
 settings page to set up how new posts <?php print $from_this_feed; ?> will be published<?php $by_default; ?>, whether they will accept
 comments and pings, any custom fields that should be set on each post, etc.</p>
 <?php
