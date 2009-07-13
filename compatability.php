@@ -16,6 +16,10 @@ function fwp_test_wp_version ($floor, $ceiling = NULL) {
 } /* function fwp_test_wp_version () */
 
 class FeedWordPressCompatibility {
+	/*static*/ function test_version ($floor, $ceiling = null) {
+		return fwp_test_wp_version($floor, $ceiling);
+	} /* FeedWordPressCompatibility::test_version() */
+
 	/*static*/ function validate_http_request ($action = -1, $capability = null) {
 		// Only worry about this if we're using a method with significant side-effects
 		if (strtoupper($_SERVER['REQUEST_METHOD']) == 'POST') :
@@ -41,6 +45,16 @@ class FeedWordPressCompatibility {
 			wp_nonce_field($action);
 		endif;
 	} /* FeedWordPressCompatibility::stamp_nonce() */
+	
+	/*static*/ function bottom_script_hook ($filename) {
+		global $fwp_path;
+
+		$hook = 'admin_footer';
+		if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_28)) : // WordPress 2.8+
+			$hook = $hook . '-' . $fwp_path . '/' . basename($filename);
+		endif;
+		return $hook;
+	} /* FeedWordPressCompatibility::bottom_script_hook() */
 } /* class FeedWordPressCompatibility */
 
 if (!function_exists('stripslashes_deep')) {

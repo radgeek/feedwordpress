@@ -276,6 +276,29 @@ settings page to set up how new posts <?php print $from_this_feed; ?> are assign
 		fwp_option_box_closer();
 	} /* FeedWordPressSettingsUI::instead_of_categories_box () */
 
+	/*static*/ function ajax_nonce_fields () {
+		echo "<form style='display: none' method='get' action=''>\n<p>\n";
+		wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false );
+		wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false );
+		echo "</p>\n</form>\n";
+	} /* FeedWordPressSettingsUI::ajax_nonce_fields () */
+
+	/*static*/ function fix_toggles_js ($context) {
+	?>
+		<script type="text/javascript">
+			jQuery(document).ready( function($) {
+				// In case someone got here first.
+				$('.postbox h3, .postbox .handlediv').unbind('click');
+				$('.postbox h3 a').unbind('click');
+				$('.hide-postbox-tog').unbind('click');
+				$('.columns-prefs input[type="radio"]').unbind('click');
+				$('.meta-box-sortables').sortable('destroy');
+				
+				postboxes.add_postbox_toggles('<?php print $context; ?>');
+			} );
+		</script>
+	<?php
+	}
 } /* class FeedWordPressSettingsUI */
 
 function fwp_insert_new_user ($newuser_name) {

@@ -59,21 +59,8 @@ else :
 endif;
 
 function feedwordpress_syndication_toggles () {
-?>
-		<script type="text/javascript">
-			jQuery(document).ready( function($) {
-				// In case someone got here first.
-				$('.postbox h3, .postbox .handlediv').unbind('click');
-				$('.postbox h3 a').unbind('click');
-				$('.hide-postbox-tog').unbind('click');
-				$('.columns-prefs input[type="radio"]').unbind('click');
-				$('.meta-box-sortables').sortable('destroy');
-				
-				postboxes.add_postbox_toggles('feedwordpresssyndication');
-			} );
-		</script>
-<?php
-}
+	FeedWordPressSettingsUI::fix_toggles_js('feedwordpresssyndication');
+} /* feedwordpress_syndication_toggles() */
 
 function fwp_dashboard_update_if_requested () {
 	global $wpdb;
@@ -190,16 +177,12 @@ if ($cont):
 	endif;
 
 	if (fwp_test_wp_version(FWP_SCHEMA_27)) :
-		if (fwp_test_wp_version(FWP_SCHEMA_27, FWP_SCHEMA_28)) :
-			$hook_it = 'admin_footer';
-		else : // WordPress 2.8+
-			$hook_it = 'admin_footer-feedwordpress/syndication.php';
-		endif;
-		add_action($hook_it, 'feedwordpress_syndication_toggles', /*priority=*/ 10000);
-		echo "<form style='display: none' method='get' action=''>\n<p>\n";
-		wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false );
-		wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false );
-		echo "</p>\n</form>\n";
+		add_action(
+			FeedWordPressCompatibility::bottom_script_hook(__FILE__),
+			/*callback=*/ 'feedwordpress_syndication_toggles',
+			/*priority=*/ 10000
+		);
+		FeedWordPressSettingsUI::ajax_nonce_fields();
 		
 		if ($links) :
 			add_meta_box(
