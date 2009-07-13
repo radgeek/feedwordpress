@@ -759,7 +759,7 @@ function fwp_linkedit_page () {
 <h2><?php _e('Feed settings'); ?><?php if (!is_null($link) and $link->found()) : ?>: <?php echo wp_specialchars($link->link->link_name, 1); ?><?php endif; ?></h2>
 
 <div id="poststuff">
-<?php fwp_linkedit_single_submit($status); ?>
+<?php fwp_linkedit_single_submit(); ?>
 
 <div id="post-body">
 <?php fwp_option_box_opener('Feed Information', 'feedinformationdiv'); ?>

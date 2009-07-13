@@ -417,15 +417,21 @@ class SyndicatedLink {
 		return $ret;
 	} /* SyndicatedLink::hardcode () */
 
-	function syndicated_status ($what, $default) {
+	function syndicated_status ($what, $default, $fallback = true) {
 		global $wpdb;
 
-		// Start with global default
-		$ret = FeedWordPress::syndicated_status($what, $default);
-
-		// Override with local setting if we have it
+		// Use local setting if we have it
 		if ( isset($this->settings["$what status"]) ) :
 			$ret = $this->settings["$what status"];
+		
+		// Or fall back to global default if we can
+		elseif ($fallback) :
+			$ret = FeedWordPress::syndicated_status($what, $default);
+
+		// Or use default value if we can't.
+		else :
+			$ret = $default;
+
 		endif;
 
 		return $wpdb->escape(trim(strtolower($ret)));

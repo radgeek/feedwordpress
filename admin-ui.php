@@ -1,13 +1,14 @@
 <?php
-function fwp_linkedit_single_submit ($status = NULL) {
+function fwp_linkedit_single_submit ($caption = NULL) {
 	if (fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) :
+		if (is_null($caption)) : $caption = __('Save'); endif;
 ?>
 <div class="submitbox" id="submitlink">
 <div id="previewview"></div>
 <div class="inside"></div>
 
 <p class="submit">
-<input type="submit" name="submit" value="<?php _e('Save') ?>" />
+<input type="submit" name="submit" value="<?php print $caption; ?>" />
 </p>
 </div>
 <?php
@@ -287,7 +288,13 @@ settings page to set up how new posts <?php print $from_this_feed; ?> are assign
 	?>
 		<script type="text/javascript">
 			jQuery(document).ready( function($) {
-				// In case someone got here first.
+			<?php if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) : ?>
+				// In case someone got here first...
+				jQuery('.postbox h3').unbind('click');
+
+				add_postbox_toggles('<?php print $context; ?>');
+			<?php elseif (FeedWordPressCompatibility::test_version(FWP_SCHEMA_27)) : ?>
+				// In case someone got here first...
 				$('.postbox h3, .postbox .handlediv').unbind('click');
 				$('.postbox h3 a').unbind('click');
 				$('.hide-postbox-tog').unbind('click');
@@ -295,6 +302,7 @@ settings page to set up how new posts <?php print $from_this_feed; ?> are assign
 				$('.meta-box-sortables').sortable('destroy');
 				
 				postboxes.add_postbox_toggles('<?php print $context; ?>');
+			<?php endif; ?>
 			} );
 		</script>
 	<?php
