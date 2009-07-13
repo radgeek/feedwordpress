@@ -881,6 +881,14 @@ class FeedWordPress {
 		return $link_id;
 	} // function FeedWordPress::syndicate_link()
 
+	/*static*/ function syndicated_status ($what, $default) {
+		$ret = get_option("feedwordpress_syndicated_{$what}_status");
+		if (!$ret) :
+			$ret = $default;
+		endif;
+		return $ret;
+	} /* FeedWordPress::syndicated_status() */
+
 	function on_unfamiliar ($what = 'author', $override = NULL) {
 		$set = array(
 			'author' => array('create', 'default', 'filter'),

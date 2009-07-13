@@ -420,12 +420,14 @@ class SyndicatedLink {
 	function syndicated_status ($what, $default) {
 		global $wpdb;
 
-		$ret = get_option("feedwordpress_syndicated_{$what}_status");
+		// Start with global default
+		$ret = FeedWordPress::syndicated_status($what, $default);
+
+		// Override with local setting if we have it
 		if ( isset($this->settings["$what status"]) ) :
 			$ret = $this->settings["$what status"];
-		elseif (!$ret) :
-			$ret = $default;
 		endif;
+
 		return $wpdb->escape(trim(strtolower($ret)));
 	} /* SyndicatedLink:syndicated_status () */
 } // class SyndicatedLink
