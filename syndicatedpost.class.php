@@ -107,7 +107,7 @@ class SyndicatedPost {
 
 			// User-supplied custom settings to apply to each post. Do first so that FWP-generated custom settings will overwrite if necessary; thus preventing any munging
 			$default_custom_settings = get_option('feedwordpress_custom_settings');
-			if ($default_custom_settings) :
+			if ($default_custom_settings and !is_array($default_custom_settings)) :
 				$default_custom_settings = unserialize($default_custom_settings);
 			endif;
 			if (!is_array($default_custom_settings)) :
@@ -115,7 +115,7 @@ class SyndicatedPost {
 			endif;
 			
 			$custom_settings = (isset($this->link->settings['postmeta']) ? $this->link->settings['postmeta'] : null);
-			if ($custom_settings) :
+			if ($custom_settings and !is_array($custom_settings)) :
 				$custom_settings = unserialize($custom_settings);
 			endif;
 			if (!is_array($custom_settings)) :
