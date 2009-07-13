@@ -639,6 +639,7 @@ if (function_exists('add_meta_box')) :
 			/*context=*/ $postsPage->meta_box_context()
 		);
 	endforeach;
+	do_action('feedwordpress_admin_page_posts_meta_boxes', $page)
 ?>
 	<div class="metabox-holder">
 <?php	do_meta_boxes($postsPage->meta_box_context(), $postsPage->meta_box_context(), $postsPage); ?>
