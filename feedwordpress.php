@@ -285,17 +285,17 @@ function log_feedwordpress_update_complete ($delta) {
 ## TEMPLATE API: functions to make your templates syndication-aware ############
 ################################################################################
 
-function is_syndicated () { return (strlen(get_syndication_feed_id()) > 0); }
+function is_syndicated ($id = NULL) { return (strlen(get_syndication_feed_id($id)) > 0); }
 
-function get_syndication_source_link ($original = NULL) {
+function get_syndication_source_link ($original = NULL, $id = NULL) {
 	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
 	endif;
 
-	if ($original) : $vals = get_post_custom_values('syndication_source_uri_original');
+	if ($original) : $vals = get_post_custom_values('syndication_source_uri_original', $id);
 	else : $vals = array();
 	endif;
 	
-	if (count($vals) == 0) : $vals = get_post_custom_values('syndication_source_uri');
+	if (count($vals) == 0) : $vals = get_post_custom_values('syndication_source_uri', $id);
 	endif;
 	
 	if (count($vals) > 0) : $ret = $vals[0]; else : $ret = NULL; endif;
@@ -303,17 +303,17 @@ function get_syndication_source_link ($original = NULL) {
 	return $ret;
 } /* function get_syndication_source_link() */
 
-function the_syndication_source_link ($original = NULL) { echo get_syndication_source_link($original); }
+function the_syndication_source_link ($original = NULL, $id = NULL) { echo get_syndication_source_link($original, $id); }
 
-function get_syndication_source ($original = NULL) {
+function get_syndication_source ($original = NULL, $id = NULL) {
 	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
 	endif;
 
-	if ($original) : $vals = get_post_custom_values('syndication_source_original');
+	if ($original) : $vals = get_post_custom_values('syndication_source_original', $id);
 	else : $vals = array();
 	endif;
 	
-	if (count($vals) == 0) : $vals = get_post_custom_values('syndication_source');
+	if (count($vals) == 0) : $vals = get_post_custom_values('syndication_source', $id);
 	endif;
 	
 	if (count($vals) > 0) : $ret = $vals[0]; else : $ret = NULL; endif;
@@ -321,17 +321,17 @@ function get_syndication_source ($original = NULL) {
 	return $ret;
 } /* function get_syndication_source() */
 
-function the_syndication_source ($original = NULL) { echo get_syndication_source($original); }
+function the_syndication_source ($original = NULL, $id = NULL) { echo get_syndication_source($original, $id); }
 
-function get_syndication_feed ($original = NULL) {
+function get_syndication_feed ($original = NULL, $id = NULL) {
 	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
 	endif;
 
-	if ($original) : $vals = get_post_custom_values('syndication_feed_original');
+	if ($original) : $vals = get_post_custom_values('syndication_feed_original', $id);
 	else : $vals = array();
 	endif;
-	
-	if (count($vals) == 0) : $vals = get_post_custom_values('syndication_feed');
+
+	if (count($vals) == 0) : $vals = get_post_custom_values('syndication_feed', $id);
 	endif;
 	
 	if (count($vals) > 0) : $ret = $vals[0]; else : $ret = NULL; endif;
@@ -339,17 +339,17 @@ function get_syndication_feed ($original = NULL) {
 	return $ret;
 } /* function get_syndication_feed() */
 
-function the_syndication_feed ($original = NULL) { echo get_syndication_feed ($original); }
+function the_syndication_feed ($original = NULL, $id = NULL) { echo get_syndication_feed($original, $id); }
 
-function get_syndication_feed_guid ($original = NULL) {
+function get_syndication_feed_guid ($original = NULL, $id = NULL) {
 	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
 	endif;
 
-	if ($original) : $vals = get_post_custom_values('syndication_source_id_original');
+	if ($original) : $vals = get_post_custom_values('syndication_source_id_original', $id);
 	else : $vals = array();
 	endif;
 	
-	if (count($vals) == 0) : $vals = array(get_feed_meta('feed/id'));
+	if (count($vals) == 0) : $vals = array(get_feed_meta('feed/id', $id));
 	endif;
 	
 	if (count($vals) > 0) : $ret = $vals[0]; else : $ret = NULL; endif;
@@ -357,16 +357,16 @@ function get_syndication_feed_guid ($original = NULL) {
 	return $ret;
 } /* function get_syndication_feed_guid () */
 
-function the_syndication_feed_guid ($original = NULL) { echo get_syndication_feed_guid($original); }
+function the_syndication_feed_guid ($original = NULL, $id = NULL) { echo get_syndication_feed_guid($original, $id); }
 
-function get_syndication_feed_id () { list($u) = get_post_custom_values('syndication_feed_id'); return $u; }
-function the_syndication_feed_id () { echo get_syndication_feed_id(); }
+function get_syndication_feed_id ($id = NULL) { list($u) = get_post_custom_values('syndication_feed_id', $id); return $u; }
+function the_syndication_feed_id ($id = NULL) { echo get_syndication_feed_id($id); }
 
 $feedwordpress_linkcache =  array (); // only load links from database once
 
-function get_feed_meta ($key) {
+function get_feed_meta ($key, $id = NULL) {
 	global $wpdb, $feedwordpress_linkcache;
-	$feed_id = get_syndication_feed_id();
+	$feed_id = get_syndication_feed_id($id);
 
 	$ret = NULL;
 	if (strlen($feed_id) > 0):
@@ -382,11 +382,11 @@ function get_feed_meta ($key) {
 	return $ret;
 } /* get_feed_meta() */
 
-function get_syndication_permalink () {
-	list($u) = get_post_custom_values('syndication_permalink'); return $u;
+function get_syndication_permalink ($id = NULL) {
+	list($u) = get_post_custom_values('syndication_permalink', $id); return $u;
 }
-function the_syndication_permalink () {
-	echo get_syndication_permalink();
+function the_syndication_permalink ($id = NULL) {
+	echo get_syndication_permalink($id);
 }
 
 ################################################################################
