@@ -8,7 +8,7 @@ function fwp_linkedit_single_submit ($caption = NULL) {
 <div class="inside"></div>
 
 <p class="submit">
-<input type="submit" name="submit" value="<?php print $caption; ?>" />
+<input type="submit" name="save" value="<?php print $caption; ?>" />
 </p>
 </div>
 <?php
@@ -20,7 +20,7 @@ function fwp_linkedit_periodic_submit ($caption = NULL) {
 		if (is_null($caption)) : $caption = __('Save Changes &raquo;'); endif;
 ?>
 <p class="submit">
-<input type="submit" name="submit" value="<?php print $caption; ?>" />
+<input type="submit" name="save" value="<?php print $caption; ?>" />
 </p>
 <?php
 	endif;
@@ -31,7 +31,7 @@ function fwp_linkedit_single_submit_closer ($caption = NULL) {
 		if (is_null($caption)) : $caption = __('Save Changes'); endif;
 ?>
 <p class="submit">
-<input class="button-primary" type="submit" name="submit" value="<?php print $caption; ?>" />
+<input class="button-primary" type="submit" name="save" value="<?php print $caption; ?>" />
 </p>
 <?php
 	endif;

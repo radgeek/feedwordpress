@@ -476,6 +476,8 @@ function fwp_posts_page () {
 	
 			$updated_link = true;
 		endif;
+		
+		do_action('feedwordpress_admin_page_posts_save', $GLOBALS['fwp_post'], $postsPage);
 	else :
 		$updated_link = false;
 	endif;
@@ -506,6 +508,16 @@ function fwp_posts_page () {
 <?php endif; ?>
 
 <div class="wrap">
+<?php
+if (function_exists('add_meta_box')) :
+	add_action(
+		FeedWordPressCompatibility::bottom_script_hook(__FILE__),
+		/*callback=*/ array($postsPage, 'fix_toggles'),
+		/*priority=*/ 10000
+	);
+	FeedWordPressSettingsUI::ajax_nonce_fields();
+endif;
+?>
 <form style="position: relative" action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 <div><?php
 	FeedWordPressCompatibility::stamp_nonce('feedwordpress_posts_settings');
@@ -623,13 +635,6 @@ if ($postsPage->for_feed_settings()) :
 endif;
 
 if (function_exists('add_meta_box')) :
-	add_action(
-		FeedWordPressCompatibility::bottom_script_hook(__FILE__),
-		/*callback=*/ array($postsPage, 'fix_toggles'),
-		/*priority=*/ 10000
-	);
-	FeedWordPressSettingsUI::ajax_nonce_fields();
-	
 	foreach ($boxes_by_methods as $method => $title) :
 		add_meta_box(
 			/*id=*/ 'feedwordpress_'.$method,

@@ -324,6 +324,26 @@ class SyndicatedLink {
 		return $notes;
 	} /* SyndicatedLink::settings_to_notes () */
 
+	function save_settings ($reload = false) {
+		global $wpdb;
+
+		$update_set = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
+			
+		// Update the properties of the link from the feed information
+		$result = $wpdb->query("
+		UPDATE $wpdb->links
+		SET $update_set
+		WHERE link_id='$this->id'
+		");
+		
+		if ($reload) :
+			// reload link information from DB
+			if (function_exists('clean_bookmark_cache')) :
+				clean_bookmark_cache($this->id);
+			endif;
+		endif;
+	} /* SyndicatedLink::save_settings () */
+
 	function uri () {
 		return (is_object($this->link) ? $this->link->link_rss : NULL);
 	} /* SyndicatedLink::uri () */
