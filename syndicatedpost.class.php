@@ -173,7 +173,17 @@ class SyndicatedPost {
 			endif;
 
 			// In case you want to know the external permalink...
-			$this->post['meta']['syndication_permalink'] = apply_filters('syndicated_item_link', $this->item['link']);
+			if (isset($this->item['link'])) :
+				$permalink = $this->item['link'];
+
+			// No <link> element. See if this feed has <guid isPermalink="true"> ....
+			elseif (isset($this->item['guid'])) :
+				if (isset($this->item['guid@ispermalink']) and strtolower(trim($this->item['guid@ispermalink'])) != 'false') :
+					$permalink = $this->item['guid'];
+				endif;
+			endif;
+
+			$this->post['meta']['syndication_permalink'] = apply_filters('syndicated_item_link', $permalink);
 
 			// Store a hash of the post content for checking whether something needs to be updated
 			$this->post['meta']['syndication_item_hash'] = $this->update_hash();
