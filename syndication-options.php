@@ -21,7 +21,7 @@ function fwp_syndication_options_page () {
 <?php
 	endif;
 
-	if (isset($_POST['submit']) or isset($_POST['create_index'])) :
+	if (isset($_POST['submit']) or isset($_POST['save']) or isset($_POST['create_index'])) :
 		update_option('feedwordpress_cat_id', $_REQUEST['syndication_category']);
 		update_option('feedwordpress_update_logging', $_REQUEST['update_logging']);
 		update_option('feedwordpress_debug', $_POST['feedwordpress_debug']);
