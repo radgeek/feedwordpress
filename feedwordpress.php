@@ -303,20 +303,54 @@ function get_syndication_source_link ($original = NULL, $id = NULL) {
 	return $ret;
 } /* function get_syndication_source_link() */
 
-function the_syndication_source_link ($original = NULL, $id = NULL) { echo get_syndication_source_link($original, $id); }
+function the_syndication_source_link ($original = NULL, $id = NULL) {
+	echo get_syndication_source_link($original, $id);
+}
+
+function feedwordpress_display_url ($url, $before = 60, $after = 0) {
+	$bits = parse_url($url);
+	
+	// Strip out crufty subdomains
+  	$bits['host'] = preg_replace('/^www[0-9]*\./i', '', $bits['host']);
+
+  	// Reassemble bit-by-bit with minimum of crufty elements
+	$url = (isset($bits['user'])?$bits['user'].'@':'')
+		.(isset($bits['host'])?$bits['host']:'')
+		.(isset($bits['path'])?$bits['path']:'')
+		.(isset($bits['query'])?'?'.$bits['query']:'');
+
+	if (strlen($url) > ($before+$after)) :
+		$url = substr($url, 0, $before).'…'.substr($url, 0 - $after, $after);
+	endif;
+
+	return $url;
+}
 
 function get_syndication_source ($original = NULL, $id = NULL) {
-	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
+	if (is_null($original)) :
+		$original = FeedWordPress::use_aggregator_source_data();
 	endif;
 
-	if ($original) : $vals = get_post_custom_values('syndication_source_original', $id);
-	else : $vals = array();
+	if ($original) :
+		$vals = get_post_custom_values('syndication_source_original', $id);
+	else :
+		$vals = array();
 	endif;
 	
-	if (count($vals) == 0) : $vals = get_post_custom_values('syndication_source', $id);
+	if (count($vals) == 0) :
+		$vals = get_post_custom_values('syndication_source', $id);
 	endif;
 	
-	if (count($vals) > 0) : $ret = $vals[0]; else : $ret = NULL; endif;
+	if (count($vals) > 0) :
+		$ret = $vals[0];
+	else :
+		$ret = NULL;
+	endif;
+
+	if (is_null($ret) or strlen(trim($ret)) == 0) :
+		// Fall back to URL of blog
+		$ret = feedwordpress_display_url(get_syndication_source_link());
+	endif;
 
 	return $ret;
 } /* function get_syndication_source() */
