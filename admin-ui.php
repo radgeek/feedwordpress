@@ -1,4 +1,35 @@
 <?php
+class FeedWordPressAdminPage {
+	var $context;
+	
+	function FeedWordPressAdminPage ($page = 'feedwordpressadmin') {
+		$this->context = $page;
+	} /* FeedWordPressAdminPage constructor */
+
+	/**
+	 * Provides a uniquely identifying name for the interface context for
+	 * use with add_meta_box() and do_meta_boxes(),
+	 *
+	 * @return string the context name
+	 *
+	 * @see add_meta_box()
+	 * @see do_meta_boxes()
+	 */
+	function meta_box_context () {
+		return $this->context;
+	} /* FeedWordPressAdminPage::meta_box_context () */
+	
+	/**
+	 * Outputs JavaScript to fix AJAX toggles settings.
+	 *
+	 * @uses FeedWordPressAdminPage::meta_box_context()
+	 */
+	 function fix_toggles () {
+	 	 FeedWordPressSettingsUI::fix_toggles_js($this->meta_box_context());
+	 } /* FeedWordPressAdminPage::fix_toggles() */
+
+} /* class FeedWordPressAdminPage */
+
 function fwp_linkedit_single_submit ($caption = NULL) {
 	if (fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) :
 		if (is_null($caption)) : $caption = __('Save'); endif;
@@ -217,7 +248,6 @@ function fwp_author_list () {
 
 class FeedWordPressSettingsUI {
 	function instead_of_posts_box ($link_id = null) {
-		fwp_option_box_opener('Syndicated Posts, Links, Comments & Pings', 'syndicatedpostsdiv', 'postbox');
 		if (!is_null($link_id)) :
 			$from_this_feed = 'from this feed';
 			$by_default = '';
@@ -232,7 +262,6 @@ class FeedWordPressSettingsUI {
 settings page to set up how new posts <?php print $from_this_feed; ?> will be published<?php $by_default; ?>, whether they will accept
 comments and pings, any custom fields that should be set on each post, etc.</p>
 <?php
-		fwp_option_box_closer();
 	} /* FeedWordPressSettingsUI::instead_of_posts_box () */
 	
 	function instead_of_authors_box ($link_id = null) {
@@ -246,7 +275,6 @@ comments and pings, any custom fields that should be set on each post, etc.</p>
 			$id_param = "";
 		endif;
 
-		fwp_option_box_opener('Syndicated Authors', 'authordiv', 'postbox')
 ?>
 <p>Use the <a
 href="admin.php?page=<?php print $GLOBALS['fwp_path']
@@ -255,7 +283,6 @@ href="admin.php?page=<?php print $GLOBALS['fwp_path']
 <?php print $from_this_feed; ?> will be assigned to
 authors.</p>
 <?php 
-		fwp_option_box_closer();
 	} /* FeedWordPressSettingsUI::instead_of_authors_box () */
 	
 	function instead_of_categories_box ($link_id = null) {
@@ -269,19 +296,19 @@ authors.</p>
 			$id_param = "";
 		endif;
 		
-		fwp_option_box_opener(__('Categories & Tags'), 'categorydiv', 'postbox');
 ?>
 <p>Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/categories-page.php<?php print $id_param; ?>"><?php _e('Categories & Tags'); ?></a>
 settings page to set up how new posts <?php print $from_this_feed; ?> are assigned categories or tags<?php print $by_default; ?>.</p>
 <?php
-		fwp_option_box_closer();
 	} /* FeedWordPressSettingsUI::instead_of_categories_box () */
 
 	/*static*/ function ajax_nonce_fields () {
-		echo "<form style='display: none' method='get' action=''>\n<p>\n";
-		wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false );
-		wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false );
-		echo "</p>\n</form>\n";
+		if (function_exists('wp_nonce_field')) :
+			echo "<form style='display: none' method='get' action=''>\n<p>\n";
+			wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false );
+			wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false );
+			echo "</p>\n</form>\n";
+		endif;
 	} /* FeedWordPressSettingsUI::ajax_nonce_fields () */
 
 	/*static*/ function fix_toggles_js ($context) {
@@ -336,4 +363,128 @@ function fwp_insert_new_user ($newuser_name) {
 	endif;
 	return $ret;
 } /* fwp_insert_new_user () */
+
+function fwp_add_meta_box ($id, $title, $callback, $page, $context = 'advanced', $priority = 'default', $callback_args = null) {
+	if (function_exists('add_meta_box'))  :
+		return add_meta_box($id, $title, $callback, $page, $context, $priority, $callback_args);
+	else :
+		/* Re-used as per terms of the GPL from add_meta_box() in WordPress 2.8.1 wp-admin/includes/template.php. */
+		global $wp_meta_boxes;
+	
+		if ( !isset($wp_meta_boxes) )
+			$wp_meta_boxes = array();
+		if ( !isset($wp_meta_boxes[$page]) )
+			$wp_meta_boxes[$page] = array();
+		if ( !isset($wp_meta_boxes[$page][$context]) )
+			$wp_meta_boxes[$page][$context] = array();
+	
+		foreach ( array_keys($wp_meta_boxes[$page]) as $a_context ) {
+		foreach ( array('high', 'core', 'default', 'low') as $a_priority ) {
+			if ( !isset($wp_meta_boxes[$page][$a_context][$a_priority][$id]) )
+				continue;
+	
+			// If a core box was previously added or removed by a plugin, don't add.
+			if ( 'core' == $priority ) {
+				// If core box previously deleted, don't add
+				if ( false === $wp_meta_boxes[$page][$a_context][$a_priority][$id] )
+					return;
+				// If box was added with default priority, give it core priority to maintain sort order
+				if ( 'default' == $a_priority ) {
+					$wp_meta_boxes[$page][$a_context]['core'][$id] = $wp_meta_boxes[$page][$a_context]['default'][$id];
+					unset($wp_meta_boxes[$page][$a_context]['default'][$id]);
+				}
+				return;
+			}
+			// If no priority given and id already present, use existing priority
+			if ( empty($priority) ) {
+				$priority = $a_priority;
+			// else if we're adding to the sorted priortiy, we don't know the title or callback. Glab them from the previously added context/priority.
+			} elseif ( 'sorted' == $priority ) {
+				$title = $wp_meta_boxes[$page][$a_context][$a_priority][$id]['title'];
+				$callback = $wp_meta_boxes[$page][$a_context][$a_priority][$id]['callback'];
+				$callback_args = $wp_meta_boxes[$page][$a_context][$a_priority][$id]['args'];
+			}
+			// An id can be in only one priority and one context
+			if ( $priority != $a_priority || $context != $a_context )
+				unset($wp_meta_boxes[$page][$a_context][$a_priority][$id]);
+		}
+		}
+	
+		if ( empty($priority) )
+			$priority = 'low';
+	
+		if ( !isset($wp_meta_boxes[$page][$context][$priority]) )
+			$wp_meta_boxes[$page][$context][$priority] = array();
+	
+		$wp_meta_boxes[$page][$context][$priority][$id] = array('id' => $id, 'title' => $title, 'callback' => $callback, 'args' => $callback_args);
+	endif;
+} /* function fwp_add_meta_box () */
+
+function fwp_do_meta_boxes($page, $context, $object) {
+	if (function_exists('do_meta_boxes')) :
+		$ret = do_meta_boxes($page, $context, $object);
+		
+		// Avoid JavaScript error from WordPress 2.5 bug
+?>
+	<div style="display: none">
+	<div id="tags-input"></div> <!-- avoid JS error from WP 2.5 bug -->
+	</div>
+<?php
+		return $ret;
+	else :
+		/* Derived as per terms of the GPL from do_meta_boxes() in WordPress 2.8.1 wp-admin/includes/template.php. */
+		global $wp_meta_boxes;
+		static $already_sorted = false;
+		
+		//do_action('do_meta_boxes', $page, $context, $object);
+	
+		echo "<div id='$context-sortables' class='meta-box-sortables'>\n";
+	
+		$i = 0;
+		do {
+			if ( !isset($wp_meta_boxes) || !isset($wp_meta_boxes[$page]) || !isset($wp_meta_boxes[$page][$context]) )
+				break;
+	
+			foreach ( array('high', 'sorted', 'core', 'default', 'low') as $priority ) {
+				if ( isset($wp_meta_boxes[$page][$context][$priority]) ) {
+					foreach ( (array) $wp_meta_boxes[$page][$context][$priority] as $box ) {
+						if ( false == $box || ! $box['title'] )
+							continue;
+						$i++;
+						fwp_option_box_opener($box['title'], $box['id'], 'postbox' /*. postbox_classes($box['id'], $page)*/);
+						call_user_func($box['callback'], $object, $box);
+						fwp_option_box_closer();
+						
+						// Submit button for WP 1.5 style
+						fwp_linkedit_periodic_submit();
+					}
+				}
+			}
+		} while(0);
+	
+		echo "</div>";
+	
+		return $i;	
+	endif;
+} /* function fwp_do_meta_boxes() */
+
+function fwp_remove_meta_box($id, $page, $context) {
+	if (function_exists('remove_meta_box')) :
+		return remove_meta_box($id, $page, $context);
+	else :
+		/* Re-used as per terms of the GPL from remove_meta_box() in WordPress 2.8.1 wp-admin/includes/template.php */
+		global $wp_meta_boxes;
+	
+		if ( !isset($wp_meta_boxes) )
+			$wp_meta_boxes = array();
+		if ( !isset($wp_meta_boxes[$page]) )
+			$wp_meta_boxes[$page] = array();
+		if ( !isset($wp_meta_boxes[$page][$context]) )
+			$wp_meta_boxes[$page][$context] = array();
+	
+		foreach ( array('high', 'core', 'default', 'low') as $priority )
+			$wp_meta_boxes[$page][$context][$priority][$id] = false;
+	endif;
+} /* function fwp_remove_meta_box() */
+
 

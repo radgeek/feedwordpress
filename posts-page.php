@@ -1,7 +1,7 @@
 <?php
 require_once(dirname(__FILE__) . '/admin-ui.php');
 
-class FeedWordPressPostsPage {
+class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	var $link = NULL;
 
 	/**
@@ -11,6 +11,13 @@ class FeedWordPressPostsPage {
 	 */
 	function FeedWordPressPostsPage ($link = NULL) {
 		$this->link = $link;
+
+		// Set meta-box context name
+		$context = 'feedwordpresspostspage';
+		if ($this->for_feed_settings()) :
+			$context .= 'forfeed';
+		endif;
+		FeedWordPressAdminPage::FeedWordPressAdminPage($context);
 	} /* FeedWordPressPostsPage constructor */
 
 	function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
@@ -25,32 +32,6 @@ class FeedWordPressPostsPage {
 		return $phrase;
 	}
 
-	/**
-	 * Provides a uniquely identifying name for the interface context for
-	 * use with add_meta_box() and do_meta_boxes(),
-	 *
-	 * @return string the context name
-	 *
-	 * @see add_meta_box()
-	 * @see do_meta_boxes()
-	 */
-	function meta_box_context () {
-		$context = 'feedwordpresspostspage';
-		if ($this->for_feed_settings()) :
-			$context .= 'forfeed';
-		endif;
-		return $context;
-	} /* FeedWordPressPostsPage::meta_box_context() */
-
-	/**
-	 * Outputs JavaScript to fix AJAX toggles settings.
-	 *
-	 * @uses FeedWordPressPostsPage::meta_box_context()
-	 */
-	 function fix_toggles () {
-	 	 FeedWordPressSettingsUI::fix_toggles_js($this->meta_box_context());
-	 } /* FeedWordPressPostsPage::fix_toggles() */
-	
 	/**
 	 * Outputs "Publication" settings box.
 	 *
@@ -109,9 +90,6 @@ class FeedWordPressPostsPage {
 		$selector[$checked]['checked'] = ' checked="checked"';
 	
 		// Hey ho, let's go...
-		if (!function_exists('add_meta_box')) :
-			fwp_option_box_opener('Publication', 'publicationdiv', 'postbox');
-		endif;
 		?>
 		<style type="text/css">
 		#syndicated-publication-form th { width: 27%; vertical-align: top; }
@@ -131,9 +109,6 @@ class FeedWordPressPostsPage {
 		</table>
 	
 		<?php
-		if (!function_exists('add_meta_box')) :
-			fwp_option_box_closer();
-		endif;
 	} /* FeedWordPressPostsPage::publication_box () */
 	
 	/**
@@ -149,11 +124,6 @@ class FeedWordPressPostsPage {
 	 */ 
 	function formatting_box ($page, $box = NULL) {
 		$formatting_filters = get_option('feedwordpress_formatting_filters');
-
-		if (!function_exists('add_meta_box')) :
-			fwp_option_box_opener('Formatting', 'formattingdiv', 'postbox');
-		endif;
-		
 		?>
 		<table class="form-table" cellspacing="2" cellpadding="5">
 		<tr><th scope="row">Formatting filters:</th>
@@ -168,10 +138,6 @@ class FeedWordPressPostsPage {
 		</td></tr>
 		</table>
 		<?php
-		
-		if (!function_exists('add_meta_box')) :
-			fwp_option_box_closer();
-		endif;
 	} /* FeedWordPressPostsPage::formatting_box() */
 	
 	/**
@@ -188,10 +154,6 @@ class FeedWordPressPostsPage {
 	/*static*/ function links_box ($page, $box = NULL) {
 		$munge_permalink = get_option('feedwordpress_munge_permalink');
 		$use_aggregator_source_data = get_option('feedwordpress_use_aggregator_source_data');
-
-		if (!function_exists('add_meta_box')) :
-			fwp_option_box_opener('Links', 'linksdiv', 'postbox');
-		endif;
 		?>
 		<table class="form-table" cellspacing="2" cellpadding="5">
 		<tr><th  scope="row">Permalinks:</th>
@@ -213,9 +175,6 @@ class FeedWordPressPostsPage {
 		</table>
 
 		<?php
-		if (!function_exists('add_meta_box')) :
-			fwp_option_box_closer();
-		endif;
 	} /* FeedWordPressPostsPage::links_box() */
 
 	/**
@@ -274,9 +233,6 @@ class FeedWordPressPostsPage {
 		endforeach;
 
 		// Hey ho, let's go...
-		if (!function_exists('add_meta_box')) :
-			fwp_option_box_opener(__('Comments & Pings'), 'commentstatus', 'postbox');
-		endif;
 		?>
 		<table class="form-table" cellspacing="2" cellpadding="5">
 		<?php foreach ($whatsits as $what => $how) : ?>
@@ -292,9 +248,6 @@ class FeedWordPressPostsPage {
 		</table>
 
 		<?php
-		if (!function_exists('add_meta_box')) :
-			fwp_option_box_closer();
-		endif;
 	} /* FeedWordPressPostsPage::comments_and_pings_box() */
 	
 	/**
@@ -327,10 +280,6 @@ class FeedWordPressPostsPage {
 			if (!is_array($custom_settings)) :
 				$custom_settings = array();
 			endif;
-		endif;
-
-		if (!function_exists('add_meta_box')) :
-			fwp_option_box_opener('Custom Post Settings (to apply to each syndicated post)', 'postcustom', 'postbox');
 		endif;
 
 		?>
@@ -370,9 +319,6 @@ class FeedWordPressPostsPage {
 		</div> <!-- id="postcustomstuff" -->
 
 		<?php
-		if (!function_exists('add_meta_box')) :
-			fwp_option_box_closer();
-		endif;
 	 } /* FeedWordPressPostsPage::custom_post_settings_box() */
 }
 
@@ -634,9 +580,8 @@ if ($postsPage->for_feed_settings()) :
 	unset($boxes_by_methods['links_box']);
 endif;
 
-if (function_exists('add_meta_box')) :
 	foreach ($boxes_by_methods as $method => $title) :
-		add_meta_box(
+		fwp_add_meta_box(
 			/*id=*/ 'feedwordpress_'.$method,
 			/*title=*/ $title,
 			/*callback=*/ array('FeedWordPressPostsPage', $method),
@@ -644,23 +589,13 @@ if (function_exists('add_meta_box')) :
 			/*context=*/ $postsPage->meta_box_context()
 		);
 	endforeach;
-	do_action('feedwordpress_admin_page_posts_meta_boxes', $postsPage)
+	do_action('feedwordpress_admin_page_posts_meta_boxes', $postsPage);
 ?>
 	<div class="metabox-holder">
-<?php	do_meta_boxes($postsPage->meta_box_context(), $postsPage->meta_box_context(), $postsPage); ?>
-	</div> <!-- class="metabox-holder" -->
-
-	<div style="display: none">
-	<div id="tags-input"></div> <!-- avoid JS error from WP 2.5 bug -->
-	</div>
 <?php
-else :
-	foreach ($boxes_by_methods as $method => $title) :
-		$postsPage->{$method}($postsPage);
-		fwp_linkedit_periodic_submit();
-	endforeach;
+	fwp_do_meta_boxes($postsPage->meta_box_context(), $postsPage->meta_box_context(), $postsPage);
 ?>
-<?php endif; ?>
+	</div> <!-- class="metabox-holder" -->
 </div> <!-- id="post-body" -->
 </div> <!-- id="poststuff" -->
 

@@ -185,7 +185,7 @@ if ($cont):
 		FeedWordPressSettingsUI::ajax_nonce_fields();
 		
 		if ($links) :
-			add_meta_box(
+			fwp_add_meta_box(
 				/*id=*/ 'feedwordpress_update_box',
 				/*title=*/ __('Update feeds now'),
 				/*callback=*/ 'fwp_syndication_manage_page_update_box',
@@ -193,7 +193,7 @@ if ($cont):
 				/*context =*/ 'feedwordpresssyndication'
 			);
 		endif;
-		add_meta_box(
+		fwp_add_meta_box(
 			/*id=*/ 'feedwordpress_feeds_box',
 			/*title=*/ __('Syndicated sources'),
 			/*callback=*/ 'fwp_syndication_manage_page_links_box',
@@ -204,7 +204,7 @@ if ($cont):
 	<div class="metabox-holder">		
 	<div id="feedwordpresssyndication-sortables" class="meta-box-sortables ui-sortable">
 <?php
-		do_meta_boxes('feedwordpresssyndication', 'feedwordpresssyndication', NULL);
+		fwp_do_meta_boxes('feedwordpresssyndication', 'feedwordpresssyndication', NULL);
 	else :
 		if ($links): // only display Update panel if there are some links to update....
 			fwp_syndication_manage_page_update_box();
