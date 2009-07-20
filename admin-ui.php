@@ -1,10 +1,33 @@
 <?php
 class FeedWordPressAdminPage {
 	var $context;
-	
-	function FeedWordPressAdminPage ($page = 'feedwordpressadmin') {
+	var $link = NULL;
+
+	/**
+	 * Construct the admin page object.
+	 *
+	 * @param mixed $link An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings
+	 */
+	function FeedWordPressAdminPage ($page = 'feedwordpressadmin', $link = NULL) {
+		// Set meta-box context name
 		$this->context = $page;
+		if ($this->for_feed_settings()) :
+			$this->context .= 'forfeed';
+		endif;
+		$this->link = $link;
 	} /* FeedWordPressAdminPage constructor */
+
+	function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
+	function for_default_settings () { return !$this->for_feed_settings(); }
+
+	function these_posts_phrase () {
+		if ($this->for_feed_settings()) :
+			$phrase = __('posts from this feed');
+		else :
+			$phrase = __('syndicated posts');
+		endif;
+		return $phrase;
+	} /* FeedWordPressAdminPage::these_posts_phrase() */
 
 	/**
 	 * Provides a uniquely identifying name for the interface context for
@@ -28,6 +51,29 @@ class FeedWordPressAdminPage {
 	 	 FeedWordPressSettingsUI::fix_toggles_js($this->meta_box_context());
 	 } /* FeedWordPressAdminPage::fix_toggles() */
 
+	 function ajax_interface_js () {
+?>
+<script type="text/javascript">
+	function contextual_appearance (item, appear, disappear, value, visibleStyle, checkbox) {
+		if (typeof(visibleStyle)=='undefined') visibleStyle = 'block';
+
+		var rollup=document.getElementById(item);
+		var newuser=document.getElementById(appear);
+		var sitewide=document.getElementById(disappear);
+		if (rollup) {
+			if ((checkbox && rollup.checked) || (!checkbox && value==rollup.value)) {
+				if (newuser) newuser.style.display=visibleStyle;
+				if (sitewide) sitewide.style.display='none';
+			} else {
+				if (newuser) newuser.style.display='none';
+				if (sitewide) sitewide.style.display=visibleStyle;
+			}
+		}
+	}
+</script>
+
+<?php
+	 } /* FeedWordPressAdminPage::ajax_interface_js () */
 } /* class FeedWordPressAdminPage */
 
 function fwp_linkedit_single_submit ($caption = NULL) {
@@ -122,7 +168,6 @@ function fwp_tags_box ($tags, $object) {
 	$desc = "<p style=\"font-size:smaller;font-style:bold;margin:0\">Tag $object as...</p>";
 
 	if (fwp_test_wp_version(FWP_SCHEMA_28)) : // WordPress 2.8+
-		fwp_option_box_opener(__('Tags'), 'tagsdiv', 'postbox');
 ?>
 			<?php print $desc; ?>
 			<div class="tagsdiv" id="post_tag">
@@ -146,7 +191,6 @@ function fwp_tags_box ($tags, $object) {
 		</div>
 <?php
 	else :
-		fwp_option_box_opener(__('Tags'), 'tagsdiv', 'postbox');
 ?>
 		<?php print $desc; ?>
 		<p id="jaxtag"><input type="text" name="tags_input" class="tags-input" id="tags-input" size="40" tabindex="3" value="<?php echo implode(",", $tags); ?>" /></p>
@@ -189,7 +233,7 @@ function fwp_category_box ($checked, $object, $tags = array()) {
 <?php
 	elseif (fwp_test_wp_version(FWP_SCHEMA_20)) : // WordPress 2.x
 ?>
-		<div id="moremeta">
+		<div id="moremeta" style="position: relative; right: auto">
 		<div id="grabit" class="dbx-group">
 			<fieldset id="categorydiv" class="dbx-box">
 			<h3 class="dbx-handle"><?php _e('Categories') ?></h3>

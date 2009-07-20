@@ -20,6 +20,10 @@ class FeedWordPressCompatibility {
 		return fwp_test_wp_version($floor, $ceiling);
 	} /* FeedWordPressCompatibility::test_version() */
 
+	/*static*/ function post_tags () {
+		return FeedWordPressCompatibility::test_version(FWP_SCHEMA_23);
+	} /* FeedWordPressCompatibility::post_tags () */
+
 	/*static*/ function validate_http_request ($action = -1, $capability = null) {
 		// Only worry about this if we're using a method with significant side-effects
 		if (strtoupper($_SERVER['REQUEST_METHOD']) == 'POST') :
@@ -56,6 +60,8 @@ class FeedWordPressCompatibility {
 		return $hook;
 	} /* FeedWordPressCompatibility::bottom_script_hook() */
 } /* class FeedWordPressCompatibility */
+
+define('FEEDWORDPRESS_AND_TAGS', (FeedWordPressCompatibility::post_tags() ? ' & Tags' : ''));
 
 if (!function_exists('stripslashes_deep')) {
 	function stripslashes_deep($value) {

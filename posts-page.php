@@ -10,27 +10,8 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 * @param mixed $link An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings
 	 */
 	function FeedWordPressPostsPage ($link = NULL) {
-		$this->link = $link;
-
-		// Set meta-box context name
-		$context = 'feedwordpresspostspage';
-		if ($this->for_feed_settings()) :
-			$context .= 'forfeed';
-		endif;
-		FeedWordPressAdminPage::FeedWordPressAdminPage($context);
+		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpresspostspage', $link);
 	} /* FeedWordPressPostsPage constructor */
-
-	function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
-	function for_default_settings () { return !$this->for_feed_settings(); }
-
-	function these_posts_phrase () {
-		if ($this->for_feed_settings()) :
-			$phrase = __('posts from this feed');
-		else :
-			$phrase = __('syndicated posts');
-		endif;
-		return $phrase;
-	}
 
 	/**
 	 * Outputs "Publication" settings box.
@@ -327,7 +308,7 @@ function fwp_posts_page () {
 
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_posts_settings', /*capability=*/ 'manage_links');
 
-	if (isset($GLOBALS['fwp_post']['save']) or isset($GLOBALS['fwp_post']['fix_mismatch'])) :
+	if (isset($GLOBALS['fwp_post']['save']) or isset($GLOBALS['fwp_post']['submit']) or isset($GLOBALS['fwp_post']['fix_mismatch'])) :
 		$link_id = $_REQUEST['save_link_id'];
 	elseif (isset($_REQUEST['link_id'])) :
 		$link_id = $_REQUEST['link_id'];
@@ -427,27 +408,10 @@ function fwp_posts_page () {
 	else :
 		$updated_link = false;
 	endif;
-?>
-<script type="text/javascript">
-	function contextual_appearance (item, appear, disappear, value, visibleStyle, checkbox) {
-		if (typeof(visibleStyle)=='undefined') visibleStyle = 'block';
+	
+	$postsPage->ajax_interface_js();
 
-		var rollup=document.getElementById(item);
-		var newuser=document.getElementById(appear);
-		var sitewide=document.getElementById(disappear);
-		if (rollup) {
-			if ((checkbox && rollup.checked) || (!checkbox && value==rollup.value)) {
-				if (newuser) newuser.style.display=visibleStyle;
-				if (sitewide) sitewide.style.display='none';
-			} else {
-				if (newuser) newuser.style.display='none';
-				if (sitewide) sitewide.style.display=visibleStyle;
-			}
-		}
-	}
-</script>
-
-<?php if ($updated_link) : ?>
+	if ($updated_link) : ?>
 <div class="updated"><p>Syndicated posts settings updated.</p></div>
 <?php elseif (!is_null($mesg)) : ?>
 <div class="updated"><p><?php print wp_specialchars($mesg, 1); ?></p></div>
