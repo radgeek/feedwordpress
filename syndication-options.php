@@ -272,7 +272,7 @@ $boxes_by_methods = array(
 	'global_feeds_box' => __('Syndicated Feeds'),
 	'global_posts_box' => __('Syndicated Posts, Links, Comments & Pings'),
 	'global_authors_box' => __('Syndicated Authors'),
-	'global_categories_box' => __('Categories & Tags'),
+	'global_categories_box' => __('Categories'.FEEDWORDPRESS_AND_TAGS),
 	'backend_box' => __('Back End'),
 );
 

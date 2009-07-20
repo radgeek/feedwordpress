@@ -364,7 +364,7 @@ jQuery(document).ready( function () {
 <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit"><?php _e('Feed'); ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Posts'); ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/authors-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Authors'); ?></a>
-| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/categories-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Categories &amp; Tags'); ?></a></div>
+| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/categories-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php print htmlspecialchars(__('Categories'.FEEDWORDPRESS_AND_TAGS)); ?></a></div>
 <div><strong>Actions &gt;</strong>
 <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder"><?php echo $caption; ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=Unsubscribe"><?php _e('Unsubscribe'); ?></a>

@@ -341,8 +341,8 @@ authors.</p>
 		endif;
 		
 ?>
-<p>Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/categories-page.php<?php print $id_param; ?>"><?php _e('Categories & Tags'); ?></a>
-settings page to set up how new posts <?php print $from_this_feed; ?> are assigned categories or tags<?php print $by_default; ?>.</p>
+<p>Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/categories-page.php<?php print $id_param; ?>"><?php _e('Categories'.FEEDWORDPRESS_AND_TAGS); ?></a>
+settings page to set up how new posts <?php print $from_this_feed; ?> are assigned categories <?php if (FeedWordPressCompatibility::post_tags()) : ?>or tags<?php endif; ?><?php print $by_default; ?>.</p>
 <?php
 	} /* FeedWordPressSettingsUI::instead_of_categories_box () */
 
