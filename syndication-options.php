@@ -21,7 +21,16 @@ function fwp_syndication_options_page () {
 <?php
 	endif;
 
-	if (isset($_POST['submit']) or isset($_POST['save']) or isset($_POST['create_index'])) :
+	if (isset($_POST['clear_cache'])) :
+		FeedWordPress::clear_cache();
+?>
+<div class="updated">
+<p><?php _e("Cleared all cached feeds from WordPress database."); ?></p>
+</div>
+<?php
+	endif;
+
+	if (isset($_POST['submit']) or isset($_POST['save']) or isset($_POST['create_index']) or isset($_POST['clear_cache'])) :
 		update_option('feedwordpress_cat_id', $_REQUEST['syndication_category']);
 		update_option('feedwordpress_update_logging', $_REQUEST['update_logging']);
 		update_option('feedwordpress_debug', $_POST['feedwordpress_debug']);
@@ -218,6 +227,12 @@ warnings, and notices that are ordinarily suppressed, and turns off all caching 
 caution: this setting is absolutely inappropriate for a production server.</p>
 </td>
 </tr>
+
+<tr style="vertical-align: top">
+<th width="33%" scope="row">Feed cache:</th>
+<td width="67%"><input class="button" type="submit" name="clear_cache" value="Clear all cached feeds from WordPress database" />
+<p>This will clear all cached copies of feed data from the WordPress database
+and force FeedWordPress to make a fresh scan for updates on syndicated feeds.</p></td></tr>
 
 <tr style="vertical-align: top">
 <th width="33%" scope="row">Guid index:</th>

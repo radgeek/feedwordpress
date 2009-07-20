@@ -1145,6 +1145,20 @@ class FeedWordPress {
 		");
 	} /* FeedWordPress::create_guid_index () */
 	
+	function clear_cache () {
+		global $wpdb;
+		
+		// MagpieRSS stores its cached feeds in options table rows with
+		// name = `rss_{md5 of url}` and timestamps for cached feeds in
+		// table rows with name = `rss_{md5 of url}_ts`. The md5 is
+		// always 32 characters in length, so the total option_name is
+		// always over 32 characters.
+		$wpdb->query("
+		DELETE FROM {$wpdb->options}
+		WHERE LOCATE('rss_', option_name) AND LENGTH(option_name) > 32
+		");
+	} /* FeedWordPress::clear_cache () */
+
 	function magpie_version () {
 		if (!defined('MAGPIE_VERSION')) : $magpie_version = $GLOBALS['wp_version'].'-default';
 		else : $magpie_version = MAGPIE_VERSION;
