@@ -20,6 +20,77 @@ class FeedWordPressCompatibility {
 		return fwp_test_wp_version($floor, $ceiling);
 	} /* FeedWordPressCompatibility::test_version() */
 
+	/*static*/ function insert_link_category ($name) {
+		global $wpdb;
+
+		$name = $wpdb->escape($name);
+
+		// WordPress 2.3+ term/taxonomy API
+		if (function_exists('wp_insert_term')) :
+			$term = wp_insert_term($name, 'link_category');
+			$cat_id = $term['term_id'];
+		// WordPress 2.1, 2.2 category API. By the way, why the fuck is this API function only available in a wp-admin module?
+		elseif (function_exists('wp_insert_category') and !fwp_test_wp_version(FWP_SCHEMA_20, FWP_SCHEMA_21)) : 
+			$cat_id = wp_insert_category(array('cat_name' => $name));
+		// WordPress 1.5 and 2.0.x
+		elseif (fwp_test_wp_version(0, FWP_SCHEMA_21)) :
+			$result = $wpdb->query("
+			INSERT INTO $wpdb->linkcategories
+			SET
+				cat_id = 0,
+				cat_name='$name',
+				show_images='N',
+				show_description='N',
+				show_rating='N',
+				show_updated='N',
+				sort_order='name'
+			");
+			$cat_id = $wpdb->insert_id;
+		// This should never happen.
+		else :
+			FeedWordPress::critical_bug('FeedWordPress::link_category_id::wp_db_version', $wp_db_version, __LINE__);
+		endif;
+		
+		// Return newly-created category ID
+		return $cat_id;
+	} /* FeedWordPressCompatibility::insert_link_category () */
+
+	/*static*/ function link_category_id ($value, $key = 'cat_name') {
+		global $wpdb;
+
+		$cat_id = NULL;
+
+		// WordPress 2.3 introduces a new taxonomy/term API
+		if (function_exists('is_term')) :
+			$the_term = is_term($value, 'link_category');
+
+			// Sometimes, in some versions, we get a row
+			if (is_array($the_term)) :
+				$cat_id = $the_term['term_id'];
+
+			// other times we get an integer result
+			else :
+				$cat_id = $the_term;
+			endif;
+
+		// WordPress 2.1 and 2.2 use a common table for both link and post categories
+		elseif (fwp_test_wp_version(FWP_SCHEMA_21, FWP_SCHEMA_23)) :
+			$value = $wpdb->escape($value);
+			$cat_id = $wpdb->get_var("SELECT cat_id FROM {$wpdb->categories} WHERE {$key}='$value'");
+		
+		// WordPress 1.5 and 2.0.x have a separate table for link categories
+		elseif (fwp_test_wp_version(0, FWP_SCHEMA_21)):
+			$value = $wpdb->escape($value);
+			$cat_id = $wpdb->get_var("SELECT cat_id FROM {$wpdb->linkcategories} WHERE {$key}='$value'");
+		
+		// This should never happen.
+		else :
+			FeedWordPress::critical_bug(__CLASS__.'::'.__METHOD__.'::wp_db_version', $wp_db_version, __LINE__);
+		endif;
+		
+		return $cat_id;
+	} /* FeedWordPressCompatibility::link_category_id () */
+
 	/*static*/ function post_tags () {
 		return FeedWordPressCompatibility::test_version(FWP_SCHEMA_23);
 	} /* FeedWordPressCompatibility::post_tags () */

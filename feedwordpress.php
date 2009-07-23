@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2009.0713
+Version: 2009.0723
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -28,7 +28,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2009.0713');
+define ('FEEDWORDPRESS_VERSION', '2009.0723');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 
@@ -997,59 +997,29 @@ class FeedWordPress {
 
 		$cat_id = get_option('feedwordpress_cat_id');
 		
-		// If we don't yet *have* the category, we'll have to create it
-		if ($cat_id === false) :
-			$cat = $wpdb->escape(DEFAULT_SYNDICATION_CATEGORY);
-			
-			// Look for something with the right name...
-			// -----------------------------------------
+		// If we don't yet have the category ID stored, search by name
+		if (!$cat_id) :
+			$cat_id = FeedWordPressCompatibility::link_category_id(DEFAULT_SYNDICATION_CATEGORY);
 
-			// WordPress 2.3 introduces a new taxonomy/term API
-			if (function_exists('is_term')) :
-				$cat_id = is_term($cat, 'link_category');
-			// WordPress 2.1 and 2.2 use a common table for both link and post categories
-			elseif (fwp_test_wp_version(FWP_SCHEMA_21, FWP_SCHEMA_23)) :
-				$cat_id = $wpdb->get_var("SELECT cat_id FROM {$wpdb->categories} WHERE cat_name='$cat'");
-			// WordPress 1.5 and 2.0.x have a separate table for link categories
-			elseif (fwp_test_wp_version(0, FWP_SCHEMA_21)):
-				$cat_id = $wpdb->get_var("SELECT cat_id FROM {$wpdb->linkcategories} WHERE cat_name='$cat'");
-			// This should never happen.
-			else :
-				FeedWordPress::critical_bug('FeedWordPress::link_category_id::wp_db_version', $wp_db_version, __LINE__);
+			if ($cat_id) :
+				// We found it; let's stamp it.
+				update_option('feedwordpress_cat_id', $cat_id);
 			endif;
 
-			// If you still can't find anything, make it for yourself.
-			// -------------------------------------------------------
-			if (!$cat_id) :
-				// WordPress 2.3+ term/taxonomy API
-				if (function_exists('wp_insert_term')) :
-					$term = wp_insert_term($cat, 'link_category');
-					$cat_id = $term['term_id'];
-				// WordPress 2.1, 2.2 category API. By the way, why the fuck is this API function only available in a wp-admin module?
-				elseif (function_exists('wp_insert_category') and !fwp_test_wp_version(FWP_SCHEMA_20, FWP_SCHEMA_21)) : 
-					$cat_id = wp_insert_category(array('cat_name' => $cat));
-				// WordPress 1.5 and 2.0.x
-				elseif (fwp_test_wp_version(0, FWP_SCHEMA_21)) :
-					$result = $wpdb->query("
-					INSERT INTO $wpdb->linkcategories
-					SET
-						cat_id = 0,
-						cat_name='$cat',
-						show_images='N',
-						show_description='N',
-						show_rating='N',
-						show_updated='N',
-						sort_order='name'
-					");
-					$cat_id = $wpdb->insert_id;
-				// This should never happen.
-				else :
-					FeedWordPress::critical_bug('FeedWordPress::link_category_id::wp_db_version', $wp_db_version, __LINE__);
-				endif;
-			endif;
+		// If we *do* have the category ID stored, verify that it exists
+		else :
+			$cat_id = FeedWordPressCompatibility::link_category_id((int) $cat_id, 'cat_id');
+		endif;
+		
+		// If we could not find an appropriate link category,
+		// make a new one for ourselves.
+		if (!$cat_id) :
+			$cat_id = FeedWordPressCompatibility::insert_link_category(DEFAULT_SYNDICATION_CATEGORY);
 
+			// Stamp it
 			update_option('feedwordpress_cat_id', $cat_id);
 		endif;
+
 		return $cat_id;
 	} // function FeedWordPress::link_category_id()
 
