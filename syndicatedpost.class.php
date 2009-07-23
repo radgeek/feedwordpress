@@ -901,7 +901,7 @@ class SyndicatedPost {
 						endforeach;
 					elseif ('create'===$unfamiliar_category) :
 						if (function_exists('wp_insert_category')) :
-							$cat_id = wp_insert_category(array('cat_name' => $cat_name));
+							$cat_id = wp_insert_category(array('cat_name' => $esc));
 						// And into the database we go.
 						else :
 							$nice_kitty = sanitize_title($cat_name);
@@ -910,7 +910,7 @@ class SyndicatedPost {
 								SET
 								  cat_name='%s',
 								  category_nicename='%s'
-								", $wpdb->escape($cat_name), $nice_kitty
+								", $esc, $nice_kitty
 							));
 							$cat_id = $wpdb->insert_id;
 						endif;
