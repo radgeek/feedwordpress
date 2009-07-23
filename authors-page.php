@@ -157,6 +157,11 @@ if ($page->for_feed_settings()) :
 function fwp_authors_page () {
 	global $wpdb, $wp_db_version;
 
+	if (FeedWordPress::needs_upgrade()) :
+		fwp_upgrade_page();
+		return;
+	endif;
+
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_author_settings', /*capability=*/ 'manage_links');
 
 	$link = FeedWordPressAdminPage::submitted_link();

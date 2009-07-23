@@ -1098,12 +1098,14 @@ class FeedWordPress {
 			
 			// Now fix the guids to avoid duplicate posts
 			echo "<ul>";
-			foreach ($this->feeds as $feed) :
+			foreach ($this->feeds as $syndicatedLink) :
+				$feed = $syndicatedLink->settings;
 				echo "<li>Fixing post meta-data for <cite>".$feed['link/name']."</cite> &#8230; "; flush();
 				$rss = @fetch_rss($feed['link/uri']);
 				if (is_array($rss->items)) :
 					foreach ($rss->items as $item) :
-						$guid = $wpdb->escape(FeedWordPress::guid($item, $feed)); // new GUID algorithm
+						$post = new SyndicatedPost($item, $syndicatedLink);
+						$guid = $wpdb->escape($post->guid()); // new GUID algorithm
 						$link = $wpdb->escape($item['link']);
 						
 						$wpdb->query("

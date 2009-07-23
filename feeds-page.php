@@ -603,6 +603,11 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 		global $wpdb;
 		global $fwp_post;
 		global $post_source;
+	
+		if (FeedWordPress::needs_upgrade()) :
+			fwp_upgrade_page();
+			return;
+		endif;
 
 		// Allow overriding of normal source for FeedFinder, which may
 		// be called from multiple points.

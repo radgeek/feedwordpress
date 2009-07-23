@@ -305,6 +305,11 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 function fwp_posts_page () {
 	global $wpdb, $wp_db_version;
+	
+	if (FeedWordPress::needs_upgrade()) :
+		fwp_upgrade_page();
+		return;
+	endif;
 
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_posts_settings', /*capability=*/ 'manage_links');
 

@@ -98,6 +98,11 @@ blank.</p></td>
 
 function fwp_categories_page () {
 	global $wpdb, $wp_db_version;
+	
+	if (FeedWordPress::needs_upgrade()) :
+		fwp_upgrade_page();
+		return;
+	endif;
 
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_categories_settings', /*capability=*/ 'manage_links');
 
