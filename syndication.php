@@ -218,8 +218,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	<p class="youhave"><strong>Note:</strong> Automatic updates are currently turned
 	<strong>off</strong>. New posts from your feeds will not be syndicated
 	until you manually check for them here. You can turn on automatic
-	updates under <a href="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/syndication-options.php">Syndication
-	Options</a>.</p>
+	updates under <a href="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/feeds-page.php">Feed Settings<a></a>.</p>
 <?php 	endif; ?>
 
 	<?php if (!fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) : ?>
