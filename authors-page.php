@@ -1,24 +1,167 @@
 <?php
 require_once(dirname(__FILE__) . '/admin-ui.php');
 
+class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
+	var $authorlist = NULL;
+	var $rule_count = 0;
+
+	function FeedWordPressAuthorsPage ($link) {
+		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressauthors', $link);
+		$this->authorlist = fwp_author_list();
+	}
+	
+	/*static*/ function syndicated_authors_box ($page, $box = NULL) {
+		$link = $page->link;
+		$unfamiliar = array ('create' => '','default' => '','filter' => '');
+
+		if ($page->for_feed_settings()) :
+			if (is_string($link->settings["unfamiliar author"])) :
+				$key = $link->settings["unfamiliar author"];
+			else:
+				$key = 'site-default';
+			endif;
+		else :
+			$key = FeedWordPress::on_unfamiliar('author');
+		endif;
+		$unfamiliar[$key] = ' selected="selected"';
+
+		$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
+		$null_emails = FeedWordPress::null_email_set();
+
+		// Hey ho, let's go...
+		?>
+<table class="form-table">
+<tbody>
+<tr>
+  <th>New authors</th>
+  <td><span>Authors who haven't been syndicated before</span>
+  <select style="max-width: 27.0em" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');">
+<?php if ($page->for_feed_settings()) : ?>
+    <option value="site-default"<?php print $unfamiliar['site-default']; ?>>are handled according to the default for all feeds</option>
+<?php endif; ?>
+    <option value="create"<?php $unfamiliar['create']; ?>>will have a new author account created for them</option>
+    <?php foreach ($page->authorlist as $author_id => $author_name) : ?>
+      <option value="<?php echo $author_id; ?>"<?php print $unfamiliar[$author_id]; ?>>will have their posts attributed to <?php echo $author_name; ?></option>
+    <?php endforeach; ?>
+    <option value="newuser">will have their posts attributed to a new user...</option>
+    <option value="filter"<?php print $unfamiliar['filter'] ?>>get filtered out</option>
+  </select>
+
+  <span id="unfamiliar-author-newuser">named <input type="text" name="unfamiliar_author_newuser" value="" /></span></p>
+  </td>
+</tr>
+
+<?php
+if ($page->for_feed_settings()) :
+?>
+<tr><th>Syndicated authors</th>
+<td>For attributing posts by specific authors. Blank out a name to delete the rule. Fill in a new name at the bottom to create a new rule.</p>
+<table style="width: 100%">
+<?php
+	if (isset($link->settings['map authors'])) :
+?>
+<?php
+		$page->rule_count=0;
+		foreach ($link->settings['map authors'] as $author_rules) :
+			foreach ($author_rules as $author_name => $author_action) :
+				$page->rule_count++; 
+?>
+<tr>
+<th style="text-align: left; width: 15.0em">Posts by <input type="text" name="author_rules_name[]" value="<?php echo htmlspecialchars($author_name); ?>" size="11" /></th>
+  <td>
+  <select id="author-rules-<?php echo $page->rule_count; ?>" name="author_rules_action[]" onchange="contextual_appearance('author-rules-<?php echo $page->rule_count; ?>', 'author-rules-<?php echo $page->rule_count; ?>-newuser', 'author-rules-<?php echo $page->rule_count; ?>-default', 'newuser', 'inline');">
+    <?php foreach ($page->authorlist as $local_author_id => $local_author_name) : ?>
+    <option value="<?php echo $local_author_id; ?>"<?php if ($local_author_id==$author_action) : echo ' selected="selected"'; endif; ?>>are assigned to <?php echo $local_author_name; ?></option>
+    <?php endforeach; ?>
+    <option value="newuser">will be assigned to a new user...</option>
+    <option value="filter"<?php if ('filter'==$author_action) : echo ' selected="selected"'; endif; ?>>get filtered out</option>
+  </select>
+  
+  <span id="author-rules-<?php echo $page->rule_count; ?>-newuser">named <input type="text" name="author_rules_newuser[]" value="" /></span>
+  </td>
+</tr>
+<?php 			endforeach;
+		endforeach;
+	endif;
+?>
+
+<tr>
+<th style="text-align: left; width: 15.0em">Posts by <input type="text" name="add_author_rule_name" size="11" /></th>
+  <td>
+    <select id="add-author-rule" name="add_author_rule_action" onchange="contextual_appearance('add-author-rule', 'add-author-rule-newuser', 'add-author-rule-default', 'newuser', 'inline');">
+      <?php foreach ($page->authorlist as $author_id => $author_name) : ?>
+      <option value="<?php echo $author_id; ?>">are assigned to <?php echo $author_name; ?></option>
+      <?php endforeach; ?>
+      <option value="newuser">will be assigned to a new user...</option>
+      <option value="filter">get filtered out</option>
+    </select>
+   
+   <span id="add-author-rule-newuser">named <input type="text" name="add_author_rule_newuser" value="" /></span>
+   </td>
+</tr>
+</table>
+</td>
+</tr>
+<?php endif; ?>
+
+<?php if ($page->for_default_settings()) : ?>
+<tr>
+<th scope="row">Matching Authors</th>
+<td><ul style="list-style: none; margin: 0; padding: 0;">
+<li><div><label><input id="match-author-by-email" type="checkbox" name="match_author_by_email" value="yes" <?php if ($match_author_by_email) : ?>checked="checked" <?php endif; ?>onchange="contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', 'block', /*checkbox=*/ true);" /> Treat syndicated authors with the same e-mail address as the same author.</label></div>
+<div id="unless-null-email">
+<p>Unless the e-mail address is one of the following anonymous e-mail addresses:</p>
+<textarea name="null_emails" rows="3" style="width: 100%">
+<?php print implode("\n", $null_emails); ?>
+</textarea>
+</div></li>
+</ul></td>
+</tr>
+<?php endif; ?>
+</tbody>
+</table>
+		<?php
+	} /* FeedWordPressAuthorsPage::syndicated_authors_box () */
+	
+	/*static*/ function fix_authors_box ($page, $box = NULL) {
+		?>
+		<table class="form-table">
+		<tbody>
+		<tr>
+		<th scope="row">Fixing mis-matched authors:</th>
+		<td><p style="margin: 0.5em 0px">Take all the posts from this feed attributed to
+		<select name="fix_mismatch_from">
+		<?php foreach ($page->authorlist as $author_id => $author_name) : ?>
+		      <option value="<?php echo $author_id; ?>"><?php echo $author_name; ?></option>
+		<?php endforeach; ?>
+		</select>
+		and instead
+		<select id="fix-mismatch-to" name="fix_mismatch_to" onchange="contextual_appearance('fix-mismatch-to', 'fix-mismatch-to-newuser', null, 'newuser', 'inline');">
+		<?php foreach ($page->authorlist as $author_id => $author_name) : ?>
+		      <option value="<?php echo $author_id; ?>">re-assign them to <?php echo $author_name; ?></option>
+		<?php endforeach; ?>
+		      <option value="newuser">re-assign them to a new user...</option>
+		      <option value="filter">delete them</option>
+		</select>
+
+		   <span id="fix-mismatch-to-newuser">named <input type="text" name="fix_mismatch_to_newuser" value="" /></span>
+		   <input type="submit" class="button" name="fix_mismatch" value="Fix it!" />
+		</td>
+		</tr>
+		</tbody>
+		</table>
+		<?php
+	} /* FeedWordPressAuthorsPage::fix_authors_box () */
+} /* class FeedWordPressAuthorsPage */
+
 function fwp_authors_page () {
 	global $wpdb, $wp_db_version;
 
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_author_settings', /*capability=*/ 'manage_links');
 
-	if (isset($GLOBALS['fwp_post']['save']) or isset($GLOBALS['fwp_post']['fix_mismatch'])) :
-		$link_id = $_REQUEST['save_link_id'];
-	elseif (isset($_REQUEST['link_id'])) :
-		$link_id = $_REQUEST['link_id'];
-	else :
-		$link_id = NULL;
-	endif;
-
-	if (is_numeric($link_id) and $link_id) :
-		$link =& new SyndicatedLink($link_id);
-	else :
-		$link = NULL;
-	endif;
+	$link = FeedWordPressAdminPage::submitted_link();
+	$link_id = $link->id;
+	$authorsPage = new FeedWordPressAuthorsPage($link);
 
 	$mesg = null;
 
@@ -200,44 +343,15 @@ function fwp_authors_page () {
 	else :
 		$updated_link = false;
 	endif;
+	
+	////////////////////////////////////////////////
+	// Prepare settings page ///////////////////////
+	////////////////////////////////////////////////
 
-	$unfamiliar = array ('create' => '','default' => '','filter' => '');
+	$authorsPage->ajax_interface_js();
 
-	if (is_object($link) and $link->found()) :
-		if (is_string($link->settings["unfamiliar author"])) :
-			$key = $link->settings["unfamiliar author"];
-		else:
-			$key = 'site-default';
-		endif;
-	else :
-		$key = FeedWordPress::on_unfamiliar('author');
-	endif;
-
-	$unfamiliar[$key] = ' selected="selected"';
-
-	$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
-	$null_emails = FeedWordPress::null_email_set();
+	if ($updated_link) :
 ?>
-<script type="text/javascript">
-	function contextual_appearance (item, appear, disappear, value, visibleStyle, checkbox) {
-		if (typeof(visibleStyle)=='undefined') visibleStyle = 'block';
-
-		var rollup=document.getElementById(item);
-		var newuser=document.getElementById(appear);
-		var sitewide=document.getElementById(disappear);
-		if (rollup) {
-			if ((checkbox && rollup.checked) || (!checkbox && value==rollup.value)) {
-				if (newuser) newuser.style.display=visibleStyle;
-				if (sitewide) sitewide.style.display='none';
-			} else {
-				if (newuser) newuser.style.display='none';
-				if (sitewide) sitewide.style.display=visibleStyle;
-			}
-		}
-	}
-</script>
-
-<?php if ($updated_link) : ?>
 <div class="updated"><p>Syndicated author settings updated.</p></div>
 <?php elseif (!is_null($mesg)) : ?>
 <div class="updated"><p><?php print wp_specialchars($mesg, 1); ?></p></div>
@@ -247,214 +361,62 @@ function fwp_authors_page () {
 <form style="position: relative" action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 <div><?php
 	FeedWordPressCompatibility::stamp_nonce('feedwordpress_author_settings');
+	$authorsPage->stamp_link_id();
+?></div>
 
-	if (is_numeric($link_id) and $link_id) :
-?>
-<input type="hidden" name="save_link_id" value="<?php echo $link_id; ?>" />
 <?php
-	else :
+	$authorsPage->display_feed_select_dropdown();
+	$authorsPage->display_settings_scope_message();
 ?>
-<input type="hidden" name="save_link_id" value="*" />
+<div id="poststuff">
+<?php fwp_settings_form_single_submit(); ?>
+<div id="post-body">
 <?php
+	////////////////////////////////////////////////
+	// Display settings boxes //////////////////////
+	////////////////////////////////////////////////
+
+	$boxes_by_methods = array(
+		'syndicated_authors_box' => __('Syndicated Authors'),
+		'fix_authors_box' => __('Reassign Authors'),
+	);
+	if ($authorsPage->for_default_settings()) :
+		unset($boxes_by_methods['fix_authors_box']);
 	endif;
+
+	foreach ($boxes_by_methods as $method => $row) :
+		if (is_array($row)) :
+			$id = $row['id'];
+			$title = $row['title'];
+		else :
+			$id = 'feedwordpress_'.$method;
+			$title = $row;
+		endif;
+
+		fwp_add_meta_box(
+			/*id=*/ $id,
+			/*title=*/ $title,
+			/*callback=*/ array('FeedWordPressAuthorsPage', $method),
+			/*page=*/ $authorsPage->meta_box_context(),
+			/*context=*/ $authorsPage->meta_box_context()
+		);
+	endforeach;
+	do_action('feedwordpress_admin_page_posts_meta_boxes', $authorsPage);
 ?>
-</div>
-
-<?php $links = FeedWordPress::syndicated_links(); ?>
-<?php if (fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
-	<div class="icon32"><img src="<?php print htmlspecialchars(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></div>
-<?php endif; ?>
-<h2>Syndicated Author Settings<?php if (!is_null($link) and $link->found()) : ?>: <?php echo wp_specialchars($link->link->link_name, 1); ?><?php endif; ?></h2>
-<?php if (fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
-	<style type="text/css">
-	#post-search {
-		float: right;
-		margin:11px 12px 0;
-		min-width: 130px;
-		position:relative;
-	}
-	.fwpfs {
-		color: #dddddd;
-		background:#797979 url(<?php bloginfo('home') ?>/wp-admin/images/fav.png) repeat-x scroll left center;
-		border-color:#777777 #777777 #666666 !important; -moz-border-radius-bottomleft:12px;
-		-moz-border-radius-bottomright:12px;
-		-moz-border-radius-topleft:12px;
-		-moz-border-radius-topright:12px;
-		border-style:solid;
-		border-width:1px;
-		line-height:15px;
-		padding:3px 30px 4px 12px;
-	}
-	.fwpfs.slide-down {
-		border-bottom-color: #626262;
-		-moz-border-radius-bottomleft:0;
-		-moz-border-radius-bottomright:0;
-		-moz-border-radius-topleft:12px;
-		-moz-border-radius-topright:12px;
-		background-image:url(<?php bloginfo('home') ?>/wp-admin/images/fav-top.png);
-		background-position:0 top;
-		background-repeat:repeat-x;
-		border-bottom-style:solid;
-		border-bottom-width:1px;
-	}
-	</style>
-	
-	<script type="text/javascript">
-		jQuery(document).ready(function($){
-			$('.fwpfs').toggle(
-				function(){$('.fwpfs').removeClass('slideUp').addClass('slideDown'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideDown') ) { $('.fwpfs').addClass('slide-down'); }}, 10) },
-				function(){$('.fwpfs').removeClass('slideDown').addClass('slideUp'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideUp') ) { $('.fwpfs').removeClass('slide-down'); }}, 10) }
-			);
-			$('.fwpfs').bind(
-				'change',
-				function () { this.form.submit(); }
-			);
-			$('#post-search .button').css( 'display', 'none' );
-		});
-	</script>
-<?php endif; /* else : */?>
-<p id="post-search">
-<select name="link_id" class="fwpfs" style="max-width: 20.0em;">
-  <option value="*"<?php if (is_null($link) or !$link->found()) : ?> selected="selected"<?php endif; ?>>- defaults for all feeds -</option>
-<?php if ($links) : foreach ($links as $ddlink) : ?>
-  <option value="<?php print (int) $ddlink->link_id; ?>"<?php if (!is_null($link) and ($link->link->link_id==$ddlink->link_id)) : ?> selected="selected"<?php endif; ?>><?php print wp_specialchars($ddlink->link_name, 1); ?></option>
-<?php endforeach; endif; ?>
-</select>
-<input class="button" type="submit" name="go" value="<?php _e('Go') ?> &raquo;" />
-</p>
-<?php /* endif; */ ?>
-
-<?php if (!is_null($link) and $link->found()) : ?>
-	<p>These settings only affect posts syndicated from
-	<strong><?php echo wp_specialchars($link->link->link_name, 1); ?></strong>.</p>
-<?php else : ?>
-	<p>These settings affect posts syndicated from any feed unless they are overridden
-	by settings for that specific feed.</p>
-<?php endif; ?>
-
+	<div class="metabox-holder">
 <?php
-	$authorlist = fwp_author_list();
+	fwp_do_meta_boxes($authorsPage->meta_box_context(), $authorsPage->meta_box_context(), $authorsPage);
 ?>
-<table class="form-table">
-<tbody>
-<tr>
-  <th>New authors</th>
-  <td><span>Authors who haven't been syndicated before</span>
-  <select style="max-width: 27.0em" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');">
-<?php if (is_object($link) and $link->found()) : ?>
-    <option value="site-default"<?php print $unfamiliar['site-default']; ?>>are handled according to the default for all feeds</option>
-<?php endif; ?>
-    <option value="create"<?php $unfamiliar['create']; ?>>will have a new author account created for them</option>
-    <?php foreach ($authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>"<?php print $unfamiliar[$author_id]; ?>>will have their posts attributed to <?php echo $author_name; ?></option>
-    <?php endforeach; ?>
-    <option value="newuser">will have their posts attributed to a new user...</option>
-    <option value="filter"<?php print $unfamiliar['filter'] ?>>get filtered out</option>
-  </select>
+	</div> <!-- class="metabox-holder" -->
+</div> <!-- id="post-body" -->
+</div> <!-- id="poststuff" -->
 
-  <span id="unfamiliar-author-newuser">named <input type="text" name="unfamiliar_author_newuser" value="" /></span></p>
-  </td>
-</tr>
-
-<?php
-if (is_object($link) and $link->found()) :
-?>
-<tr><th>Syndicated authors</th>
-<td>For attributing posts by specific authors. Blank out a name to delete the rule. Fill in a new name at the bottom to create a new rule.</p>
-<table style="width: 100%">
-<?php
-	if (isset($link->settings['map authors'])) :
-?>
-<?php
-		$i=0;
-		foreach ($link->settings['map authors'] as $author_rules) :
-			foreach ($author_rules as $author_name => $author_action) :
-				$i++; 
-?>
-<tr>
-<th style="text-align: left; width: 15.0em">Posts by <input type="text" name="author_rules_name[]" value="<?php echo htmlspecialchars($author_name); ?>" size="11" /></th>
-  <td>
-  <select id="author-rules-<?php echo $i; ?>" name="author_rules_action[]" onchange="contextual_appearance('author-rules-<?php echo $i; ?>', 'author-rules-<?php echo $i; ?>-newuser', 'author-rules-<?php echo $i; ?>-default', 'newuser', 'inline');">
-    <?php foreach ($authorlist as $local_author_id => $local_author_name) : ?>
-    <option value="<?php echo $local_author_id; ?>"<?php if ($local_author_id==$author_action) : echo ' selected="selected"'; endif; ?>>are assigned to <?php echo $local_author_name; ?></option>
-    <?php endforeach; ?>
-    <option value="newuser">will be assigned to a new user...</option>
-    <option value="filter"<?php if ('filter'==$author_action) : echo ' selected="selected"'; endif; ?>>get filtered out</option>
-  </select>
-  
-  <span id="author-rules-<?php echo $i; ?>-newuser">named <input type="text" name="author_rules_newuser[]" value="" /></span>
-  </td>
-</tr>
-<?php 			endforeach;
-		endforeach;
-	endif;
-?>
-
-<tr>
-<th style="text-align: left; width: 15.0em">Posts by <input type="text" name="add_author_rule_name" size="11" /></th>
-  <td>
-    <select id="add-author-rule" name="add_author_rule_action" onchange="contextual_appearance('add-author-rule', 'add-author-rule-newuser', 'add-author-rule-default', 'newuser', 'inline');">
-      <?php foreach ($authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>">are assigned to <?php echo $author_name; ?></option>
-      <?php endforeach; ?>
-      <option value="newuser">will be assigned to a new user...</option>
-      <option value="filter">get filtered out</option>
-    </select>
-   
-   <span id="add-author-rule-newuser">named <input type="text" name="add_author_rule_newuser" value="" /></span>
-   </td>
-</tr>
-</table>
-</td>
-</tr>
-<?php endif; ?>
-
-<?php if (!(is_object($link) and $link->found())) : ?>
-<tr>
-<th scope="row">Matching Authors</th>
-<td><ul style="list-style: none; margin: 0; padding: 0;">
-<li><div><label><input id="match-author-by-email" type="checkbox" name="match_author_by_email" value="yes" <?php if ($match_author_by_email) : ?>checked="checked" <?php endif; ?>onchange="contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', 'block', /*checkbox=*/ true);" /> Treat syndicated authors with the same e-mail address as the same author.</label></div>
-<div id="unless-null-email">
-<p>Unless the e-mail address is one of the following anonymous e-mail addresses:</p>
-<textarea name="null_emails" rows="3" style="width: 100%">
-<?php print implode("\n", $null_emails); ?>
-</textarea>
-</div></li>
-</ul></td>
-</tr>
-<?php else : ?>
-<th scope="row">Fixing mis-matched authors:</th>
-<td><p style="margin: 0.5em 0px">Take all the posts from this feed attributed to
-<select name="fix_mismatch_from">
-<?php foreach ($authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>"><?php echo $author_name; ?></option>
-<?php endforeach; ?>
-</select>
-and instead
-<select id="fix-mismatch-to" name="fix_mismatch_to" onchange="contextual_appearance('fix-mismatch-to', 'fix-mismatch-to-newuser', null, 'newuser', 'inline');">
-<?php foreach ($authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>">re-assign them to <?php echo $author_name; ?></option>
-<?php endforeach; ?>
-      <option value="newuser">re-assign them to a new user...</option>
-      <option value="filter">delete them</option>
-</select>
-
-   <span id="fix-mismatch-to-newuser">named <input type="text" name="fix_mismatch_to_newuser" value="" /></span>
-   <input type="submit" class="button" name="fix_mismatch" value="Fix it!" />
-   </td>
-</td>
-<?php endif; ?>
-</tbody>
-</table>
-
-<p class="submit">
-<input class="button-primary" type="submit" name="save" value="Save Changes" />
-</p>
+<?php fwp_settings_form_single_submit_closer(); ?>
 
 <script type="text/javascript">
 	contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');
 <?php if (is_object($link) and $link->found()) : ?>
-<?php 	for ($j=1; $j<=$i; $j++) : ?>
+<?php 	for ($j=1; $j<=$authorsPage->rule_count; $j++) : ?>
 	contextual_appearance('author-rules-<?php echo $j; ?>', 'author-rules-<?php echo $j; ?>-newuser', 'author-rules-<?php echo $j; ?>-default', 'newuser', 'inline');
 <?php 	endfor; ?>
 	contextual_appearance('add-author-rule', 'add-author-rule-newuser', 'add-author-rule-default', 'newuser', 'inline');

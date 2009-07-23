@@ -191,7 +191,7 @@ function fwp_syndication_options_page () {
 		update_option('feedwordpress_update_time_limit', ($_POST['update_time_limit']=='yes')?(int) $_POST['time_limit_seconds']:0);
 
 		$freshness_interval = (isset($_POST['freshness_interval']) ? (int) $_POST['freshness_interval'] : 10);
-		update_option('feedworidpress_freshness', $freshness_interval*60);
+		update_option('feedwordpress_freshness', $freshness_interval*60);
 
 		if (isset($_REQUEST['hardcode_name']) and ($_REQUEST['hardcode_name'] == 'no')) :
 			update_option('feedwordpress_hardcode_name', 'no');
@@ -264,7 +264,7 @@ print $icon;
 <form action="" method="post">
 <?php
 	FeedWordPressCompatibility::stamp_nonce('feedwordpress_options');
-	fwp_linkedit_single_submit();
+	fwp_settings_form_single_submit();
 ?>
 <div id="post-body">
 <?php
@@ -291,7 +291,7 @@ do_action('feedwordpress_admin_page_settings_meta_boxes', $settingsPage);
 <?php
 	fwp_do_meta_boxes($settingsPage->meta_box_context(), $settingsPage->meta_box_context(), $settingsPage);
 
-	fwp_linkedit_single_submit_closer();
+	fwp_settings_form_single_submit_closer();
 ?>
 	</div> <!-- class="metabox-holder" -->
 </div> <!-- id="post-body" -->

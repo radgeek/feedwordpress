@@ -512,6 +512,7 @@ function fwp_add_pages () {
 	endif;
 
 	call_user_func_array('add_menu_page', $menu);
+	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Feeds', 'Feeds', $fwp_capability['manage_options'], $fwp_path.'/feeds-page.php');
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Posts & Links', 'Posts & Links', $fwp_capability['manage_options'], $fwp_path.'/posts-page.php');
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Authors', 'Authors', $fwp_capability['manage_options'], $fwp_path.'/authors-page.php');
 	add_submenu_page($fwp_path.'/syndication.php', 'Categories'.FEEDWORDPRESS_AND_TAGS, 'Categories'.FEEDWORDPRESS_AND_TAGS, $fwp_capability['manage_options'], $fwp_path.'/categories-page.php');
@@ -894,14 +895,27 @@ class FeedWordPress {
 		// WordPress gets cranky if there's no homepage URI
 		if (!isset($uri) or strlen($uri)<1) : $uri = $rss; endif;
 		
-		if (function_exists('wp_insert_link')) { // WordPress 2.x
+		if (function_exists('wp_insert_link')) : // WordPress 2.x
+			if (FeedWordPressCompatibility::test_version(0, FWP_SCHEMA_21)) :
+				// Morons.
+				$name = $wpdb->escape($name);
+				$uri = $wpdb->escape($uri);
+				$rss = $wpdb->escape($rss);
+				
+				// Comes in as a single category
+				$linkCats = $cat_id;
+			else :
+				// Comes in as an array of categories
+				$linkCats = array($cat_id);
+			endif;
+
 			$link_id = wp_insert_link(array(
 				"link_name" => $name,
 				"link_url" => $uri,
-				"link_category" => (fwp_test_wp_version(0, FWP_SCHEMA_21) ? $cat_id : array($cat_id)),
+				"link_category" => $linkCats,
 				"link_rss" => $rss
 			));
-		} else { // WordPress 1.5.x
+		else : // WordPress 1.5.x
 			$result = $wpdb->query("
 			INSERT INTO $wpdb->links
 			SET
@@ -911,7 +925,7 @@ class FeedWordPress {
 				link_rss = '".$wpdb->escape($rss)."'
 			");
 			$link_id = $wpdb->insert_id;
-		} // if
+		endif;
 		return $link_id;
 	} // function FeedWordPress::syndicate_link()
 

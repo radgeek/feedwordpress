@@ -255,6 +255,31 @@ class SyndicatedLink {
 		return $new_count;
 	} /* SyndicatedLink::poll() */
 
+	/**
+	 * Updates the URL for the feed syndicated by this link.
+	 *
+	 * @param string $url The new feed URL to use for this source.
+	 * @return bool TRUE on success, FALSE on failure.
+	 */
+	function set_uri ($url) {
+		global $wpdb;
+
+		if ($this->found()) :
+			// Update link_rss
+			$result = $wpdb->query("
+			UPDATE $wpdb->links
+			SET
+				link_rss = '".$wpdb->escape($url)."'
+			WHERE link_id = '".$wpdb->escape($this->id)."'
+			");
+			
+			$ret = ($result ? true : false);
+		else :
+			$ret = false;
+		endif;
+		return $ret;
+	} /* SyndicatedLink::set_uri () */
+	
 	function map_name_to_new_user ($name, $newuser_name) {
 		global $wpdb;
 
@@ -348,9 +373,23 @@ class SyndicatedLink {
 		return (is_object($this->link) ? $this->link->link_rss : NULL);
 	} /* SyndicatedLink::uri () */
 
-	function homepage () {
-		return (isset($this->settings['feed/link']) ? $this->settings['feed/link'] : NULL);
+	function homepage ($fromFeed = true) {
+		if ($fromFeed) :
+			$url = (isset($this->settings['feed/link']) ? $this->settings['feed/link'] : NULL);
+		else :
+			$url = $this->link->link_url;
+		endif;
+		return $url;
 	} /* SyndicatedLink::homepage () */
+
+	function name ($fromFeed = true) {
+		if ($fromFeed) :
+			$name = (isset($this->settings['feed/title']) ? $this->settings['feed/title'] : NULL);
+		else :
+			$name = $this->link->link_name;
+		endif;
+		return $name;
+	} /* SyndicatedLink::name () */
 
 	function ttl () {
 		if (is_object($this->magpie)) :

@@ -1,6 +1,7 @@
 <?php
 class FeedWordPressAdminPage {
 	var $context;
+	var $updated = false;
 	var $link = NULL;
 
 	/**
@@ -9,16 +10,59 @@ class FeedWordPressAdminPage {
 	 * @param mixed $link An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings
 	 */
 	function FeedWordPressAdminPage ($page = 'feedwordpressadmin', $link = NULL) {
+		$this->link = $link;
+
 		// Set meta-box context name
 		$this->context = $page;
 		if ($this->for_feed_settings()) :
 			$this->context .= 'forfeed';
 		endif;
-		$this->link = $link;
 	} /* FeedWordPressAdminPage constructor */
 
 	function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
 	function for_default_settings () { return !$this->for_feed_settings(); }
+
+	/*static*/ function submitted_link_id () {
+		global $fwp_post;
+
+		// Presume global unless we get a specific link ID
+		$link_id = NULL;
+
+		$submit_buttons = array(
+			'save',
+			'submit',
+			'fix_mismatch',
+			'feedfinder',
+		);
+		foreach ($submit_buttons as $field) :
+			if (isset($fwp_post[$field])) :
+				$link_id = $_REQUEST['save_link_id'];
+			endif;
+		endforeach;
+		
+		if (is_null($link_id) and isset($_REQUEST['link_id'])) :
+			$link_id = $_REQUEST['link_id'];
+		endif;
+
+		return $link_id;
+	} /* FeedWordPressAdminPage::submitted_link_id() */
+
+	/*static*/ function submitted_link () {
+		$link_id = FeedWordPressAdminPage::submitted_link_id();
+		if (is_numeric($link_id) and $link_id) :
+			$link =& new SyndicatedLink($link_id);
+		else :
+			$link = NULL;
+		endif;
+		return $link;
+	} /* FeedWordPressAdminPage::submitted_link () */
+
+	function stamp_link_id ($field = null) {
+		if (is_null($field)) : $field = 'save_link_id'; endif;
+		?>
+	<input type="hidden" name="<?php print wp_specialchars($field, 'both'); ?>" value="<?php print ($this->for_feed_settings() ? $this->link->id : '*'); ?>" />
+		<?php
+	} /* FeedWordPressAdminPage::stamp_link_id () */
 
 	function these_posts_phrase () {
 		if ($this->for_feed_settings()) :
@@ -73,10 +117,118 @@ class FeedWordPressAdminPage {
 </script>
 
 <?php
-	 } /* FeedWordPressAdminPage::ajax_interface_js () */
+	} /* FeedWordPressAdminPage::ajax_interface_js () */
+
+	function display_feed_select_dropdown() {
+		$links = FeedWordPress::syndicated_links();
+		if (fwp_test_wp_version(FWP_SCHEMA_27)) :
+	?>
+			<style type="text/css">	
+			#post-search {
+				float: right;
+				margin:11px 12px 0;
+				min-width: 130px;
+				position:relative;
+			}
+			.fwpfs {
+				color: #dddddd;
+				background:#797979 url(<?php bloginfo('home') ?>/wp-admin/images/fav.png) repeat-x scroll left center;
+				border-color:#777777 #777777 #666666 !important; -moz-border-radius-bottomleft:12px;
+				-moz-border-radius-bottomright:12px;
+				-moz-border-radius-topleft:12px;
+				-moz-border-radius-topright:12px;
+				border-style:solid;
+				border-width:1px;
+				line-height:15px;
+				padding:3px 30px 4px 12px;
+			}
+			.fwpfs.slide-down {
+				border-bottom-color: #626262;
+				-moz-border-radius-bottomleft:0;
+				-moz-border-radius-bottomright:0;
+				-moz-border-radius-topleft:12px;
+				-moz-border-radius-topright:12px;
+				background-image:url(<?php bloginfo('home') ?>/wp-admin/images/fav-top.png);
+				background-position:0 top;
+				background-repeat:repeat-x;
+				border-bottom-style:solid;
+				border-bottom-width:1px;
+			}
+			</style>
+			
+			<script type="text/javascript">
+				jQuery(document).ready(function($){
+					$('.fwpfs').toggle(
+						function(){$('.fwpfs').removeClass('slideUp').addClass('slideDown'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideDown') ) { $('.fwpfs').addClass('slide-down'); }}, 10) },
+						function(){$('.fwpfs').removeClass('slideDown').addClass('slideUp'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideUp') ) { $('.fwpfs').removeClass('slide-down'); }}, 10) }
+					);
+					$('.fwpfs').bind(
+						'change',
+						function () { this.form.submit(); }
+					);
+					$('#post-search .button').css( 'display', 'none' );
+				});
+			</script>
+		<?php
+		endif;
+		
+		?>
+		<p id="post-search">
+		<select name="link_id" class="fwpfs" style="max-width: 20.0em;">
+		  <option value="*"<?php if ($this->for_default_settings()) : ?> selected="selected"<?php endif; ?>>- defaults for all feeds -</option>
+		<?php if ($links) : foreach ($links as $ddlink) : ?>
+		  <option value="<?php print (int) $ddlink->link_id; ?>"<?php if (!is_null($this->link) and ($this->link->id==$ddlink->link_id)) : ?> selected="selected"<?php endif; ?>><?php print wp_specialchars($ddlink->link_name, 1); ?></option>
+		<?php endforeach; endif; ?>
+		</select>
+		<input class="button" type="submit" name="go" value="<?php _e('Go') ?> &raquo;" />
+		</p>
+		<?php
+	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
+
+	function display_sheet_header ($pagename = 'Syndication') {
+		if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_27)) :
+		?>
+			<div class="icon32"><img src="<?php print wp_specialchars(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png', 1); ?>" alt="" /></div>
+		<?php
+		endif;
+		?>
+
+		<h2><?php print wp_specialchars(__($pagename.' Settings'), 1); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo wp_specialchars($this->link->link->link_name, 1); ?><?php endif; ?></h2>
+		<?php
+	}
+
+	function display_update_notice_if_updated ($pagename = 'Syndication', $mesg = NULL) {
+		if ($this->updated) :
+		?>
+			<div class="updated">
+			<p><?php print wp_specialchars($pagename, 1); ?> settings updated.</p>
+			</div>
+		<?php
+		elseif (!is_null($mesg)) :
+		?>
+			<div class="updated">
+			<p><?php print wp_specialchars($mesg, 1); ?></p>
+			</div>
+		<?php
+		endif;
+	} /* FeedWordPressAdminPage::display_update_notice_if_updated() */
+
+	function display_settings_scope_message () {
+		if ($this->for_feed_settings()) :
+		?>
+	<p>These settings only affect posts syndicated from
+	<strong><?php echo wp_specialchars($this->link->link->link_name, 1); ?></strong>.</p>
+		<?php
+		else :
+		?>
+	<p>These settings affect posts syndicated from any feed unless they are overridden
+	by settings for that specific feed.</p>
+		<?php
+		endif;
+	} /* FeedWordPressAdminPage::display_settings_scope_message () */
 } /* class FeedWordPressAdminPage */
 
-function fwp_linkedit_single_submit ($caption = NULL) {
+function fwp_settings_form_single_submit ($caption = NULL) {
 	if (fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) :
 		if (is_null($caption)) : $caption = __('Save'); endif;
 ?>
@@ -92,7 +244,7 @@ function fwp_linkedit_single_submit ($caption = NULL) {
 	endif;
 }
 
-function fwp_linkedit_periodic_submit ($caption = NULL) {
+function fwp_settings_form_periodic_submit ($caption = NULL) {
 	if (!fwp_test_wp_version(FWP_SCHEMA_25)) :
 		if (is_null($caption)) : $caption = __('Save Changes &raquo;'); endif;
 ?>
@@ -103,7 +255,7 @@ function fwp_linkedit_periodic_submit ($caption = NULL) {
 	endif;
 }
 
-function fwp_linkedit_single_submit_closer ($caption = NULL) {
+function fwp_settings_form_single_submit_closer ($caption = NULL) {
 	if (fwp_test_wp_version(FWP_SCHEMA_27)) :
 		if (is_null($caption)) : $caption = __('Save Changes'); endif;
 ?>
@@ -377,7 +529,29 @@ settings page to set up how new posts <?php print $from_this_feed; ?> are assign
 			} );
 		</script>
 	<?php
-	}
+	} /* FeedWordPressSettingsUI::fix_toggles_js () */
+	
+	function magic_input_tip_js ($id) {
+		if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_25)) :
+		?>
+			<script type="text/javascript">
+			jQuery(document).ready( function () {
+				var inputBox = jQuery("#<?php print $id; ?>");
+				var boxEl = inputBox.get(0);
+				if (boxEl.value==boxEl.defaultValue) { inputBox.addClass('form-input-tip'); }
+				inputBox.focus(function() {
+					if ( this.value == this.defaultValue )
+						jQuery(this).val( '' ).removeClass( 'form-input-tip' );
+				});
+				inputBox.blur(function() {
+					if ( this.value == '' )
+						jQuery(this).val( this.defaultValue ).addClass( 'form-input-tip' );
+				});			
+			} );
+			</script>
+		<?php
+		endif;
+	} /* FeedWordPressSettingsUI::magic_input_tip_js () */
 } /* class FeedWordPressSettingsUI */
 
 function fwp_insert_new_user ($newuser_name) {
@@ -500,7 +674,7 @@ function fwp_do_meta_boxes($page, $context, $object) {
 						fwp_option_box_closer();
 						
 						// Submit button for WP 1.5 style
-						fwp_linkedit_periodic_submit();
+						fwp_settings_form_periodic_submit();
 					}
 				}
 			}

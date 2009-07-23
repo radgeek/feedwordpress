@@ -101,19 +101,9 @@ function fwp_categories_page () {
 
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_categories_settings', /*capability=*/ 'manage_links');
 
-	if (isset($GLOBALS['fwp_post']['save']) or isset($GLOBALS['fwp_post']['submit']) or isset($GLOBALS['fwp_post']['fix_mismatch'])) :
-		$link_id = $_REQUEST['save_link_id'];
-	elseif (isset($_REQUEST['link_id'])) :
-		$link_id = $_REQUEST['link_id'];
-	else :
-		$link_id = NULL;
-	endif;
+	$link = FeedWordPressAdminPage::submitted_link();
+	$link_id = $link->id;
 
-	if (is_numeric($link_id) and $link_id) :
-		$link =& new SyndicatedLink($link_id);
-	else :
-		$link = NULL;
-	endif;
 	$catsPage = new FeedWordPressCategoriesPage($link);
 
 	$mesg = null;
@@ -177,7 +167,7 @@ function fwp_categories_page () {
 			SET $alter_set
 			WHERE link_id='$link_id'
 			");
-			$updated_link = true;
+			$catsPage->updated = true;
 
 			// reload link information from DB
 			if (function_exists('clean_bookmark_cache')) :
@@ -201,54 +191,19 @@ function fwp_categories_page () {
 
 			update_option('feedwordpress_unfamiliar_category', $_REQUEST['unfamiliar_category']);
 
-			$updated_link = true;
+			$catsPage->updated = true;
 		endif;
 	else :
-		$updated_link = false;
+		$catsPage->updated = false;
 	endif;
 
 	////////////////////////////////////////////////
-	// Get defaults from database //////////////////
+	// Prepare settings page ///////////////////////
 	////////////////////////////////////////////////
 	
-	$unfamiliar = array ('create'=>'','tag' => '', 'default'=>'','filter'=>'');
-	if (is_object($link) and $link->found()) :
-		$unfamiliar['site-default'] = '';
-		$ucKey = $link->settings["unfamiliar category"];
-		$ucDefault = 'site-default';
-
-		if (is_array($link->settings['cats'])) : $cats = $link->settings['cats'];
-		else : $cats = array();
-		endif;
-
-		$tags = $link->settings['tags'];
-	else :
-		$ucKey = FeedWordPress::on_unfamiliar('category');
-		$ucDefault = 'create';
-
-		$cats = array_map('trim',
-			preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, get_option('feedwordpress_syndication_cats'))
-		);
-		$tags = array_map('trim',
-			preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, get_option('feedwordpress_syndication_tags'))
-		);
-	endif;
-
-	if (!is_string($ucKey) or !array_key_exists($ucKey, $unfamiliar)) :
-		$ucKey = $ucDefault;
-	endif;
-	$unfamiliar[$ucKey] = ' checked="checked"';
-
-	$dogs = SyndicatedPost::category_ids($cats, /*unfamiliar=*/ NULL);
-
 	$catsPage->ajax_interface_js();
-
-	if ($updated_link) : ?>
-<div class="updated"><p>Syndicated categories and tags settings updated.</p></div>
-<?php elseif (!is_null($mesg)) : ?>
-<div class="updated"><p><?php print wp_specialchars($mesg, 1); ?></p></div>
-<?php endif; ?>
-
+	$catsPage->display_update_notice_if_updated('Syndicated categories'.FEEDWORDPRESS_AND_TAGS, $mesg);
+?>
 <div class="wrap">
 <?php
 if (function_exists('add_meta_box')) :
@@ -263,24 +218,10 @@ endif;
 <form style="position: relative" action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 <div><?php
 	FeedWordPressCompatibility::stamp_nonce('feedwordpress_categories_settings');
+	$catsPage->stamp_link_id();
+?></div>
 
-	if (is_numeric($link_id) and $link_id) :
-?>
-<input type="hidden" name="save_link_id" value="<?php echo $link_id; ?>" />
-<?php
-	else :
-?>
-<input type="hidden" name="save_link_id" value="*" />
-<?php
-	endif;
-?>
-</div>
-
-<?php $links = FeedWordPress::syndicated_links(); ?>
-<?php if (fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
-	<div class="icon32"><img src="<?php print htmlspecialchars(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></div>
-<?php endif; ?>
-<h2>Categories<?php print htmlspecialchars(FEEDWORDPRESS_AND_TAGS); ?> Settings<?php if (!is_null($link) and $link->found()) : ?>: <?php echo wp_specialchars($link->link->link_name, 1); ?><?php endif; ?></h2>
+<?php $catsPage->display_sheet_header('Categories'.FEEDWORDPRESS_AND_TAGS); ?>
 
 <style type="text/css">
 	table.edit-form th { width: 27%; vertical-align: top; }
@@ -288,86 +229,27 @@ endif;
 	table.edit-form td ul.options { margin: 0; padding: 0; list-style: none; }
 </style>
 
-<?php if (fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
-	<style type="text/css">	
-	#post-search {
-		float: right;
-		margin:11px 12px 0;
-		min-width: 130px;
-		position:relative;
-	}
-	.fwpfs {
-		color: #dddddd;
-		background:#797979 url(<?php bloginfo('home') ?>/wp-admin/images/fav.png) repeat-x scroll left center;
-		border-color:#777777 #777777 #666666 !important; -moz-border-radius-bottomleft:12px;
-		-moz-border-radius-bottomright:12px;
-		-moz-border-radius-topleft:12px;
-		-moz-border-radius-topright:12px;
-		border-style:solid;
-		border-width:1px;
-		line-height:15px;
-		padding:3px 30px 4px 12px;
-	}
-	.fwpfs.slide-down {
-		border-bottom-color: #626262;
-		-moz-border-radius-bottomleft:0;
-		-moz-border-radius-bottomright:0;
-		-moz-border-radius-topleft:12px;
-		-moz-border-radius-topright:12px;
-		background-image:url(<?php bloginfo('home') ?>/wp-admin/images/fav-top.png);
-		background-position:0 top;
-		background-repeat:repeat-x;
-		border-bottom-style:solid;
-		border-bottom-width:1px;
-	}
-	</style>
-	
-	<script type="text/javascript">
-		jQuery(document).ready(function($){
-			$('.fwpfs').toggle(
-				function(){$('.fwpfs').removeClass('slideUp').addClass('slideDown'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideDown') ) { $('.fwpfs').addClass('slide-down'); }}, 10) },
-				function(){$('.fwpfs').removeClass('slideDown').addClass('slideUp'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideUp') ) { $('.fwpfs').removeClass('slide-down'); }}, 10) }
-			);
-			$('.fwpfs').bind(
-				'change',
-				function () { this.form.submit(); }
-			);
-			$('#post-search .button').css( 'display', 'none' );
-		});
-	</script>
-<?php endif; /* else : */?>
-<p id="post-search">
-<select name="link_id" class="fwpfs" style="max-width: 20.0em;">
-  <option value="*"<?php if (is_null($link) or !$link->found()) : ?> selected="selected"<?php endif; ?>>- defaults for all feeds -</option>
-<?php if ($links) : foreach ($links as $ddlink) : ?>
-  <option value="<?php print (int) $ddlink->link_id; ?>"<?php if (!is_null($link) and ($link->link->link_id==$ddlink->link_id)) : ?> selected="selected"<?php endif; ?>><?php print wp_specialchars($ddlink->link_name, 1); ?></option>
-<?php endforeach; endif; ?>
-</select>
-<input class="button" type="submit" name="go" value="<?php _e('Go') ?> &raquo;" />
-</p>
-<?php /* endif; */ ?>
-
-<?php if (!is_null($link) and $link->found()) : ?>
-	<p>These settings only affect posts syndicated from
-	<strong><?php echo wp_specialchars($link->link->link_name, 1); ?></strong>.</p>
-<?php else : ?>
-	<p>These settings affect posts syndicated from any feed unless they are overridden
-	by settings for that specific feed.</p>
-<?php endif; ?>
+<?php
+	$catsPage->display_feed_select_dropdown();
+	$catsPage->display_settings_scope_message();
+?>
 
 <div id="poststuff">
-<?php fwp_linkedit_single_submit(); ?>
+<?php fwp_settings_form_single_submit(); ?>
 <div id="post-body">
 <?php
-$boxes_by_methods = array(
-	'feed_categories_box' => __('Feed Categories'.FEEDWORDPRESS_AND_TAGS),
-	'categories_box' => array('title' => __('Categories'), 'id' => 'categorydiv'),
-	'tags_box' => __('Tags'),
-);
+	////////////////////////////////////////////////
+	// Display settings boxes //////////////////////
+	////////////////////////////////////////////////
 
-if (!FeedWordPressCompatibility::post_tags()) :
-	unset($boxes_by_methods['tags_box']);
-endif;
+	$boxes_by_methods = array(
+		'feed_categories_box' => __('Feed Categories'.FEEDWORDPRESS_AND_TAGS),
+		'categories_box' => array('title' => __('Categories'), 'id' => 'categorydiv'),
+		'tags_box' => __('Tags'),
+	);
+	if (!FeedWordPressCompatibility::post_tags()) :
+		unset($boxes_by_methods['tags_box']);
+	endif;
 
 	foreach ($boxes_by_methods as $method => $row) :
 		if (is_array($row)) :
@@ -396,7 +278,7 @@ endif;
 </div> <!-- id="post-body" -->
 </div> <!-- id="poststuff" -->
 
-<?php fwp_linkedit_single_submit_closer(); ?>
+<?php fwp_settings_form_single_submit_closer(); ?>
 
 <script type="text/javascript">
 	contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');

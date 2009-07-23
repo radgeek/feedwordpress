@@ -1,48 +1,5 @@
 <?php
 require_once(dirname(__FILE__) . '/admin-ui.php');
-require_once(dirname(__FILE__) . '/magpiemocklink.class.php');
-require_once(dirname(__FILE__) . '/feedfinder.class.php');
-
-$FeedWordPressHTTPStatusMessages = array (
-	200 => 'OK. FeedWordPress had no problems retrieving the content at this URL but the content does not seem to be a feed, and does not seem to include links to any feeds.',
-	201 => 'Created',
-	202 => 'Accepted',
-	203 => 'Non-Authoritative information',
-	204 => 'No Content',
-	205 => 'Reset Content',
-	206 => 'Partial Content',
-	300 => 'Multiple Choices',
-	301 => 'Moved Permanently',
-	302 => 'Found',
-	303 => 'See Other',
-	304 => 'Not Modified',
-	305 => 'Use Proxy',
-	307 => 'Temporary Redirect',
-	400 => 'Bad Request',
-	401 => 'Unauthorized. This URL probably needs a username and password for you to access it.',
-	402 => 'Payment Required',
-	403 => 'Forbidden. The URL is not made available for the machine that FeedWordPress is running on.',
-	404 => 'Not Found. There is nothing at this URL. Have you checked the address for typos?',
-	405 => 'Method Not Allowed',
-	406 => 'Not Acceptable',
-	407 => 'Proxy Authentication Required',
-	408 => 'Request Timeout',
-	409 => 'Conflict',
-	410 => 'Gone. This URL is no longer available on this server and no forwarding address is known.',
-	411 => 'Length Required',
-	412 => 'Precondition Failed',
-	413 => 'Request Entity Too Large',
-	414 => 'Request URI Too Long',
-	415 => 'Unsupported Media Type',
-	416 => 'Requested Range Not Satisfiable',
-	417 => 'Expectation Failed',
-	500 => 'Internal Server Error. Something unexpected went wrong with the configuration of the server that hosts this URL. You might try again later to see if this issue has been resolved.',
-	501 => 'Not Implemented',
-	502 => 'Bad Gateway',
-	503 => 'Service Unavailable. The server is currently unable to handle the request due to a temporary overloading or maintenance of the server that hosts this URL. This is probably a temporary condition and you should try again later to see if the issue has been resolved.',
-	504 => 'Gateway Timeout',
-	505 => 'HTTP Version Not Supported',
-);
 
 ################################################################################
 ## ADMIN MENU ADD-ONS: implement Dashboard management pages ####################
@@ -155,9 +112,8 @@ function fwp_syndication_manage_page () {
 ?>
 <?php $cont = true;
 if (isset($_REQUEST['action'])):
-	if ($_REQUEST['action'] == 'feedfinder' or $_REQUEST['action'] == FWP_SYNDICATE_NEW) : $cont = fwp_feedfinder_page();
+	if ($_REQUEST['action'] == 'feedfinder' or $_REQUEST['action']==FWP_SYNDICATE_NEW) : $cont = fwp_feedfinder_page();
 	elseif ($_REQUEST['action'] == 'switchfeed') : $cont = fwp_switchfeed_page();
-	elseif ($_REQUEST['action'] == 'linkedit') : $cont = fwp_linkedit_page();
 	elseif ($_REQUEST['action'] == FWP_UNSUB_CHECKED or $_REQUEST['action'] == 'Unsubscribe') : $cont = fwp_multidelete_page();
 	endif;
 endif;
@@ -215,7 +171,7 @@ if ($cont):
 
 		<?php if (fwp_test_wp_version(0, FWP_SCHEMA_25)) : ?>
 		<div class="wrap">
-		<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
+		<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename(__FILE__); ?>" method="post">
 		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 		<h2>Add a new syndicated site:</h2>
 		<div>
@@ -223,7 +179,7 @@ if ($cont):
 		<input type="text" name="lookup" id="add-uri" value="URI" size="64" />
 		<input type="hidden" name="action" value="feedfinder" />
 		</div>
-		<div class="submit"><input type="submit" value="Syndicate &raquo;" /></div>
+		<div class="submit"><input type="submit" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
 		</form>
 		</div> <!-- class="wrap" -->
 		<?php endif; ?>
@@ -300,22 +256,7 @@ function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
 	<div class="alignright">
 	<label for="add-uri">Add new source:</label>
 	<input type="text" name="lookup" id="add-uri" value="Website or feed URI" />
-<script type="text/javascript">
-jQuery(document).ready( function () {
-	var addUri = jQuery("#add-uri");
-	var box = addUri.get(0);
-	if (box.value==box.defaultValue) { addUri.addClass('form-input-tip'); }
-	addUri.focus(function() {
-		if ( this.value == this.defaultValue )
-			jQuery(this).val( '' ).removeClass( 'form-input-tip' );
-	});
-	addUri.blur(function() {
-		if ( this.value == '' )
-			jQuery(this).val( this.defaultValue ).addClass( 'form-input-tip' );
-	});
-
-} );
-</script>
+	<?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
 
 	<input type="hidden" name="action" value="feedfinder" />
 	<input type="submit" class="button-secondary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
@@ -359,9 +300,9 @@ jQuery(document).ready( function () {
 	endif;
 ?>
 <td>
-<strong><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit"><?php echo wp_specialchars($link->link_name, 'both'); ?></a></strong>
+<strong><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/feeds-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php echo wp_specialchars($link->link_name, 'both'); ?></a></strong>
 <div class="row-actions"><div><strong>Settings &gt;</strong>
-<a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=linkedit"><?php _e('Feed'); ?></a>
+<a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/feeds-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Feed'); ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Posts'); ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/authors-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Authors'); ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/categories-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php print htmlspecialchars(__('Categories'.FEEDWORDPRESS_AND_TAGS)); ?></a></div>
@@ -434,482 +375,56 @@ jQuery(document).ready( function () {
 } /* function fwp_syndication_manage_page_links_box() */
 
 function fwp_feedfinder_page () {
-	global $wpdb;
-	global $FeedWordPressHTTPStatusMessages;
-
-	$lookup = (isset($_REQUEST['lookup'])?$_REQUEST['lookup']:NULL);
-
-	if (isset($_REQUEST['link_id']) and ($_REQUEST['link_id']!=0)):
-		$link_id = $_REQUEST['link_id'];
-		if (!is_numeric($link_id)) : FeedWordPress::critical_bug('fwp_feedfinder_page::link_id', $link_id, __LINE__); endif;
-		
-		$link = $wpdb->get_row("SELECT * FROM $wpdb->links WHERE link_id='".$wpdb->escape($link_id)."'");
-		if (is_object($link)):
-			if (is_null($lookup)) $lookup = $link->link_url;
-			$name = wp_specialchars($link->link_name, 'both');
-		else:
-			die (__("Cheatin' uh ?"));
-		endif;
-	else:
-		$name = "<code>".htmlspecialchars($lookup)."</code>";
-		$link_id = 0;
-	endif;
-?>
-	<div class="wrap">
-	<h2>Feed Finder: <?php echo $name; ?></h2>
-<?php
-	$f =& new FeedFinder($lookup);
-	$feeds = $f->find();
-	if (count($feeds) > 0):
-		foreach ($feeds as $key => $f):
-			$rss = fetch_rss($f);
-			if ($rss):
-				$feed_title = isset($rss->channel['title'])?$rss->channel['title']:$rss->channel['link'];
-				$feed_link = isset($rss->channel['link'])?$rss->channel['link']:'';
-			else :
-				// Give us some sucky defaults
-				$uri_bits = parse_url($lookup);
-				$uri_bits['host'] = preg_replace('/^www\./i', '', $uri_bits['host']);
-				$display_uri =
-					(isset($uri_bits['user'])?$uri_bits['user'].'@':'')
-					.(isset($uri_bits['host'])?$uri_bits['host']:'')
-					.(isset($uri_bits['port'])?':'.$uri_bits['port']:'')
-					.(isset($uri_bits['path'])?$uri_bits['path']:'')
-					.(isset($uri_bits['query'])?'?'.$uri_bits['query']:'');
-				if (strlen($display_uri) > 32) : $display_uri = substr($display_uri, 0, 32).'&#8230;'; endif;
-
-				$feed_title = $display_uri;
-				$feed_link = $lookup;
-			endif;
-?>
-				<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
-				<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_switchfeed'); ?></div>
-				<fieldset style="clear: both">
-				<legend><?php echo $rss->feed_type; ?> <?php echo $rss->feed_version; ?> feed</legend>
-
-				<?php if ($link_id===0): ?>
-					<input type="hidden" name="feed_title" value="<?php echo wp_specialchars($feed_title, 'both'); ?>" />
-					<input type="hidden" name="feed_link" value="<?php echo wp_specialchars($feed_link, 'both'); ?>" />
-				<?php endif; ?>
-
-				<input type="hidden" name="link_id" value="<?php echo $link_id; ?>" />
-				<input type="hidden" name="feed" value="<?php echo wp_specialchars($f, 'both'); ?>" />
-				<input type="hidden" name="action" value="switchfeed" />
-
-				<div>
-				<div style="float:right; background-color:#D0D0D0; color: black; width:45%; font-size:70%; border-left: 1px dotted #A0A0A0; padding-left: 0.5em; margin-left: 1.0em">
-<?php				if (count($rss->items) > 0): ?>
-					<?php
-						// Prepare to display Sample Item
-						$link =& new MagpieMockLink($rss, $f);
-						$post =& new SyndicatedPost($rss->items[0], $link);
-					?>
-					<h3>Sample Item</h3>
-					<ul>
-					<li><strong>Title:</strong> <a href="<?php echo $post->post['meta']['syndication_permalink']; ?>"><?php echo $post->post['post_title']; ?></a></li>
-					<li><strong>Date:</strong> <?php print date('d-M-y g:i:s a', $post->published()); ?></li>
-					</ul>
-					<div class="entry">
-					<?php print $post->post['post_content']; ?>
-					</div>
-<?php				else: ?>
-					<h3>No Items</h3>
-					<p>FeedWordPress found no posts on this feed.</p>
-<?php				endif; ?>
-				</div>
-
-				<div>
-				<h3>Feed Information</h3>
-				<ul>
-				<li><strong>Website:</strong> <a href="<?php echo $feed_link; ?>"><?php echo is_null($feed_title)?'<em>Unknown</em>':$feed_title; ?></a></li>
-				<li><strong>Feed URI:</strong> <a href="<?php echo wp_specialchars($f, 'both'); ?>"><?php echo wp_specialchars($f, 'both'); ?></a> (<a title="Check feed &lt;<?php echo wp_specialchars($f, 'both'); ?>&gt; for validity" href="http://feedvalidator.org/check.cgi?url=<?php echo urlencode($f); ?>">validate</a>)</li>
-				<li><strong>Encoding:</strong> <?php echo isset($rss->encoding)?wp_specialchars($rss->encoding, 'both'):"<em>Unknown</em>"; ?></li>
-				<li><strong>Description:</strong> <?php echo isset($rss->channel['description'])?wp_specialchars($rss->channel['description'], 'both'):"<em>Unknown</em>"; ?></li>
-				</ul>
-				<div class="submit"><input type="submit" name="Use" value="&laquo; Use this feed" /></div>
-				<div class="submit"><input type="submit" name="Cancel" value="&laquo; Cancel" /></div>
-				</div>
-				</div>
-				</fieldset>
-				</form>
-<?php
-		endforeach;
-	else:
-		print "<p><strong>".__('Error').":</strong> ".__("FeedWordPress couldn't find any feeds at").' <code><a href="'.htmlspecialchars($lookup).'">'.htmlspecialchars($lookup).'</a></code>';
-		print ". ".__('Try another URL').".</p>";
-		
-		// Diagnostics
-		$httpObject = _wp_http_get_object();
-		$transports = $httpObject->_getTransport();
-		print "<div class=\"updated\" style=\"margin-left: 3.0em; margin-right: 3.0em;\">\n";
-		print "<h3>".__('Diagnostic information')."</h3>\n";
-		if (!is_null($f->error())) :
-			print "<h4>".__('HTTP request failure')."</h4>\n";
-			print "<p>".$f->error()."</p>\n";
-		else :
-			print "<h4>".__('HTTP request completed')."</h4>\n";
-			print "<p><strong>Status ".$f->status().":</strong> ".$FeedWordPressHTTPStatusMessages[$f->status()]."</p>\n";
-		endif;
-		print "<h4>".__('HTTP Transports available').":</h4>\n";
-		print "<ol>\n";
-		print "<li>".implode("</li>\n<li>", array_map('get_class', $transports))."</li>\n";
-		print "</ol>\n";
-		print "</div>\n";
-	endif;
-?>
-	</div>
-
-	<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
-	<div><?php
-		FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds');
-	?></div>
-	<div class="wrap">
-	<h2>Use another feed</h2>
-	<div><label>Feed:</label>
-	<input type="text" name="lookup" value="URI" />
-	<input type="hidden" name="link_id" value="<?php echo $link_id; ?>" />
-	<input type="hidden" name="action" value="feedfinder" /></div>
-	<div class="submit"><input type="submit" value="Use this feed &raquo;" /></div>
-	</div>
-	</form>
-<?php
-	return false; // Don't continue
-}
+	global $post_source;
+	
+	$post_source = 'feedwordpress_feeds';
+	
+	// With action=feedfinder, this goes directly to the feedfinder page
+	include_once(dirname(__FILE__) . '/feeds-page.php');
+	return false;
+} /* function fwp_feedfinder_page () */
 
 function fwp_switchfeed_page () {
 	global $wpdb, $wp_db_version;
+	global $fwp_post;
 
 	// If this is a POST, validate source and user credentials
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_switchfeed', /*capability=*/ 'manage_links');
 
-	if (!isset($_REQUEST['Cancel'])):
-		if (isset($_POST['link_id']) and ($_POST['link_id']==0)):
-			$link_id = FeedWordPress::syndicate_link($_REQUEST['feed_title'], $_REQUEST['feed_link'], $_REQUEST['feed']);
+	$changed = false;
+	if (!isset($fwp_post['Cancel'])):
+		if (isset($fwp_post['save_link_id']) and ($fwp_post['save_link_id']=='*')) :
+			$changed = true;
+			$link_id = FeedWordPress::syndicate_link($fwp_post['feed_title'], $fwp_post['feed_link'], $fwp_post['feed']);
 			if ($link_id): ?>
-<div class="updated"><p><a href="<?php echo stripslashes($_REQUEST['feed_link']); ?>"><?php echo wp_specialchars(stripslashes($_REQUEST['feed_title']), 'both'); ?></a>
-has been added as a contributing site, using the feed at &lt;<a href="<?php echo stripslashes($_REQUEST['feed']); ?>"><?php echo wp_specialchars(stripslashes($_REQUEST['feed']), 'both'); ?></a>&gt;.
-| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link_id; ?>&amp;action=linkedit">Configure settings</a>.</div>
+<div class="updated"><p><a href="<?php print $fwp_post['feed_link']; ?>"><?php print wp_specialchars($fwp_post['feed_title'], 'both'); ?></a>
+has been added as a contributing site, using the feed at
+&lt;<a href="<?php print $fwp_post['feed']; ?>"><?php print wp_specialchars($fwp_post['feed'], 'both'); ?></a>&gt;.
+| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/feeds-page.php&amp;link_id=<?php print $link_id; ?>">Configure settings</a>.</p></div>
 <?php			else: ?>
 <div class="updated"><p>There was a problem adding the feed. [SQL: <?php echo wp_specialchars(mysql_error(), 'both'); ?>]</p></div>
 <?php			endif;
-		elseif (isset($_POST['link_id'])):
-			// Update link_rss
-			$result = $wpdb->query("
-			UPDATE $wpdb->links
-			SET
-				link_rss = '".$wpdb->escape($_REQUEST['feed'])."'
-			WHERE link_id = '".$wpdb->escape($_REQUEST['link_id'])."'
-			");
-			
-			if ($result):
-				$result = $wpdb->get_row("
-				SELECT link_name, link_url FROM $wpdb->links
-				WHERE link_id = '".$wpdb->escape($_REQUEST['link_id'])."'
-				");
-			?> 
-<div class="updated"><p>Feed for <a href="<?php echo $result->link_url; ?>"><?php echo wp_specialchars($result->link_name, 'both'); ?></a>
-updated to &lt;<a href="<?php echo $_REQUEST['feed']; ?>"><?php echo wp_specialchars($_REQUEST['feed'], 'both'); ?></a>&gt;.</p></div>
-			<?php else: ?>
-<div class="updated"><p>Nothing was changed.</p></div>
-			<?php endif;
+		elseif (isset($fwp_post['save_link_id'])):
+			$existingLink = new SyndicatedLink($fwp_post['save_link_id']);
+			$changed = $existingLink->set_uri($fwp_post['feed']);
+
+			if ($changed):
+				$home = $existingLink->homepage(/*from feed=*/ false);
+				$name = $existingLink->name(/*from feed=*/ false);
+				?> 
+<div class="updated"><p>Feed for <a href="<?php echo wp_specialchars($home, 'both'); ?>"><?php echo wp_specialchars($name, 'both'); ?></a>
+updated to &lt;<a href="<?php echo wp_specialchars($fwp_post['feed'], 'both'); ?>"><?php echo wp_specialchars($fwp_post['feed'], 'both'); ?></a>&gt;.</p></div>
+				<?php
+			endif;
 		endif;
+	endif;
+
+	if (!$changed) :
+		?>
+<div class="updated"><p>Nothing was changed.</p></div>
+		<?php
 	endif;
 	return true; // Continue
-}
-
-function fwp_linkedit_page () {
-	global $wpdb, $wp_db_version;
-
-	// If this is a POST, validate source and user credentials
-	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_linkedit', /*capability=*/ 'manage_links');
-
-	$special_settings = array ( /* Regular expression syntax is OK here */
-		'cats',
-		'cat_split',
-		'hardcode name',
-		'hardcode url',
-		'hardcode description',
-		'hardcode categories', /* Deprecated */
-		'post status',
-		'comment status',
-		'ping status',
-		'unfamiliar author',
-		'unfamliar categories', /* Deprecated */
-		'unfamiliar category',
-		'map authors',
-		'tags',
-		'update/.*',
-		'feed/.*',
-		'link/.*',
-	);
-
-	if (isset($_REQUEST['feedfinder'])) :
-		return fwp_feedfinder_page(); // re-route to Feed Finder page
-	else :
-		$link_id = (int) $_REQUEST['link_id'];
-		$link =& new SyndicatedLink($link_id);
-
-		if ($link->found()) :
-			if (isset($GLOBALS['fwp_post']['save'])) :
-				$alter = array ();
-				
-				// custom feed settings first
-				foreach ($GLOBALS['fwp_post']['notes'] as $mn) :
-					$mn['key0'] = trim($mn['key0']);
-					$mn['key1'] = trim($mn['key1']);
-					if (preg_match("\007^(("
-							.implode(')|(',$special_settings)
-							."))$\007i",
-							$mn['key1'])) :
-						$mn['key1'] = 'user/'.$mn['key1'];
-					endif;
-
-					if (strlen($mn['key0']) > 0) :
-						unset($link->settings[$mn['key0']]); // out with the old
-					endif;
-					
-					if (($mn['action']=='update') and (strlen($mn['key1']) > 0)) :
-						$link->settings[$mn['key1']] = $mn['value']; // in with the new
-					endif;
-				endforeach;
-				
-				// now stuff through the web form
-				// hardcoded feed info
-				if (isset($GLOBALS['fwp_post']['hardcode_name'])) :
-					$link->settings['hardcode name'] = $GLOBALS['fwp_post']['hardcode_name'];
-					if (FeedWordPress::affirmative($link->settings, 'hardcode name')) :
-						$alter[] = "link_name = '".$wpdb->escape($GLOBALS['fwp_post']['name'])."'";
-					endif;
-				endif;
-				if (isset($GLOBALS['fwp_post']['hardcode_description'])) :
-					$link->settings['hardcode description'] = $GLOBALS['fwp_post']['hardcode_description'];
-					if (FeedWordPress::affirmative($link->settings, 'hardcode description')) :
-						$alter[] = "link_description = '".$wpdb->escape($GLOBALS['fwp_post']['description'])."'";
-					endif;
-				endif;
-				if (isset($GLOBALS['fwp_post']['hardcode_url'])) :
-					$link->settings['hardcode url'] = $GLOBALS['fwp_post']['hardcode_url'];
-					if (FeedWordPress::affirmative($link->settings, 'hardcode url')) :
-						$alter[] = "link_url = '".$wpdb->escape($GLOBALS['fwp_post']['linkurl'])."'";
-					endif;
-				endif;
-				
-				// Update scheduling
-				if (isset($GLOBALS['fwp_post']['update_schedule'])) :
-					$link->settings['update/hold'] = $GLOBALS['fwp_post']['update_schedule'];
-				endif;
-
-				$alter[] = "link_notes = '".$wpdb->escape($link->settings_to_notes())."'";
-
-				$alter_set = implode(", ", $alter);
-
-				// issue update query
-				$result = $wpdb->query("
-				UPDATE $wpdb->links
-				SET $alter_set
-				WHERE link_id='$link_id'
-				");
-				$updated_link = true;
-
-				// reload link information from DB
-				if (function_exists('clean_bookmark_cache')) :
-					clean_bookmark_cache($link_id);
-				endif;
-				$link =& new SyndicatedLink($link_id);
-			else :
-				$updated_link = false;
-			endif;
-
-			$db_link = $link->link;
-			$link_url = wp_specialchars($db_link->link_url, 1);
-			$link_name = wp_specialchars($db_link->link_name, 1);
-			$link_description = wp_specialchars($db_link->link_description, 'both');
-			$link_rss_uri = wp_specialchars($db_link->link_rss, 'both');
-		else :
-			die( __('Link not found.') ); 
-		endif;
-
-	?>
-<script type="text/javascript">
-	function flip_hardcode (item) {
-		ed=document.getElementById('basics-'+item+'-edit');
-		view=document.getElementById('basics-'+item+'-view');
-		
-		o = document.getElementById('basics-hardcode-'+item);
-		if (o.value=='yes') { ed.style.display='inline'; view.style.display='none'; }
-		else { ed.style.display='none'; view.style.display='inline'; }
-	}
-</script>
-
-<?php if ($updated_link) : ?>
-<div class="updated"><p>Syndicated feed settings updated.</p></div>
-<?php endif; ?>
-
-<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
-<div class="wrap">
-<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_linkedit'); ?>
-<input type="hidden" name="link_id" value="<?php echo $link_id; ?>" />
-<input type="hidden" name="action" value="linkedit" />
-<input type="hidden" name="save" value="link" />
-
-<?php if (fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
-	<div class="icon32"><img src="<?php print htmlspecialchars(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></div>
-<?php endif; ?>
-
-<h2><?php _e('Feed settings'); ?><?php if (!is_null($link) and $link->found()) : ?>: <?php echo wp_specialchars($link->link->link_name, 1); ?><?php endif; ?></h2>
-
-<div id="poststuff">
-<?php fwp_linkedit_single_submit(); ?>
-
-<div id="post-body">
-<?php fwp_option_box_opener('Feed Information', 'feedinformationdiv'); ?>
-	<table class="editform" width="100%" cellspacing="2" cellpadding="5">
-	<tr>
-	<th scope="row" width="20%"><?php _e('Feed URI:') ?></th>
-	<td width="60%"><a href="<?php echo wp_specialchars($link_rss_uri, 'both'); ?>"><?php echo $link_rss_uri; ?></a>
-	(<a href="<?php echo FEEDVALIDATOR_URI; ?>?url=<?php echo urlencode($link_rss_uri); ?>"
-	title="Check feed &lt;<?php echo wp_specialchars($link_rss_uri, 'both'); ?>&gt; for validity">validate</a>)
-	</td>
-	<td width="20%"><input type="submit" name="feedfinder" value="switch &rarr;" style="font-size:smaller" /></td>
-	</tr>
-	<tr>
-	<th scope="row" width="20%"><?php _e('Link Name:') ?></th>
-	<td width="60%"><input type="text" id="basics-name-edit" name="name"
-	value="<?php echo $link_name; ?>" style="width: 95%" />
-	<span id="basics-name-view"><strong><?php echo $link_name; ?></strong></span>
-	</td>
-	<td>
-	<select id="basics-hardcode-name" onchange="flip_hardcode('name')" name="hardcode_name">
-	<option value="no" <?php echo $link->hardcode('name')?'':'selected="selected"'; ?>>update automatically</option>
-	<option value="yes" <?php echo $link->hardcode('name')?'selected="selected"':''; ?>>edit manually</option>
-	</select>
-	</td>
-	</tr>
-	<tr>
-	<th scope="row" width="20%"><?php _e('Short description:') ?></th>
-	<td width="60%">
-	<input id="basics-description-edit" type="text" name="description" value="<?php echo $link_description; ?>" style="width: 95%" />
-	<span id="basics-description-view"><strong><?php echo $link_description; ?></strong></span>
-	</td>
-	<td>
-	<select id="basics-hardcode-description" onchange="flip_hardcode('description')"
-	name="hardcode_description">
-	<option value="no" <?php echo $link->hardcode('description')?'':'selected="selected"'; ?>>update automatically</option>
-	<option value="yes" <?php echo $link->hardcode('description')?'selected="selected"':''; ?>>edit manually</option>
-	</select></td>
-	</tr>
-	<tr>
-	<th width="20%" scope="row"><?php _e('Homepage:') ?></th>
-	<td width="60%">
-	<input id="basics-url-edit" type="text" name="linkurl" value="<?php echo $link_url; ?>" style="width: 95%;" />
-	<a id="basics-url-view" href="<?php echo $link_url; ?>"><?php echo $link_url; ?></a></td>
-	<td>
-	<select id="basics-hardcode-url" onchange="flip_hardcode('url')" name="hardcode_url">
-	<option value="no"<?php echo $link->hardcode('url')?'':' selected="selected"'; ?>>update automatically</option>
-	<option value="yes"<?php echo $link->hardcode('url')?' selected="selected"':''; ?>>edit manually</option>
-	</select></td></tr>
-	
-	<tr>
-	<th width="20%"><?php _e('Last update') ?>:</th>
-	<td colspan="2"><?php
-		if (isset($link->settings['update/last'])) :
-			echo fwp_time_elapsed($link->settings['update/last'])." ";
-		else :
-			echo " none yet";
-		endif;
-	?></td></tr>
-	<tr><th width="20%">Next update:</th>
-	<td colspan="2"><?php
-		$holdem = (isset($link->settings['update/hold']) ? $link->settings['update/hold'] : 'scheduled');
-	?>
-	<select name="update_schedule">
-	<option value="scheduled"<?php echo ($holdem=='scheduled')?' selected="selected"':''; ?>>update on schedule <?php
-		echo " (";
-		if (isset($link->settings['update/ttl']) and is_numeric($link->settings['update/ttl'])) :
-			if (isset($link->settings['update/timed']) and $link->settings['update/timed']=='automatically') :
-				echo 'next: ';
-				$next = $link->settings['update/last'] + ((int) $link->settings['update/ttl'] * 60);
-				if (strftime('%x', time()) != strftime('%x', $next)) :
-					echo strftime('%x', $next)." ";
-				endif;
-				echo strftime('%X', $link->settings['update/last']+((int) $link->settings['update/ttl']*60));
-			else :
-				echo "every ".$link->settings['update/ttl']." minute".(($link->settings['update/ttl']!=1)?"s":"");
-			endif;
-		else:
-			echo "next scheduled update";
-		endif;
-		echo ")";
-	?></option>
-	<option value="next"<?php echo ($holdem=='next')?' selected="selected"':''; ?>>update ASAP</option>
-	<option value="ping"<?php echo ($holdem=='ping')?' selected="selected"':''; ?>>update only when pinged</option>
-	</select></tr>
-	</table>
-<?php fwp_option_box_closer(); ?>
-
-<script type="text/javascript">
-flip_hardcode('name');
-flip_hardcode('description');
-flip_hardcode('url');
-</script>
-
-<?php fwp_linkedit_periodic_submit(); ?>
-
-<?php
-	FeedWordPressSettingsUI::instead_of_posts_box($link_id);
-	FeedWordPressSettingsUI::instead_of_authors_box($link_id);
-	FeedWordPressSettingsUI::instead_of_categories_box($link_id);
-
-	fwp_option_box_opener('Custom Feed Settings (for use in templates)', 'postcustom', 'postbox');
-?>
-<p class="setting-description">These custom settings are special fields for the <strong>feed</strong> you are
-syndicating, to be retrieved in templates using the <code>get_feed_meta()</code> function. They do not create
-custom fields on syndicated <strong>posts</strong>. If you want to create custom fields that are applied to each
-individual post from this feed, set up the settings in <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php&amp;link_id=<?php print $link_id; ?>">Syndicated Posts</a>.</p>
-
-<div id="postcustomstuff">
-<table id="meta-list" cellpadding="3">
-	<tr>
-	<th>Key</th>
-	<th>Value</th>
-	<th>Action</th>
-	</tr>
-
-<?php
-	$i = 0;
-	foreach ($link->settings as $key => $value) :
-		if (!preg_match("\007^((".implode(')|(', $special_settings)."))$\007i", $key)) :
-?>
-			<tr style="vertical-align:top">
-			<th width="30%" scope="row"><input type="hidden" name="notes[<?php echo $i; ?>][key0]" value="<?php echo wp_specialchars($key, 'both'); ?>" />
-			<input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo $i; ?>][key1]" value="<?php echo wp_specialchars($key, 'both'); ?>" /></th>
-			<td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo wp_specialchars($value, 'both'); ?></textarea></td>
-			<td width="10%"><select name="notes[<?php echo $i; ?>][action]">
-			<option value="update">save changes</option>
-			<option value="delete">delete this setting</option>
-			</select></td>
-			</tr>
-<?php
-			$i++;
-		endif;
-	endforeach;
-?>
-	<tr>
-	<th scope="row"><input type="text" size="10" name="notes[<?php echo $i; ?>][key1]" value="" /></th>
-	<td><textarea name="notes[<?php echo $i; ?>][value]" rows="2" cols="40"></textarea></td>
-	<td><em>add new setting...</em><input type="hidden" name="notes[<?php echo $i; ?>][action]" value="update" /></td>
-	</tr>
-</table>
-<?php fwp_option_box_closer(); ?>
-
-<?php fwp_linkedit_periodic_submit(); ?>
-<?php fwp_linkedit_single_submit_closer(); ?>
-</div> <!-- id="post-body" -->
-</div> <!-- id="poststuff" -->
-</div>
-	<?php
-	endif;
-	return false; // Don't continue
 }
 
 function fwp_multidelete_page () {
