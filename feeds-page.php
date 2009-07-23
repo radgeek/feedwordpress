@@ -165,7 +165,7 @@ contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null
 contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 </script>
 <?php
-	} /* FeedWordPressSyndicationOptionsPage::global_feeds_box() */
+	} /* FeedWordPressFeedsPage::global_feeds_box() */
 
 	function feed_information_box ($page, $box = NULL) {
 		global $wpdb;

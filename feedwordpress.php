@@ -517,22 +517,12 @@ function fwp_add_pages () {
 		$menu[] = WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-tiny.png';
 	endif;
 
-	if (fwp_test_wp_version(FWP_SCHEMA_26)) :
-		$options = __('Settings');
-		$longoptions = __('Syndication Settings');
-	else :
-		$options = __('Options');
-		$longoptions = __('Syndication Options');
-	endif;
-
 	call_user_func_array('add_menu_page', $menu);
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Feeds', 'Feeds', $fwp_capability['manage_options'], $fwp_path.'/feeds-page.php');
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Posts & Links', 'Posts & Links', $fwp_capability['manage_options'], $fwp_path.'/posts-page.php');
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Authors', 'Authors', $fwp_capability['manage_options'], $fwp_path.'/authors-page.php');
 	add_submenu_page($fwp_path.'/syndication.php', 'Categories'.FEEDWORDPRESS_AND_TAGS, 'Categories'.FEEDWORDPRESS_AND_TAGS, $fwp_capability['manage_options'], $fwp_path.'/categories-page.php');
-	add_submenu_page($fwp_path.'/syndication.php', $longoptions, $options, $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
-
-	add_options_page($longoptions, 'Syndication', $fwp_capability['manage_options'], $fwp_path.'/syndication-options.php');
+	add_submenu_page($fwp_path.'/syndication.php', 'FeedWordPress Back End', 'Back End', $fwp_capability['manage_options'], $fwp_path.'/backend-page.php');
 } /* function fwp_add_pages () */
 
 function fwp_check_debug () {

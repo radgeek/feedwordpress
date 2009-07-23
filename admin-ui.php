@@ -199,17 +199,19 @@ class FeedWordPressAdminPage {
 
 	function display_update_notice_if_updated ($pagename = 'Syndication', $mesg = NULL) {
 		if ($this->updated) :
-		?>
-			<div class="updated">
-			<p><?php print wp_specialchars($pagename, 1); ?> settings updated.</p>
-			</div>
-		<?php
-		elseif (!is_null($mesg)) :
-		?>
+			if ($this->updated === true) :
+				$mesg = $pagename . ' settings updated.';
+			else :
+				$mesg = $this->updated;
+			endif;
+		endif;
+		
+		if (!is_null($mesg)) :
+			?>
 			<div class="updated">
 			<p><?php print wp_specialchars($mesg, 1); ?></p>
 			</div>
-		<?php
+			<?php
 		endif;
 	} /* FeedWordPressAdminPage::display_update_notice_if_updated() */
 
