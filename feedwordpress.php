@@ -171,6 +171,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_action('admin_menu', 'fwp_add_pages');
 	add_action('admin_notices', 'fwp_check_debug');
 	add_action('admin_notices', 'fwp_check_magpie');
+	add_action('init', 'feedwordpress_check_for_magpie_fix');
 
 	# Inbound XML-RPC update methods
 	add_filter('xmlrpc_methods', 'feedwordpress_xmlrpc_hook');
@@ -196,9 +197,14 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	endif;
 		
 	# Cron-less auto-update. Hooray!
-	add_action('init', 'feedwordpress_auto_update');
-	add_action('init', 'feedwordpress_check_for_magpie_fix');
-	
+	$autoUpdateHook = get_option('feedwordpress_automatic_updates');
+	if ($autoUpdateHook != 'init') :
+		$autoUpdateHook = 'shutdown';
+	endif;
+	add_action($autoUpdateHook, 'feedwordpress_auto_update');
+
+	add_action('init', 'feedwordpress_update_magic_url');
+
 	# Default sanitizers
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'resolve_relative_uris'), 0, 2);
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'sanitize_content'), 0, 2);
@@ -238,11 +244,19 @@ function feedwordpress_auto_update () {
 		$feedwordpress =& new FeedWordPress;
 		$feedwordpress->update();
 	endif;
-	
+} /* feedwordpress_auto_update () */
+
+function feedwordpress_update_magic_url () {
+	// Explicit update request in the HTTP request (e.g. from a cron job)
 	if (FeedWordPress::update_requested()) :
+		$feedwordpress =& new FeedWordPress;
+		$feedwordpress->update();
+		
+		// Magic URL should return nothing but a 200 OK header packet
+		// when successful.
 		exit;
 	endif;
-} /* feedwordpress_auto_update () */
+} /* feedwordpress_magic_update_url () */
 
 ################################################################################
 ## LOGGING FUNCTIONS: log status updates to error_log if you want it ###########
@@ -871,10 +885,6 @@ class FeedWordPress {
 			else :
 				FeedWordPress::critical_bug('FeedWordPress::stale::last', $last, __LINE__);
 			endif;
-
-		// Explicit request for an update (e.g. from a cron job).
-		elseif (FeedWordPress::update_requested()) :
-			$ret = true;
 
 		else :
 			$ret = false;

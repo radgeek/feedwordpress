@@ -93,7 +93,8 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<tr>
 		<th scope="row">Updates:</th>
 		<td><select id="automatic-updates-selector" name="automatic_updates" size="1" onchange="contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');">
-		<option value="yes"<?php echo ($automatic_updates)?' selected="selected"':''; ?>>automatic updates on page loads</option>
+		<option value="shutdown"<?php echo ($automatic_updates=='shutdown')?' selected="selected"':''; ?>>automatically check for updates after pages load</option>
+		<option value="init"<?php echo ($automatic_updates=='init')?' selected="selected"':''; ?>>automatically check for updates before pages load</option>
 		<option value="no"<?php echo (!$automatic_updates)?' selected="selected"':''; ?>>cron job or manual updates</option>
 		</select>
 		<div id="cron-job-explanation" class="setting-description">
@@ -160,7 +161,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php endif; ?>
 </table>
 <script type="text/javascript">
-contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
+contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');
 contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 </script>
 <?php
@@ -586,7 +587,13 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			else :
 				// Global
 				update_option('feedwordpress_cat_id', $post['syndication_category']);
-				update_option('feedwordpress_automatic_updates', ($post['automatic_updates']=='yes'));
+				
+				if (!isset($post['automatic_updates']) or !in_array($post['automatic_updates'], array('init', 'shutdown'))) :
+					$automatic_updates = false;
+				else :
+					$automatic_updates = $post['automatic_updates'];
+				endif;
+				update_option('feedwordpress_automatic_updates', $automatic_updates);
 				update_option('feedwordpress_update_time_limit', ($post['update_time_limit']=='yes')?(int) $post['time_limit_seconds']:0);
 
 				foreach (array('name', 'description', 'url') as $what) :
@@ -713,7 +720,6 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			</div> <!-- class="wrap" -->
 	
 			<script type="text/javascript">
-				// contextual_appearance()
 				var els = ['name', 'description', 'url'];
 				for (var i = 0; i < els.length; i++) {
 					contextual_appearance(
