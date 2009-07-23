@@ -1,6 +1,6 @@
 === FeedWordPress ===
 Contributors: Charles Johnson
-Donate link: http://projects.radgeek.com/feedwordpress/
+Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 1.5
 Tested up to: 2.8.1

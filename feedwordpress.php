@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: FeedWordPress
-Plugin URI: http://projects.radgeek.com/feedwordpress
+Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
 Version: 2009.0713
 Author: Charles Johnson
