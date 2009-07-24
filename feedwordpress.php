@@ -230,6 +230,14 @@ function feedwordpress_check_for_magpie_fix () {
 			$source = dirname(__FILE__)."/MagpieRSS-upgrade/rss.php";
 			$destination = ABSPATH . WPINC . '/rss.php';
 			$success = @copy($source, $destination);
+
+			// Copy over rss-functions.php, too, to avoid collisions
+			// on pre-lapsarian versions of WordPress.
+			if ($success) :			
+				$source = dirname(__FILE__)."/MagpieRSS-upgrade/rss-functions.php";
+				$destination = ABSPATH . WPINC . '/rss-functions.php';
+				$success = @copy($source, $destination);
+			endif;
 			$ret = (int) $success;
 		endif;
 
