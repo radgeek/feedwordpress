@@ -5,7 +5,11 @@ class FeedWordPressBackendPage extends FeedWordPressAdminPage {
 	function FeedWordPressBackendPage () {
 		// Set meta-box context name
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressbackendpage');
+		$this->dispatch = 'feedwordpress_backend';
+		$this->filename = __FILE__;
 	}
+
+	function has_link () { return false; }
 
 	function display () {
 		global $wpdb, $wp_db_version, $fwp_path;
@@ -17,7 +21,7 @@ class FeedWordPressBackendPage extends FeedWordPressAdminPage {
 		endif;
 	
 		// If this is a POST, validate source and user credentials
-		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_options', /*capability=*/ 'manage_options');
+		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_backend', /*capability=*/ 'manage_options');
 	
 		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
 			$this->accept_POST($fwp_post);
@@ -27,58 +31,37 @@ class FeedWordPressBackendPage extends FeedWordPressAdminPage {
 		// Prepare settings page ///////////////////////
 		////////////////////////////////////////////////
 
-		$this->ajax_interface_js();
 		$this->display_update_notice_if_updated('Back End');
-		print '<div class="wrap">'."\n";
 
-		if (function_exists('add_meta_box')) :
-			add_action(
-				FeedWordPressCompatibility::bottom_script_hook(__FILE__),
-				/*callback=*/ array($this, 'fix_toggles'),
-				/*priority=*/ 10000
-			);
-			FeedWordPressSettingsUI::ajax_nonce_fields();
-		endif;
-
-	$this->display_sheet_header('FeedWordPress Back End');
-	?>
-	<div id="poststuff">
-	<form action="" method="post">
-	<?php
-		FeedWordPressCompatibility::stamp_nonce('feedwordpress_options');
-		fwp_settings_form_single_submit();
-	?>
-	<div id="post-body">
-	<?php
-	$boxes_by_methods = array(
-		'performance_box' => __('Performance'),
-		'diagnostics_box' => __('Diagnostics'),
-	);
-	
-	foreach ($boxes_by_methods as $method => $title) :
-		fwp_add_meta_box(
-			/*id=*/ 'feedwordpress_'.$method,
-			/*title=*/ $title,
-			/*callback=*/ array('FeedWordPressBackendPage', $method),
-			/*page=*/ $this->meta_box_context(),
-			/*context=*/ $this->meta_box_context()
-		);
-	endforeach;
-	do_action('feedwordpress_admin_page_backend_meta_boxes', $this);
-	?>
-		<div class="metabox-holder">
-	<?php
-		fwp_do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
-	
-		fwp_settings_form_single_submit_closer();
-	?>
-		</div> <!-- class="metabox-holder" -->
-	</div> <!-- id="post-body" -->
-	</form>
-	
-	</div> <!-- id="poststuff" -->
-	</div> <!-- class="wrap" -->
+		$this->open_sheet('FeedWordPress Back End');
+		?>
+		<div id="post-body">
 		<?php
+		$boxes_by_methods = array(
+			'performance_box' => __('Performance'),
+			'diagnostics_box' => __('Diagnostics'),
+		);
+	
+		foreach ($boxes_by_methods as $method => $title) :
+			fwp_add_meta_box(
+				/*id=*/ 'feedwordpress_'.$method,
+				/*title=*/ $title,
+				/*callback=*/ array('FeedWordPressBackendPage', $method),
+				/*page=*/ $this->meta_box_context(),
+				/*context=*/ $this->meta_box_context()
+			);
+		endforeach;
+		do_action('feedwordpress_admin_page_backend_meta_boxes', $this);
+		?>
+			<div class="metabox-holder">
+			<?php
+			fwp_do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
+			?>
+			</div> <!-- class="metabox-holder" -->
+		</div> <!-- id="post-body" -->
+
+		<?php
+		$this->close_sheet();
 	} /* FeedWordPressBackendPage::display () */
 
 	function accept_POST ($post) {

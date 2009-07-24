@@ -56,6 +56,9 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		endif;
 
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressfeeds', $link);
+
+		$this->dispatch = get_class($this);
+		$this->filename = __FILE__;
 	} /* FeedWordPressFeedsPage constructor */
 
 	var $special_settings = array ( /* Regular expression syntax is OK here */
@@ -668,28 +671,7 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			
 			$this->ajax_interface_js();
 			$this->display_update_notice_if_updated('Syndicated feed');
-			print '<div class="wrap">'."\n";
-
-			if (function_exists('add_meta_box')) :
-				add_action(
-					FeedWordPressCompatibility::bottom_script_hook(__FILE__),
-					/*callback=*/ array($this, 'fix_toggles'),
-					/*priority=*/ 10000
-				);
-				FeedWordPressSettingsUI::ajax_nonce_fields();
-			endif;
-			?>
-			<form style="position: relative" action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
-			<div><?php
-				$this->display_sheet_header('Feed');
-				$this->display_feed_select_dropdown();
-				$this->display_settings_scope_message();
-			?></div>
-			<div id="poststuff">
-			<?php
-				FeedWordPressCompatibility::stamp_nonce(get_class($this));
-				$this->stamp_link_id();
-				fwp_settings_form_single_submit();
+			$this->open_sheet('Feed');
 			?>
 			<div id="post-body">
 			<?php
@@ -734,12 +716,8 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			?>
 			</div> <!-- class="metabox-holder" -->
 			</div> <!-- id="post-body" -->
-			</div> <!-- id="poststuff" -->
-	
-			<div><?php fwp_settings_form_single_submit_closer(); ?></div>
-			</form>
-			</div> <!-- class="wrap" -->
-	
+			<?php $this->close_sheet(); ?>
+
 			<script type="text/javascript">
 				var els = ['name', 'description', 'url'];
 				for (var i = 0; i < els.length; i++) {

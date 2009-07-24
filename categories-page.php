@@ -4,6 +4,8 @@ require_once(dirname(__FILE__) . '/admin-ui.php');
 class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 	function FeedWordPressCategoriesPage ($link) {
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpresscategories', $link);
+		$this->dispatch = 'feedwordpress_categories_settings';
+		$this->filename = __FILE__;
 	}
 	
 	/*static*/ function feed_categories_box ($page, $box = NULL) {
@@ -206,43 +208,17 @@ function fwp_categories_page () {
 	// Prepare settings page ///////////////////////
 	////////////////////////////////////////////////
 	
-	$catsPage->ajax_interface_js();
 	$catsPage->display_update_notice_if_updated('Syndicated categories'.FEEDWORDPRESS_AND_TAGS, $mesg);
-?>
-<div class="wrap">
-<?php
-if (function_exists('add_meta_box')) :
-	add_action(
-		FeedWordPressCompatibility::bottom_script_hook(__FILE__),
-		/*callback=*/ array($catsPage, 'fix_toggles'),
-		/*priority=*/ 10000
-	);
-	FeedWordPressSettingsUI::ajax_nonce_fields();
-endif;
-?>
-<form style="position: relative" action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
-<div><?php
-	FeedWordPressCompatibility::stamp_nonce('feedwordpress_categories_settings');
-	$catsPage->stamp_link_id();
-?></div>
+	$catsPage->open_sheet('Categories'.FEEDWORDPRESS_AND_TAGS);
+	?>
+	<style type="text/css">
+		table.edit-form th { width: 27%; vertical-align: top; }
+		table.edit-form td { width: 73%; vertical-align: top; }
+		table.edit-form td ul.options { margin: 0; padding: 0; list-style: none; }
+	</style>
 
-<?php $catsPage->display_sheet_header('Categories'.FEEDWORDPRESS_AND_TAGS); ?>
-
-<style type="text/css">
-	table.edit-form th { width: 27%; vertical-align: top; }
-	table.edit-form td { width: 73%; vertical-align: top; }
-	table.edit-form td ul.options { margin: 0; padding: 0; list-style: none; }
-</style>
-
-<?php
-	$catsPage->display_feed_select_dropdown();
-	$catsPage->display_settings_scope_message();
-?>
-
-<div id="poststuff">
-<?php fwp_settings_form_single_submit(); ?>
-<div id="post-body">
-<?php
+	<div id="post-body">
+	<?php
 	////////////////////////////////////////////////
 	// Display settings boxes //////////////////////
 	////////////////////////////////////////////////
@@ -280,10 +256,8 @@ endif;
 	fwp_do_meta_boxes($catsPage->meta_box_context(), $catsPage->meta_box_context(), $catsPage);
 ?>
 	</div> <!-- class="metabox-holder" -->
-</div> <!-- id="post-body" -->
-</div> <!-- id="poststuff" -->
-
-<?php fwp_settings_form_single_submit_closer(); ?>
+	</div> <!-- id="post-body" -->
+	<?php $catsPage->close_sheet(); ?>
 
 <script type="text/javascript">
 	contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');
@@ -297,8 +271,6 @@ endif;
 	contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', 'block', /*checkbox=*/ true);
 <?php endif; ?>
 </script>
-</form>
-</div> <!-- class="wrap" -->
 <?php
 } /* function fwp_categories_page () */
 

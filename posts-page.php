@@ -11,6 +11,8 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 */
 	function FeedWordPressPostsPage ($link = NULL) {
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpresspostspage', $link);
+		$this->dispatch = 'feedwordpress_posts_settings';
+		$this->filename = __FILE__;
 	} /* FeedWordPressPostsPage constructor */
 
 	/**
@@ -411,38 +413,15 @@ function fwp_posts_page () {
 <div class="updated"><p><?php print wp_specialchars($mesg, 1); ?></p></div>
 <?php endif; ?>
 
-<div class="wrap">
 <?php
-if (function_exists('add_meta_box')) :
-	add_action(
-		FeedWordPressCompatibility::bottom_script_hook(__FILE__),
-		/*callback=*/ array($postsPage, 'fix_toggles'),
-		/*priority=*/ 10000
-	);
-	FeedWordPressSettingsUI::ajax_nonce_fields();
-endif;
+	$links = FeedWordPress::syndicated_links();
+	$postsPage->open_sheet('Syndicated Posts & Links');
 ?>
-<form style="position: relative" action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
-<div><?php
-	FeedWordPressCompatibility::stamp_nonce('feedwordpress_posts_settings');
-	$postsPage->stamp_link_id();
-?></div>
-
 <style type="text/css">
 	table.edit-form th, table.form-table th { width: 27%; vertical-align: top; }
 	table.edit-form td, table.form-table td { width: 73%; vertical-align: top; }
 	ul.options { margin: 0; padding: 0; list-style: none; }
 </style>
-
-<?php
-	$links = FeedWordPress::syndicated_links();
-	$postsPage->display_sheet_header('Syndicated Posts & Links');
-	$postsPage->display_feed_select_dropdown();
-	$postsPage->display_settings_scope_message();
-?>
-
-<div id="poststuff">
-<?php fwp_settings_form_single_submit(); ?>
 <div id="post-body">
 <?php
 $boxes_by_methods = array(
@@ -476,13 +455,8 @@ endif;
 ?>
 	</div> <!-- class="metabox-holder" -->
 </div> <!-- id="post-body" -->
-</div> <!-- id="poststuff" -->
-
-<?php fwp_settings_form_single_submit_closer(); ?>
-</form>
-</div> <!-- class="wrap" -->
-
 <?php
+	$postsPage->close_sheet();
 } /* function fwp_posts_page () */
 
 	fwp_posts_page();

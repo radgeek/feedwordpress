@@ -3,6 +3,8 @@ class FeedWordPressAdminPage {
 	var $context;
 	var $updated = false;
 	var $link = NULL;
+	var $dispatch = NULL;
+	var $filename = NULL;
 
 	/**
 	 * Construct the admin page object.
@@ -185,15 +187,15 @@ class FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
 
-	function display_sheet_header ($pagename = 'Syndication') {
+	function display_sheet_header ($pagename = 'Syndication', $all = false) {
 		if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_27)) :
-		?>
+			?>
 			<div class="icon32"><img src="<?php print wp_specialchars(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png', 1); ?>" alt="" /></div>
-		<?php
+			<?php
 		endif;
 		?>
 
-		<h2><?php print wp_specialchars(__($pagename.' Settings'), 1); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo wp_specialchars($this->link->link->link_name, 1); ?><?php endif; ?></h2>
+		<h2><?php print wp_specialchars(__($pagename.($all ? '' : ' Settings')), 1); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo wp_specialchars($this->link->link->link_name, 1); ?><?php endif; ?></h2>
 		<?php
 	}
 
@@ -228,6 +230,71 @@ class FeedWordPressAdminPage {
 		<?php
 		endif;
 	} /* FeedWordPressAdminPage::display_settings_scope_message () */
+	
+	/*static*/ function has_link () { return true; }
+
+	function open_sheet ($header) {
+		// Set up prepatory AJAX stuff
+		$this->ajax_interface_js();
+		if (function_exists('add_meta_box')) :
+			add_action(
+				FeedWordPressCompatibility::bottom_script_hook($this->filename),
+				/*callback=*/ array($this, 'fix_toggles'),
+				/*priority=*/ 10000
+			);
+			FeedWordPressSettingsUI::ajax_nonce_fields();
+		endif;
+
+		?>
+		<div class="wrap" style="position:relative">
+		<?php
+		if (!is_null($header)) :
+			$this->display_sheet_header($header);
+		endif;
+
+		if (!is_null($this->dispatch)) :
+			?>
+			<form action="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/<?php echo basename($this->filename); ?>" method="post">
+			<div><?php
+				FeedWordPressCompatibility::stamp_nonce($this->dispatch);
+				$this->stamp_link_id();
+			?></div>
+			<?php
+		endif;
+
+		if ($this->has_link()) :
+			$this->display_feed_select_dropdown();
+			$this->display_settings_scope_message();
+		endif;
+
+		if (function_exists('do_meta_boxes')) :
+			?>
+			<div id="poststuff">
+			<?php
+		else :
+			?>
+			</div> <!-- class="wrap" -->
+			<?php
+		endif;
+
+		if (!is_null($this->dispatch)) :
+			fwp_settings_form_single_submit();
+		endif;
+	} /* FeedWordPressAdminPage::open_sheet () */
+	
+	function close_sheet () {
+		// WordPress 2.5+
+		if (function_exists('do_meta_boxes')) :
+			?>
+			</div> <!-- id="poststuff" -->
+			<?php if (!is_null($this->dispatch)) : ?>
+			<?php fwp_settings_form_single_submit_closer(); ?>
+			</form>
+			<?php endif; ?>
+			</div> <!-- class="wrap" -->
+			<?php
+		endif;
+	}
 } /* class FeedWordPressAdminPage */
 
 function fwp_settings_form_single_submit ($caption = NULL) {
@@ -288,8 +355,8 @@ function fwp_authors_single_submit ($link = NULL) {
 }
 
 function fwp_option_box_opener ($legend, $id, $class = "stuffbox") {
-	global $wp_db_version;
-	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
+	// WordPress 2.5+
+	if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_25)) :
 ?>
 <div id="<?php print $id; ?>" class="<?php print $class; ?>">
 <h3><?php print htmlspecialchars($legend); ?></h3>
@@ -297,7 +364,8 @@ function fwp_option_box_opener ($legend, $id, $class = "stuffbox") {
 <?php
 	else :
 ?>
-<fieldset class="options"><legend><?php print htmlspecialchars($legend); ?></legend>
+		<div class="wrap">
+		<h2><?php print htmlspecialchars($legend); ?></h2>
 <?php
 	endif;
 }
@@ -311,7 +379,7 @@ function fwp_option_box_closer () {
 <?php
 	else :
 ?>
-</fieldset>
+	</div> <!-- class="wrap" -->
 <?php
 	endif;
 }
@@ -675,8 +743,12 @@ function fwp_do_meta_boxes($page, $context, $object) {
 						call_user_func($box['callback'], $object, $box);
 						fwp_option_box_closer();
 						
-						// Submit button for WP 1.5 style
-						fwp_settings_form_periodic_submit();
+						if (is_object($object) and method_exists($object, 'interstitial')) :
+							$object->interstitial();
+						else :
+							// Submit button for WP 1.5, early 2.x style
+							fwp_settings_form_periodic_submit();
+						endif;
 					}
 				}
 			}

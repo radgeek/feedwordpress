@@ -4,10 +4,12 @@ require_once(dirname(__FILE__) . '/admin-ui.php');
 class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 	var $authorlist = NULL;
 	var $rule_count = 0;
-
+	
 	function FeedWordPressAuthorsPage ($link) {
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressauthors', $link);
 		$this->authorlist = fwp_author_list();
+		$this->dispatch = 'feedwordpress_author_settings';
+		$this->filename = __FILE__;
 	}
 	
 	/*static*/ function syndicated_authors_box ($page, $box = NULL) {
@@ -353,30 +355,26 @@ function fwp_authors_page () {
 	// Prepare settings page ///////////////////////
 	////////////////////////////////////////////////
 
-	$authorsPage->ajax_interface_js();
-
 	if ($updated_link) :
 ?>
 <div class="updated"><p>Syndicated author settings updated.</p></div>
 <?php elseif (!is_null($mesg)) : ?>
 <div class="updated"><p><?php print wp_specialchars($mesg, 1); ?></p></div>
-<?php endif; ?>
+<?php endif;
 
-<div class="wrap">
-<form style="position: relative" action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
-<div><?php
-	FeedWordPressCompatibility::stamp_nonce('feedwordpress_author_settings');
-	$authorsPage->stamp_link_id();
-?></div>
+	if (function_exists('add_meta_box')) :
+		add_action(
+			FeedWordPressCompatibility::bottom_script_hook(__FILE__),
+			/*callback=*/ array($authorsPage, 'fix_toggles'),
+			/*priority=*/ 10000
+		);
+		FeedWordPressSettingsUI::ajax_nonce_fields();
+	endif;
 
-<?php
-	$authorsPage->display_feed_select_dropdown();
-	$authorsPage->display_settings_scope_message();
-?>
-<div id="poststuff">
-<?php fwp_settings_form_single_submit(); ?>
-<div id="post-body">
-<?php
+	$authorsPage->open_sheet('Syndicated Author');
+	?>
+	<div id="post-body">
+	<?php
 	////////////////////////////////////////////////
 	// Display settings boxes //////////////////////
 	////////////////////////////////////////////////
@@ -414,9 +412,7 @@ function fwp_authors_page () {
 ?>
 	</div> <!-- class="metabox-holder" -->
 </div> <!-- id="post-body" -->
-</div> <!-- id="poststuff" -->
-
-<?php fwp_settings_form_single_submit_closer(); ?>
+<?php $authorsPage->close_sheet(); ?>
 
 <script type="text/javascript">
 	contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');
@@ -430,8 +426,6 @@ function fwp_authors_page () {
 	contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', 'block', /*checkbox=*/ true);
 <?php endif; ?>
 </script>
-</form>
-</div> <!-- class="wrap" -->
 <?php
 } /* function fwp_authors_page () */
 
