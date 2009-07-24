@@ -580,9 +580,9 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 				
 				foreach (array('name', 'description', 'url') as $what) :
 					// We have a checkbox for "No," so if it's unchecked, mark as "Yes."
-					$this->link->settings["hardcode {$what}"] = (isset($fwp_post["hardcode_{$what}"]) ? $fwp_post["hardcode_{$what}"] : 'yes');
+					$this->link->settings["hardcode {$what}"] = (isset($post["hardcode_{$what}"]) ? $post["hardcode_{$what}"] : 'yes');
 					if (FeedWordPress::affirmative($this->link->settings, "hardcode {$what}")) :
-						$alter[] = "link_{$what} = '".$wpdb->escape($fwp_post['link'.$what])."'";
+						$alter[] = "link_{$what} = '".$wpdb->escape($post['link'.$what])."'";
 					endif;
 				endforeach;
 				
