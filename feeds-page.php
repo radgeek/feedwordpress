@@ -387,8 +387,18 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			width: 45%;
 			font-size: 70%;
 			border-left: 1px dotted #A0A0A0;
+			margin-left: 1.0em;
+		}
+		.feed-sample p, .feed-sample h3 {
 			padding-left: 0.5em;
-			margin-left: 1.0em;					}
+			padding-right: 0.5em;
+		}
+		.feed-sample .feed-problem {
+			background-color: #ffd0d0;
+			border-bottom: 1px dotted black;
+			padding-bottom: 0.5em;
+			margin-bottom: 0.5em;
+		}
 		</style>
 
 		<div class="wrap">
@@ -399,24 +409,26 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 		$feeds = $f->find();
 		if (count($feeds) > 0):
 			foreach ($feeds as $key => $f):
-				$rss = fetch_rss($f);
+				$rss = @fetch_rss($f);
 				if ($rss):
 					$feed_title = isset($rss->channel['title'])?$rss->channel['title']:$rss->channel['link'];
 					$feed_link = isset($rss->channel['link'])?$rss->channel['link']:'';
+					$feed_type = ($rss->feed_type ? $rss->feed_type : 'Unknown');
 				else :
 					// Give us some sucky defaults
 					$feed_title = feedwordpress_display_url($lookup);
 					$feed_link = $lookup;
+					$feed_type = 'Unknown';
 				endif;
 				?>
 					<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication.php" method="post">
 					<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_switchfeed'); ?></div>
 					<fieldset>
-					<legend><?php echo $rss->feed_type; ?> <?php echo $rss->feed_version; ?> feed</legend>
-	
+					<legend><?php echo $feed_type; ?> <?php echo $rss->feed_version; ?> feed</legend>
+
 					<?php
 					$this->stamp_link_id();
-					
+
 					// No feed specified = add new feed; we
 					// need to pass along a starting title
 					// and homepage URL for the new Link.
@@ -450,6 +462,15 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 						</div>
 						<?php
 					else:
+						if (magpie_error()) :
+							print '<div class="feed-problem">';
+							print "<h3>Problem:</h3>\n";
+							print "<p>FeedWordPress encountered the following error
+							when trying to retrieve this feed:</p>";
+							print '<p style="margin: 1.0em 3.0em"><code>'.magpie_error().'</code></p>';
+							print "<p>If you think this is a temporary problem, you can still force FeedWordPress to add the subscription. FeedWordPress will not be able to find any syndicated posts until this problem is resolved.</p>";
+							print "</div>";
+						endif;
 						?>
 						<h3>No Items</h3>
 						<p>FeedWordPress found no posts on this feed.</p>
