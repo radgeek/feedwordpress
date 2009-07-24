@@ -131,10 +131,10 @@ FeedWordPress installations.</p></td>
 		?>
 <table class="editform" width="100%" cellspacing="2" cellpadding="5">
 <tr style="vertical-align: top">
-<th width="33%" scope="row">Update notices:</th>
+<th width="33%" scope="row">Logging:</th>
 <td width="67%"><select name="update_logging" size="1">
-<option value="yes"<?php echo ($settings['update_logging'] ?' selected="selected"':''); ?>>write to PHP logs</option>
-<option value="no"<?php echo ($settings['update_logging'] ?'':' selected="selected"'); ?>>don't write to PHP logs</option>
+<option value="yes"<?php echo ($settings['update_logging'] ?' selected="selected"':''); ?>>log updates, new posts, and updated posts in PHP logs</option>
+<option value="no"<?php echo ($settings['update_logging'] ?'':' selected="selected"'); ?>>don't log updates</option>
 </select></td>
 </tr>
 <tr style="vertical-align: top">
