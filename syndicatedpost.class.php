@@ -160,8 +160,23 @@ class SyndicatedPost {
 			if (isset($this->item['comments'])) :
 				$this->post['meta']['rss:comments'] = apply_filters('syndicated_item_comments', $this->item['comments']);
 			endif;
+			
+			// RSS 2.0 comment feeds extension
 			if (isset($this->item['wfw']['commentrss'])) :
 				$this->post['meta']['wfw:commentRSS'] = apply_filters('syndicated_item_commentrss', $this->item['wfw']['commentrss']);
+			endif;
+
+			// Atom 1.0 comment feeds link-rel
+			if (isset($this->item['link_replies'])) :
+				// There may be multiple <link rel="replies"> elements; feeds have a feed MIME type
+				$N = isset($this->item['link_replies#']) ? $this->item['link_replies#'] : 1;
+				for ($i = 1; $i <= $N; $i++) :
+					$currentElement = 'link_replies'.(($i > 1) ? '#'.$i : '');
+					if (isset($this->item[$currentElement.'@type'])
+					and preg_match("\007application/(atom|rss|rdf)\+xml\007i", $this->item[$currentElement.'@type'])) :
+						$this->post['meta']['wfw:commentRSS'] = apply_filters('syndicated_item_commentrss', $this->item[$currentElement]);
+					endif;
+				endfor;
 			endif;
 
 			// Store information to identify the feed that this came from
