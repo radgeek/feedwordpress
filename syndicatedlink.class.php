@@ -192,7 +192,8 @@ class SyndicatedLink {
 				$this->settings['update/ttl'] = $ttl;
 				$this->settings['update/timed'] = 'feed';
 			else :
-				$this->settings['update/ttl'] = rand(30, 120); // spread over time interval for staggered updates
+				// spread out over a time interval for staggered updates
+				$this->settings['update/ttl'] = DEFAULT_UPDATE_PERIOD+rand(0, 2*(DEFAULT_UPDATE_PERIOD/3));
 				$this->settings['update/timed'] = 'automatically';
 			endif;
 

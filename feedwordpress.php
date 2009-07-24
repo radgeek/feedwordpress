@@ -30,7 +30,10 @@ License: GPL
 
 define ('FEEDWORDPRESS_VERSION', '2009.0723');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
+
+// Defaults
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
+define ('DEFAULT_UPDATE_PERIOD', 60); // value in minutes
 
 $feedwordpress_debug = get_option('feedwordpress_debug');
 if (is_string($feedwordpress_debug)) :
