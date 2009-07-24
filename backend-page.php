@@ -64,7 +64,7 @@ class FeedWordPressBackendPage extends FeedWordPressAdminPage {
 			/*context=*/ $this->meta_box_context()
 		);
 	endforeach;
-	do_action('feedwordpress_admin_page_settings_meta_boxes', $this);
+	do_action('feedwordpress_admin_page_backend_meta_boxes', $this);
 	?>
 		<div class="metabox-holder">
 	<?php

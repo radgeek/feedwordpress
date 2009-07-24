@@ -273,7 +273,7 @@ endif;
 			/*context=*/ $catsPage->meta_box_context()
 		);
 	endforeach;
-	do_action('feedwordpress_admin_page_posts_meta_boxes', $catsPage);
+	do_action('feedwordpress_admin_page_categories_meta_boxes', $catsPage);
 ?>
 	<div class="metabox-holder">
 <?php

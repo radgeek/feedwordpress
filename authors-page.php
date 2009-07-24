@@ -406,7 +406,7 @@ function fwp_authors_page () {
 			/*context=*/ $authorsPage->meta_box_context()
 		);
 	endforeach;
-	do_action('feedwordpress_admin_page_posts_meta_boxes', $authorsPage);
+	do_action('feedwordpress_admin_page_authors_meta_boxes', $authorsPage);
 ?>
 	<div class="metabox-holder">
 <?php
