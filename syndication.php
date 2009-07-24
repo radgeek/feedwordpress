@@ -422,7 +422,13 @@ function fwp_multidelete_page () {
 	if (isset($_REQUEST['link_id'])) : array_push($link_ids, $_REQUEST['link_id']); endif;
 
 	if (isset($GLOBALS['fwp_post']['confirm']) and $GLOBALS['fwp_post']['confirm']=='Delete'):
-		foreach ($GLOBALS['fwp_post']['link_action'] as $link_id => $what) :
+		if (isset($GLOBALS['fwp_post']['link_action']) and is_array($GLOBALS['fwp_post']['link_action'])) :
+			$actions = $GLOBALS['fwp_post']['link_action'];
+		else :
+			$actions = array();
+		endif;
+
+		foreach ($actions as $link_id => $what) :
 			$do_it[$what][] = $link_id;
 		endforeach;
 
