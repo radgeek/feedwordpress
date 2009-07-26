@@ -4,7 +4,7 @@
  * Author:	Kellan Elliot-McCrea <kellan@protest.net>
  *		WordPress development team <http://www.wordpress.org/>
  *		Charles Johnson <technophilia@radgeek.com>
- * Version:	2009.0708
+ * Version:	2009.0725
  * License:	GPL
  *
  * Provenance:
@@ -324,7 +324,7 @@ class MagpieRSS {
 
         // check for a namespace, and split if found
         // Don't munge content tags
-	$ns = $this->namespace($element);
+	$ns = $this->xmlns($element);
 	if ( empty($this->incontent) ) {
 		$el = strtolower($ns['element']);
 		$this->current_namespace = $ns['effective'];
@@ -517,7 +517,7 @@ class MagpieRSS {
     }
     
     function feed_end_element ($p, $el) {
-	    $closer = $this->namespace($el);
+	    $closer = $this->xmlns($el);
 
 	    if ( $this->incontent ) {
 		    $opener = array_pop($this->incontent);
@@ -582,7 +582,7 @@ class MagpieRSS {
     }
     
 	// Namespace handling functions
-	function namespace ($element) {
+	function xmlns ($element) {
 		$namespaces = end($this->stack['xmlns']);
 		$ns = '';
 		if ( strpos( $element, ':' ) ) {
@@ -1207,7 +1207,7 @@ endif;
     version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
 \*=======================================================================*/
 
-define('MAGPIE_VERSION', '2009.0708');
+define('MAGPIE_VERSION', '2009.0725');
 
 $MAGPIE_ERROR = "";
 
