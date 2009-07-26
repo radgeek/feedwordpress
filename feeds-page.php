@@ -663,6 +663,7 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 		else :
 			if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
 				$this->accept_POST($fwp_post);
+				do_action('feedwordpress_admin_page_feeds_save', $GLOBALS['fwp_post'], $this);
 			endif;
 			
 			////////////////////////////////////////////////

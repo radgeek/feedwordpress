@@ -25,6 +25,7 @@ class FeedWordPressBackendPage extends FeedWordPressAdminPage {
 	
 		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
 			$this->accept_POST($fwp_post);
+			do_action('feedwordpress_admin_page_backend_save', $GLOBALS['fwp_post'], $this);
 		endif;
 
 		////////////////////////////////////////////////

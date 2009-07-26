@@ -200,6 +200,8 @@ function fwp_categories_page () {
 
 			$catsPage->updated = true;
 		endif;
+		
+		do_action('feedwordpress_admin_page_categories_save', $GLOBALS['fwp_post'], $catsPage);
 	else :
 		$catsPage->updated = false;
 	endif;

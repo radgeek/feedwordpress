@@ -347,6 +347,8 @@ function fwp_authors_page () {
 			
 			$updated_link = true;
 		endif;
+
+		do_action('feedwordpress_admin_page_authors_save', $GLOBALS['fwp_post'], $authorsPage);
 	else :
 		$updated_link = false;
 	endif;
