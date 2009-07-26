@@ -247,7 +247,7 @@ class SyndicatedPost {
 			if (isset($this->feedmeta['tags']) and is_array($this->feedmeta['tags'])) :
 				$this->post['tags_input'] = array_merge($this->post['tags_input'], $this->feedmeta['tags']);
 			endif;
-
+			$this->post['tags_input'] = apply_filters('syndicated_item_tags', $this->post['tags_input'], $this);
 		endif;
 	} // SyndicatedPost::SyndicatedPost()
 
