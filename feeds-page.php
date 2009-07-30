@@ -105,11 +105,10 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		you can perform scheduled updates by sending regularly-scheduled
 		requests to <a href="<?php bloginfo('home'); ?>?update_feedwordpress=1"><code><?php bloginfo('home') ?>?update_feedwordpress=1</code></a>
 		For example, inserting the following line in your crontab:</p>
-		<pre><code>*/10 * * * * /usr/bin/curl --silent \
-	<?php bloginfo('home'); ?>?update_feedwordpress=1</code></pre>
-		<p class="setting-description">will check in every 10 minutes and
-		check for updates on any feeds that are ready to be polled for
-		updates.</p>
+		<pre style="font-size: 0.80em"><code>*/10 * * * * /usr/bin/curl --silent <?php bloginfo('home'); ?>?update_feedwordpress=1</code></pre>
+		<p class="setting-description">will check in every 10 minutes
+		and check for updates on any feeds that are ready to be polled
+		for updates.</p>
 		</div>
 		</td>
 		</tr>
