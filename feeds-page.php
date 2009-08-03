@@ -82,6 +82,108 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		'link/.*',
 	);
 
+	function display () {
+		global $wpdb;
+		global $fwp_post;
+		global $post_source;
+	
+		if (FeedWordPress::needs_upgrade()) :
+			fwp_upgrade_page();
+			return;
+		endif;
+
+		// Allow overriding of normal source for FeedFinder, which may
+		// be called from multiple points.
+		if (isset($post_source) and !is_null($post_source)) :
+			$source = $post_source;
+		else :
+			$source = get_class($this);
+		endif;
+
+		// If this is a POST, validate source and user credentials
+		FeedWordPressCompatibility::validate_http_request(/*action=*/ $source, /*capability=*/ 'manage_links');
+
+		if (isset($_REQUEST['feedfinder'])
+		or (isset($_REQUEST['action']) and $_REQUEST['action']=='feedfinder')
+		or (isset($_REQUEST['action']) and $_REQUEST['action']==FWP_SYNDICATE_NEW)) :
+			return $this->display_feedfinder(); // re-route to Feed Finder page
+		else :
+			if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
+				$this->accept_POST($fwp_post);
+				do_action('feedwordpress_admin_page_feeds_save', $GLOBALS['fwp_post'], $this);
+			endif;
+			
+			////////////////////////////////////////////////
+			// Prepare settings page ///////////////////////
+			////////////////////////////////////////////////
+			
+			$this->ajax_interface_js();
+			$this->display_update_notice_if_updated('Syndicated feed');
+			$this->open_sheet('Feed');
+			?>
+			<div id="post-body">
+			<?php
+			////////////////////////////////////////////////
+			// Display settings boxes //////////////////////
+			////////////////////////////////////////////////
+		
+			$boxes_by_methods = array(
+				'feed_information_box' => __('Feed Information'),
+				'global_feeds_box' => __('Update Scheduling'),
+				'posts_box' => __('Syndicated Posts, Links, Comments & Pings'),
+				'authors_box' => __('Syndicated Authors'),
+				'categories_box' => __('Categories'.FEEDWORDPRESS_AND_TAGS),
+				'custom_settings_box' => __('Custom Feed Settings (for use in templates)'),
+			);
+			if ($this->for_default_settings()) :
+				unset($boxes_by_methods['custom_settings_box']);
+			endif;
+		
+			foreach ($boxes_by_methods as $method => $row) :
+				if (is_array($row)) :
+					$id = $row['id'];
+					$title = $row['title'];
+				else :
+					$id = 'feedwordpress_'.$method;
+					$title = $row;
+				endif;
+		
+				fwp_add_meta_box(
+					/*id=*/ $id,
+					/*title=*/ $title,
+					/*callback=*/ array(get_class($this), $method),
+					/*page=*/ $this->meta_box_context(),
+					/*context=*/ $this->meta_box_context()
+				);
+			endforeach;
+			do_action('feedwordpress_admin_page_feeds_meta_boxes', $this);
+			?>
+			<div class="metabox-holder">
+			<?php
+				fwp_do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
+			?>
+			</div> <!-- class="metabox-holder" -->
+			</div> <!-- id="post-body" -->
+			<?php $this->close_sheet(); ?>
+
+			<script type="text/javascript">
+				var els = ['name', 'description', 'url'];
+				for (var i = 0; i < els.length; i++) {
+					contextual_appearance(
+						/*item=*/ 'basics-hardcode-'+els[i],
+						/*appear=*/ 'basics-'+els[i]+'-view',
+						/*disappear=*/ 'basics-'+els[i]+'-edit',
+						/*value=*/ 'no',
+						/*visibleStyle=*/ 'block',
+						/*checkbox=*/ true
+					);
+				} /* for */
+			</script>
+			<?php
+		endif;
+		return false; // Don't continue
+	} /* FeedWordPressFeedsPage::display() */
+
 	/*static*/ function global_feeds_box ($page, $box = NULL) {
 		global $wpdb;
 		?>
@@ -634,108 +736,6 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 		endif;
 	} /* WordPressFeedsPage::accept_POST() */
 
-	function display () {
-		global $wpdb;
-		global $fwp_post;
-		global $post_source;
-	
-		if (FeedWordPress::needs_upgrade()) :
-			fwp_upgrade_page();
-			return;
-		endif;
-
-		// Allow overriding of normal source for FeedFinder, which may
-		// be called from multiple points.
-		if (isset($post_source) and !is_null($post_source)) :
-			$source = $post_source;
-		else :
-			$source = get_class($this);
-		endif;
-
-		// If this is a POST, validate source and user credentials
-		FeedWordPressCompatibility::validate_http_request(/*action=*/ $source, /*capability=*/ 'manage_links');
-
-		if (isset($_REQUEST['feedfinder'])
-		or (isset($_REQUEST['action']) and $_REQUEST['action']=='feedfinder')
-		or (isset($_REQUEST['action']) and $_REQUEST['action']==FWP_SYNDICATE_NEW)) :
-			return $this->display_feedfinder(); // re-route to Feed Finder page
-		else :
-			if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
-				$this->accept_POST($fwp_post);
-				do_action('feedwordpress_admin_page_feeds_save', $GLOBALS['fwp_post'], $this);
-			endif;
-			
-			////////////////////////////////////////////////
-			// Prepare settings page ///////////////////////
-			////////////////////////////////////////////////
-			
-			$this->ajax_interface_js();
-			$this->display_update_notice_if_updated('Syndicated feed');
-			$this->open_sheet('Feed');
-			?>
-			<div id="post-body">
-			<?php
-			////////////////////////////////////////////////
-			// Display settings boxes //////////////////////
-			////////////////////////////////////////////////
-		
-			$boxes_by_methods = array(
-				'feed_information_box' => __('Feed Information'),
-				'global_feeds_box' => __('Update Scheduling'),
-				'posts_box' => __('Syndicated Posts, Links, Comments & Pings'),
-				'authors_box' => __('Syndicated Authors'),
-				'categories_box' => __('Categories'.FEEDWORDPRESS_AND_TAGS),
-				'custom_settings_box' => __('Custom Feed Settings (for use in templates)'),
-			);
-			if ($this->for_default_settings()) :
-				unset($boxes_by_methods['custom_settings_box']);
-			endif;
-		
-			foreach ($boxes_by_methods as $method => $row) :
-				if (is_array($row)) :
-					$id = $row['id'];
-					$title = $row['title'];
-				else :
-					$id = 'feedwordpress_'.$method;
-					$title = $row;
-				endif;
-		
-				fwp_add_meta_box(
-					/*id=*/ $id,
-					/*title=*/ $title,
-					/*callback=*/ array(get_class($this), $method),
-					/*page=*/ $this->meta_box_context(),
-					/*context=*/ $this->meta_box_context()
-				);
-			endforeach;
-			do_action('feedwordpress_admin_page_feeds_meta_boxes', $this);
-			?>
-			<div class="metabox-holder">
-			<?php
-				fwp_do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
-			?>
-			</div> <!-- class="metabox-holder" -->
-			</div> <!-- id="post-body" -->
-			<?php $this->close_sheet(); ?>
-
-			<script type="text/javascript">
-				var els = ['name', 'description', 'url'];
-				for (var i = 0; i < els.length; i++) {
-					contextual_appearance(
-						/*item=*/ 'basics-hardcode-'+els[i],
-						/*appear=*/ 'basics-'+els[i]+'-view',
-						/*disappear=*/ 'basics-'+els[i]+'-edit',
-						/*value=*/ 'no',
-						/*visibleStyle=*/ 'block',
-						/*checkbox=*/ true
-					);
-				} /* for */
-			</script>
-			<?php
-		endif;
-		return false; // Don't continue
-
-	}
 } /* class FeedWordPressFeedsPage */
 
 	$feedsPage = new FeedWordPressFeedsPage;
