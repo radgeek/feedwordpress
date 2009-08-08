@@ -119,7 +119,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			
 			$this->ajax_interface_js();
 			$this->display_update_notice_if_updated('Syndicated feed');
-			$this->open_sheet('Feed');
+			$this->open_sheet('Feed and Update');
 			?>
 			<div id="post-body">
 			<?php
