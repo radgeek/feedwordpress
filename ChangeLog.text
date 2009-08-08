@@ -1,5 +1,11 @@
 FeedWordPress Change Log
 ========================
+Changes from 2009.0707 to Trunk
+-------------------------------
+*	BUGIFX: SILENT FAILURE OF "SYNDICATE" BUTTON FIXED 
+
+*	BUGFIX: MagpieRSS "ILLEGAL OFFSET TYPE" ERROR MESSAGE FIXED
+
 Changes from 2009.0618 to 2009.0707
 -----------------------------------
 *	BUGFIX: WORDPRESS 2.8 AJAX COMPATIBILITY ISSUES RESOLVED (blank or

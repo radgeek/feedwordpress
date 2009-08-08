@@ -26,6 +26,172 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 	function has_link () { return false; }
 
+	function display () {
+		global $wpdb;
+		
+		if (FeedWordPress::needs_upgrade()) :
+			fwp_upgrade_page();
+			return;
+		endif;
+		
+		?>
+		<?php $cont = true;
+		if (isset($_REQUEST['action'])):
+			if ($_REQUEST['action'] == 'feedfinder' or $_REQUEST['action']==FWP_SYNDICATE_NEW) : $cont = fwp_feedfinder_page();
+			elseif ($_REQUEST['action'] == 'switchfeed') : $cont = fwp_switchfeed_page();
+			elseif ($_REQUEST['action'] == FWP_UNSUB_CHECKED or $_REQUEST['action'] == 'Unsubscribe') : $cont = fwp_multidelete_page();
+			endif;
+		endif;
+		
+		if ($cont):
+		?>
+		<style type="text/css">
+			.heads-up {
+				background-color: #d0d0d0;
+				color: black;
+				padding: 1.0em;
+				margin: 0.5em 4.0em !important;
+			}
+			.update-form.with-donation {
+				margin-right: 50%;
+				min-height: 255px;
+			}
+			.donation-form, .donation-thanks {
+				background-color: #ffffcc;
+				text-align: left;
+				padding: 0.5em 0.5em;
+				border-left: thin dashed #777777;
+				font-size: 70%;
+				position: absolute;
+				top: 0; bottom: 0; right: 0; left: auto;
+				width: 50%;		
+			}
+			.donation-thanks {
+				background-color: #ccffcc;
+			}
+			.donation-thanks .signature {
+				text-align: right;
+				font-style: italic;
+			}
+			.donation-form h4, .donation-thanks h4 {
+				font-size: 10px;
+				text-align: center;
+				border-bottom: 1px solid #777777;
+				margin: 0px;
+			}
+			.donation-form .donate  {
+				text-align: center;
+			}
+			.donation-form .sod-off {
+				padding-top: 0.5em;
+				margin-top: 0.5em;
+				border-top: thin solid #777777;
+			}
+		</style>
+		<?php
+			$links = FeedWordPress::syndicated_links();
+			$this->open_sheet('Syndicated Sites');
+			?>
+			<div id="post-body">
+			<?php
+			if ($links) :
+				fwp_add_meta_box(
+					/*id=*/ 'feedwordpress_update_box',
+					/*title=*/ __('Update feeds now'),
+					/*callback=*/ 'fwp_syndication_manage_page_update_box',
+					/*page=*/ $this->meta_box_context(),
+					/*context =*/ $this->meta_box_context()
+				);
+			endif;
+			fwp_add_meta_box(
+				/*id=*/ 'feedwordpress_feeds_box',
+				/*title=*/ __('Syndicated sources'),
+				/*callback=*/ 'fwp_syndication_manage_page_links_box',
+				/*page=*/ $this->meta_box_context(),
+				/*context =*/ $this->meta_box_context()
+			);
+			if (FeedWordPressCompatibility::test_version(0, FWP_SCHEMA_25)) :
+				fwp_add_meta_box(
+					/*id=*/ 'feedwordpress_add_feed_box',
+					/*title=*/ 'Add a new syndicated source',
+					/*callback=*/ 'fwp_syndication_manage_page_add_feed_box',
+					/*page=*/ $this->meta_box_context(),
+					/*context=*/ $this->meta_box_context()
+				);
+			endif;
+					
+			do_action('feedwordpress_admin_page_syndication_meta_boxes', $this);
+		?>
+			<div class="metabox-holder">		
+			<?php
+				fwp_do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
+			?>
+			</div> <!-- class="metabox-holder" -->
+			</div> <!-- id="post-body" -->
+		
+			<?php $this->close_sheet(/*dispatch=*/ NULL); ?>
+		
+			<div style="display: none">
+			<div id="tags-input"></div> <!-- avoid JS error from WP 2.5 bug -->
+			</div>
+		<?php
+		endif;
+	} /* FeedWordPressSyndicationPage::display () */
+
+	function bleg_thanks ($page, $box = NULL) {
+		?>
+		<div class="donation-thanks">
+		<h4>Thank you!</h4>
+		<p><strong>Thank you</strong> for your contribution to <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a> development.
+		Your generous gifts make ongoing support and development for
+		FeedWordPress possible.</p>
+		<p>If you have any questions about FeedWordPress, or if there
+		is anything I can do to help make FeedWordPress more useful for
+		you, please <a href="http://feedwordpress.radgeek.com/contact">contact me</a>
+		and let me know what you're thinking about.</p>
+		<p class="signature">&#8212;<a href="http://radgeek.com/">Charles Johnson</a>, Developer, <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>.</p>
+		</div>
+		<?php
+	} /* FeedWordPressSyndicationPage::bleg_thanks () */
+
+	function bleg_box ($page, $box = NULL) {
+		?>
+<div class="donation-form">
+<h4>Keep FeedWordPress improving</h4>
+<form action="https://www.paypal.com/cgi-bin/webscr" accept-charset="UTF-8" method="post"><div>
+<p><a href="http://feedwordpress.radgeek.com/">FeedWordPress</a> makes syndication
+simple and empowers you to stream content from all over the web into your
+WordPress hub. That's got to be worth a few lattes. If you're finding FWP useful,
+<a href="http://feedwordpress.radgeek.com/donation/">a modest gift</a>
+is the best way to support steady progress on development, enhancements,
+support, and documentation.</p>
+<div class="donate">
+<input type="hidden" name="business" value="commerce@radgeek.com"  />
+<input type="hidden" name="cmd" value="_xclick"  />
+<input type="hidden" name="item_name" value="FeedWordPress donation"  />
+<input type="hidden" name="no_shipping" value="1"  />
+<input type="hidden" name="return" value="<?php bloginfo('url'); ?>/wp-admin/admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename(__FILE__); ?>&amp;paid=yes"  />
+<input type="hidden" name="currency_code" value="USD" />
+<input type="hidden" name="notify_url" value="http://feedwordpress.radgeek.com/ipn/donation"  />
+<input type="hidden" name="custom" value="1"  />
+<input type="image" name="submit" src="https://www.paypal.com/en_GB/i/btn/btn_donate_SM.gif" alt="Donate through PayPal" />
+</div>
+</div></form>
+
+<p>You can make a gift online (or
+<a href="http://feedwordpress.radgeek.com/donation">set up an automatic
+regular donation</a>) using an existing PayPal account or any major credit card.</p>
+
+<div class="sod-off">
+<form style="text-align: center" action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename(__FILE__); ?>" method="POST"><div>
+<input class="button-primary" type="submit" name="maybe_later" value="Maybe Later" />
+<input class="button-secondary" type="submit" name="go_away" value="Dismiss" />
+</div></form>
+</div>
+</div> <!-- class="donation-form" -->
+		<?php
+	} /* FeedWordPressSyndicationPage::bleg_box () */
+
 	/**
 	 * Override the default display of a save-settings button and replace
 	 * it with nothing.
@@ -113,77 +279,6 @@ function fwp_dashboard_update_if_requested () {
 	endif;
 }
 
-function fwp_syndication_manage_page () {
-	global $wpdb;
-
-	if (FeedWordPress::needs_upgrade()) :
-		fwp_upgrade_page();
-		return;
-	endif;
-
-?>
-<?php $cont = true;
-if (isset($_REQUEST['action'])):
-	if ($_REQUEST['action'] == 'feedfinder' or $_REQUEST['action']==FWP_SYNDICATE_NEW) : $cont = fwp_feedfinder_page();
-	elseif ($_REQUEST['action'] == 'switchfeed') : $cont = fwp_switchfeed_page();
-	elseif ($_REQUEST['action'] == FWP_UNSUB_CHECKED or $_REQUEST['action'] == 'Unsubscribe') : $cont = fwp_multidelete_page();
-	endif;
-endif;
-
-if ($cont):
-?>
-<?php
-	$syndicationPage = new FeedWordPressSyndicationPage;
-
-	$links = FeedWordPress::syndicated_links();
-	$syndicationPage->open_sheet('Syndicated Sites');
-	?>
-	<div id="post-body">
-	<?php
-	if ($links) :
-		fwp_add_meta_box(
-			/*id=*/ 'feedwordpress_update_box',
-			/*title=*/ __('Update feeds now'),
-			/*callback=*/ 'fwp_syndication_manage_page_update_box',
-			/*page=*/ $syndicationPage->meta_box_context(),
-			/*context =*/ $syndicationPage->meta_box_context()
-		);
-	endif;
-	fwp_add_meta_box(
-		/*id=*/ 'feedwordpress_feeds_box',
-		/*title=*/ __('Syndicated sources'),
-		/*callback=*/ 'fwp_syndication_manage_page_links_box',
-		/*page=*/ $syndicationPage->meta_box_context(),
-		/*context =*/ $syndicationPage->meta_box_context()
-	);
-	if (FeedWordPressCompatibility::test_version(0, FWP_SCHEMA_25)) :
-		fwp_add_meta_box(
-			/*id=*/ 'feedwordpress_add_feed_box',
-			/*title=*/ 'Add a new syndicated source',
-			/*callback=*/ 'fwp_syndication_manage_page_add_feed_box',
-			/*page=*/ $syndicationPage->meta_box_context(),
-			/*context=*/ $syndicationPage->meta_box_context()
-		);
-	endif;
-			
-	do_action('feedwordpress_admin_page_syndication_meta_boxes', $syndicationPage);
-?>
-	<div class="metabox-holder">		
-	<?php
-		fwp_do_meta_boxes($syndicationPage->meta_box_context(), $syndicationPage->meta_box_context(), $syndicationPage);
-	?>
-	</div> <!-- class="metabox-holder" -->
-	</div> <!-- id="post-body" -->
-
-	<?php $syndicationPage->close_sheet(/*dispatch=*/ NULL); ?>
-
-	<div style="display: none">
-	<div id="tags-input"></div> <!-- avoid JS error from WP 2.5 bug -->
-	</div>
-<?php
-endif;
-} /* function fwp_syndication_manage_page () */
-
 function fwp_syndication_manage_page_add_feed_box ($object = NULL, $box = NULL) {
 	?>
 	<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename(__FILE__); ?>" method="post">
@@ -198,9 +293,38 @@ function fwp_syndication_manage_page_add_feed_box ($object = NULL, $box = NULL) 
 	<?php
 }
 
+define('FEEDWORDPRESS_BLEG_MAYBE_LATER_OFFSET', (60 /*sec/min*/ * 60 /*min/hour*/ * 24 /*hour/day*/ * 31 /*days*/));
+define('FEEDWORDPRESS_BLEG_ALREADY_PAID_OFFSET', (60 /*sec/min*/ * 60 /*min/hour*/ * 24 /*hour/day*/ * 183 /*days*/));
 function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
+	$bleg_box_hidden = null;
+	if (isset($_POST['maybe_later'])) :
+		$bleg_box_hidden = time() + FEEDWORDPRESS_BLEG_MAYBE_LATER_OFFSET; 
+	elseif (isset($_REQUEST['paid']) and $_REQUEST['paid'])  :
+		$bleg_box_hidden = time() + FEEDWORDPRESS_BLEG_ALREADY_PAID_OFFSET; 
+	elseif (isset($_POST['go_away'])) :
+		$bleg_box_hidden = 'permanent';
+	endif;
+
+	if (!is_null($bleg_box_hidden)) :
+		update_option('feedwordpress_bleg_box_hidden', $bleg_box_hidden);
+	else :
+		$bleg_box_hidden = get_option('feedwordpress_bleg_box_hidden');
+	endif;
 ?>
-	<form action="" method="POST">
+	<?php
+	$bleg_box_ready = (!$bleg_box_hidden or (is_numeric($bleg_box_hidden) and $bleg_box_hidden < time()));
+	if (isset($_REQUEST['paid']) and $_REQUEST['paid']) :
+		$object->bleg_thanks($subject, $box);
+	elseif ($bleg_box_ready) :
+		$object->bleg_box($object, $box);
+	endif;
+	?>
+
+	<form
+		action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename(__FILE__); ?>"
+		method="POST"
+		class="update-form<?php if ($bleg_box_ready) : ?> with-donation<?php endif; ?>"
+	>
 	<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 	<p>Check currently scheduled feeds for new and updated posts.</p>
 
@@ -209,10 +333,10 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 
 	if (!get_option('feedwordpress_automatic_updates')) :
 	?>
-		<p class="youhave"><strong>Note:</strong> Automatic updates are currently turned
+		<p class="heads-up"><strong>Note:</strong> Automatic updates are currently turned
 		<strong>off</strong>. New posts from your feeds will not be syndicated
 		until you manually check for them here. You can turn on automatic
-		updates under <a href="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/feeds-page.php">Feed Settings<a></a>.</p>
+		updates under <a href="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/feeds-page.php">Feed &amp; Update Settings<a></a>.</p>
 	<?php 
 	endif;
 	?>
@@ -565,5 +689,6 @@ my mind.</label></li>
 	endif;
 }
 
-	fwp_syndication_manage_page();
+	$syndicationPage = new FeedWordPressSyndicationPage;
+	$syndicationPage->display();
 
