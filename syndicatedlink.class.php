@@ -203,9 +203,11 @@ class SyndicatedLink {
 					$updateWindow = DEFAULT_UPDATE_PERIOD;
 				endif;
 				
-				$this->settings['update/ttl'] = $updateWindow+rand(0, 2*($updateWindow/3));
+				$fudgedInterval = $updateWindow+rand(0, 2*($updateWindow/3));
+				$this->settings['update/ttl'] = apply_filters('syndicated_feed_automatic_ttl', $fudgedInterval, $this);
 				$this->settings['update/timed'] = 'automatically';
 			endif;
+			$this->settings['update/ttl'] = apply_filters('syndicated_feed_ttl', $this->settings['update/ttl'], $this);
 
 			if (!isset($this->settings['update/hold']) or $this->settings['update/hold']!='ping') :
 				$this->settings['update/hold'] = 'scheduled';
