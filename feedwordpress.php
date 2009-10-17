@@ -35,9 +35,13 @@ define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 define ('DEFAULT_UPDATE_PERIOD', 60); // value in minutes
 
-$feedwordpress_debug = get_option('feedwordpress_debug');
-if (is_string($feedwordpress_debug)) :
-	$feedwordpress_debug = ($feedwordpress_debug == 'yes');
+if (isset($_REQUEST['feedwordpress_debug'])) :
+	$feedwordpress_debug = $_REQUEST['feedwordpress_debug'];
+else :
+	$feedwordpress_debug = get_option('feedwordpress_debug');
+	if (is_string($feedwordpress_debug)) :
+		$feedwordpress_debug = ($feedwordpress_debug == 'yes');
+	endif;
 endif;
 define ('FEEDWORDPRESS_DEBUG', $feedwordpress_debug);
 
@@ -200,7 +204,15 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 		add_action('feedwordpress_check_feed', 'log_feedwordpress_check_feed', 100);
 		add_action('feedwordpress_update_complete', 'log_feedwordpress_update_complete', 100);
 	endif;
-		
+	
+	if (FeedWordPress::update_requested() and FEEDWORDPRESS_DEBUG) :
+		add_action('post_syndicated_item', 'debug_out_feedwordpress_post', 100);
+		add_action('update_syndicated_item', 'debug_out_feedwordpress_update_post', 100);
+		add_action('feedwordpress_update', 'debug_out_feedwordpress_update_feeds', 100);
+		add_action('feedwordpress_check_feed', 'debug_out_feedwordpress_check_feed', 100);
+		add_action('feedwordpress_update_complete', 'debug_out_feedwordpress_update_complete', 100);
+	endif;
+
 	# Cron-less auto-update. Hooray!
 	$autoUpdateHook = get_option('feedwordpress_automatic_updates');
 	if ($autoUpdateHook != 'init') :
@@ -263,7 +275,7 @@ function feedwordpress_update_magic_url () {
 	// Explicit update request in the HTTP request (e.g. from a cron job)
 	if (FeedWordPress::update_requested()) :
 		$feedwordpress =& new FeedWordPress;
-		$feedwordpress->update();
+		$feedwordpress->update(FeedWordPress::update_requested_url());
 		
 		// Magic URL should return nothing but a 200 OK header packet
 		// when successful.
@@ -306,6 +318,39 @@ function log_feedwordpress_update_complete ($delta) {
 	error_log("[".date('Y-m-d H:i:s')."][feedwordpress] "
 		.(is_null($delta) ? "Error: I don't syndicate that URI"
 		: implode(' and ', $mesg)));
+}
+
+function debug_out_feedwordpress_post ($id) {
+	$post = wp_get_single_post($id);
+	print ("[".date('Y-m-d H:i:s')."][feedwordpress] posted "
+		."'{$post->post_title}' ({$post->post_date})\n");
+}
+
+function debug_out_feedwordpress_update_post ($id) {
+	$post = wp_get_single_post($id);
+	print ("[".date('Y-m-d H:i:s')."][feedwordpress] updated "
+		."'{$post->post_title}' ({$post->post_date})"
+		." (as of {$post->post_modified})\n");
+}
+
+function debug_out_feedwordpress_update_feeds ($uri) {
+	print ("[".date('Y-m-d H:i:s')."][feedwordpress] update('$uri')\n");
+}
+
+function debug_out_feedwordpress_check_feed ($feed) {
+	$uri = $feed['link/uri']; $name = $feed['link/name'];
+	print ("[".date('Y-m-d H:i:s')."][feedwordpress] Examining $name <$uri>\n");
+}
+
+function debug_out_feedwordpress_update_complete ($delta) {
+	$mesg = array();
+	if (isset($delta['new'])) $mesg[] = 'added '.$delta['new'].' new posts';
+	if (isset($delta['updated'])) $mesg[] = 'updated '.$delta['updated'].' existing posts';
+	if (empty($mesg)) $mesg[] = 'nothing changed';
+
+	print ("[".date('Y-m-d H:i:s')."][feedwordpress] "
+		.(is_null($delta) ? "Error: I don't syndicate that URI"
+		: implode(' and ', $mesg))."\n");
 }
 
 ################################################################################
@@ -839,7 +884,7 @@ class FeedWordPress {
 				break;
 			endif;
 
-			$pinged_that = (is_null($uri) or in_array($uri, array($feed->uri(), $feed->homepage())));
+			$pinged_that = (is_null($uri) or ($uri=='*') or in_array($uri, array($feed->uri(), $feed->homepage())));
 
 			if (!is_null($uri)) : // A site-specific ping always updates
 				$timely = true;
@@ -869,6 +914,9 @@ class FeedWordPress {
 
 	function stale () {
 		if (get_option('feedwordpress_automatic_updates')) :
+			// Do our best to avoid possible simultaneous
+			// updates by getting up-to-the-minute settings.
+			
 			$last = get_option('feedwordpress_last_update_all');
 		
 			// If we haven't updated all yet, give it a time window
@@ -896,8 +944,22 @@ class FeedWordPress {
 	} // FeedWordPress::stale()
 	
 	function update_requested () {
-		return (isset($_REQUEST['update_feedwordpress']) and $_REQUEST['update_feedwordpress']);
+		return (
+			isset($_REQUEST['update_feedwordpress'])
+			and $_REQUEST['update_feedwordpress']
+		);
 	} // FeedWordPress::update_requested()
+
+	function update_requested_url () {
+			$ret = null;
+			
+			if (($_REQUEST['update_feedwordpress']=='*')
+			or (preg_match('|^http://.*|i', $_REQUEST['update_feedwordpress']))) :
+				$ret = $_REQUEST['update_feedwordpress'];
+			endif;
+
+			return $ret;
+	} // FeedWordPress::update_requested_url()
 
 	function syndicate_link ($name, $uri, $rss) {
 		global $wpdb;
