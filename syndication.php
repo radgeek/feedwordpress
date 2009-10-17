@@ -452,6 +452,7 @@ function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
 				if (isset($sLink->settings['update/timed']) and $sLink->settings['update/timed']=='automatically') :
 					$next = $sLink->settings['update/last'] + ((int) $sLink->settings['update/ttl'] * 60);
 					print fwp_time_elapsed($next);
+					if (FEEDWORDPRESS_DEBUG) : print " [".(($next-time())/60)." minutes]"; endif;
 				else :
 					echo "every ".$sLink->settings['update/ttl']." minute".(($sLink->settings['update/ttl']!=1)?"s":"");
 				endif;

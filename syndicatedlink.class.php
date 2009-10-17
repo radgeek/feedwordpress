@@ -193,7 +193,17 @@ class SyndicatedLink {
 				$this->settings['update/timed'] = 'feed';
 			else :
 				// spread out over a time interval for staggered updates
-				$this->settings['update/ttl'] = DEFAULT_UPDATE_PERIOD+rand(0, 2*(DEFAULT_UPDATE_PERIOD/3));
+				if (isset($this->settings['update/window'])) :
+					$updateWindow = $this->settings['update/window'];
+				else :
+					$updateWindow = get_option('feedwordpress_update_window');
+				endif;
+				
+				if (!is_numeric($updateWindow) or ($updateWindow < 1)) :
+					$updateWindow = DEFAULT_UPDATE_PERIOD;
+				endif;
+				
+				$this->settings['update/ttl'] = $updateWindow+rand(0, 2*($updateWindow/3));
 				$this->settings['update/timed'] = 'automatically';
 			endif;
 

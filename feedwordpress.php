@@ -71,6 +71,8 @@ if (FEEDWORDPRESS_DEBUG) :
 	define('MAGPIE_CACHE_AGE', 1);
 else :
 	define('MAGPIE_DEBUG', false);
+	
+	define('MAGPIE_CACHE_AGE', 1*60);
 endif;
 
 // Note that the rss-functions.php that comes prepackaged with WordPress is
