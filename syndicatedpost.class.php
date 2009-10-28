@@ -705,6 +705,12 @@ class SyndicatedPost {
 						meta_key='$key',
 						meta_value='$value'
 					");
+					if (!$result) :
+						$err = mysql_error();
+						if (FEEDWORDPRESS_DEBUG) :
+							echo "[DEBUG:".date('Y-m-d H:i:S')."][feedwordpress]: post metadata insertion FAILED for field '$key' := '$value': [$err]";
+						endif;
+					endif;
 				endforeach;
 			endforeach;
 		endif;
