@@ -1136,7 +1136,60 @@ class SyndicatedPost {
 
 		return $author;
 	} // SyndicatedPost::author()
-	
+
+	/**
+	 * SyndicatedPost::isTaggedAs: Test whether a feed item is
+	 * tagged / categorized with a given string. Case and leading and
+	 * trailing whitespace are ignored.
+	 *
+	 * @param string $tag Tag to check for
+	 *
+	 * @return bool Whether or not at least one of the categories / tags on 
+	 *	$this->item is set to $tag (modulo case and leading and trailing
+	 * 	whitespace)
+	 */
+	function isTaggedAs ($tag) {
+		$desiredTag = strtolower(trim($tag)); // Normalize case and whitespace
+
+		// Check to see if this is tagged with $tag
+		$currentCategory = 'category';
+		$currentCategoryNumber = 1;
+
+		// If we have the new MagpieRSS, the number of category elements
+		// on this item is stored under index "category#".
+		if (isset($this->item['category#'])) :
+			$numberOfCategories = (int) $this->item['category#'];
+		
+		// We REALLY shouldn't have the old and busted MagpieRSS, but in
+		// case we do, it doesn't support multiple categories, but there
+		// might still be a single value under the "category" index.
+		elseif (isset($this->item['category'])) :
+			$numberOfCategories = 1;
+
+		// No standard category or tag elements on this feed item.
+		else :
+			$numberOfCategories = 0;
+
+		endif;
+
+		$isSoTagged = false; // Innocent until proven guilty
+
+		// Loop through category elements; if there are multiple
+		// elements, they are indexed as category, category#2,
+		// category#3, ... category#N
+		while ($currentCategoryNumber <= $numberOfCategories) :
+			if ($desiredTag == strtolower(trim($this->item[$currentCategory]))) :
+				$isSoTagged = true; // Got it!
+				break;
+			endif;
+
+			$currentCategoryNumber += 1;
+			$currentCategory = 'category#'.$currentCategoryNumber;
+		endwhile;
+
+		return $isSoTagged;
+	} /* SyndicatedPost::isTaggedAs() */
+
 	var $uri_attrs = array (
 		array('a', 'href'),
 		array('applet', 'codebase'),

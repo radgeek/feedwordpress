@@ -2,6 +2,10 @@ FeedWordPress Change Log
 ========================
 Changes from 2009.0707 to Trunk
 -------------------------------
+*	NEW INTERFACE HOOKS
+
+*	FILTER API: SyndicatedPost::isTaggedAs
+
 *	BUGIFX: SILENT FAILURE OF "SYNDICATE" BUTTON FIXED 
 
 *	BUGFIX: MagpieRSS "ILLEGAL OFFSET TYPE" ERROR MESSAGE FIXED
