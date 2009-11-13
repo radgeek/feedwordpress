@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2009.1111
+Version: 2009.1112
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -28,7 +28,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2009.0803');
+define ('FEEDWORDPRESS_VERSION', '2009.1112');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 // Defaults
@@ -531,14 +531,14 @@ function feedwordpress_item_feed_data () {
 	if (is_syndicated()) :
 ?>
 <source>
-	<title><?php the_syndication_source(); ?></title>
-	<link rel="alternate" type="text/html" href="<?php the_syndication_source_link(); ?>" />
-	<link rel="self" href="<?php the_syndication_feed(); ?>" />
+	<title><?php print htmlspecialchars(get_syndication_source()); ?></title>
+	<link rel="alternate" type="text/html" href="<?php print htmlspecialchars(get_syndication_source_link()); ?>" />
+	<link rel="self" href="<?php print htmlspecialchars(get_syndication_feed()); ?>" />
 <?php
 	$id = get_syndication_feed_guid();
 	if (strlen($id) > 0) :
 ?>
-	<id><?php print $id; ?></id>
+	<id><?php print htmlspecialchars($id); ?></id>
 <?php
 	endif;
 	$updated = get_feed_meta('feed/updated');
