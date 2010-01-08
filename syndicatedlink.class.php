@@ -382,6 +382,31 @@ class SyndicatedLink {
 		endif;
 	} /* SyndicatedLink::save_settings () */
 
+	/**
+	 * Retrieves the value of a setting, allowing for a global setting to be
+	 * used as a fallback, or a constant value, or both.
+	 *
+	 * @param string $name The link setting key
+	 * @param mixed $fallback_global If the link setting is nonexistent or marked as a use-default value, fall back to the value of this global setting.
+	 * @param mixed $fallback_value If the link setting and the global setting are nonexistent or marked as a use-default value, fall back to this constant value.
+	 * @return bool TRUE on success, FALSE on failure.
+	 */
+	function setting ($name, $fallback_global = NULL, $fallback_value = NULL) {
+		$ret = NULL;
+		if (isset($this->settings[$name])) :
+			$ret = $this->settings[$name];
+		endif;
+		
+		if ((is_null($ret) or strtolower($ret)=='default') and !is_null($fallback_global)) :
+			$ret = get_option('feedwordpress_'.$fallback_global, /*default=*/ NULL);
+		endif;
+
+		if ((is_null($ret) or strtolower($ret)=='default') and !is_null($fallback_value)) :
+			$ret = $fallback_value;
+		endif;
+		return $ret;
+	} /* SyndicatedLink::setting () */
+
 	function uri () {
 		return (is_object($this->link) ? $this->link->link_rss : NULL);
 	} /* SyndicatedLink::uri () */

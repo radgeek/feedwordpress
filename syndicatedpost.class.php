@@ -1227,24 +1227,27 @@ class SyndicatedPost {
 	} /* function SyndicatedPost::resolve_single_relative_uri() */
 
 	function resolve_relative_uris ($content, $obj) {
-		# The MagpieRSS upgrade has some `xml:base` support baked in.
-		# However, sometimes people do silly things, like putting
-		# relative URIs out on a production RSS 2.0 feed or other feeds
-		# with no good support for `xml:base`. So we'll do our best to
-		# try to catch any remaining relative URIs and resolve them as
-		# best we can.
-		$obj->_base = $obj->item['link']; // Reset the base for resolving relative URIs
-
-		foreach ($obj->uri_attrs as $pair) :
-			list($tag, $attr) = $pair;
-			$pattern = FeedWordPressHTML::attributeRegex($tag, $attr);
-			$content = preg_replace_callback (
-				$pattern,
-				array(&$obj, 'resolve_single_relative_uri'),
-				$content
-			);
-		endforeach;
-
+		$set = $obj->link->setting('resolve relative', 'resolve_relative', 'yes');
+		if ($set and $set != 'no') : 
+			# The MagpieRSS upgrade has some `xml:base` support baked in.
+			# However, sometimes people do silly things, like putting
+			# relative URIs out on a production RSS 2.0 feed or other feeds
+			# with no good support for `xml:base`. So we'll do our best to
+			# try to catch any remaining relative URIs and resolve them as
+			# best we can.
+			$obj->_base = $obj->item['link']; // Reset the base for resolving relative URIs
+	
+			foreach ($obj->uri_attrs as $pair) :
+				list($tag, $attr) = $pair;
+				$pattern = FeedWordPressHTML::attributeRegex($tag, $attr);
+				$content = preg_replace_callback (
+					$pattern,
+					array(&$obj, 'resolve_single_relative_uri'),
+					$content
+				);
+			endforeach;
+		endif;
+		
 		return $content;
 	} /* function SyndicatedPost::resolve_relative_uris () */
 

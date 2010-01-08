@@ -106,19 +106,57 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 * @uses fwp_option_box_closer()
 	 */ 
 	function formatting_box ($page, $box = NULL) {
-		$formatting_filters = get_option('feedwordpress_formatting_filters');
+		global $fwp_path;
+		$thesePosts = $page->these_posts_phrase();
+		$global_resolve_relative = get_option('feedwordpress_resolve_relative', 'yes');
+		if ($page->for_feed_settings()) :
+			$formatting_filters = null;
+			$resolve_relative = $page->link->setting('resolve relative', NULL, 'default');
+			$url = preg_replace('|/+$|', '', $page->link->homepage());
+			$setting = array(
+				'yes' => __('resolve relative URIs'),
+				'no' => __('leave relative URIs unresolved'),
+			);
+			$href = $fwp_path.'/'.basename(__FILE__);
+		else :
+			$formatting_filters = get_option('feedwordpress_formatting_filters', 'no');
+			$resolve_relative = $global_resolve_relative;
+			$url = 'http://example.com';
+		endif;
 		?>
 		<table class="form-table" cellspacing="2" cellpadding="5">
-		<tr><th scope="row">Formatting filters:</th>
-		<td><select name="formatting_filters" size="1">
-		<option value="no"<?php echo ($formatting_filters!='yes')?' selected="selected"':''; ?>>Protect syndicated posts from formatting filters</option>
-		<option value="yes"<?php echo ($formatting_filters=='yes')?' selected="selected"':''; ?>>Expose syndicated posts to formatting filters</option>
-		</select>
-		<p class="setting-description">If you have trouble getting plugins to work that are supposed to insert
-		elements after posts (like relevant links or a social networking
-		<q>Share This</q> button), try changing this option to see if it fixes your
-		problem.</p>
+		<?php if (!is_null($formatting_filters)) : ?>
+
+		  <tr><th scope="row">Formatting filters:</th>
+		  <td><select name="formatting_filters" size="1">
+		  <option value="no"<?php echo ($formatting_filters!='yes')?' selected="selected"':''; ?>>Protect syndicated posts from formatting filters</option>
+		  <option value="yes"<?php echo ($formatting_filters=='yes')?' selected="selected"':''; ?>>Expose syndicated posts to formatting filters</option>
+		  </select>
+		  <p class="setting-description">If you have trouble getting plugins to work that are supposed to insert
+		  elements after posts (like relevant links or a social networking
+		  <q>Share This</q> button), try changing this option to see if it fixes your
+		  problem.</p>
+		  </td></tr>
+
+		<?php endif; ?>
+		
+		<tr><th scope="row">Relative URIs:</th>
+		<td>If link or image in a syndicated post from <code><?php print $url; ?></code>
+		refers to a partial URI like <code>/about</code>, where should
+		the syndicated copy point to?</p>
+
+		<ul>
+		<?php if ($page->for_feed_settings()) : ?>
+		<li><p><label><input type="radio" name="resolve_relative" value='default' <?php echo ($resolve_relative=='default')?' checked="checked"':''; ?>/> Use <a href="admin.php?page=<?php print $href; ?>">site-wide setting</a><br/>
+		<small style="margin-left: 2.0em;">Currently: <strong><?php print $setting[$global_resolve_relative]; ?></strong></small></label></p></li>
+		<?php endif; ?>
+		<li><p><label><input type="radio" name="resolve_relative" value="yes"<?php echo ($resolve_relative!='no' and $resolve_relative!='default')?' checked="checked"':''; ?>/> Resolve the URI so it points to <code><?php print $url; ?></code><br/>
+		<small style="margin-left: 2.0em;"><code>/contact</code> is rewritten as <code><?php print $url; ?>/contact</code></label></small></p></li>
+		<li><p><label><input type="radio" name="resolve_relative" value="no"<?php echo ($resolve_relative=='no')?' checked="checked"':''; ?>/> Leave relative URIs unchanged, so they point to this site<br/>
+		<small style="margin-left: 2.0em;"><code>/contact</code> is left as <code>/contact</code></small></label></li>
+		</ul>
 		</td></tr>
+
 		</table>
 		<?php
 	} /* FeedWordPressPostsPage::formatting_box() */
@@ -344,6 +382,10 @@ function fwp_posts_page () {
 
 			$link->settings['postmeta'] = serialize($custom_settings);
 
+			if (isset($GLOBALS['fwp_post']['resolve_relative'])) :
+				$link->settings['resolve relative'] = $GLOBALS['fwp_post']['resolve_relative'];
+			endif;
+			
 			// Post status, comment status, ping status
 			foreach (array('post', 'comment', 'ping') as $what) :
 				$sfield = "feed_{$what}_status";
@@ -385,6 +427,9 @@ function fwp_posts_page () {
 			update_option('feedwordpress_use_aggregator_source_data', $_REQUEST['use_aggregator_source_data']);
 			update_option('feedwordpress_formatting_filters', $_REQUEST['formatting_filters']);
 
+			if (isset($GLOBALS['fwp_post']['resolve_relative'])) :
+				update_option('feedwordpress_resolve_relative', $GLOBALS['fwp_post']['resolve_relative']);
+			endif;
 			if (isset($_REQUEST['feed_comment_status']) and ($_REQUEST['feed_comment_status'] == 'open')) :
 				update_option('feedwordpress_syndicated_comment_status', 'open');
 			else :
@@ -434,7 +479,6 @@ $boxes_by_methods = array(
 
 // Feed-level settings don't exist for these.
 if ($postsPage->for_feed_settings()) :
-	unset($boxes_by_methods['formatting_box']);
 	unset($boxes_by_methods['links_box']);
 endif;
 

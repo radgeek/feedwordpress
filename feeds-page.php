@@ -77,6 +77,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		'map authors',
 		'tags',
 		'postmeta',
+		'resolve relative',
 		'update/.*',
 		'feed/.*',
 		'link/.*',
