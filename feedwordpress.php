@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2010.0107
+Version: 2010.0108
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -28,7 +28,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2010.0107');
+define ('FEEDWORDPRESS_VERSION', '2010.0108');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 // Defaults
@@ -272,12 +272,34 @@ function feedwordpress_auto_update () {
 } /* feedwordpress_auto_update () */
 
 function feedwordpress_update_magic_url () {
+	global $wpdb;
+
 	// Explicit update request in the HTTP request (e.g. from a cron job)
 	if (FeedWordPress::update_requested()) :
 		$feedwordpress =& new FeedWordPress;
 		$feedwordpress->update(FeedWordPress::update_requested_url());
 		
-		// Magic URL should return nothing but a 200 OK header packet
+		if (FEEDWORDPRESS_DEBUG and count($wpdb->queries) > 0) :
+			$mysqlTime = 0.0;
+			$byTime = array();
+			foreach ($wpdb->queries as $query) :
+				$time = $query[1] * 1000000.0;
+				$mysqlTime += $query[1];
+				if (!isset($byTime[$time])) : $byTime[$time] = array(); endif;
+				$byTime[$time][] = $query[0]. ' // STACK: ' . $query[2];   
+			endforeach;
+			krsort($byTime);
+       
+			foreach ($byTime as $time => $querySet) :
+				foreach ($querySet as $query) :
+					print "[".(sprintf('%4.4f', $time/1000.0)) . "ms] $query\n";
+				endforeach;
+			endforeach;
+			echo "[feedwordpress] $wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of "; timer_stop(1); print " seconds.";
+		endif;
+
+
+    		// Magic URL should return nothing but a 200 OK header packet
 		// when successful.
 		exit;
 	endif;
