@@ -1,8 +1,10 @@
 <?php
 require_once(dirname(__FILE__) . '/admin-ui.php');
+require_once(dirname(__FILE__) . '/updatedpostscontrol.class.php');
 
 class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	var $link = NULL;
+	var $updatedPosts = NULL;
 
 	/**
 	 * Construct the posts page object.
@@ -13,7 +15,103 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpresspostspage', $link);
 		$this->dispatch = 'feedwordpress_posts_settings';
 		$this->filename = __FILE__;
+		$this->updatedPosts = new UpdatedPostsControl($this);
 	} /* FeedWordPressPostsPage constructor */
+
+	function accept_POST ($post) {
+		global $wpdb;
+		
+		$link_id = $this->link->id;
+
+		// User mashed a Save Changes button
+		if (isset($post['save']) or isset($post['submit'])) :
+			// custom post settings
+			foreach ($post['notes'] as $mn) :
+				$mn['key0'] = trim($mn['key0']);
+				$mn['key1'] = trim($mn['key1']);
+	
+				if (strlen($mn['key0']) > 0) :
+					unset($custom_settings[$mn['key0']]); // out with the old
+				endif;
+				
+				if (($mn['action']=='update') and (strlen($mn['key1']) > 0)) :
+					$custom_settings[$mn['key1']] = $mn['value']; // in with the new
+				endif;
+			endforeach;
+	
+			$this->updatedPosts->accept_POST($post);
+			if ($this->for_feed_settings()) :
+				$alter = array ();
+	
+				$this->link->settings['postmeta'] = serialize($custom_settings);
+	
+				if (isset($post['resolve_relative'])) :
+					$this->link->settings['resolve relative'] = $post['resolve_relative'];
+				endif;
+				
+				// Post status, comment status, ping status
+				foreach (array('post', 'comment', 'ping') as $what) :
+					$sfield = "feed_{$what}_status";
+					if (isset($post[$sfield])) :
+						if ($post[$sfield]=='site-default') :
+							unset($this->link->settings["{$what} status"]);
+						else :
+							$this->link->settings["{$what} status"] = $post[$sfield];
+						endif;
+					endif;
+				endforeach;
+
+				$alter[] = "link_notes = '".$wpdb->escape($this->link->settings_to_notes())."'";
+				$alter_set = implode(", ", $alter);
+	
+				// issue update query
+				$result = $wpdb->query("
+				UPDATE $wpdb->links
+				SET $alter_set
+				WHERE link_id='$link_id'
+				");
+				$this->updated = true;
+			
+				// reload link information from DB
+				if (function_exists('clean_bookmark_cache')) :
+					clean_bookmark_cache($link_id);
+				endif;
+				$link =& new SyndicatedLink($link_id);
+			else :
+				// update_option ...
+				if (isset($post['feed_post_status'])) :
+					update_option('feedwordpress_syndicated_post_status', $post['feed_post_status']);
+				endif;
+
+				update_option('feedwordpress_custom_settings', serialize($custom_settings));
+	
+				update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
+				update_option('feedwordpress_use_aggregator_source_data', $_REQUEST['use_aggregator_source_data']);
+				update_option('feedwordpress_formatting_filters', $_REQUEST['formatting_filters']);
+	
+				if (isset($post['resolve_relative'])) :
+					update_option('feedwordpress_resolve_relative', $post['resolve_relative']);
+				endif;
+				if (isset($_REQUEST['feed_comment_status']) and ($_REQUEST['feed_comment_status'] == 'open')) :
+					update_option('feedwordpress_syndicated_comment_status', 'open');
+				else :
+					update_option('feedwordpress_syndicated_comment_status', 'closed');
+				endif;
+
+				if (isset($_REQUEST['feed_ping_status']) and ($_REQUEST['feed_ping_status'] == 'open')) :
+					update_option('feedwordpress_syndicated_ping_status', 'open');
+				else :
+					update_option('feedwordpress_syndicated_ping_status', 'closed');
+				endif;
+		
+				$this->updated = true;
+			endif;
+
+		// Probably a "Go" button for the drop-down
+		else :
+			$this->updated = false;
+		endif;		
+	}
 
 	/**
 	 * Outputs "Publication" settings box.
@@ -45,6 +143,8 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		if (SyndicatedPost::use_api('post_status_pending')) :
 			$setting['pending'] = array('label' => "Hold %s for review; mark as Pending", 'checked' => '');
 		endif;
+
+
 		if ($page->for_feed_settings()) :
 			$href = $fwp_path.'/'.basename(__FILE__);
 			$currently = str_replace('%s', '', strtolower(strtok($setting[$post_status_global]['label'], ';')));
@@ -80,7 +180,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		</style>
 	
 		<table id="syndicated-publication-form" class="form-table" cellspacing="2" cellpadding="5">
-		<tr><th scope="row">Status for new posts:</th>
+		<tr><th scope="row"><?php _e('New posts:'); ?></th>
 		<td><ul class="options">
 		<?php foreach ($selector as $code => $li) : ?>
 			<li><label><input type="radio" name="feed_post_status"
@@ -89,6 +189,8 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		<?php endforeach; ?>
 		</ul></td>
 		</tr>
+
+		<?php $page->updatedPosts->display(); ?>
 		</table>
 	
 		<?php
@@ -345,12 +447,14 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 function fwp_posts_page () {
 	global $wpdb, $wp_db_version;
-	
+	global $fwp_post;
+
 	if (FeedWordPress::needs_upgrade()) :
 		fwp_upgrade_page();
 		return;
 	endif;
 
+	// If this is a POST, validate source and user credentials
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_posts_settings', /*capability=*/ 'manage_links');
 
 	$link = FeedWordPressAdminPage::submitted_link();
@@ -360,99 +464,16 @@ function fwp_posts_page () {
 	$mesg = null;
 
 	////////////////////////////////////////////////
-	// Process POST request, if any /////////////////
+	// Process POST request, if any ////////////////
 	////////////////////////////////////////////////
-	if (isset($GLOBALS['fwp_post']['save']) or isset($GLOBALS['fwp_post']['submit'])) :
-		// custom post settings
-		foreach ($GLOBALS['fwp_post']['notes'] as $mn) :
-			$mn['key0'] = trim($mn['key0']);
-			$mn['key1'] = trim($mn['key1']);
-
-			if (strlen($mn['key0']) > 0) :
-				unset($custom_settings[$mn['key0']]); // out with the old
-			endif;
-			
-			if (($mn['action']=='update') and (strlen($mn['key1']) > 0)) :
-				$custom_settings[$mn['key1']] = $mn['value']; // in with the new
-			endif;
-		endforeach;
-
-		if (is_object($link) and $link->found()) :
-			$alter = array ();
-
-			$link->settings['postmeta'] = serialize($custom_settings);
-
-			if (isset($GLOBALS['fwp_post']['resolve_relative'])) :
-				$link->settings['resolve relative'] = $GLOBALS['fwp_post']['resolve_relative'];
-			endif;
-			
-			// Post status, comment status, ping status
-			foreach (array('post', 'comment', 'ping') as $what) :
-				$sfield = "feed_{$what}_status";
-				if (isset($GLOBALS['fwp_post'][$sfield])) :
-					if ($GLOBALS['fwp_post'][$sfield]=='site-default') :
-						unset($link->settings["{$what} status"]);
-					else :
-						$link->settings["{$what} status"] = $GLOBALS['fwp_post'][$sfield];
-					endif;
-				endif;
-			endforeach;
-			
-			$alter[] = "link_notes = '".$wpdb->escape($link->settings_to_notes())."'";
-
-			$alter_set = implode(", ", $alter);
-
-			// issue update query
-			$result = $wpdb->query("
-			UPDATE $wpdb->links
-			SET $alter_set
-			WHERE link_id='$link_id'
-			");
-			$updated_link = true;
-
-			// reload link information from DB
-			if (function_exists('clean_bookmark_cache')) :
-				clean_bookmark_cache($link_id);
-			endif;
-			$link =& new SyndicatedLink($link_id);
-		else :
-			// update_option ...
-			if (isset($GLOBALS['fwp_post']['feed_post_status'])) :
-				update_option('feedwordpress_syndicated_post_status', $GLOBALS['fwp_post']['feed_post_status']);
-			endif;
-			
-			update_option('feedwordpress_custom_settings', serialize($custom_settings));
-
-			update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
-			update_option('feedwordpress_use_aggregator_source_data', $_REQUEST['use_aggregator_source_data']);
-			update_option('feedwordpress_formatting_filters', $_REQUEST['formatting_filters']);
-
-			if (isset($GLOBALS['fwp_post']['resolve_relative'])) :
-				update_option('feedwordpress_resolve_relative', $GLOBALS['fwp_post']['resolve_relative']);
-			endif;
-			if (isset($_REQUEST['feed_comment_status']) and ($_REQUEST['feed_comment_status'] == 'open')) :
-				update_option('feedwordpress_syndicated_comment_status', 'open');
-			else :
-				update_option('feedwordpress_syndicated_comment_status', 'closed');
-			endif;
-	
-			if (isset($_REQUEST['feed_ping_status']) and ($_REQUEST['feed_ping_status'] == 'open')) :
-				update_option('feedwordpress_syndicated_ping_status', 'open');
-			else :
-				update_option('feedwordpress_syndicated_ping_status', 'closed');
-			endif;
-	
-			$updated_link = true;
-		endif;
-		
-		do_action('feedwordpress_admin_page_posts_save', $GLOBALS['fwp_post'], $postsPage);
-	else :
-		$updated_link = false;
+	if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
+		$postsPage->accept_POST($fwp_post);
+		do_action('feedwordpress_admin_page_posts_save', $fwp_post, $postsPage);
 	endif;
 	
 	$postsPage->ajax_interface_js();
 
-	if ($updated_link) : ?>
+	if ($postsPage->updated) : ?>
 <div class="updated"><p>Syndicated posts settings updated.</p></div>
 <?php elseif (!is_null($mesg)) : ?>
 <div class="updated"><p><?php print wp_specialchars($mesg, 1); ?></p></div>
@@ -470,9 +491,9 @@ function fwp_posts_page () {
 <div id="post-body">
 <?php
 $boxes_by_methods = array(
-	'publication_box' => __('Publication'),
-	'formatting_box' => __('Formatting'),
+	'publication_box' => __('Syndicated Posts'),
 	'links_box' => __('Links'),
+	'formatting_box' => __('Formatting'),
 	'comments_and_pings_box' => __('Comments & Pings'),
 	'custom_post_settings_box' => __('Custom Post Settings (to apply to each syndicated post)'),
 );

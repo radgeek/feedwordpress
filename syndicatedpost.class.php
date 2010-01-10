@@ -285,11 +285,28 @@ class SyndicatedPost {
 
 				$last_rev_ts = gmmktime($backref[4], $backref[5], $backref[6], $backref[2], $backref[3], $backref[1]);
 				$updated_ts = $this->updated(/*fallback=*/ true, /*default=*/ NULL);
-				$updated = ((
+				
+				$frozen_values = get_post_custom_values('_syndication_freeze_updates', $result->id);
+				$frozen_post = (count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
+				$frozen_feed = ('yes' == $this->link->setting('freeze updates', 'freeze_updates', NULL));
+
+				// Check timestamps...
+				$updated = (
 					!is_null($updated_ts)
 					and ($updated_ts > $last_rev_ts)
-				) or $update_hash_changed);
-
+				);
+				
+			
+				// Or the hash...
+				$updated = ($updated or $update_hash_changed);
+				
+				// But only if the post is not frozen.
+				$updated = (
+					$updated
+					and !$frozen_post
+					and !$frozen_feed
+				); 
+				
 				if ($updated) :
 					$this->_freshness = 1; // Updated content
 					$this->_wp_id = $result->id;

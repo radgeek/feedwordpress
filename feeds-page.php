@@ -2,6 +2,7 @@
 require_once(dirname(__FILE__) . '/admin-ui.php');
 require_once(dirname(__FILE__) . '/magpiemocklink.class.php');
 require_once(dirname(__FILE__) . '/feedfinder.class.php');
+require_once(dirname(__FILE__) . '/updatedpostscontrol.class.php');
 
 class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	var $HTTPStatusMessages = array (
@@ -44,6 +45,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		504 => 'Gateway Timeout',
 		505 => 'HTTP Version Not Supported',
 	);
+	var $updatedPosts = NULL;
 
 	/**
 	 * Constructs the Feeds page object
@@ -59,6 +61,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 		$this->dispatch = get_class($this);
 		$this->filename = __FILE__;
+		$this->updatedPosts = new UpdatedPostsControl($this);
 	} /* FeedWordPressFeedsPage constructor */
 
 	var $special_settings = array ( /* Regular expression syntax is OK here */
@@ -78,6 +81,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		'tags',
 		'postmeta',
 		'resolve relative',
+		'freeze updates',
 		'update/.*',
 		'feed/.*',
 		'link/.*',
@@ -131,6 +135,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$boxes_by_methods = array(
 				'feed_information_box' => __('Feed Information'),
 				'global_feeds_box' => __('Update Scheduling'),
+				'updated_posts_box' => __('Updated Posts'),
 				'posts_box' => __('Syndicated Posts, Links, Comments & Pings'),
 				'authors_box' => __('Syndicated Authors'),
 				'categories_box' => __('Categories'.FEEDWORDPRESS_AND_TAGS),
@@ -184,6 +189,14 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		endif;
 		return false; // Don't continue
 	} /* FeedWordPressFeedsPage::display() */
+
+	/*static*/ function updated_posts_box ($page, $box = NULL) {
+		?>
+		<table class="edit-form">
+		<?php $page->updatedPosts->display(); ?>
+		</table>
+		<?php
+	} /* FeedWordPressFeedsPage::updated_posts_box() */
 
 	/*static*/ function global_feeds_box ($page, $box = NULL) {
 		global $wpdb;
@@ -696,6 +709,7 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			
 		// User mashed a Save Changes button
 		if (isset($post['save']) or isset($post['submit'])) :
+			
 			if ($this->for_feed_settings()) :
 				$alter = array ();
 					
@@ -743,23 +757,6 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					endif;
 				endif;
 				
-				$alter[] = "link_notes = '".$wpdb->escape($this->link->settings_to_notes())."'";
-
-				$alter_set = implode(", ", $alter);
-
-				// issue update query
-				$result = $wpdb->query("
-				UPDATE $wpdb->links
-				SET $alter_set
-				WHERE link_id='{$this->link->id}'
-				");
-				$this->updated = true;
-
-				// reload link information from DB
-				if (function_exists('clean_bookmark_cache')) :
-					clean_bookmark_cache($this->link->id);
-				endif;
-				$this->link = new SyndicatedLink($this->link->id);
 			else :
 				// Global
 				update_option('feedwordpress_cat_id', $post['syndication_category']);
@@ -786,6 +783,27 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 				endforeach;
 				
 				$this->updated = true;
+			endif;
+			$this->updatedPosts->accept_POST($post);
+
+			if ($this->for_feed_settings()) :
+				$alter[] = "link_notes = '".$wpdb->escape($this->link->settings_to_notes())."'";
+
+				$alter_set = implode(", ", $alter);
+
+				// issue update query
+				$result = $wpdb->query("
+				UPDATE $wpdb->links
+				SET $alter_set
+				WHERE link_id='{$this->link->id}'
+				");
+				$this->updated = true;
+
+				// reload link information from DB
+				if (function_exists('clean_bookmark_cache')) :
+					clean_bookmark_cache($this->link->id);
+				endif;
+				$this->link = new SyndicatedLink($this->link->id);
 			endif;
 
 		// Probably a "Go" button for the drop-down

@@ -182,6 +182,9 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_action('admin_notices', 'fwp_check_magpie');
 	add_action('init', 'feedwordpress_check_for_magpie_fix');
 
+	add_action('admin_menu', 'feedwordpress_add_post_edit_controls');
+	add_action('save_post', 'feedwordpress_save_post_edit_controls');
+
 	# Inbound XML-RPC update methods
 	add_filter('xmlrpc_methods', 'feedwordpress_xmlrpc_hook');
 	
@@ -772,6 +775,62 @@ function fwp_publish_post_hook ($post_id) {
 		endif;
 	endif;
 }
+
+	function feedwordpress_add_post_edit_controls () {
+		add_meta_box('feedwordpress-post-controls', __('Syndication'), 'feedwordpress_post_edit_controls', 'post', 'side', 'high');
+	} // function FeedWordPress::postEditControls
+	
+	function feedwordpress_post_edit_controls () {
+		global $post;
+		
+		$frozen_values = get_post_custom_values('_syndication_freeze_updates', $post->ID);
+		$frozen_post = (count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
+
+		if (is_syndicated($post->ID)) :
+		?>
+		<p>This is a syndicated post, which originally appeared at
+		<cite><?php print wp_specialchars(get_syndication_source(NULL, $post->ID)); ?></cite>.
+		<a href="<?php print wp_specialchars(get_syndication_permalink($post->ID)); ?>">View original post</a>.</p>
+		
+		<p><input type="hidden" name="feedwordpress_noncename" id="feedwordpress_noncename" value="<?php print wp_create_nonce(plugin_basename(__FILE__)); ?>" />
+		<label><input type="checkbox" name="freeze_updates" value="yes" <?php if ($frozen_post) : ?>checked="checked"<?php endif; ?> /> <strong>Manual editing.</strong>
+		Do not overwrite the changes you have made to this post, even
+		if the syndicated content is updated on the feed.</label></p>
+		<?php
+		else :
+		?>
+		<p>This post was created locally at this website.</p>
+		<?php
+		endif;
+	} // function feedwordpress_post_edit_controls () */
+
+	function feedwordpress_save_post_edit_controls ( $post_id ) {
+		global $post;
+		
+		if (!wp_verify_nonce($_POST['feedwordpress_noncename'], plugin_basename(__FILE__))) :
+			return $post_id;
+		endif;
+	
+		// Verify if this is an auto save routine. If it is our form has
+		// not been submitted, so we don't want to do anything.
+		if ( defined('DOING_AUTOSAVE') and DOING_AUTOSAVE ) :
+			return $post_id;
+		endif;
+		
+		// Check permissions
+		if ( !current_user_can( 'edit_'.$_POST['post_type'], $post_id) ) :
+			return $post_id;
+		endif;
+		
+		// OK, we're golden. Now let's save some data.
+		if (isset($_POST['freeze_updates'])) :
+			update_post_meta($post_id, '_syndication_freeze_updates', $_POST['freeze_updates']); 
+		else :
+			delete_post_meta($post_id, '_syndication_freeze_updates');
+		endif;
+		
+		return $_POST['freeze_updates'];
+	} // function feedwordpress_save_edit_controls
 
 ################################################################################
 ## class FeedWordPress #########################################################
