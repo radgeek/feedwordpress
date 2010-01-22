@@ -744,8 +744,8 @@ class SyndicatedPost {
 
 		$a = $this->author();
 		$author = $a['name'];
-		$email = $a['email'];
-		$url = $a['uri'];
+		$email = (isset($a['email']) ? $a['email'] : NULL);
+		$url = (isset($a['uri']) ? $a['uri'] : NULL);
 
 		$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
 		if ($match_author_by_email and !FeedWordPress::is_null_email($email)) :

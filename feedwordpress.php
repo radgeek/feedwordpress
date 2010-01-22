@@ -808,7 +808,7 @@ function fwp_publish_post_hook ($post_id) {
 	function feedwordpress_save_post_edit_controls ( $post_id ) {
 		global $post;
 		
-		if (!wp_verify_nonce($_POST['feedwordpress_noncename'], plugin_basename(__FILE__))) :
+		if (!isset($_POST['feedwordpress_noncename']) or !wp_verify_nonce($_POST['feedwordpress_noncename'], plugin_basename(__FILE__))) :
 			return $post_id;
 		endif;
 	
@@ -1102,6 +1102,8 @@ class FeedWordPress {
 		
 		if (is_string($override)) :
 			$ret = strtolower($override);
+		else :
+			$ret = NULL;
 		endif;
 
 		if (!is_numeric($override) and !in_array($ret, $set[$what])) :
