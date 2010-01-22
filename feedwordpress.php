@@ -794,8 +794,9 @@ function fwp_publish_post_hook ($post_id) {
 		
 		<p><input type="hidden" name="feedwordpress_noncename" id="feedwordpress_noncename" value="<?php print wp_create_nonce(plugin_basename(__FILE__)); ?>" />
 		<label><input type="checkbox" name="freeze_updates" value="yes" <?php if ($frozen_post) : ?>checked="checked"<?php endif; ?> /> <strong>Manual editing.</strong>
-		Do not overwrite the changes you have made to this post, even
-		if the syndicated content is updated on the feed.</label></p>
+		If set, FeedWordPress will not overwrite the changes you make manually
+		to this post, if the syndicated content is updated on the
+		feed.</label></p>
 		<?php
 		else :
 		?>
