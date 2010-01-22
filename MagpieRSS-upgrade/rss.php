@@ -4,7 +4,7 @@
  * Author:	Kellan Elliot-McCrea <kellan@protest.net>
  *		WordPress development team <http://www.wordpress.org/>
  *		Charles Johnson <technophilia@radgeek.com>
- * Version:	2009.0725
+ * Version:	2010.0122
  * License:	GPL
  *
  * Provenance:
@@ -95,7 +95,7 @@ define('ATOM', 'Atom');
 
 define('MAGPIE_USER_AGENT', 'WordPress/' . $wp_version . '(+http://www.wordpress.org)');
 
-$wp_encoding = get_settings('blog_charset');
+$wp_encoding = get_option('blog_charset', /*default=*/ 'ISO-8859-1');
 define('MAGPIE_OUTPUT_ENCODING', ($wp_encoding?$wp_encoding:'ISO-8859-1'));
 
 ################################################################################
@@ -1207,7 +1207,7 @@ endif;
     version will be return, if it exists (and if MAGPIE_CACHE_FRESH_ONLY is off)
 \*=======================================================================*/
 
-define('MAGPIE_VERSION', '2009.0725');
+define('MAGPIE_VERSION', '2010.0122');
 
 $MAGPIE_ERROR = "";
 

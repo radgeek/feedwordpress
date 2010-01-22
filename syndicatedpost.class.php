@@ -180,8 +180,12 @@ class SyndicatedPost {
 			endif;
 
 			// Store information to identify the feed that this came from
-			$this->post['meta']['syndication_feed'] = $this->feedmeta['link/uri'];
-			$this->post['meta']['syndication_feed_id'] = $this->feedmeta['link/id'];
+			if (isset($this->feedmeta['link/uri'])) :
+				$this->post['meta']['syndication_feed'] = $this->feedmeta['link/uri'];
+			endif;
+			if (isset($this->feedmeta['link/id'])) :
+				$this->post['meta']['syndication_feed_id'] = $this->feedmeta['link/id'];
+			endif;
 
 			if (isset($this->item['source_link_self'])) :
 				$this->post['meta']['syndication_feed_original'] = $this->item['source_link_self'];
