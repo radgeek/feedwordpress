@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2010.0108
+Version: 2010.0127
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -28,7 +28,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2010.0108');
+define ('FEEDWORDPRESS_VERSION', '2010.0127');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 // Defaults
@@ -60,6 +60,7 @@ define ('FWP_SCHEMA_25', 7558); // Database schema # for WP 2.5
 define ('FWP_SCHEMA_26', 8201); // Database schema # for WP 2.6
 define ('FWP_SCHEMA_27', 9872); // Database schema # for WP 2.7
 define ('FWP_SCHEMA_28', 11548); // Database schema # for WP 2.8
+define ('FWP_SCHEMA_29', 12329); // Database schema # for WP 2.9
 
 if (FEEDWORDPRESS_DEBUG) :
 	// Help us to pick out errors, if any.
@@ -122,11 +123,18 @@ else : // Something went wrong. Let's just guess.
 	$fwp_path = 'feedwordpress';
 endif;
 
+function feedwordpress_admin_scripts () {
+	wp_enqueue_script('post'); // for magic tag and category boxes
+	wp_enqueue_script('admin-forms'); // for checkbox selection
+}
+
 // If this is a FeedWordPress admin page, queue up scripts for AJAX functions that FWP uses
 // If it is a display page or a non-FeedWordPress admin page, don't.
 if (is_admin() and isset($_REQUEST['page']) and preg_match("|^{$fwp_path}/|", $_REQUEST['page'])) :
 	if (function_exists('wp_enqueue_script')) :
-		if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
+		if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) :
+			add_action('admin_print_scripts', 'feedwordpress_admin_scripts');
+		elseif (FeedWordPressCompatibility(FWP_SCHEMA_25)) :
 			wp_enqueue_script('post'); // for magic tag and category boxes
 			wp_enqueue_script('thickbox'); // for fold-up boxes
 			wp_enqueue_script('admin-forms'); // for checkbox selection

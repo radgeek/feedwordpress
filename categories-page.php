@@ -260,19 +260,6 @@ function fwp_categories_page () {
 	</div> <!-- class="metabox-holder" -->
 	</div> <!-- id="post-body" -->
 	<?php $catsPage->close_sheet(); ?>
-
-<script type="text/javascript">
-	contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');
-<?php if (is_object($link) and $link->found()) : ?>
-<?php 	for ($j=1; $j<=$i; $j++) : ?>
-	contextual_appearance('author-rules-<?php echo $j; ?>', 'author-rules-<?php echo $j; ?>-newuser', 'author-rules-<?php echo $j; ?>-default', 'newuser', 'inline');
-<?php 	endfor; ?>
-	contextual_appearance('add-author-rule', 'add-author-rule-newuser', 'add-author-rule-default', 'newuser', 'inline');
-	contextual_appearance('fix-mismatch-to', 'fix-mismatch-to-newuser', null, 'newuser', 'inline');
-<?php else : ?>
-	contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', 'block', /*checkbox=*/ true);
-<?php endif; ?>
-</script>
 <?php
 } /* function fwp_categories_page () */
 
