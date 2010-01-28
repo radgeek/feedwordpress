@@ -134,7 +134,7 @@ if (is_admin() and isset($_REQUEST['page']) and preg_match("|^{$fwp_path}/|", $_
 	if (function_exists('wp_enqueue_script')) :
 		if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) :
 			add_action('admin_print_scripts', 'feedwordpress_admin_scripts');
-		elseif (FeedWordPressCompatibility(FWP_SCHEMA_25)) :
+		elseif (FeedWordPressCompatibility::test_version(FWP_SCHEMA_25)) :
 			wp_enqueue_script('post'); // for magic tag and category boxes
 			wp_enqueue_script('thickbox'); // for fold-up boxes
 			wp_enqueue_script('admin-forms'); // for checkbox selection
