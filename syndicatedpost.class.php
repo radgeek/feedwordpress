@@ -52,6 +52,7 @@ class SyndicatedPost {
 
 			# Identify content and sanitize it.
 			# ---------------------------------
+			$content = NULL;
 			if (isset($this->item['atom_content'])) :
 				$content = $this->item['atom_content'];
 			elseif (isset($this->item['xhtml']['body'])) :
@@ -65,14 +66,20 @@ class SyndicatedPost {
 			endif;
 			$this->post['post_content'] = apply_filters('syndicated_item_content', $content, $this);
 
-			# Identify and sanitize excerpt
-			$excerpt = NULL;
-			if ( isset($this->item['description']) and $this->item['description'] ) :
-				$excerpt = $this->item['description'];
-			elseif ( isset($content) and $content ) :
-				$excerpt = strip_tags($content);
-				if (strlen($excerpt) > 255) :
-					$excerpt = substr($excerpt,0,252).'...';
+			# Identify and sanitize excerpt: atom:summary, or rss:description
+			$excerpt = (isset($this->item['summary']) ? $this->item['summary'] : NULL);
+			
+			# Many RSS feeds use rss:description, inadvisably, to
+			# carry the entire post (typically with escaped HTML).
+			# If that's what happened, we don't want the full
+			# content for the excerpt.
+			if ( is_null($excerpt) or $excerpt == $content ) :
+				# If content is available, generate an excerpt.
+				if ( strlen(trim($content)) > 0 ) :
+					$excerpt = strip_tags($content);
+					if (strlen($excerpt) > 255) :
+						$excerpt = substr($excerpt,0,252).'...';
+					endif;
 				endif;
 			endif;
 			$excerpt = apply_filters('syndicated_item_excerpt', $excerpt, $this); 

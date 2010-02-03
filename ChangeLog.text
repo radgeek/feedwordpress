@@ -2,6 +2,26 @@ FeedWordPress Change Log
 ========================
 Changes from 2009.0707 to Trunk
 -------------------------------
+*	FULL-TEXT "EXCERPTS" NOW PROPERLY SHORTENED. Based on a straightforward
+	reading of the existing RSS specs, it's reasonable for the
+	rss:description element to be read as a plaintext summary or excerpt for
+	the item containing the description -- with the full text of the item,
+	if available, in another, better-suited element, such as the de facto
+	standard content:encoded extension element. The problem is that uses of
+	RSS rarely have much to do with anything like a straightforward reading
+	of the specs. As a result, many actual RSS producers in the wild put the
+	full text of the article in a description element. But since
+	FeedWordPress has treated this text as a summary, this produces
+	aggregated posts with lengthy "excerpts" containing the full text of the
+	article. This release of FeedWordPress fixes the problem by doing a
+	little digging before treating rss:description as a summary: if the
+	description element is used properly as a plain text summary, then
+	FeedWordPress will take the summary provided by the feed, rather than
+	recreating its own excerpt from the full text; but if an RSS item has no
+	full-text element other than description, FeedWordPress will treat the
+	description element as the full text of the article, and generate a
+	shortened excerpt automatically from that text.
+
 *	NEW INTERFACE HOOKS
 
 *	FILTER API: SyndicatedPost::isTaggedAs
