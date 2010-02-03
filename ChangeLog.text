@@ -2,6 +2,13 @@ FeedWordPress Change Log
 ========================
 Changes from 2009.0707 to Trunk
 -------------------------------
+*	WORDPRESS 2.9.1 COMPATIBILITY: This release has been tested for
+	compatibility with the newly released WordPress 2.9 and 2.9.1. Changes
+	in the user interface JavaScript between WordPress 2.8.x and WordPress
+	2.9 caused the tag box interface element to break in the
+	Syndication --> Categories & Tags settings page; this breakage has been
+	fixed.
+
 *	FULL-TEXT "EXCERPTS" NOW PROPERLY SHORTENED. Based on a straightforward
 	reading of the existing RSS specs, it's reasonable for the
 	rss:description element to be read as a plaintext summary or excerpt for
