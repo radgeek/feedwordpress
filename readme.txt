@@ -23,13 +23,15 @@ to use at [Feminist Blogs](http://feministblogs.org/).
 
 FeedWordPress is designed with flexibility, ease of use, and ease of
 configuration in mind. You'll need a working installation of WordPress or
-WordPress MU (versions [2.8][], [2.7][], [2.6][], [2.5][], [2.3][], [2.2][],
-[2.1][], [2.0][] or [1.5][]), and also FTP or SFTP access to your web host. The
-ability to create cron jobs on your web host is helpful but not absolutely
-necessary. You *don't* need to tweak any plain-text configuration files and you
-*don't* need shell access to your web host to make it work. (Although, I should
-point out, web hosts that *don't* offer shell access are *bad web hosts*.)
+WordPress MU (versions [2.9][], [2.8][], [2.7][], [2.6][], [2.5][], [2.3][],
+[2.2][], [2.1][], [2.0][] or [1.5][]), and also FTP or SFTP access to your web
+host. The ability to create cron jobs on your web host is helpful but not
+absolutely necessary. You *don't* need to tweak any plain-text configuration
+files and you *don't* need shell access to your web host to make it work.
+(Although, I should point out, web hosts that *don't* offer shell access are
+*bad web hosts*.)
 
+  [2.9]: http://codex.wordpress.org/Version_2.9
   [2.8]: http://codex.wordpress.org/Version_2.8
   [2.7]: http://codex.wordpress.org/Version_2.7
   [2.6]: http://codex.wordpress.org/Version_2.6
