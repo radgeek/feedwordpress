@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2010.0202
+Version: 2010.0205
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -28,7 +28,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2010.0202');
+define ('FEEDWORDPRESS_VERSION', '2010.0205');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 // Defaults
@@ -177,6 +177,10 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	# Filter in original permalinks if the user wants that
 	add_filter('post_link', 'syndication_permalink', 1);
 
+	# When foreign URLs are used for permalinks in feeds, they need to be
+	# escaped properly.
+	add_filter('the_permalink_rss', 'syndication_permalink_rss');
+	
 	# WTF? By default, wp_insert_link runs incoming link_url and link_rss
 	# URIs through default filters that include `wp_kses()`. But `wp_kses()`
 	# just happens to escape any occurrence of & to &amp; -- which just
@@ -586,13 +590,33 @@ function feedwordpress_item_feed_data () {
 }
 
 function syndication_permalink ($permalink = '') {
-	if (get_option('feedwordpress_munge_permalink') != 'no'):
+	if (FeedWordPress::munge_permalinks()):
 		$uri = get_syndication_permalink();
-		return ((strlen($uri) > 0) ? $uri : $permalink);
-	else:
-		return $permalink;
+		$permalink = ((strlen($uri) > 0) ? $uri : $permalink);
 	endif;
+	return $permalink;
 } // function syndication_permalink ()
+
+/**
+ * syndication_permalink_rss: Filter syndicated permalinks for use in feed
+ * contexts.
+ *
+ * @param string $permalink
+ * @return string
+ *
+ * @uses is_syndicated()
+ * @uses FeedWordPress::munge_permalinks()
+ *
+ */
+function syndication_permalink_rss ($permalink) {
+	if (is_syndicated() and FeedWordPress::munge_permalinks()) :
+		// This is a foreign link; WordPress can't vouch for its not
+		// having any entities that need to be &-escaped. So we'll do
+		// it here.
+		$permalink = wp_specialchars($permalink, ENT_QUOTES);
+	endif;
+	return $permalink;
+} /* function syndication_permalink_rss() */ 
 
 ################################################################################
 ## ADMIN MENU ADD-ONS: register Dashboard management pages #####################
@@ -1148,6 +1172,17 @@ class FeedWordPress {
 		$ret = get_option('feedwordpress_use_aggregator_source_data');
 		return apply_filters('syndicated_post_use_aggregator_source_data', ($ret=='yes'));
 	}
+
+	/**
+	 * FeedWordPress::munge_permalinks: check whether or not FeedWordPress
+	 * should rewrite permalinks for syndicated items to reflect their
+	 * original location.
+	 *
+	 * @return bool TRUE if FeedWordPress SHOULD rewrite permalinks; FALSE otherwise
+	 */
+	/*static*/ function munge_permalinks () {
+		return (get_option('feedwordpress_munge_permalink', /*default=*/ 'yes') != 'no');
+	} /* FeedWordPress::munge_permalinks() */
 
 	function syndicated_links () {
 		$contributors = FeedWordPress::link_category_id();
