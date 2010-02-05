@@ -158,7 +158,10 @@ class SyndicatedLink {
 			$processed = array();
 		endif;
 
-		if (is_object($this->magpie)) :
+		
+		if (is_wp_error($this->magpie)) :
+			$new_count = $this->magpie;
+		elseif (is_object($this->magpie)) :
 			$new_count = array('new' => 0, 'updated' => 0);
 
 			# -- Update Link metadata live from feed

@@ -177,9 +177,10 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	# Filter in original permalinks if the user wants that
 	add_filter('post_link', 'syndication_permalink', 1);
 
-	# When foreign URLs are used for permalinks in feeds, they need to be
-	# escaped properly.
-	add_filter('the_permalink_rss', 'syndication_permalink_rss');
+	# When foreign URLs are used for permalinks in feeds or display
+	# contexts, they need to be escaped properly.
+	add_filter('the_permalink', 'syndication_permalink_escaped');
+	add_filter('the_permalink_rss', 'syndication_permalink_escaped');
 	
 	# WTF? By default, wp_insert_link runs incoming link_url and link_rss
 	# URIs through default filters that include `wp_kses()`. But `wp_kses()`
@@ -598,8 +599,8 @@ function syndication_permalink ($permalink = '') {
 } // function syndication_permalink ()
 
 /**
- * syndication_permalink_rss: Filter syndicated permalinks for use in feed
- * contexts.
+ * syndication_permalink_rss: Escape XML special characters in syndicated
+ * permalinks when used in feed contexts and HTML display contexts.
  *
  * @param string $permalink
  * @return string
@@ -608,7 +609,7 @@ function syndication_permalink ($permalink = '') {
  * @uses FeedWordPress::munge_permalinks()
  *
  */
-function syndication_permalink_rss ($permalink) {
+function syndication_permalink_escaped ($permalink) {
 	if (is_syndicated() and FeedWordPress::munge_permalinks()) :
 		// This is a foreign link; WordPress can't vouch for its not
 		// having any entities that need to be &-escaped. So we'll do
