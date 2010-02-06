@@ -48,7 +48,10 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 				if (isset($post['resolve_relative'])) :
 					$this->link->settings['resolve relative'] = $post['resolve_relative'];
 				endif;
-				
+				if (isset($post['munge_comments_feed_links'])) :
+					$this->link->settings['munge comments feed links'] = $post['munge_comments_feed_links'];
+				endif;
+
 				// Post status, comment status, ping status
 				foreach (array('post', 'comment', 'ping') as $what) :
 					$sfield = "feed_{$what}_status";
@@ -91,6 +94,9 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	
 				if (isset($post['resolve_relative'])) :
 					update_option('feedwordpress_resolve_relative', $post['resolve_relative']);
+				endif;
+				if (isset($post['munge_comments_feed_links'])) :
+					update_option('feedwordpress_munge_comments_feed_links', $post['munge_comments_feed_links']);
 				endif;
 				if (isset($_REQUEST['feed_comment_status']) and ($_REQUEST['feed_comment_status'] == 'open')) :
 					update_option('feedwordpress_syndicated_comment_status', 'open');
@@ -312,6 +318,8 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 * @uses fwp_option_box_closer()
 	 */
 	/*static*/ function comments_and_pings_box ($page, $box = NULL) {
+		global $fwp_path;
+
 		$setting = array();
 		$selector = array();
 
@@ -320,6 +328,24 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			'ping' => array('label' => __('Pings'), 'accept' => 'Accept pings'),
 		);
 		$onThesePosts = 'on '.$page->these_posts_phrase();
+
+		$selected = array(
+			'munge_comments_feed_links' => array('yes' => '', 'no' => '')
+		);
+		
+		$globalMungeCommentsFeedLinks = get_option('feedwordpress_munge_comments_feed_links', 'yes');
+		if ($page->for_feed_settings()) :
+			$selected['munge_comments_feed_links']['default'] = '';
+			
+			$sel =  $page->link->setting('munge comments feed links', NULL, 'default');
+		else :
+			$sel = $globalMungeCommentsFeedLinks;
+		endif;
+		$selected['munge_comments_feed_links'][$sel] = ' checked="checked"';
+		
+		if ($globalMungeCommentsFeedLinks != 'no') : $siteWide = __('comment feeds from the original website');
+		else : $siteWide = __('local comment feeds on this website');
+		endif;
 
 		foreach ($whatsits as $what => $how) :
 			$whatsits[$what]['default'] = FeedWordPress::syndicated_status($what, /*default=*/ 'closed');
@@ -368,6 +394,17 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		  <?php endforeach; ?>
 		  </ul></td></tr>
 		<?php endforeach; ?>
+		  <tr><th scope="row"><?php _e('Comment feeds'); ?></th>
+		  <td><p>When WordPress feeds and templates link to comments
+		  feeds for <?php print $page->these_posts_phrase(); ?>, the
+		  URLs for the feeds should...</p>
+		  <ul class="options">
+		  <?php if ($page->for_feed_settings()) : ?>
+		  <li><label><input type="radio" name="munge_comments_feed_links" value="default"<?php print $selected['munge_comments_feed_links']['default']; ?> /> Use <a href="admin.php?page=<?php print $href; ?>">site-wide setting</a> (currently: <strong><?php _e($siteWide); ?></strong>)</label></li>
+		  <?php endif; ?>
+		  <li><label><input type="radio" name="munge_comments_feed_links" value="yes"<?php print $selected['munge_comments_feed_links']['yes']; ?> /> <?php _e('Point to comment feeds from the original website (when provided by the syndicated feed)'); ?></label></li>
+		  <li><label><input type="radio" name="munge_comments_feed_links" value="no"<?php print $selected['munge_comments_feed_links']['no']; ?> /> <?php _e('Point to local comment feeds on this website'); ?></label></li>
+		  </ul></td></tr>
 		</table>
 
 		<?php

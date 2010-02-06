@@ -182,6 +182,8 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_filter('the_permalink', 'syndication_permalink_escaped');
 	add_filter('the_permalink_rss', 'syndication_permalink_escaped');
 	
+	add_filter('post_comments_feed_link', 'syndication_comments_feed_link');
+
 	# WTF? By default, wp_insert_link runs incoming link_url and link_rss
 	# URIs through default filters that include `wp_kses()`. But `wp_kses()`
 	# just happens to escape any occurrence of & to &amp; -- which just
@@ -507,20 +509,28 @@ function get_syndication_feed_id ($id = NULL) { list($u) = get_post_custom_value
 function the_syndication_feed_id ($id = NULL) { echo get_syndication_feed_id($id); }
 
 $feedwordpress_linkcache =  array (); // only load links from database once
+function get_syndication_feed_object ($id = NULL) {
+	global $feedwordpress_linkcache;
 
-function get_feed_meta ($key, $id = NULL) {
-	global $wpdb, $feedwordpress_linkcache;
+	$link = NULL;
+
 	$feed_id = get_syndication_feed_id($id);
-
-	$ret = NULL;
 	if (strlen($feed_id) > 0):
 		if (isset($feedwordpress_linkcache[$feed_id])) :
 			$link = $feedwordpress_linkcache[$feed_id];
 		else :
-			$link =& new SyndicatedLink($feed_id);
+			$link = new SyndicatedLink($feed_id);
 			$feedwordpress_linkcache[$feed_id] = $link;
 		endif;
+	endif;
+	return $link;
+}
 
+function get_feed_meta ($key, $id = NULL) {
+	$ret = NULL;
+
+	$link = get_syndication_feed_object($id);
+	if (is_object($link) and isset($link->settings[$key])) :
 		$ret = $link->settings[$key];
 	endif;
 	return $ret;
@@ -538,6 +548,7 @@ function the_syndication_permalink ($id = NULL) {
 ################################################################################
 
 $feedwordpress_the_syndicated_content = NULL;
+$feedwordpress_the_original_permalink = NULL;
 
 function feedwordpress_preserve_syndicated_content ($text) {
 	global $feedwordpress_the_syndicated_content;
@@ -591,6 +602,11 @@ function feedwordpress_item_feed_data () {
 }
 
 function syndication_permalink ($permalink = '') {
+	global $feedwordpress_the_original_permalink;
+	
+	// Save the local permalink in case we need to retrieve it later.
+	$feedwordpress_the_original_permalink = $permalink;
+
 	if (FeedWordPress::munge_permalinks()):
 		$uri = get_syndication_permalink();
 		$permalink = ((strlen($uri) > 0) ? $uri : $permalink);
@@ -618,6 +634,70 @@ function syndication_permalink_escaped ($permalink) {
 	endif;
 	return $permalink;
 } /* function syndication_permalink_rss() */ 
+
+/**
+ * syndication_comments_feed_link: Escape XML special characters in comments
+ * feed links 
+ *
+ * @param string $link
+ * @return string
+ *
+ * @uses is_syndicated()
+ * @uses FeedWordPress::munge_permalinks()
+ */
+function syndication_comments_feed_link ($link) {
+	global $feedwordpress_the_original_permalink, $id;
+
+	if (is_syndicated() and FeedWordPress::munge_permalinks()) :
+		// If the source post provided a comment feed URL using
+		// wfw:commentRss or atom:link/@rel="replies" we can make use of
+		// that value here.
+		$source = get_syndication_feed_object();
+		$replacement = NULL;
+		if ($source->setting('munge comments feed links', 'munge_comments_feed_links', 'yes') != 'no') :
+			$commentFeeds = get_post_custom_values('wfw:commentRSS');
+			if (
+				is_array($commentFeeds)
+				and (count($commentFeeds) > 0)
+				and (strlen($commentFeeds[0]) > 0)
+			) :
+				$replacement = $commentFeeds[0];
+				
+				// This is a foreign link; WordPress can't vouch for its not
+				// having any entities that need to be &-escaped. So we'll do it
+				// here.
+				$replacement = wp_specialchars($replacement, ENT_QUOTES);
+			endif;
+		endif;
+		
+		if (is_null($replacement)) :
+			// Q: How can we get the proper feed format, since the
+			// format is, stupidly, not passed to the filter?
+			// A: Kludge kludge kludge kludge!
+			$fancy_permalinks = ('' != get_option('permalink_structure'));
+			if ($fancy_permalinks) :
+				preg_match('|/feed(/([^/]+))?/?$|', $link, $ref);
+
+				$format = (isset($ref[2]) ? $ref[2] : '');
+				if (strlen($format) == 0) : $format = get_default_feed(); endif;
+
+				$replacement = trailingslashit($feedwordpress_the_original_permalink) . 'feed';
+				if ($format != get_default_feed()) :
+					$replacement .= '/'.$format;
+				endif;
+				$replacement = user_trailingslashit($replacement, 'single_feed');
+			else :
+				// No fancy permalinks = no problem
+				// WordPress doesn't call get_permalink() to
+				// generate the comment feed URL, so the
+				// comments feed link is never munged by FWP.
+			endif;
+		endif;
+		
+		if (!is_null($replacement)) : $link = $replacement; endif;
+	endif;
+	return $link;
+} /* function syndication_comments_feed_link() */
 
 ################################################################################
 ## ADMIN MENU ADD-ONS: register Dashboard management pages #####################
