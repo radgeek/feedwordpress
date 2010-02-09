@@ -289,34 +289,39 @@ class SyndicatedPost {
 	#####################################
 
 	function created () {
-		$epoch = null;
+		$date = '';
 		if (isset($this->item['dc']['created'])) :
-			$epoch = @parse_w3cdtf($this->item['dc']['created']);
+			$date = $this->item['dc']['created'];
 		elseif (isset($this->item['dcterms']['created'])) :
-			$epoch = @parse_w3cdtf($this->item['dcterms']['created']);
+			$date = $this->item['dcterms']['created'];
 		elseif (isset($this->item['created'])): // Atom 0.3
-			$epoch = @parse_w3cdtf($this->item['created']);
+			$date = $this->item['created'];
 		endif;
+		$epoch = $this->strtotimestamp($date);
 		return $epoch;
 	} /* SyndicatedPost::created() */
 
-	function published ($fallback = true) {
-		$epoch = null;
+	function published ($fallback = true, $default = NULL) {
+		$date = '';
 
 		# RSS is a fucking mess. Figure out whether we have a date in
 		# <dc:date>, <issued>, <pubDate>, etc., and get it into Unix
 		# epoch format for reformatting. If we can't find anything,
 		# we'll use the last-updated time.
 		if (isset($this->item['dc']['date'])):				// Dublin Core
-			$epoch = @parse_w3cdtf($this->item['dc']['date']);
+			$date = $this->item['dc']['date'];
 		elseif (isset($this->item['dcterms']['issued'])) :		// Dublin Core extensions
-			$epoch = @parse_w3cdtf($this->item['dcterms']['issued']);
+			$date = $this->item['dcterms']['issued'];
 		elseif (isset($this->item['published'])) : 			// Atom 1.0
-			$epoch = @parse_w3cdtf($this->item['published']);
+			$date = $this->item['published'];
 		elseif (isset($this->item['issued'])): 				// Atom 0.3
-			$epoch = @parse_w3cdtf($this->item['issued']);
-		elseif (isset($this->item['pubdate'])): 			// RSS 2.0
-			$epoch = strtotime($this->item['pubdate']);
+			$date = $this->item['issued'];
+		elseif (isset($this->item['pubdate'])):				// RSS 2.0
+			$date = $this->item['pubdate'];
+		endif;
+		
+		if (strlen($date) > 0) :
+			$epoch = $this->strtotimestamp($date);
 		elseif ($fallback) :						// Fall back to <updated> / <modified> if present
 			$epoch = $this->updated(/*fallback=*/ false);
 		endif;
@@ -334,19 +339,23 @@ class SyndicatedPost {
 	} /* SyndicatedPost::published() */
 
 	function updated ($fallback = true, $default = -1) {
-		$epoch = null;
+		$date = '';
 
 		# As far as I know, only dcterms and Atom have reliable ways to
 		# specify when something was *modified* last. If neither is
 		# available, then we'll try to get the time of publication.
 		if (isset($this->item['dc']['modified'])) : 			// Not really correct
-			$epoch = @parse_w3cdtf($this->item['dc']['modified']);
+			$date = $this->item['dc']['modified'];
 		elseif (isset($this->item['dcterms']['modified'])) :		// Dublin Core extensions
-			$epoch = @parse_w3cdtf($this->item['dcterms']['modified']);
+			$date = $this->item['dcterms']['modified'];
 		elseif (isset($this->item['modified'])):			// Atom 0.3
-			$epoch = @parse_w3cdtf($this->item['modified']);
+			$date = $this->item['modified'];
 		elseif (isset($this->item['updated'])):				// Atom 1.0
-			$epoch = @parse_w3cdtf($this->item['updated']);
+			$date = $this->item['updated'];
+		endif;
+		
+		if (strlen($date) > 0) :
+			$epoch = $this->strtotimestamp($date);
 		elseif ($fallback) :						// Fall back to issued / dc:date
 			$epoch = $this->published(/*fallback=*/ false, /*default=*/ $default);
 		endif;
@@ -363,6 +372,32 @@ class SyndicatedPost {
 		return $epoch;
 	} /* SyndicatedPost::updated() */
 
+	function strtotimestamp ($date) {
+		$epoch = NULL;
+		if (strlen($date) > 0) :
+			// First, try to parse it as a W3C date-time
+			$epoch = @parse_w3cdtf($date);
+	
+			if (!is_numeric($epoch) or !$epoch or (0 >= $epoch)) : // Failure
+				// In some versions of PHP, strtotime() does not support
+				// the UT timezone. Since UT is by definition within 1
+				// second of UTC, we'll just convert it here to avoid
+				// problems.
+				$date = preg_replace(
+					'/(\s)UT$/',
+					'$1UTC',
+					$date
+				);
+				$epoch = strtotime($date);
+			endif;
+			
+			if (!is_numeric($epoch) or !$epoch or (0 >= $epoch)) :
+				$epoch = NULL;
+			endif;
+		endif;
+		return $epoch;
+	} /* SyndicatedPost::strtotimestamp() */
+		
 	function update_hash () {
 		return md5(serialize($this->item));
 	} /* SyndicatedPost::update_hash() */
