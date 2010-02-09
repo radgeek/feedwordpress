@@ -121,10 +121,10 @@ class SyndicatedPost {
 
 			// Dealing with timestamps in WordPress is so fucking fucked.
 			$offset = (int) get_option('gmt_offset') * 60 * 60;
-			$this->post['post_date'] = gmdate('Y-m-d H:i:s', $this->published() + $offset);
-			$this->post['post_modified'] = gmdate('Y-m-d H:i:s', $this->updated() + $offset);
-			$this->post['post_date_gmt'] = gmdate('Y-m-d H:i:s', $this->published());
-			$this->post['post_modified_gmt'] = gmdate('Y-m-d H:i:s', $this->updated());
+			$this->post['post_date'] = gmdate('Y-m-d H:i:s', $this->published(/*fallback=*/ true, /*default=*/ -1) + $offset);
+			$this->post['post_modified'] = gmdate('Y-m-d H:i:s', $this->updated(/*fallback=*/ true, /*default=*/ -1) + $offset);
+			$this->post['post_date_gmt'] = gmdate('Y-m-d H:i:s', $this->published(/*fallback=*/ true, /*default=*/ -1));
+			$this->post['post_modified_gmt'] = gmdate('Y-m-d H:i:s', $this->updated(/*fallback=*/ true, /*default=*/ -1));
 
 			// Use feed-level preferences or the global default.
 			$this->post['post_status'] = $this->link->syndicated_status('post', 'publish');
@@ -323,7 +323,7 @@ class SyndicatedPost {
 		if (strlen($date) > 0) :
 			$epoch = $this->strtotimestamp($date);
 		elseif ($fallback) :						// Fall back to <updated> / <modified> if present
-			$epoch = $this->updated(/*fallback=*/ false);
+			$epoch = $this->updated(/*fallback=*/ false, /*default=*/ $default);
 		endif;
 		
 		# If everything failed, then default to the current time.

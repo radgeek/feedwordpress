@@ -29,6 +29,15 @@ Changes from 2009.0707 to Trunk
 	description element as the full text of the article, and generate a
 	shortened excerpt automatically from that text.
 
+*	BETTER DATE HANDLING -- FEWER FLASHBACKS TO 1969 and 1970: FeedWordPress
+	has made some bugfixes and some improvements in the logic for parsing
+	dates. This should allow FeedWordPress to correctly parse more dates in
+	more feeds; and, in the last resort, when FeedWordPress fails to
+	correctly parse a date, to fall back to a more intelligent default. This
+	should hopefully avoid most or all error conditions that have resulted
+	in articles being erroneously dated to the dawn of the Unix epoch
+	(31 December 1969 or 1 January 1970).
+	
 *	NEW INTERFACE HOOKS
 
 *	FILTER API: SyndicatedPost::isTaggedAs

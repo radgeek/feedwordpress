@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2010.0205
+Version: 2010.0208
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -28,7 +28,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2010.0205');
+define ('FEEDWORDPRESS_VERSION', '2010.0208');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 // Defaults
