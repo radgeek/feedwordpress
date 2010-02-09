@@ -9,8 +9,15 @@
 
 class MagpieFromSimplePie {
 	var $pie;
-	var $original;
-	var $item;
+	var $originals;
+
+	var $channel;
+	var $items;
+	var $textinput = array ();
+	var $image = array();
+
+	var $feed_type;
+	var $feed_version;
 
 	var $_XMLNS_FAMILIAR = array (
     	'http://www.w3.org/2005/Atom' => 'atom' /* 1.0 */,
@@ -43,19 +50,25 @@ class MagpieFromSimplePie {
 	/**
 	 * MagpieFromSimplePie constructor
 	 *
-	 * @param SimplePie_Item $item The item to convert to Magpie array format.
-	 * @param SimplePie $pie The feed from which the item came.
+	 * @param SimplePie $pie The feed to convert to MagpieRSS format.
 	 *
-	 * @uses MagpieFromSimplePie::is_atom
 	 * @uses MagpieFromSimplePie::processItemData
 	 * @uses MagpieFromSimplePie::normalize 
 	 */
-	function MagpieFromSimplePie ($item, $pie) {
-		$this->original = $item;
+	function MagpieFromSimplePie ($pie) {
 		$this->pie = $pie;
+		$this->originals = $this->pie->get_items();
 
-		$this->item = $this->processItemData($this->original->data);
-		$this->normalize();		
+		$this->channel = $this->processFeedData($this->pie->data);
+		foreach ($this->originals as $key => $item) :
+			$this->items[$key] = $this->processItemData($item->data);
+		endforeach;
+
+		$this->normalize();
+
+		// In case anyone goes poking around our private members (uh...)
+		$this->feed_type = ($this->is_atom() ? 'Atom' : 'RSS');
+		$this->feed_version = $this->feed_version();
 	} /* MagpieFromSimplePie constructor */
 	
 	/**
@@ -65,10 +78,74 @@ class MagpieFromSimplePie {
 	 * 
 	 * @return array A MagpieRSS format array representing this feed item.
 	 */
-	function get_item () {
-		return $this->item;
+	function get_items () {
+		return $this->items;
 	} /* MagpieFromSimplePie::get_item */
 	
+	/**
+	* MagpieFromSimplePie::processFeedData
+	*
+	* @param array $data
+	* @return array
+	*
+	* @uses MagpieFromSimplePie::processChannelData()
+	*/
+	function processFeedData ($data) {
+		$ret = array();
+		if (isset($data['child'])) : foreach ($data['child'] as $ns => $elements) :
+			foreach ($elements as $name => $multi) :
+				foreach ($multi as $element) :
+					if ($name=='feed' or $name=='channel') :
+						// Don't need to process these
+						foreach (array(
+							'',
+							'http://www.w3.org/2005/Atom',
+							'http://purl.org/rss/1.0/',
+							'http://backend.userland.com/RSS2'
+						) as $ns) :
+							if (isset($element['child'][$ns]['entry'])) : unset($element['child'][$ns]['entry']); endif;
+							if (isset($element['child'][$ns]['item'])) : unset($element['child'][$ns]['item']); endif;
+						endforeach;
+				
+						$ret = $this->processChannelData($element) + $ret;
+					elseif (in_array(strtolower($name), array('rss', 'rdf'))) :
+						// Drop down to get to <channel> element
+						$ret = $this->processFeedData($element) + $ret;
+					endif;
+				endforeach;
+			endforeach;
+		endforeach; endif;
+		return $ret;
+	} /* MagpieFromSimplePie::processFeedData() */
+
+	/**
+	 * MagpieFromSimplePie::processChannelData
+	 *
+	 * @param array $data
+	 * @param array $path
+	 * @return array
+	 *
+	 * @uses MagpieFromSimplePie::handleAttributes
+	 * @uses MagpieFromSimplePie::handleChildren
+	 */
+        function processChannelData ($data, $path = array()) {
+        	$ret = array();
+		$tagPath = strtolower(implode('_', $path));
+		
+		// Only process at the right level
+		if (strlen($tagPath) > 0
+		and isset($data['data'])
+		and strlen($data['data']) > 0) :
+			$ret[$tagPath] = $data['data'];
+		endif;
+		
+		$ret = $this->handleAttributes($data, $path)
+			+ $this->handleChildren($data, $path, 'processChannelData')
+			+ $ret;
+
+		return $ret;
+        } /* MagpieFromSimplePie::processChannelData() */
+
 	/**
 	 * MagpieFromSimplePie::processItemData
 	 *
@@ -92,8 +169,10 @@ class MagpieFromSimplePie {
 			$data['attribs']['']['xml:base'] = $data['xml_base'];
 		endif;
 		
-		$ret = $this->handleAttributes($data, $path) + $ret;
-		$ret = $this->handleChildren($data, $path) + $ret;
+		$ret = $this->handleAttributes($data, $path)
+			+ $this->handleChildren($data, $path, 'processItemData')
+			+ $ret;
+
 		return $ret;
 	} /* MagpieFromSimplePie::processItemData() */
 
@@ -116,11 +195,11 @@ class MagpieFromSimplePie {
 				$attr = strtolower($attr);
 				if ($ns=='rdf' and $attr=='about') :
 					$ret['about'] = $value;
-				else :
+				elseif (strlen($tagPath) > 0) :
 					if (strlen($ns) > 0 and $this->is_namespaced($ns, /*attrib=*/ true)) :
 						$attr = $ns.':'.$attr;
 					endif;
-	
+
 					$ret[$tagPath.'@'.$attr] = $value;
 					if (isset($ret[$tagPath.'@']) and strlen($ret[$tagPath.'@'])>0) :
 						$ret[$tagPath.'@'] .= ',';
@@ -134,6 +213,9 @@ class MagpieFromSimplePie {
 		return $ret;
 	} /* MagpieFromSimplePie::handleAttributes() */
 	
+	var $inImage = false;
+	var $inTextInput = false;
+
 	/**
 	 * MagpieFromSimplePie::handleChildren
 	 *
@@ -146,59 +228,83 @@ class MagpieFromSimplePie {
 	 * @uses MagpieFromSimplePie::increment_element
 	 * @uses MagpieFromSimplePie::processItemData
 	 */
-	function handleChildren ($data, $path = array()) {
+	function handleChildren ($data, $path = array(), $method = 'processItemData') {
 		$tagPath = strtolower(implode('_', $path));
 		$ret = array();
 		if (isset($data['child'])) : foreach ($data['child'] as $ns => $elements) :
 			if (isset($this->_XMLNS_FAMILIAR[$ns])) :
 				$ns = $this->_XMLNS_FAMILIAR[$ns];
 			endif;
+			if (''==$ns) :
+				$ns = ($this->is_atom() ? 'atom' : 'rss');
+			endif;
 
 			foreach ($elements as $tag => $multi) : foreach ($multi as $element) :
 				$copyOver = NULL;
 
-				// Determine tag name; check #; increment #
-				$childTag = strtolower($tag);
-				if ('link'==$tag and 'atom'==$ns) :
-					$rel = $this->get_attrib(
-						/*ns=*/ array('', 'http://www.w3.org/2005/Atom'),
-						/*attr=*/ 'rel',
-						$element
-					);
-					if ($rel != 'alternate') :
-						$childTag .= '_'.$rel;
-					endif;
-					$copyOver = $this->get_attrib(
-						/*ns=*/ array('', 'http://www.w3.org/2005/Atom'),
-						/*attr=*/ 'href',
-						$element
-					);
-				elseif ('content'==$tag and $this->is_atom()) :
-					$childTag = 'atom_'.$tag;
-				endif;
-					
-				$childTag = $this->increment_element($ret, $childTag, $ns, $path);
-				$childPath = $path; $childPath[] = $childTag; 
-
-				if (!is_null($copyOver)) :
-					$co = array();
-					$co[implode('_', $childPath)] = $copyOver;
-				else :
+				if ('image'==$tag and 'rss'==$ns) :
+					$this->inImage = true;
+					$childPath = array();
 					$co = NULL;
+				elseif ('textinput'==strtolower($tag) and 'rss'==$ns) :
+					$this->inTextInput = true;
+					$childPath = array();
+					$co = NULL;
+				else :
+					// Determine tag name; check #; increment #
+					$childTag = strtolower($tag);
+					if ('link'==$tag and 'atom'==$ns) :
+						$rel = $this->get_attrib(
+							/*ns=*/ array('', 'http://www.w3.org/2005/Atom'),
+							/*attr=*/ 'rel',
+							$element
+						);
+						if ($rel != 'alternate') :
+							$childTag .= '_'.$rel;
+						endif;
+						$copyOver = $this->get_attrib(
+							/*ns=*/ array('', 'http://www.w3.org/2005/Atom'),
+							/*attr=*/ 'href',
+							$element
+						);
+					elseif ('content'==$tag and 'atom'==$ns) :
+						$childTag = 'atom_'.$tag;
+					endif;
+					
+					$childTag = $this->increment_element($ret, $childTag, $ns, $path);
+					$childPath = $path; $childPath[] = strtolower($childTag); 
+
+					if (!is_null($copyOver)) :
+						$co = array();
+						$co[implode('_', $childPath)] = $copyOver;
+					else :
+						$co = NULL;
+					endif;
 				endif;
 
-				$arr = $this->processItemData($element, $childPath);
+				$arr = $this->{$method}($element, $childPath);
 				if ($co) :
 					$arr = $co + $arr; // Left-hand overwrites right-hand
 				endif;
+				
+				if ($this->inImage) :
+					$this->image = $arr + $this->image;
 					
-				if ($this->is_namespaced($ns)) :
+					// Close tag
+					if ('image'==$tag and 'rss'==$ns) : $this->inImage = false; endif;
+				elseif ($this->inTextInput) :
+					$this->textinput = $arr + $this->textinput;
+					
+					// Close tag
+					if ('textinput'==$tag and 'rss'==$ns) : $this->inTextInput = false; endif;
+				elseif ($this->is_namespaced($ns)) :
 					if (!isset($ret[$ns])) : $ret[$ns] = array(); endif;
 					$ret[$ns] = $arr + $ret[$ns];
 				else :
 					$ret = $arr + $ret;
 				endif;
 			endforeach; endforeach;
+			
 		endforeach; endif;
 		return $ret;
 	} /* MagpieFromSimplePie::handleChildren() */
@@ -239,73 +345,119 @@ class MagpieFromSimplePie {
 	 * @uses parse_w3cdtf
 	 */
 	function normalize () {
-		// if atom populate rss fields and normalize 0.3 and 1.0 feeds
+		// Normalize channel data
 		if ( $this->is_atom() ) :
-			$item = $this->item;
-	
-			// Atom 1.0 elements <=> Atom 0.3 elements
+			// Atom 1.0 elements <=> Atom 0.3 elements (Thanks, o brilliant wordsmiths of the Atom 1.0 standard!)
 			if ($this->feed_version() < 1.0) :
-				$this->normalize_element($this->item, 'modified', $this->item, 'updated');
-				$this->normalize_element($this->item, 'issued', $this->item, 'published');
+				$this->normalize_element($this->channel, 'tagline', $this->channel, 'subtitle');
+				$this->normalize_element($this->channel, 'copyright', $this->channel, 'rights');
+				$this->normalize_element($this->channel, 'modified', $this->channel, 'updated');
 			else :
-				$this->normalize_element($this->item, 'updated', $this->item, 'modified');
-				$this->normalize_element($this->item, 'published', $this->item, 'issued');
+				$this->normalize_element($this->channel, 'subtitle', $this->channel, 'tagline');
+				$this->normalize_element($this->channel, 'rights', $this->channel, 'copyright');
+				$this->normalize_element($this->channel, 'updated', $this->channel, 'modified');
 			endif;
-
-			$this->normalize_author_inheritance();
-
+			$this->normalize_element($this->channel, 'author', $this->channel['dc'], 'creator', 'normalize_atom_person');
+			$this->normalize_element($this->channel, 'contributor', $this->channel['dc'], 'contributor', 'normalize_atom_person');
+	
 			// Atom elements to RSS elements
-			$this->normalize_element($this->item, 'author', $this->item['dc'], 'creator', 'normalize_atom_person');
-			$this->normalize_element($this->item, 'contributor', $this->item['dc'], 'contributor', 'normalize_atom_person');
-			$this->normalize_element($this->item, 'summary', $this->item, 'description');
-			$this->normalize_element($this->item, 'atom_content', $this->item['content'], 'encoded');
-			$this->normalize_element($this->item, 'link_enclosure', $this->item, 'enclosure', 'normalize_enclosure');
+			$this->normalize_element($this->channel, 'subtitle', $this->channel, 'description');
 		
-			// Categories
-			if ( isset($this->item['category#']) ) : // Atom 1.0 categories to dc:subject and RSS 2.0 categories
-				$this->normalize_element($this->item, 'category', $this->item['dc'], 'subject', 'normalize_category');
-			elseif ( isset($this->item['dc']['subject#']) ) : // dc:subject to Atom 1.0 and RSS 2.0 categories
-				$this->normalize_element($this->item['dc'], 'subject', $this->item, 'category', 'normalize_dc_subject');
+			if ( isset($this->channel['logo']) ) :
+				$this->normalize_element($this->channel, 'logo', $this->image, 'url');
+				$this->normalize_element($this->channel, 'link', $this->image, 'link');
+				$this->normalize_element($this->channel, 'title', $this->image, 'title');
 			endif;
-		
-			// Normalized item timestamp
-			$atom_date = (isset($this->item['published']) ) ? $this->item['published'] : $this->item['updated'];
-			if ( $atom_date ) :
-				$date_timestamp = @parse_w3cdtf($atom_date);
-			endif;
-		
+
 		elseif ( $this->is_rss() ) :
+			// Normalize image element from where stupid MagpieRSS puts it
+			//$this->normalize_element($this->channel, 'image_title', $this->image, 'title');
+			//$this->normalize_element($this->channel, 'image_link', $this->image, 'link');
+			//$this->normalize_element($this->channel, 'image_url', $this->image, 'url');
+
+			// ... and, gag, textInput
+			//$this->normalize_element($this->channel, 'textinput_title', $this->textinput, 'title');
+			//$this->normalize_element($this->channel, 'textinput_link', $this->textinput, 'link');
+			//$this->normalize_element($this->channel, 'textinput_name', $this->textinput, 'name');
+			//$this->normalize_element($this->channel, 'textinput_description', $this->textinput, 'description');
+			
 			// RSS elements to Atom elements
 			$this->normalize_element($this->channel, 'description', $this->channel, 'tagline'); // Atom 0.3
 			$this->normalize_element($this->channel, 'description', $this->channel, 'subtitle'); // Atom 1.0 (yay wordsmithing!)
 			$this->normalize_element($this->image, 'url', $this->channel, 'logo');
-        
-			// RSS elements to Atom elements
-			$this->normalize_element($this->item, 'description', $this->item, 'summary');
-			$this->normalize_element($this->item, 'enclosure', $this->item, 'link_enclosure', 'normalize_enclosure');
+		endif;
+		
+		// Now loop through and normalize item data
+		for ( $i = 0; $i < count($this->items); $i++) :
+			$item = $this->items[$i];
 			
-			// Categories
-			if ( isset($this->item['category#']) ) : // RSS 2.0 categories to dc:subject and Atom 1.0 categories
-				$this->normalize_element($this->item, 'category', $this->item['dc'], 'subject', 'normalize_category');
-			elseif ( isset($this->item['dc']['subject#']) ) : // dc:subject to Atom 1.0 and RSS 2.0 categories
-				$this->normalize_element($this->item['dc'], 'subject', $this->item, 'category', 'normalize_dc_subject');
+			// if atom populate rss fields and normalize 0.3 and 1.0 feeds
+			if ( $this->is_atom() ) :
+				// Atom 1.0 elements <=> Atom 0.3 elements
+				if ($this->feed_version() < 1.0) :
+					$this->normalize_element($item, 'modified', $item, 'updated');
+					$this->normalize_element($item, 'issued', $item, 'published');
+				else :
+					$this->normalize_element($item, 'updated', $item, 'modified');
+					$this->normalize_element($item, 'published', $item, 'issued');
+				endif;
+	
+				$this->normalize_author_inheritance($item, $this->originals[$i]);
+	
+				// Atom elements to RSS elements
+				$this->normalize_element($item, 'author', $item['dc'], 'creator', 'normalize_atom_person');
+				$this->normalize_element($item, 'contributor', $item['dc'], 'contributor', 'normalize_atom_person');
+				$this->normalize_element($item, 'summary', $item, 'description');
+				$this->normalize_element($item, 'atom_content', $item['content'], 'encoded');
+				$this->normalize_element($item, 'link_enclosure', $item, 'enclosure', 'normalize_enclosure');
+
+				// Categories
+				if ( isset($item['category#']) ) : // Atom 1.0 categories to dc:subject and RSS 2.0 categories
+					$this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
+				elseif ( isset($item['dc']['subject#']) ) : // dc:subject to Atom 1.0 and RSS 2.0 categories
+					$this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
+				endif;
+
+				// Normalized item timestamp
+				$atom_date = (isset($item['published']) ) ? $item['published'] : $item['updated'];
+				if ( $atom_date ) :
+					$date_timestamp = @parse_w3cdtf($atom_date);
+				endif;
+		
+				if (is_numeric($date_timestamp) and $date_timestamp > 0) :
+					$titem['date_timestamp'] = $date_timestamp;
+				endif;
+			elseif ( $this->is_rss() ) :
+				// RSS elements to Atom elements
+				$this->normalize_element($item, 'description', $item, 'summary');
+				$this->normalize_element($item, 'enclosure', $item, 'link_enclosure', 'normalize_enclosure');
+				
+				// Categories
+				if ( isset($item['category#']) ) : // RSS 2.0 categories to dc:subject and Atom 1.0 categories
+					$this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
+				elseif ( isset($item['dc']['subject#']) ) : // dc:subject to Atom 1.0 and RSS 2.0 categories
+					$this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
+				endif;
+	
+				// Normalized item timestamp
+				if (isset($item['pubdate'])) :
+					$date_timestamp = @strtotime($item['pubdate']);
+				elseif ( isset($item['dc']['date']) ) :
+					$date_timestamp = @parse_w3cdtf($item['dc']['date']);
+				endif;
 			endif;
 
-			// Normalized item timestamp
-			if (isset($this->item['pubdate'])) :
-				$date_timestamp = @strtotime($this->item['pubdate']);
-			elseif ( isset($this->item['dc']['date']) ) :
-				$date_timestamp = @parse_w3cdtf($this->item['dc']['date']);
+			if (is_numeric($date_timestamp) and $date_timestamp > 0) :
+				$item['date_timestamp'] = $date_timestamp;
 			endif;
-		endif;
-
-		if (is_numeric($date_timestamp) and $date_timestamp > 0) :
-			$this->item['date_timestamp'] = $date_timestamp;
-		endif;
+			$this->items[$i] = $item;
+		endfor;
 	} /* MagpieFromSimplePie::normalize() */
 
 	/**
 	 * MagpieFromSimplePie::normalize_author_inheritance
+	 *
+	 * @param SimplePie_Item $original
 	 *
 	 * @uses SimplePie_Item::get_authors
 	 * @uses SimplePie_Author::get_name
@@ -313,7 +465,7 @@ class MagpieFromSimplePie {
 	 * @uses SimplePie_Author::get_email
 	 * @uses MagpieFromSimplePie::increment_element
 	 */
-	function normalize_author_inheritance () {
+	function normalize_author_inheritance (&$item, $original) {
 		// "If an atom:entry element does not contain
 		// atom:author elements, then the atom:author elements
 		// of the contained atom:source element are considered
@@ -322,13 +474,13 @@ class MagpieFromSimplePie {
 		// considered to apply to the entry if there are no
 		// atom:author elements in the locations described
 		// above." <http://atompub.org/2005/08/17/draft-ietf-atompub-format-11.html#rfc.section.4.2.1>
-		if (!isset($this->item["author#"])) :
-			$authors = $this->original->get_authors();
+		if (!isset($item["author#"])) :
+			$authors = $original->get_authors();
 			foreach ($authors as $author) :
-				$tag = $this->increment_element($this->item, 'author', 'atom', array());
-				$this->item[$tag] = $this->item["{$tag}_name"] = $author->get_name();
-				if ($author->get_link()) : $this->item["{$tag}_uri"] = $this->item["{$tag}_url"] = $author->get_link(); endif;
-				if ($author->get_email()) : $this->item["{$tag}_email"] = $author->get_email(); endif;
+				$tag = $this->increment_element($item, 'author', 'atom', array());
+				$item[$tag] = $item["{$tag}_name"] = $author->get_name();
+				if ($author->get_link()) : $item["{$tag}_uri"] = $item["{$tag}_url"] = $author->get_link(); endif;
+				if ($author->get_email()) : $item["{$tag}_email"] = $author->get_email(); endif;
 			endforeach;
 		endif;
 	} /* MagpieFromSimplePie::normalize_author_inheritance() */
