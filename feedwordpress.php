@@ -397,7 +397,18 @@ function debug_out_feedwordpress_update_complete ($delta) {
 ## TEMPLATE API: functions to make your templates syndication-aware ############
 ################################################################################
 
-function is_syndicated ($id = NULL) { return (strlen(get_syndication_feed_id($id)) > 0); }
+/**
+ * is_syndicated: Tests whether the current post in a Loop context, or a post
+ * given by ID number, was syndicated by FeedWordPress. Useful for templates
+ * to determine whether or not to retrieve syndication-related meta-data in
+ * displaying a post.
+ *
+ * @param int $id The post to check for syndicated status. Defaults to the current post in a Loop context.
+ * @return bool TRUE if the post's meta-data indicates it was syndicated; FALSE otherwise 
+ */ 
+function is_syndicated ($id = NULL) {
+	return (strlen(get_syndication_feed_id($id)) > 0);
+} /* function is_syndicated() */
 
 function get_syndication_source_link ($original = NULL, $id = NULL) {
 	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
@@ -601,6 +612,21 @@ function feedwordpress_item_feed_data () {
 	endif;
 }
 
+/**
+ * syndication_permalink: Allow WordPress to use the original remote URL of
+ * syndicated posts as their permalink. Can be turned on or off by by setting in
+ * Syndication => Posts & Links. Saves the old internal permalink in a global
+ * variable for later use.
+ *
+ * @param string $permalink The internal permalink
+ * @return string The new permalink. Same as the old if the post is not
+ *	syndicated, or if FWP is set to use internal permalinks, or if the post
+ *	was syndicated, but didn't have a proper permalink recorded.
+ *
+ * @uses FeedWordPress::munge_permalinks()
+ * @uses get_syndication_permalink()
+ * @global $feedwordpress_the_original_permalink
+ */ 
 function syndication_permalink ($permalink = '') {
 	global $feedwordpress_the_original_permalink;
 	
@@ -612,10 +638,10 @@ function syndication_permalink ($permalink = '') {
 		$permalink = ((strlen($uri) > 0) ? $uri : $permalink);
 	endif;
 	return $permalink;
-} // function syndication_permalink ()
+} /* function syndication_permalink () */
 
 /**
- * syndication_permalink_rss: Escape XML special characters in syndicated
+ * syndication_permalink_escaped: Escape XML special characters in syndicated
  * permalinks when used in feed contexts and HTML display contexts.
  *
  * @param string $permalink
@@ -633,7 +659,7 @@ function syndication_permalink_escaped ($permalink) {
 		$permalink = wp_specialchars($permalink, ENT_QUOTES);
 	endif;
 	return $permalink;
-} /* function syndication_permalink_rss() */ 
+} /* function syndication_permalink_escaped() */ 
 
 /**
  * syndication_comments_feed_link: Escape XML special characters in comments
