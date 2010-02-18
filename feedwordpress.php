@@ -554,6 +554,47 @@ function the_syndication_permalink ($id = NULL) {
 	echo get_syndication_permalink($id);
 }
 
+/**
+ * get_local_permalink: returns a string containing the internal permalink
+ * for a post (whether syndicated or not) on your local WordPress installation.
+ * This may be useful if you want permalinks to point to the original source of
+ * an article for most purposes, but want to retrieve a URL for the local
+ * representation of the post for one or two limited purposes (for example,
+ * linking to a comments page on your local aggregator site).
+ *
+ * @param $id The numerical ID of the post to get the permalink for. If empty,
+ * 	defaults to the current post in a Loop context.
+ * @return string The URL of the local permalink for this post.
+ *
+ * @uses get_permalink()
+ * @global $feedwordpress_the_original_permalink
+ *
+ * @since 2010.0217
+ */
+function get_local_permalink ($id = NULL) {
+	global $feedwordpress_the_original_permalink;
+	
+	// get permalink, and thus activate filter and force global to be filled
+	// with original URL.
+	$url = get_permalink($id);
+	return $feedwordpress_the_original_permalink;
+} /* get_local_permalink() */
+
+/**
+ * the_original_permalink: displays the contents of get_original_permalink()
+ *
+ * @param $id The numerical ID of the post to get the permalink for. If empty,
+ * 	defaults to the current post in a Loop context.
+ *
+ * @uses get_local_permalinks()
+ * @uses apply_filters
+ *
+ * @since 2010.0217
+ */
+function the_local_permalink ($id = NULL) {
+	print apply_filters('the_permalink', get_local_permalink($id));
+} /* function the_local_permalink() */
+
 ################################################################################
 ## FILTERS: syndication-aware handling of post data for templates and feeds ####
 ################################################################################
