@@ -400,11 +400,21 @@ class SyndicatedLink {
 			$ret = $this->settings[$name];
 		endif;
 		
-		if ((is_null($ret) or strtolower($ret)=='default') and !is_null($fallback_global)) :
+		$no_value = (
+			is_null($ret)
+			or (is_string($ret) and strtolower($ret)=='default')
+		);
+
+		if ($no_value and !is_null($fallback_global)) :
 			$ret = get_option('feedwordpress_'.$fallback_global, /*default=*/ NULL);
 		endif;
 
-		if ((is_null($ret) or strtolower($ret)=='default') and !is_null($fallback_value)) :
+		$no_value = (
+			is_null($ret)
+			or (is_string($ret) and strtolower($ret)=='default')
+		);
+
+		if ($no_value and !is_null($fallback_value)) :
 			$ret = $fallback_value;
 		endif;
 		return $ret;
