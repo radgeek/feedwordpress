@@ -74,19 +74,7 @@ class SyndicatedPost {
 
 			# Identify content and sanitize it.
 			# ---------------------------------
-			$content = NULL;
-			if (isset($this->item['atom_content'])) :
-				$content = $this->item['atom_content'];
-			elseif (isset($this->item['xhtml']['body'])) :
-				$content = $this->item['xhtml']['body'];
-			elseif (isset($this->item['xhtml']['div'])) :
-				$content = $this->item['xhtml']['div'];
-			elseif (isset($this->item['content']['encoded']) and $this->item['content']['encoded']):
-				$content = $this->item['content']['encoded'];
-			else:
-				$content = $this->item['description'];
-			endif;
-			$this->post['post_content'] = apply_filters('syndicated_item_content', $content, $this);
+			$this->post['post_content'] = apply_filters('syndicated_item_content', $this->content(), $this);
 
 			# Identify and sanitize excerpt: atom:summary, or rss:description
 			$excerpt = (isset($this->item['summary']) ? $this->item['summary'] : NULL);
@@ -95,10 +83,10 @@ class SyndicatedPost {
 			# carry the entire post (typically with escaped HTML).
 			# If that's what happened, we don't want the full
 			# content for the excerpt.
-			if ( is_null($excerpt) or $excerpt == $content ) :
+			if ( is_null($excerpt) or $excerpt == $this->content() ) :
 				# If content is available, generate an excerpt.
-				if ( strlen(trim($content)) > 0 ) :
-					$excerpt = strip_tags($content);
+				if ( strlen(trim($this->content())) > 0 ) :
+					$excerpt = strip_tags($this->content());
 					if (strlen($excerpt) > 255) :
 						$excerpt = substr($excerpt,0,252).'...';
 					endif;
@@ -287,6 +275,21 @@ class SyndicatedPost {
 	#####################################
 	#### EXTRACT DATA FROM FEED ITEM ####
 	#####################################
+	function content () {
+		$content = NULL;
+		if (isset($this->item['atom_content'])) :
+			$content = $this->item['atom_content'];
+		elseif (isset($this->item['xhtml']['body'])) :
+			$content = $this->item['xhtml']['body'];
+		elseif (isset($this->item['xhtml']['div'])) :
+			$content = $this->item['xhtml']['div'];
+		elseif (isset($this->item['content']['encoded']) and $this->item['content']['encoded']):
+			$content = $this->item['content']['encoded'];
+		else:
+			$content = $this->item['description'];
+		endif;
+		return $content;
+	} /* SyndicatedPost::content() */
 
 	function created () {
 		$date = '';
@@ -543,6 +546,37 @@ class SyndicatedPost {
 
 		return $isSoTagged;
 	} /* SyndicatedPost::isTaggedAs() */
+
+	/**
+	 * SyndicatedPost::enclosures: returns an array with any enclosures
+	 * that may be attached to this syndicated item.
+	 *
+	 * @param string $type If you only want enclosures that match a certain
+	 *	MIME type or group of MIME types, you can limit the enclosures
+	 *	that will be returned to only those with a MIME type which
+	 *	matches this regular expression.
+	 * @return array
+	 */
+	function enclosures ($type = '/.*/') {
+		$enclosures = array();
+
+		if (isset($this->item['enclosure#'])) :
+			// Loop through enclosure, enclosure#2, enclosure#3, ....
+			for ($i = 1; $i <= $this->item['enclosure#']; $i++) :
+				$eid = (($i > 1) ? "#{$id}" : "");
+
+				// Does it match the type we want?
+				if (preg_match($type, $this->item["enclosure{$eid}@type"])) :
+					$enclosures[] = array(
+						"url" => $this->item["enclosure{$eid}@url"],
+						"type" => $this->item["enclosure{$eid}@type"],
+						"length" => $this->item["enclosure{$eid}@length"],
+					);
+				endif;
+			endfor;
+		endif;
+		return $enclosures;		
+	} /* SyndicatedPost::enclosures() */
 
 	##################################
 	#### BUILT-IN CONTENT FILTERS ####
@@ -1124,18 +1158,22 @@ class SyndicatedPost {
 				// Allow for either a single value or an array
 				if (!is_array($values)) $values = array($values);
 				foreach ( $values as $value ) :
-					$value = $wpdb->escape($value);
-					$result = $wpdb->query("
-					INSERT INTO $wpdb->postmeta
-					SET
-						post_id='$postId',
-						meta_key='$key',
-						meta_value='$value'
-					");
-					if (!$result) :
-						$err = mysql_error();
-						if (FEEDWORDPRESS_DEBUG) :
-							echo "[DEBUG:".date('Y-m-d H:i:S')."][feedwordpress]: post metadata insertion FAILED for field '$key' := '$value': [$err]";
+					if (function_exists('add_post_meta')) :
+						add_post_meta($postId, $key, $value, /*unique=*/ false);
+					else :
+						$value = $wpdb->escape($value);
+						$result = $wpdb->query("
+						INSERT INTO $wpdb->postmeta
+						SET
+							post_id='$postId',
+							meta_key='$key',
+							meta_value='$value'
+						");
+						if (!$result) :
+							$err = mysql_error();
+							if (FEEDWORDPRESS_DEBUG) :
+								echo "[DEBUG:".date('Y-m-d H:i:S')."][feedwordpress]: post metadata insertion FAILED for field '$key' := '$value': [$err]";
+							endif;
 						endif;
 					endif;
 				endforeach;
