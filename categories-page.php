@@ -180,7 +180,10 @@ function fwp_categories_page () {
 			if (function_exists('clean_bookmark_cache')) :
 				clean_bookmark_cache($link_id);
 			endif;
-			$link =& new SyndicatedLink($link_id);
+			
+			// Reset
+			unset($link);
+			$link = new SyndicatedLink($link_id);
 		else :
 			// Categories
 			if (!empty($saveCats)) :

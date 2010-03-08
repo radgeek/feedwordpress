@@ -306,7 +306,10 @@ function fwp_authors_page () {
 			if (function_exists('clean_bookmark_cache')) :
 				clean_bookmark_cache($link_id);
 			endif;
-			$link =& new SyndicatedLink($link_id);
+			
+			// Reset
+			unset($link);
+			$link = new SyndicatedLink($link_id);
 		else :
 			if ('newuser'==$GLOBALS['fwp_post']['unfamiliar_author']) :
 				$newuser_name = trim($GLOBALS['fwp_post']['unfamiliar_author_newuser']);
