@@ -48,6 +48,9 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 				if (isset($post['resolve_relative'])) :
 					$this->link->settings['resolve relative'] = $post['resolve_relative'];
 				endif;
+				if (isset($post['munge_permalink'])) :
+					$this->link->settings['munge permalink'] = $post['munge_permalink'];
+				endif;
 				if (isset($post['munge_comments_feed_links'])) :
 					$this->link->settings['munge comments feed links'] = $post['munge_comments_feed_links'];
 				endif;
@@ -64,25 +67,13 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 					endif;
 				endforeach;
 
-				$alter[] = "link_notes = '".$wpdb->escape($this->link->settings_to_notes())."'";
-				$alter_set = implode(", ", $alter);
-	
-				// issue update query
-				$result = $wpdb->query("
-				UPDATE $wpdb->links
-				SET $alter_set
-				WHERE link_id='$link_id'
-				");
+				// Save settings
+				$this->link->save_settings(/*reload=*/ true);
 				$this->updated = true;
-			
-				// reload link information from DB
-				if (function_exists('clean_bookmark_cache')) :
-					clean_bookmark_cache($link_id);
-				endif;
-				
-				// Reset
-				unset($link);
-				$link = new SyndicatedLink($link_id);
+
+				// Reset, reload
+				unset($this->link);
+				$this->link = new SyndicatedLink($link_id);
 			else :
 				// update_option ...
 				if (isset($post['feed_post_status'])) :
@@ -134,8 +125,6 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 * @uses FeedWordPress::syndicated_status()
 	 * @uses SyndicatedLink::syndicated_status()
 	 * @uses SyndicatedPost::use_api()
-	 * @uses fwp_option_box_opener()
-	 * @uses fwp_option_box_closer()
 	 */ 
 	/*static*/ function publication_box ($page, $box = NULL) {
 		global $fwp_path;
@@ -213,8 +202,6 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 *	a page for one feed's settings or for global defaults
 	 * @param array $box
 	 *
-	 * @uses fwp_option_box_opener()
-	 * @uses fwp_option_box_closer()
 	 */ 
 	function formatting_box ($page, $box = NULL) {
 		global $fwp_path;
@@ -280,21 +267,36 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 *	a page for one feed's settings or for global defaults
 	 * @param array $box
 	 *
-	 * @uses fwp_option_box_opener()
-	 * @uses fwp_option_box_closer()
 	 */
 	/*static*/ function links_box ($page, $box = NULL) {
-		$munge_permalink = get_option('feedwordpress_munge_permalink');
-		$use_aggregator_source_data = get_option('feedwordpress_use_aggregator_source_data');
+		$setting = array(
+			'munge_permalink' => array(
+				'yes' => 'the copy on the original website',
+				'no' => 'the local copy on this website',
+			),
+		);
+
+		$global_munge_permalink = get_option('feedwordpress_munge_permalink');
+		if ($page->for_feed_settings()) :
+			$munge_permalink = $page->link->setting('munge permalink', NULL);
+		else :
+			$munge_permalink = $global_munge_permalink;
+			$use_aggregator_source_data = get_option('feedwordpress_use_aggregator_source_data');
+		endif;
+
 		?>
 		<table class="form-table" cellspacing="2" cellpadding="5">
-		<tr><th  scope="row">Permalinks:</th>
-		<td><select name="munge_permalink" size="1">
-		<option value="yes"<?php echo ($munge_permalink=='yes')?' selected="selected"':''; ?>>point to the copy on the original website</option>
-		<option value="no"<?php echo ($munge_permalink=='no')?' selected="selected"':''; ?>>point to the local copy on this website</option>
-		</select></td>
+		<tr><th  scope="row">Permalinks point to:</th>
+		<td><ul class="options">	
+		<?php if ($page->for_feed_settings()) : ?>
+		<li><label><input type="radio" name="munge_permalink" value="default"<?php echo ($munge_permalink!='yes' and $munge_permalink != 'no')?' checked="checked"':''; ?>/> use site-wide setting (currently <?php print $setting['munge_permalink'][$global_munge_permalink]; ?>)</label></li>
+		<?php endif; ?>
+		<li><label><input type="radio" name="munge_permalink" value="yes"<?php echo ($munge_permalink=='yes')?' checked="checked"':''; ?>><?php print $setting['munge_permalink']['yes']; ?></label></li>
+		<li><label><input type="radio" name="munge_permalink" value="no"<?php echo ($munge_permalink=='no')?' checked="checked"':''; ?>><?php print $setting['munge_permalink']['no']; ?></label></li>
+		</ul></td>
 		</tr>
 		
+		<?php if (!$page->for_feed_settings()) : ?>
 		<tr><th scope="row">Posts from aggregator feeds:</th>
 		<td><ul class="options">
 		<li><label><input type="radio" name="use_aggregator_source_data" value="no"<?php echo ($use_aggregator_source_data!="yes")?' checked="checked"':''; ?>> Give the aggregator itself as the source of posts from an aggregator feed.</label></li>
@@ -304,6 +306,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		This setting controls what FeedWordPress will give as the source of posts from
 		such an aggregator feed.</p>
 		</td></tr>
+		<?php endif; ?>
 		</table>
 
 		<?php
@@ -317,8 +320,6 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 *	a page for one feed's settings or for global defaults
 	 * @param array $box
 	 *
-	 * @uses fwp_option_box_opener()
-	 * @uses fwp_option_box_closer()
 	 */
 	/*static*/ function comments_and_pings_box ($page, $box = NULL) {
 		global $fwp_path;
@@ -420,9 +421,6 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 * @param object $page of class FeedWordPressPostsPage tells us whether this is
 	 *	a page for one feed's settings or for global defaults
 	 * @param array $box
-	 *
-	 * @uses fwp_option_box_opener()
-	 * @uses fwp_option_box_closer()
 	 */
 	/*static*/ function custom_post_settings_box ($page, $box = NULL) {
 		if ($page->for_feed_settings()) :
@@ -537,11 +535,6 @@ $boxes_by_methods = array(
 	'comments_and_pings_box' => __('Comments & Pings'),
 	'custom_post_settings_box' => __('Custom Post Settings (to apply to each syndicated post)'),
 );
-
-// Feed-level settings don't exist for these.
-if ($postsPage->for_feed_settings()) :
-	unset($boxes_by_methods['links_box']);
-endif;
 
 	foreach ($boxes_by_methods as $method => $title) :
 		fwp_add_meta_box(

@@ -82,6 +82,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		'postmeta',
 		'resolve relative',
 		'freeze updates',
+		'munge permalink',
 		'update/.*',
 		'feed/.*',
 		'link/.*',

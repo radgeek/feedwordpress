@@ -683,7 +683,13 @@ function syndication_permalink ($permalink = '') {
 	// even outside of the Post Loop. Props Björn.
 	$id = url_to_postid($permalink);
 
-	if (FeedWordPress::munge_permalinks()):
+	$munge = false;
+	$link = get_syndication_feed_object($id);
+	if (is_object($link)) :
+		$munge = ($link->setting('munge permalink', 'munge_permalink', 'yes') != 'no');
+	endif;
+
+	if ($munge):
 		$uri = get_syndication_permalink($id);
 		$permalink = ((strlen($uri) > 0) ? $uri : $permalink);
 	endif;
