@@ -259,7 +259,7 @@ function fwp_upgrade_page () {
 			echo "<div class=\"wrap\">\n";
 			echo "<h2>Upgrading FeedWordPress...</h2>";
 
-			$feedwordpress =& new FeedWordPress;
+			$feedwordpress = new FeedWordPress;
 			$feedwordpress->upgrade_database($ver);
 			echo "<p><strong>Done!</strong> Upgraded database to version ".FEEDWORDPRESS_VERSION.".</p>\n";
 			echo "<form action=\"\" method=\"get\">\n";

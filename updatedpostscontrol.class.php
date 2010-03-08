@@ -18,7 +18,7 @@ class UpdatedPostsControl {
 		else :
 			$aFeed = 'a syndicated feed';
 			$freeze_updates = $global_freeze_updates;
-		endif;	
+		endif;
 	?>
 		<tr>
 		<th scope="row"><?php _e('Updated posts:') ?></th>

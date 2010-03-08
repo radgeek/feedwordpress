@@ -229,7 +229,7 @@ function fwp_dashboard_update_if_requested () {
 
 	shuffle($update_set); // randomize order for load balancing purposes...
 	if ($fwp_update_invoke != 'get' and count($update_set) > 0) : // Only do things with side-effects for HTTP POST or command line
-		$feedwordpress =& new FeedWordPress;
+		$feedwordpress = new FeedWordPress;
 		add_action('feedwordpress_check_feed', 'update_feeds_mention');
 		add_action('feedwordpress_check_feed_complete', 'update_feeds_finish', 10, 3);
 
@@ -440,7 +440,7 @@ function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
 			<?php endif; ?>
 
 			<td><?php
-			$sLink =& new SyndicatedLink($link->link_id);
+			$sLink = new SyndicatedLink($link->link_id);
 			if (isset($sLink->settings['update/last'])) :
 				print fwp_time_elapsed($sLink->settings['update/last']);
 			else :
@@ -459,6 +459,7 @@ function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
 			else:
 				echo "as soon as possible";
 			endif;
+			unset($sLink);
 			print "</div>";
 ?>
 			</td>

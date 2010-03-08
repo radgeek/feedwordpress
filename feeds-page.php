@@ -565,7 +565,7 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 		<h2>Feed Finder: <?php echo $name; ?></h2>
 
 		<?php
-		$f =& new FeedFinder($lookup);
+		$f = new FeedFinder($lookup);
 		$feeds = $f->find();
 		if (count($feeds) > 0):
 			foreach ($feeds as $key => $f):
@@ -609,8 +609,8 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					<?php
 					if (count($rss->items) > 0):
 						// Prepare to display Sample Item
-						$link =& new MagpieMockLink($rss, $f);
-						$post =& new SyndicatedPost($rss->items[0], $link);
+						$link = new MagpieMockLink($rss, $f);
+						$post = new SyndicatedPost($rss->items[0], $link);
 						?>
 						<h3>Sample Item</h3>
 						<ul>
@@ -621,6 +621,8 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 						<?php print $post->post['post_content']; ?>
 						</div>
 						<?php
+						unset($link);
+						unset($post);
 					else:
 						if (magpie_error()) :
 							print '<div class="feed-problem">';

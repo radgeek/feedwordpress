@@ -55,9 +55,9 @@ class FeedFinder {
 				foreach ($href as $u) {
 					$the_uri = Relative_URI::resolve($u, $this->uri);
 					if ($this->verify) {
-						$feed =& new FeedFinder($the_uri);
+						$feed = new FeedFinder($the_uri);
 						if ($feed->is_feed()) $ret[] = $the_uri;
-						$feed = NULL;
+						unset($feed);
 					} else {
 						$ret[] = $the_uri;
 					}

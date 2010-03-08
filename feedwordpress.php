@@ -289,7 +289,7 @@ function feedwordpress_check_for_magpie_fix () {
 
 function feedwordpress_auto_update () {
 	if (FeedWordPress::stale()) :
-		$feedwordpress =& new FeedWordPress;
+		$feedwordpress = new FeedWordPress;
 		$feedwordpress->update();
 	endif;
 } /* feedwordpress_auto_update () */
@@ -299,7 +299,7 @@ function feedwordpress_update_magic_url () {
 
 	// Explicit update request in the HTTP request (e.g. from a cron job)
 	if (FeedWordPress::update_requested()) :
-		$feedwordpress =& new FeedWordPress;
+		$feedwordpress = new FeedWordPress;
 		$feedwordpress->update(FeedWordPress::update_requested_url());
 		
 		if (FEEDWORDPRESS_DEBUG and count($wpdb->queries) > 0) :
@@ -1063,7 +1063,7 @@ class FeedWordPress {
 		$this->feeds = array ();
 		$links = FeedWordPress::syndicated_links();
 		if ($links): foreach ($links as $link):
-			$this->feeds[] =& new SyndicatedLink($link);
+			$this->feeds[] = new SyndicatedLink($link);
 		endforeach; endif;
 	} // FeedWordPress::FeedWordPress ()
 
@@ -1559,7 +1559,7 @@ function feedwordpress_xmlrpc_hook ($args = array ()) {
 }
 
 function feedwordpress_pong ($args) {
-	$feedwordpress =& new FeedWordPress;
+	$feedwordpress = new FeedWordPress;
 	$delta = @$feedwordpress->update($args[1]);
 	if (is_null($delta)):
 		return array('flerror' => true, 'message' => "Sorry. I don't syndicate <$args[1]>.");

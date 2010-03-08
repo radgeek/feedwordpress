@@ -52,7 +52,7 @@ class FeedWordPressAdminPage {
 	/*static*/ function submitted_link () {
 		$link_id = FeedWordPressAdminPage::submitted_link_id();
 		if (is_numeric($link_id) and $link_id) :
-			$link =& new SyndicatedLink($link_id);
+			$link = new SyndicatedLink($link_id);
 		else :
 			$link = NULL;
 		endif;

@@ -234,7 +234,7 @@ class SyndicatedLink {
 
 			if (is_array($this->magpie->items)) :
 				foreach ($this->magpie->items as $item) :
-					$post =& new SyndicatedPost($item, $this);
+					$post = new SyndicatedPost($item, $this);
 					if (!$resume or !in_array(trim($post->guid()), $processed)) :
 						$processed[] = $post->guid();
 						if (!$post->filtered()) :
@@ -247,6 +247,7 @@ class SyndicatedLink {
 							break;
 						endif;
 					endif;
+					unset($post);
 				endforeach;
 			endif;
 			
