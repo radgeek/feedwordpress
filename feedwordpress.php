@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2010.0217
+Version: 2010.0308
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2010.0217
+ * @version 2010.0308
  */
 
 # This uses code derived from:
@@ -33,7 +33,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2010.0217');
+define ('FEEDWORDPRESS_VERSION', '2010.0308');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 // Defaults
@@ -679,8 +679,12 @@ function syndication_permalink ($permalink = '') {
 	// Save the local permalink in case we need to retrieve it later.
 	$feedwordpress_the_original_permalink = $permalink;
 
+	// Map this permalink to a post ID so we can get the correct permalink
+	// even outside of the Post Loop. Props Björn.
+	$id = url_to_postid($permalink);
+
 	if (FeedWordPress::munge_permalinks()):
-		$uri = get_syndication_permalink();
+		$uri = get_syndication_permalink($id);
 		$permalink = ((strlen($uri) > 0) ? $uri : $permalink);
 	endif;
 	return $permalink;
