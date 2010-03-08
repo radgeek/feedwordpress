@@ -164,24 +164,11 @@ function fwp_categories_page () {
 				endif;
 			endif;
 
-			$alter[] = "link_notes = '".$wpdb->escape($link->settings_to_notes())."'";
-
-			$alter_set = implode(", ", $alter);
-
-			// issue update query
-			$result = $wpdb->query("
-			UPDATE $wpdb->links
-			SET $alter_set
-			WHERE link_id='$link_id'
-			");
+			// Save settings
+			$link->save_settings(/*reload=*/ true);
 			$catsPage->updated = true;
-
-			// reload link information from DB
-			if (function_exists('clean_bookmark_cache')) :
-				clean_bookmark_cache($link_id);
-			endif;
 			
-			// Reset
+			// Reset, reload
 			unset($link);
 			$link = new SyndicatedLink($link_id);
 		else :

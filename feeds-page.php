@@ -790,8 +790,7 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			$this->updatedPosts->accept_POST($post);
 
 			if ($this->for_feed_settings()) :
-				$alter[] = "link_notes = '".$wpdb->escape($this->link->settings_to_notes())."'";
-
+				// Save changes to channel-level meta-data
 				$alter_set = implode(", ", $alter);
 
 				// issue update query
@@ -800,13 +799,15 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 				SET $alter_set
 				WHERE link_id='{$this->link->id}'
 				");
+				
+				// Save settings
+				$this->link->save_settings(/*reload=*/ true);
+
 				$this->updated = true;
 
-				// reload link information from DB
-				if (function_exists('clean_bookmark_cache')) :
-					clean_bookmark_cache($this->link->id);
-				endif;
-				$this->link = new SyndicatedLink($this->link->id);
+				// Reset, reload
+				$link_id = $this->link->id; unset($this->link);
+				$this->link = new SyndicatedLink($link_id);
 			endif;
 
 		// Probably a "Go" button for the drop-down
