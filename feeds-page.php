@@ -743,7 +743,7 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					// We have a checkbox for "No," so if it's unchecked, mark as "Yes."
 					$this->link->settings["hardcode {$what}"] = (isset($post["hardcode_{$what}"]) ? $post["hardcode_{$what}"] : 'yes');
 					if (FeedWordPress::affirmative($this->link->settings, "hardcode {$what}")) :
-						$alter[] = "link_{$what} = '".$wpdb->escape($post['link'.$what])."'";
+						$this->link->link->{'link_'.$what} = $post['link'.$what];
 					endif;
 				endforeach;
 				
@@ -791,14 +791,14 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 
 			if ($this->for_feed_settings()) :
 				// Save changes to channel-level meta-data
-				$alter_set = implode(", ", $alter);
+				//$alter_set = implode(", ", $alter);
 
 				// issue update query
-				$result = $wpdb->query("
-				UPDATE $wpdb->links
-				SET $alter_set
-				WHERE link_id='{$this->link->id}'
-				");
+				//$result = $wpdb->query("
+				//UPDATE $wpdb->links
+				//SET $alter_set
+				//WHERE link_id='{$this->link->id}'
+				//");
 				
 				// Save settings
 				$this->link->save_settings(/*reload=*/ true);

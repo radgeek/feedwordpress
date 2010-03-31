@@ -369,9 +369,17 @@ class SyndicatedLink {
 	function save_settings ($reload = false) {
 		global $wpdb;
 
-		$update_set = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
-			
-		// Update the properties of the link from the feed information
+		// Save channel-level meta-data
+		foreach (array('link_name', 'link_description', 'link_url') as $what) :
+			$alter[] = "{$what} = '".$wpdb->escape($this->link->{$what})."'";
+		endforeach;
+
+		// Save settings to the notes field
+		$alter[] = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
+
+		// Update the properties of the link from settings changes, etc.
+		$update_set = implode(", ", $alter);
+
 		$result = $wpdb->query("
 		UPDATE $wpdb->links
 		SET $update_set
@@ -379,7 +387,7 @@ class SyndicatedLink {
 		");
 		
 		if ($reload) :
-			// reload link information from DB
+			// force reload of link information from DB
 			if (function_exists('clean_bookmark_cache')) :
 				clean_bookmark_cache($this->id);
 			endif;
