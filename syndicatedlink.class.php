@@ -33,10 +33,13 @@
 #	Values of keys in link_notes are accessible from templates using
 #	the function `get_feed_meta($key)` if this plugin is activated.
 
+require_once(dirname(__FILE__).'/magpiefromsimplepie.class.php');
+
 class SyndicatedLink {
 	var $id = null;
 	var $link = null;
 	var $settings = array ();
+	var $simplepie = null;
 	var $magpie = null;
 
 	function SyndicatedLink ($link) {
@@ -146,7 +149,15 @@ class SyndicatedLink {
 	function poll ($crash_ts = NULL) {
 		global $wpdb;
 
-		$this->magpie = fetch_rss($this->link->link_rss);
+		$this->simplepie = fetch_feed($this->link->link_rss);
+		
+		// Filter compatibility mode
+		if (is_wp_error($this->simplepie)) :
+			$this->magpie = $this->simplepie;
+		else :
+			$this->magpie = new MagpieFromSimplePie($this->simplepie);
+		endif;
+
 		$new_count = NULL;
 
 		$resume = FeedWordPress::affirmative($this->settings, 'update/unfinished');
@@ -232,9 +243,14 @@ class SyndicatedLink {
 			# -- Add new posts from feed and update any updated posts
 			$crashed = false;
 
-			if (is_array($this->magpie->items)) :
-				foreach ($this->magpie->items as $item) :
-					$post = new SyndicatedPost($item, $this);
+			if (is_array($this->magpie->originals)) :
+				foreach ($this->magpie->originals as $key => $original) :
+					$item = $this->magpie->items[$key];
+					$post = new SyndicatedPost(array(
+						'simplepie' => $original,
+						'magpie' => $item,
+					), $this);
+
 					if (!$resume or !in_array(trim($post->guid()), $processed)) :
 						$processed[] = $post->guid();
 						if (!$post->filtered()) :

@@ -11,8 +11,9 @@
  * @version 2010.0208
  */
 class SyndicatedPost {
-	var $item = null;
-	
+	var $item = null;	// MagpieRSS representation
+	var $entry = null;	// SimplePie_Item representation
+
 	var $link = null;
 	var $feed = null;
 	var $feedmeta = null;
@@ -34,6 +35,14 @@ class SyndicatedPost {
 	function SyndicatedPost ($item, $source) {
 		global $wpdb;
 
+		if (is_array($item) and isset($item['simplepie']) and isset($item['magpie'])) :
+			$this->entry = $item['simplepie'];
+			$this->item = $item['magpie'];
+			$item = $item['magpie'];
+		else :
+			$this->item = $item;
+		endif;
+
 		$this->link = $source;
 		$this->feed = $source->magpie;
 		$this->feedmeta = $source->settings;
@@ -53,7 +62,6 @@ class SyndicatedPost {
 		global $fwp_channel, $fwp_feedmeta;
 		$fwp_channel = $this->feed; $fwp_feedmeta = $this->feedmeta;
 
-		$this->item = $item;
 		$this->item = apply_filters('syndicated_item', $this->item, $this);
 
 		# Filters can halt further processing by returning NULL

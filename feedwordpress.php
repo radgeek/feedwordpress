@@ -85,6 +85,9 @@ else :
 	define('MAGPIE_CACHE_AGE', 1*60);
 endif;
 
+// Use our the cache settings that we want.
+add_filter('wp_feed_cache_transient_lifetime', array('FeedWordPress', 'cache_lifetime'));
+
 // Note that the rss-functions.php that comes prepackaged with WordPress is
 // old & busted. For the new hotness, drop a copy of rss.php from
 // this archive into wp-includes/rss.php
@@ -1511,6 +1514,13 @@ class FeedWordPress {
 		WHERE LOCATE('rss_', option_name) AND LENGTH(option_name) > 32
 		");
 	} /* FeedWordPress::clear_cache () */
+
+	function cache_lifetime ($duration) {
+		if (defined('MAGPIE_CACHE_AGE')) :
+			$duration = MAGPIE_CACHE_AGE;
+		endif;
+		return $duration;
+	} /* FeedWordPress::cache_lifetime () */
 
 	function magpie_version () {
 		if (!defined('MAGPIE_VERSION')) : $magpie_version = $GLOBALS['wp_version'].'-default';
