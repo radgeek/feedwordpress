@@ -508,7 +508,15 @@ function update_feeds_mention ($feed) {
 	flush();
 }
 function update_feeds_finish ($feed, $added, $dt) {
-	echo " completed in $dt second".(($dt==1)?'':'s')."</li>\n";
+	if (is_wp_error($added)) :
+		$mesgs = $added->get_error_messages();
+		foreach ($mesgs as $mesg) :
+			echo "<br/><strong>Feed error:</strong> <code>$mesg</code>";
+		endforeach;
+		echo "</li>\n";
+	else :
+		echo " completed in $dt second".(($dt==1)?'':'s')."</li>\n";
+	endif;
 }
 
 function fwp_author_list () {

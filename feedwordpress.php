@@ -1179,8 +1179,10 @@ class FeedWordPress {
 				$added = $feed->poll($crash_ts);
 				do_action('feedwordpress_check_feed_complete', $feed->settings, $added, time() - $start_ts);
 
-				if (isset($added['new'])) : $delta['new'] += $added['new']; endif;
-				if (isset($added['updated'])) : $delta['updated'] += $added['updated']; endif;
+				if (is_array($added)) : // Success
+					if (isset($added['new'])) : $delta['new'] += $added['new']; endif;
+					if (isset($added['updated'])) : $delta['updated'] += $added['updated']; endif;
+				endif;
 			endif;
 		endforeach;
 
