@@ -570,8 +570,10 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 		$feeds = $f->find();
 		if (count($feeds) > 0):
 			foreach ($feeds as $key => $f):
-				$rss = @fetch_rss($f);
-				if ($rss):
+				$pie = FeedWordPress::fetch($f);
+				$rss = (is_wp_error($pie) ? $pie : new MagpieFromSimplePie($pie));
+
+				if ($rss and !is_wp_error($rss)):
 					$feed_title = isset($rss->channel['title'])?$rss->channel['title']:$rss->channel['link'];
 					$feed_link = isset($rss->channel['link'])?$rss->channel['link']:'';
 					$feed_type = ($rss->feed_type ? $rss->feed_type : 'Unknown');
@@ -606,12 +608,11 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 
 					<div>
 					<div class="feed-sample">
-					
 					<?php
-					if (count($rss->items) > 0):
+					if (!is_wp_error($rss) and count($rss->items) > 0):
 						// Prepare to display Sample Item
 						$link = new MagpieMockLink($rss, $f);
-						$post = new SyndicatedPost($rss->items[0], $link);
+						$post = new SyndicatedPost(array('magpie' => $rss->items[0], 'simplepie' => $rss->originals[0]), $link);
 						?>
 						<h3>Sample Item</h3>
 						<ul>
@@ -625,12 +626,12 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 						unset($link);
 						unset($post);
 					else:
-						if (magpie_error()) :
+						if (is_wp_error($rss)) :
 							print '<div class="feed-problem">';
 							print "<h3>Problem:</h3>\n";
 							print "<p>FeedWordPress encountered the following error
 							when trying to retrieve this feed:</p>";
-							print '<p style="margin: 1.0em 3.0em"><code>'.magpie_error().'</code></p>';
+							print '<p style="margin: 1.0em 3.0em"><code>'.$rss->get_error_message().'</code></p>';
 							print "<p>If you think this is a temporary problem, you can still force FeedWordPress to add the subscription. FeedWordPress will not be able to find any syndicated posts until this problem is resolved.</p>";
 							print "</div>";
 						endif;

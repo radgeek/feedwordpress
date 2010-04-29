@@ -1,4 +1,6 @@
 <?php
+require_once(dirname(__FILE__).'/feedtime.class.php');
+
 /**
  * class SyndicatedPost: FeedWordPress uses to manage the conversion of
  * incoming items from the feed parser into posts for the WordPress
@@ -8,7 +10,7 @@
  * different feed formats, which may be useful to FeedWordPress users
  * who make use of feed data in PHP add-ons and filters.
  *
- * @version 2010.0208
+ * @version 2010.0403
  */
 class SyndicatedPost {
 	var $item = null;	// MagpieRSS representation
@@ -73,43 +75,37 @@ class SyndicatedPost {
 			# of insertion, not here, to avoid double-escaping and
 			# to avoid screwing with syndicated_post filters
 
-			$this->post['post_title'] = apply_filters('syndicated_item_title', $this->item['title'], $this);
+			$this->post['post_title'] = apply_filters(
+				'syndicated_item_title',
+				$this->entry->get_title(), $this
+			);
 
-			// This just gives us an alphanumeric representation of
-			// the author. We will look up (or create) the numeric
-			// ID for the author in SyndicatedPost::add()
-			$this->post['named']['author'] = apply_filters('syndicated_item_author', $this->author(), $this);
+			$this->post['named']['author'] = apply_filters(
+				'syndicated_item_author',
+				$this->author(), $this
+			);
+			// This just gives us an alphanumeric name for the author.
+			// We look up (or create) the numeric ID for the author
+			// in SyndicatedPost::add().
 
-			# Identify content and sanitize it.
-			# ---------------------------------
-			$this->post['post_content'] = apply_filters('syndicated_item_content', $this->content(), $this);
-
-			# Identify and sanitize excerpt: atom:summary, or rss:description
-			$excerpt = (isset($this->item['summary']) ? $this->item['summary'] : NULL);
+			$this->post['post_content'] = apply_filters(
+				'syndicated_item_content',
+				$this->content(), $this
+			);
 			
-			# Many RSS feeds use rss:description, inadvisably, to
-			# carry the entire post (typically with escaped HTML).
-			# If that's what happened, we don't want the full
-			# content for the excerpt.
-			if ( is_null($excerpt) or $excerpt == $this->content() ) :
-				# If content is available, generate an excerpt.
-				if ( strlen(trim($this->content())) > 0 ) :
-					$excerpt = strip_tags($this->content());
-					if (strlen($excerpt) > 255) :
-						$excerpt = substr($excerpt,0,252).'...';
-					endif;
-				endif;
-			endif;
-			$excerpt = apply_filters('syndicated_item_excerpt', $excerpt, $this); 
-
+			$excerpt = apply_filters('syndicated_item_excerpt', $this->excerpt(), $this);
 			if (!is_null($excerpt)):
 				$this->post['post_excerpt'] = $excerpt;
 			endif;
 			
-			// This is unnecessary if we use wp_insert_post
+			### Legacy ### Supports WP < 2.2 ########################
+			// If we use wp_insert_post(), that will generate the
+			// post_name for us automatically. Otherwise, we have to
+			// do it here.
 			if (!$this->use_api('wp_insert_post')) :
 				$this->post['post_name'] = sanitize_title($this->post['post_title']);
 			endif;
+			### End of Legacy #######################################
 
 			$this->post['epoch']['issued'] = apply_filters('syndicated_item_published', $this->published(), $this);
 			$this->post['epoch']['created'] = apply_filters('syndicated_item_created', $this->created(), $this);
@@ -149,15 +145,13 @@ class SyndicatedPost {
 			$this->post['meta'] = array_merge($default_custom_settings, $custom_settings);
 
 			// RSS 2.0 / Atom 1.0 enclosure support
-			if ( isset($this->item['enclosure#']) ) :
-				for ($i = 1; $i <= $this->item['enclosure#']; $i++) :
-					$eid = (($i > 1) ? "#{$id}" : "");
-					$this->post['meta']['enclosure'][] =
-						apply_filters('syndicated_item_enclosure_url', $this->item["enclosure{$eid}@url"], $this)."\n".
-						apply_filters('syndicated_item_enclosure_length', $this->item["enclosure{$eid}@length"], $this)."\n".
-						apply_filters('syndicated_item_enclosure_type', $this->item["enclosure{$eid}@type"], $this);
-				endfor;
-			endif;
+			$enclosures = $this->entry->get_enclosures();
+			if (is_array($enclosures)) : foreach ($enclosures as $enclosure) :
+				$this->post['meta']['enclosure'][] =
+					apply_filters('syndicated_item_enclosure_url', $enclosure->get_link(), $this)."\n".
+					apply_filters('syndicated_item_enclosure_length', $enclosure->get_length(), $this)."\n".
+					apply_filters('syndicated_item_enclosure_type', $enclosure->get_type(), $this);
+			endforeach; endif;
 
 			// In case you want to point back to the blog this was syndicated from
 			if (isset($this->feed->channel['title'])) :
@@ -182,27 +176,16 @@ class SyndicatedPost {
 			endif;
 
 			// Store information on human-readable and machine-readable comment URIs
-			if (isset($this->item['comments'])) :
-				$this->post['meta']['rss:comments'] = apply_filters('syndicated_item_comments', $this->item['comments']);
-			endif;
 			
-			// RSS 2.0 comment feeds extension
-			if (isset($this->item['wfw']['commentrss'])) :
-				$this->post['meta']['wfw:commentRSS'] = apply_filters('syndicated_item_commentrss', $this->item['wfw']['commentrss']);
-			endif;
+			// Human-readable comment URI
+			$commentLink = apply_filters('syndicated_item_comments', $this->comment_link(), $this);
+			if (!is_null($commentLink)) : $this->post['meta']['rss:comments'] = $commentLink; endif;
 
-			// Atom 1.0 comment feeds link-rel
-			if (isset($this->item['link_replies'])) :
-				// There may be multiple <link rel="replies"> elements; feeds have a feed MIME type
-				$N = isset($this->item['link_replies#']) ? $this->item['link_replies#'] : 1;
-				for ($i = 1; $i <= $N; $i++) :
-					$currentElement = 'link_replies'.(($i > 1) ? '#'.$i : '');
-					if (isset($this->item[$currentElement.'@type'])
-					and preg_match("\007application/(atom|rss|rdf)\+xml\007i", $this->item[$currentElement.'@type'])) :
-						$this->post['meta']['wfw:commentRSS'] = apply_filters('syndicated_item_commentrss', $this->item[$currentElement]);
-					endif;
-				endfor;
-			endif;
+			// Machine-readable content feed URI
+			$commentFeed = apply_filters('syndicated_item_commentrss', $this->comment_feed(), $this);
+			if (!is_null($commentFeed)) :	$this->post['meta']['wfw:commentRSS'] = $commentFeed; endif;
+			// Yeah, yeah, now I know that it's supposed to be
+			// wfw:commentRss. Oh well. Path dependence, sucka.
 
 			// Store information to identify the feed that this came from
 			if (isset($this->feedmeta['link/uri'])) :
@@ -217,17 +200,7 @@ class SyndicatedPost {
 			endif;
 
 			// In case you want to know the external permalink...
-			if (isset($this->item['link'])) :
-				$permalink = $this->item['link'];
-
-			// No <link> element. See if this feed has <guid isPermalink="true"> ....
-			elseif (isset($this->item['guid'])) :
-				if (isset($this->item['guid@ispermalink']) and strtolower(trim($this->item['guid@ispermalink'])) != 'false') :
-					$permalink = $this->item['guid'];
-				endif;
-			endif;
-
-			$this->post['meta']['syndication_permalink'] = apply_filters('syndicated_item_link', $permalink);
+			$this->post['meta']['syndication_permalink'] = apply_filters('syndicated_item_link', $this->permalink());
 
 			// Store a hash of the post content for checking whether something needs to be updated
 			$this->post['meta']['syndication_item_hash'] = $this->update_hash();
@@ -299,6 +272,34 @@ class SyndicatedPost {
 		return $content;
 	} /* SyndicatedPost::content() */
 
+	function excerpt () {
+		# Identify and sanitize excerpt: atom:summary, or rss:description
+		$excerpt = $this->entry->get_description();
+			
+		# Many RSS feeds use rss:description, inadvisably, to
+		# carry the entire post (typically with escaped HTML).
+		# If that's what happened, we don't want the full
+		# content for the excerpt.
+		$content = $this->content();
+		if ( is_null($excerpt) or $excerpt == $content ) :
+			# If content is available, generate an excerpt.
+			if ( strlen(trim($content)) > 0 ) :
+				$excerpt = strip_tags($content);
+				if (strlen($excerpt) > 255) :
+					$excerpt = substr($excerpt,0,252).'...';
+				endif;
+			endif;
+		endif;
+		return $excerpt;
+	} /* SyndicatedPost::excerpt() */
+
+	function permalink () {
+		// Handles explicit <link> elements and also RSS 2.0 cases with
+		// <guid isPermaLink="true">, etc. Hooray!
+		$permalink = $this->entry->get_link();
+		return $permalink;
+	}
+
 	function created () {
 		$date = '';
 		if (isset($this->item['dc']['created'])) :
@@ -308,8 +309,9 @@ class SyndicatedPost {
 		elseif (isset($this->item['created'])): // Atom 0.3
 			$date = $this->item['created'];
 		endif;
-		$epoch = $this->strtotimestamp($date);
-		return $epoch;
+
+		$epoch = new FeedTime($date);
+		return $epoch->timestamp();
 	} /* SyndicatedPost::created() */
 
 	function published ($fallback = true, $default = NULL) {
@@ -332,7 +334,8 @@ class SyndicatedPost {
 		endif;
 		
 		if (strlen($date) > 0) :
-			$epoch = $this->strtotimestamp($date);
+			$time = new FeedTime($date);
+			$epoch = $time->timestamp();
 		elseif ($fallback) :						// Fall back to <updated> / <modified> if present
 			$epoch = $this->updated(/*fallback=*/ false, /*default=*/ $default);
 		endif;
@@ -366,7 +369,8 @@ class SyndicatedPost {
 		endif;
 		
 		if (strlen($date) > 0) :
-			$epoch = $this->strtotimestamp($date);
+			$time = new FeedTime($date);
+			$epoch = $time->timestamp();
 		elseif ($fallback) :						// Fall back to issued / dc:date
 			$epoch = $this->published(/*fallback=*/ false, /*default=*/ $default);
 		endif;
@@ -383,32 +387,6 @@ class SyndicatedPost {
 		return $epoch;
 	} /* SyndicatedPost::updated() */
 
-	function strtotimestamp ($date) {
-		$epoch = NULL;
-		if (strlen($date) > 0) :
-			// First, try to parse it as a W3C date-time
-			$epoch = @parse_w3cdtf($date);
-	
-			if (!is_numeric($epoch) or !$epoch or (0 >= $epoch)) : // Failure
-				// In some versions of PHP, strtotime() does not support
-				// the UT timezone. Since UT is by definition within 1
-				// second of UTC, we'll just convert it here to avoid
-				// problems.
-				$date = preg_replace(
-					'/(\s)UT$/',
-					'$1UTC',
-					$date
-				);
-				$epoch = strtotime($date);
-			endif;
-			
-			if (!is_numeric($epoch) or !$epoch or (0 >= $epoch)) :
-				$epoch = NULL;
-			endif;
-		endif;
-		return $epoch;
-	} /* SyndicatedPost::strtotimestamp() */
-		
 	function update_hash () {
 		return md5(serialize($this->item));
 	} /* SyndicatedPost::update_hash() */
@@ -585,6 +563,78 @@ class SyndicatedPost {
 		endif;
 		return $enclosures;		
 	} /* SyndicatedPost::enclosures() */
+
+	function comment_link () {
+		$url = null;
+		
+		// RSS 2.0 has a standard <comments> element:
+		// "<comments> is an optional sub-element of <item>. If present,
+		// it is the url of the comments page for the item."
+		// <http://cyber.law.harvard.edu/rss/rss.html#ltcommentsgtSubelementOfLtitemgt>
+		if (isset($this->item['comments'])) :
+			$url = $this->item['comments'];
+		endif;
+
+		// The convention in Atom feeds is to use a standard <link>
+		// element with @rel="replies" and @type="text/html".
+		// Unfortunately, SimplePie_Item::get_links() allows us to filter
+		// by the value of @rel, but not by the value of @type. *sigh*
+		
+		// Try Atom 1.0 first
+		$linkElements = $this->entry->get_item_tags(SIMPLEPIE_NAMESPACE_ATOM_10, 'link');
+		
+		// Fall back and try Atom 0.3
+		if (is_null($linkElements)) : $linkElements =  $this->entry->get_item_tags(SIMPLEPIE_NAMESPACE_ATOM_03, 'link'); endif;
+		
+		// Now loop through the elements, screening by @rel and @type
+		if (is_array($linkElements)) : foreach ($linkElements as $link) :
+			$rel = (isset($link['attribs']['']['rel']) ? $link['attribs']['']['rel'] : 'alternate');
+			$type = (isset($link['attribs']['']['type']) ? $link['attribs']['']['type'] : NULL);
+			$href = (isset($link['attribs']['']['href']) ? $link['attribs']['']['href'] : NULL);
+
+			if (strtolower($rel)=='replies' and $type=='text/html' and !is_null($href)) :
+				$url = $href;
+			endif;
+		endforeach; endif;
+
+		return $url;
+	}
+
+	function comment_feed () {
+		$feed = null;
+
+		// Well Formed Web comment feeds extension for RSS 2.0
+		// <http://www.sellsbrothers.com/spout/default.aspx?content=archive.htm#exposingRssComments>
+		//
+		// N.B.: Correct capitalization is wfw:commentRss, but
+		// wfw:commentRSS is common in the wild (partly due to a typo in
+		// the original spec). In any case, our item array is normalized
+		// to all lowercase anyways.
+		if (isset($this->item['wfw']['commentrss'])) :
+			$feed = $this->item['wfw']['commentrss'];
+		endif;
+
+		// In Atom 1.0, the convention is to use a standard link element
+		// with @rel="replies". Sometimes this is also used to pass a
+		// link to the human-readable comments page, so we also need to
+		// check link/@type for a feed MIME type.
+		//
+		// Which is why I'm not using the SimplePie_Item::get_links()
+		// method here, incidentally: it doesn't allow you to filter by
+		// @type. *sigh*
+		if (isset($this->item['link_replies'])) :
+			// There may be multiple <link rel="replies"> elements; feeds have a feed MIME type
+			$N = isset($this->item['link_replies#']) ? $this->item['link_replies#'] : 1;
+			for ($i = 1; $i <= $N; $i++) :
+				$currentElement = 'link_replies'.(($i > 1) ? '#'.$i : '');
+				if (isset($this->item[$currentElement.'@type'])
+				and preg_match("\007application/(atom|rss|rdf)\+xml\007i", $this->item[$currentElement.'@type'])) :
+					$feed = $this->item[$currentElement];
+				endif;
+			endfor;
+		endif;
+		return $feed;
+	} /* SyndicatedPost::comment_feed() */
 
 	##################################
 	#### BUILT-IN CONTENT FILTERS ####

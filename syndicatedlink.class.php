@@ -127,7 +127,7 @@ class SyndicatedLink {
 	} /* SyndicatedLink::SyndicatedLink () */
 	
 	function found () {
-		return is_object($this->link);
+		return is_object($this->link) and !is_wp_error($this->link);
 	} /* SyndicatedLink::found () */
 
 	function stale () {
@@ -149,7 +149,7 @@ class SyndicatedLink {
 	function poll ($crash_ts = NULL) {
 		global $wpdb;
 
-		$this->simplepie = fetch_feed($this->link->link_rss);
+		$this->simplepie = FeedWordPress::fetch($this->link->link_rss);
 		
 		// Filter compatibility mode
 		if (is_wp_error($this->simplepie)) :
@@ -170,9 +170,9 @@ class SyndicatedLink {
 		endif;
 
 		
-		if (is_wp_error($this->magpie)) :
-			$new_count = $this->magpie;
-		elseif (is_object($this->magpie)) :
+		if (is_wp_error($this->simplepie)) :
+			$new_count = $this->simplepie;
+		elseif (is_object($this->simplepie)) :
 			$new_count = array('new' => 0, 'updated' => 0);
 
 			# -- Update Link metadata live from feed

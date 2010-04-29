@@ -17,7 +17,9 @@ class MagpieMockLink extends SyndicatedLink {
 
 	function poll ($crash_ts = NULL) {
 		// Do nothing but update copy of feed
-		$this->magpie = fetch_rss($this->url);
+		$this->simplepie = FeedWordPress::fetch($this->url);
+		$this->magpie = new MagpieFromSimplePie($this->simplepie);
+
 		$this->link = $this->magpie;
 	} /* function MagpieMockLink::poll () */
 
@@ -26,7 +28,7 @@ class MagpieMockLink extends SyndicatedLink {
 	} /* function MagpieMockLink::uri() */
 
 	function homepage () {
-		return (is_object($this->magpie) ? $this->magpie->channel['link'] : null);
+		return (!is_wp_error($this->simplepie) ? $this->simplepie->get_link() : null);
 	} /* function MagpieMockLink::homepage () */
 } /* class MagpieMockLink */
 

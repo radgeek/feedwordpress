@@ -1,4 +1,6 @@
 <?php
+require_once(dirname(__FILE__).'/feedtime.class.php');
+
 /**
  * class MagpieFromSimplePie: compatibility layer to prevent existing filters
  * from breaking.
@@ -342,7 +344,8 @@ class MagpieFromSimplePie {
 	 * @uses MagpieFromSimplePie::normalize_enclosure
 	 * @uses MagpieFromSimplePie::normalize_category
 	 * @uses MagpieFromSimplePie::normalize_dc_subject
-	 * @uses parse_w3cdtf
+	 * @uses FeedTime
+	 * @uses FeedTime::timestamp
 	 */
 	function normalize () {
 		// Normalize channel data
@@ -401,7 +404,7 @@ class MagpieFromSimplePie {
 					$this->normalize_element($item, 'updated', $item, 'modified');
 					$this->normalize_element($item, 'published', $item, 'issued');
 				endif;
-	
+
 				$this->normalize_author_inheritance($item, $this->originals[$i]);
 	
 				// Atom elements to RSS elements
@@ -419,14 +422,7 @@ class MagpieFromSimplePie {
 				endif;
 
 				// Normalized item timestamp
-				$atom_date = (isset($item['published']) ) ? $item['published'] : $item['updated'];
-				if ( $atom_date ) :
-					$date_timestamp = @parse_w3cdtf($atom_date);
-				endif;
-		
-				if (is_numeric($date_timestamp) and $date_timestamp > 0) :
-					$titem['date_timestamp'] = $date_timestamp;
-				endif;
+				$item_date = (isset($item['published']) ) ? $item['published'] : $item['updated'];
 			elseif ( $this->is_rss() ) :
 				// RSS elements to Atom elements
 				$this->normalize_element($item, 'description', $item, 'summary');
@@ -441,15 +437,22 @@ class MagpieFromSimplePie {
 	
 				// Normalized item timestamp
 				if (isset($item['pubdate'])) :
-					$date_timestamp = @strtotime($item['pubdate']);
-				elseif ( isset($item['dc']['date']) ) :
-					$date_timestamp = @parse_w3cdtf($item['dc']['date']);
+					$item_date = $item['pubdate'];
+				elseif (isset($item['dc']['date'])) :
+					$item_date = $item['dc']['date'];
+				else :
+					$item_date = null;
 				endif;
 			endif;
 
-			if (is_numeric($date_timestamp) and $date_timestamp > 0) :
-				$item['date_timestamp'] = $date_timestamp;
+			if ( $item_date ) :
+				$date_timestamp = new FeedTime($item_date);
+	
+				if (!$date_timestamp->failed()) :
+					$item['date_timestamp'] = $date_timestamp->timestamp();
+				endif;
 			endif;
+
 			$this->items[$i] = $item;
 		endfor;
 	} /* MagpieFromSimplePie::normalize() */

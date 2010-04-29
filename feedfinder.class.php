@@ -75,16 +75,24 @@ class FeedFinder {
 	function status ($uri = NULL) {
 		$this->_get($uri);
 		
-		if (isset($this->_response->status)) :
-			$ret = $this->_response->status;
+		if (!is_wp_error($this->_response) and isset($this->_response['response']['code'])) :
+			$ret = $this->_response['response']['code'];
 		else :
 			$ret = NULL;
 		endif;
 		return $ret;
 	}
 
-	function error () {
-		return $this->_error;
+	function error ($index = NULL) {
+		$message = NULL;
+		if (count($this->_error) > 0) :
+			if (is_scalar($index) and !is_null($index)) :
+				$message = $this->_error[$index];
+			else :
+				$message = implode(" / ", $this->_error)."\n";
+			endif;
+		endif;
+		return $message;
 	}
 	
 	function is_feed ($uri = NULL) {
@@ -111,15 +119,20 @@ class FeedFinder {
 			$headers['Accept'] = 'application/atom+xml application/rdf+xml application/rss+xml application/xml text/html */*';
 			$headers['User-Agent'] = 'feedfinder/1.2 (compatible; PHP FeedFinder) +http://projects.radgeek.com/feedwordpress';
 
-			// Use function provided by MagpieRSS package
-			$client = _fetch_remote_file($this->uri, $headers);
-			if (isset($client->error)) :
-				$this->_error = $client->error;
+			// Use WordPress API function
+			$client = wp_remote_request($this->uri, array(
+				'headers' => $headers,
+				'timeout' => FEEDWORDPRESS_FETCH_TIME_OUT,
+			));
+
+			$this->_response = $client;
+			if (is_wp_error($client)) :
+				$this->_data = NULL;
+				$this->_error = $client->get_error_messages();
 			else :
+				$this->_data = $client['body'];
 				$this->_error = NULL;
 			endif;
-			$this->_response = $client;
-			$this->_data = $client->results;
 
 			// Kilroy was here
 			$this->_cache_uri = $this->uri;

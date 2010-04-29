@@ -71,32 +71,29 @@ if (FEEDWORDPRESS_DEBUG) :
 	// Help us to pick out errors, if any.
 	ini_set('error_reporting', E_ALL & ~E_NOTICE);
 	ini_set('display_errors', true);
-	define('MAGPIE_DEBUG', true);
 	
 	 // When testing we don't want cache issues to interfere. But this is
 	 // a VERY BAD SETTING for a production server. Webmasters will eat your 
 	 // face for breakfast if you use it, and the baby Jesus will cry. So
 	 // make sure FEEDWORDPRESS_DEBUG is FALSE for any site that will be
 	 // used for more than testing purposes!
-	define('MAGPIE_CACHE_AGE', 1);
+	define('FEEDWORDPRESS_CACHE_AGE', 1);
+	define('FEEDWORDPRESS_CACHE_LIFETIME', 1);
+	define('FEEDWORDPRESS_FETCH_TIME_OUT', 60);
 else :
-	define('MAGPIE_DEBUG', false);
-	
-	define('MAGPIE_CACHE_AGE', 1*60);
+	// Hold onto data all day for conditional GET purposes,
+	// but consider it stale after 1 min (requiring a conditional GET)
+	define('FEEDWORDPRESS_CACHE_LIFETIME', 24*60*60);
+	define('FEEDWORDPRESS_CACHE_AGE', 1*60);
+	define('FEEDWORDPRESS_FETCH_TIME_OUT', 10);
 endif;
 
 // Use our the cache settings that we want.
 add_filter('wp_feed_cache_transient_lifetime', array('FeedWordPress', 'cache_lifetime'));
 
-// Note that the rss-functions.php that comes prepackaged with WordPress is
-// old & busted. For the new hotness, drop a copy of rss.php from
-// this archive into wp-includes/rss.php
-
-if (is_readable(ABSPATH . WPINC . '/rss.php')) :
-	require_once (ABSPATH . WPINC . '/rss.php');
-else :
-	require_once (ABSPATH . WPINC . '/rss-functions.php');
-endif;
+// Ensure that we have SimplePie loaded up and ready to go.
+// We no longer need a MagpieRSS upgrade module. Hallelujah!
+require_once(ABSPATH . WPINC . '/feed.php');
 
 if (isset($wp_db_version)) :
 	if ($wp_db_version >= FWP_SCHEMA_23) :
@@ -202,8 +199,6 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	# Admin menu
 	add_action('admin_menu', 'fwp_add_pages');
 	add_action('admin_notices', 'fwp_check_debug');
-	add_action('admin_notices', 'fwp_check_magpie');
-	add_action('init', 'feedwordpress_check_for_magpie_fix');
 
 	add_action('admin_menu', 'feedwordpress_add_post_edit_controls');
 	add_action('save_post', 'feedwordpress_save_post_edit_controls');
@@ -256,39 +251,6 @@ else :
 	# Hook in the menus, which will just point to the upgrade interface
 	add_action('admin_menu', 'fwp_add_pages');
 endif; // if (!FeedWordPress::needs_upgrade())
-
-function feedwordpress_check_for_magpie_fix () {
-	if (isset($_POST['action']) and $_POST['action']=='fix_magpie_version') :
-		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_fix_magpie', /*capability=*/ 'edit_files');
-
-		$back_to = $_SERVER['REQUEST_URI'];
-		if (isset($_POST['ignore'])) :
-			// kill error message by telling it we ignored the upgrade request for this version
-			update_option('feedwordpress_magpie_ignored_upgrade_to', EXPECTED_MAGPIE_VERSION);
-			$ret = 'ignored';
-		elseif (isset($_POST['upgrade'])) :
-			$source = dirname(__FILE__)."/MagpieRSS-upgrade/rss.php";
-			$destination = ABSPATH . WPINC . '/rss.php';
-			$success = @copy($source, $destination);
-
-			// Copy over rss-functions.php, too, to avoid collisions
-			// on pre-lapsarian versions of WordPress.
-			if ($success) :			
-				$source = dirname(__FILE__)."/MagpieRSS-upgrade/rss-functions.php";
-				$destination = ABSPATH . WPINC . '/rss-functions.php';
-				$success = @copy($source, $destination);
-			endif;
-			$ret = (int) $success;
-		endif;
-
-		if (strpos($back_to, '?')===false) : $sep = '?';
-		else : $sep = '&';
-		endif;
-
-		header("Location: {$back_to}{$sep}feedwordpress_magpie_fix=".$ret);
-		exit;
-	endif;
-} /* feedwordpress_check_for_magpie_fix() */
 
 function feedwordpress_auto_update () {
 	if (FeedWordPress::stale()) :
@@ -828,95 +790,6 @@ for a production server.</p>
 	endif;
 } /* function fwp_check_debug () */
 
-define('EXPECTED_MAGPIE_VERSION', '2010.0122');
-function fwp_check_magpie () {
-	if (isset($_REQUEST['feedwordpress_magpie_fix'])) :
-		if ($_REQUEST['feedwordpress_magpie_fix']=='ignored') :
-?>
-<div class="updated fade">
-<p>O.K., we'll ignore the problem for now. FeedWordPress will not display any
-more error messages.</p>
-</div>
-<?php
-		elseif ((bool) $_REQUEST['feedwordpress_magpie_fix']) :
-?>
-<div class="updated fade">
-<p>Congratulations! Your MagpieRSS has been successfully upgraded to the version
-shipped with FeedWordPress.</p>
-</div>
-<?php
-		else :
-			$source = dirname(__FILE__)."/MagpieRSS-upgrade/rss.php";
-			$destination = ABSPATH . WPINC . '/rss.php';
-			$cmd = "cp '".htmlspecialchars(addslashes($source))."' '".htmlspecialchars(addslashes($destination))."'";
-			$cmd = wordwrap($cmd, /*width=*/ 75, /*break=*/ " \\\n\t");
-
-?>
-<div class="error">
-<p><strong>FeedWordPress was unable to automatically upgrade your copy of MagpieRSS.</strong></p>
-<p>It's likely that you need to change the file permissions on <code><?php print htmlspecialchars($source); ?></code>
-to allow FeedWordPress to overwrite it.</p>
-<p><strong>To perform the upgrade manually,</strong> you can
-use a SFTP or FTP client to upload a copy of <code>rss.php</code> from the
-<code>MagpieRSS-upgrades/</code> directory of your FeedWordPress archive so that
-it overwrites <code><?php print htmlspecialchars($destination); ?></code>. Or,
-if your web host provides shell access, you can issue the following command from
-a command prompt to perform the upgrade:</p>
-<pre>
-<samp>$</samp> <kbd><?php print $cmd; ?></kbd>
-</pre>
-<p><strong>If you've fixed the file permissions,</strong> you can try the
-automatic upgrade again.</p>
-
-<?php			feedwordpress_upgrade_old_and_busted_buttons(); ?>
-</div>
-<?php
-		endif;
-	else :
-		$magpie_version = FeedWordPress::magpie_version();
-
-		$ignored = get_option('feedwordpress_magpie_ignored_upgrade_to');
-		if (EXPECTED_MAGPIE_VERSION != $magpie_version and EXPECTED_MAGPIE_VERSION != $ignored) :
-			if (current_user_can('edit_files')) :
-				$youAre = 'you are';
-				$itIsRecommendedThatYou = 'It is <strong>strongly recommended</strong> that you';
-			else :
-				$youAre = 'this site is';
-				$itIsRecommendedThatYou = 'You may want to contact the administrator of the site; it is <strong>strongly recommended</strong> that they';
-			endif;
-			print '<div class="error">';
-?>
-<p style="font-style: italic"><strong>FeedWordPress has detected that <?php print $youAre; ?> currently using a version of
-MagpieRSS other than the upgraded version that ships with this version of FeedWordPress.</strong></p>
-<ul>
-<li><strong>Currently running:</strong> MagpieRSS <?php print $magpie_version; ?></li>
-<li><strong>Version included with FeedWordPress <?php print FEEDWORDPRESS_VERSION; ?>:</strong> MagpieRSS <?php print EXPECTED_MAGPIE_VERSION; ?></li>
-</ul>
-<p><?php print $itIsRecommendedThatYou; ?> install the upgraded
-version of MagpieRSS supplied with FeedWordPress. The version of
-MagpieRSS that ships with WordPress is very old and buggy, and
-encounters a number of errors when trying to parse modern Atom
-and RSS feeds.</p>
-<?php
-			feedwordpress_upgrade_old_and_busted_buttons();
-			print '</div>';
-		endif;
-	endif;
-}
-
-function feedwordpress_upgrade_old_and_busted_buttons() {
-	if (current_user_can('edit_files')) :
-?>
-<form action="" method="post"><div>
-<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_fix_magpie'); ?>
-<input type="hidden" name="action" value="fix_magpie_version" />
-<input class="button-secondary" type="submit" name="ignore" value="<?php _e('Ignore this problem'); ?>" />
-<input class="button-primary" type="submit" name="upgrade" value="<?php _e('Upgrade'); ?>" />
-</div></form>
-<?php
-	endif;
-}
-
 ################################################################################
 ## fwp_hold_pings() and fwp_release_pings(): Outbound XML-RPC ping reform   ####
 ## ... 'coz it's rude to send 500 pings the first time your aggregator runs ####
@@ -1437,55 +1310,11 @@ class FeedWordPress {
 		if (is_null($from) or $from <= 0.96) : $from = 0.96; endif;
 
 		switch ($from) :
-		case 0.96: // account for changes to syndication custom values and guid
-			echo "<p>Upgrading database from {$from} to ".FEEDWORDPRESS_VERSION."...</p>\n";
-
-			$cat_id = FeedWordPress::link_category_id();
-			
-			// Avoid duplicates
-			$wpdb->query("DELETE FROM `{$wpdb->postmeta}` WHERE meta_key = 'syndication_feed_id'");
-			
-			// Look up all the link IDs
-			$wpdb->query("
-			CREATE TEMPORARY TABLE tmp_custom_values
-			SELECT
-				NULL AS meta_id,
-				post_id,
-				'syndication_feed_id' AS meta_key,
-				link_id AS meta_value
-			FROM `{$wpdb->postmeta}`, `{$wpdb->links}`
-			WHERE
-				meta_key='syndication_feed'
-				AND meta_value=link_rss
-				AND link_category = {$cat_id}
-			");
-			
-			// Now attach them to their posts
-			$wpdb->query("INSERT INTO `{$wpdb->postmeta}` SELECT * FROM tmp_custom_values");
-			
-			// And clean up after ourselves.
-			$wpdb->query("DROP TABLE tmp_custom_values");
-			
-			// Now fix the guids to avoid duplicate posts
-			echo "<ul>";
-			foreach ($this->feeds as $syndicatedLink) :
-				$feed = $syndicatedLink->settings;
-				echo "<li>Fixing post meta-data for <cite>".$feed['link/name']."</cite> &#8230; "; flush();
-				$rss = @fetch_rss($feed['link/uri']);
-				if (is_array($rss->items)) :
-					foreach ($rss->items as $item) :
-						$post = new SyndicatedPost($item, $syndicatedLink);
-						$guid = $wpdb->escape($post->guid()); // new GUID algorithm
-						$link = $wpdb->escape($item['link']);
-						
-						$wpdb->query("
-						UPDATE `{$wpdb->posts}` SET guid='{$guid}' WHERE guid='{$link}'
-						");
-					endforeach;
-				endif;
-				echo "<strong>complete.</strong></li>\n";
-			endforeach;
-			echo "</ul>\n";
+		case 0.96:
+			 // Dropping legacy upgrade code. If anyone is still
+			 // using 0.96 and just now decided to upgrade, well, I'm
+			 // sorry about that. You'll just have to cope with a few
+			 // duplicate posts.
 
 			// Mark the upgrade as successful.
 			update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
@@ -1501,33 +1330,59 @@ class FeedWordPress {
 		");
 	} /* FeedWordPress::create_guid_index () */
 	
+	/*static*/ function fetch ($url) {
+		require_once (ABSPATH . WPINC . '/class-feed.php');
+		$feed = new SimplePie();
+		$feed->set_feed_url($url);
+		$feed->set_cache_class('WP_Feed_Cache');
+		$feed->set_file_class('WP_SimplePie_File');
+		$feed->set_cache_duration(FeedWordPress::cache_duration());
+		$feed->init();
+		$feed->handle_content_type();
+		
+		if ($feed->error()) :
+			$ret = new WP_Error('simplepie-error', $feed->error());
+		else :
+			$ret = $feed;
+		endif;
+		return $ret;
+	} /* FeedWordPress::fetch () */
+	
 	function clear_cache () {
 		global $wpdb;
 		
-		// MagpieRSS stores its cached feeds in options table rows with
-		// name = `rss_{md5 of url}` and timestamps for cached feeds in
-		// table rows with name = `rss_{md5 of url}_ts`. The md5 is
-		// always 32 characters in length, so the total option_name is
-		// always over 32 characters.
+		// The WordPress SimplePie module stores its cached feeds as
+		// transient records in the options table. The data itself is
+		// stored in `_transient_feed_{md5 of url}` and the last-modified
+		// timestamp in `_transient_feed_mod_{md5 of url}`. Timeouts for
+		// these records are stored in `_transient_timeout_feed_{md5}`.
+		// Since the md5 is always 32 characters in length, the
+		// option_name is always over 32 characters.
 		$wpdb->query("
 		DELETE FROM {$wpdb->options}
-		WHERE LOCATE('rss_', option_name) AND LENGTH(option_name) > 32
+		WHERE option_name LIKE '_transient%_feed_%' AND LENGTH(option_name) > 32
 		");
 	} /* FeedWordPress::clear_cache () */
 
-	function cache_lifetime ($duration) {
-		if (defined('MAGPIE_CACHE_AGE')) :
-			$duration = MAGPIE_CACHE_AGE;
+	function cache_duration () {
+		if (defined('FEEDWORDPRESS_CACHE_AGE')) :
+			$duration = FEEDWORDPRESS_CACHE_AGE;
 		endif;
 		return $duration;
-	} /* FeedWordPress::cache_lifetime () */
-
-	function magpie_version () {
-		if (!defined('MAGPIE_VERSION')) : $magpie_version = $GLOBALS['wp_version'].'-default';
-		else : $magpie_version = MAGPIE_VERSION;
-		endif;
-		return $magpie_version;
 	}
+	function cache_lifetime ($duration) {
+		// Check for explicit setting of a lifetime duration
+		if (defined('FEEDWORDPRESS_CACHE_LIFETIME')) :
+			$duration = FEEDWORDPRESS_CACHE_LIFETIME;
+
+		// Fall back to the cache freshness duration
+		elseif (defined('FEEDWORDPRESS_CACHE_AGE')) :
+			$duration = FEEDWORDPRESS_CACHE_AGE;
+		endif;
+		
+		// Fall back to WordPress default
+		return $duration;
+	} /* FeedWordPress::cache_lifetime () */
 
 	# Utility functions for handling text settings
 	function negative ($f, $setting) {
@@ -1545,15 +1400,10 @@ class FeedWordPress {
 	function critical_bug ($varname, $var, $line) {
 		global $wp_version;
 
-		if (defined('MAGPIE_VERSION')) : $mv = MAGPIE_VERSION;
-		else : $mv = 'WordPress '.$wp_version.' default.';
-		endif;
-
 		echo '<p>There may be a bug in FeedWordPress. Please <a href="'.FEEDWORDPRESS_AUTHOR_CONTACT.'">contact the author</a> and paste the following information into your e-mail:</p>';
 		echo "\n<plaintext>";
 		echo "Triggered at line # ".$line."\n";
 		echo "FeedWordPress version: ".FEEDWORDPRESS_VERSION."\n";
-		echo "MagpieRSS version: {$mv}\n";
 		echo "WordPress version: {$wp_version}\n";
 		echo "PHP version: ".phpversion()."\n";
 		echo "\n";
@@ -1594,11 +1444,7 @@ function feedwordpress_pong ($args) {
 	endif;
 }
 
-# The upgraded MagpieRSS also uses this class. So if we have it loaded
-# in, don't load it again.
-if (!class_exists('Relative_URI')) {
-	require_once(dirname(__FILE__) . '/relative_uri.class.php');
-}
+require_once(dirname(__FILE__) . '/relative_uri.class.php');
 
 // take your best guess at the realname and e-mail, given a string
 define('FWP_REGEX_EMAIL_ADDY', '([^@"(<\s]+@[^"@(<\s]+\.[^"@(<\s]+)');
