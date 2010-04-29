@@ -47,6 +47,7 @@ class MagpieFromSimplePie {
 	'http://purl.org/syndication/thread/1.0' => 'thr',
 	'http://purl.org/syndication/thread/1.0/' => 'thr',
 	'http://www.w3.org/XML/1998/namespace' => 'xml',
+	'http://www.itunes.com/dtds/podcast-1.0.dtd' => 'itunes',
 	);
 
 	/**

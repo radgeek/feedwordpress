@@ -170,7 +170,6 @@ class SyndicatedPost {
 				foreach ($values as $value) :
 					if (preg_match('/\$\( ([^)]+) \)/x', $value, $ref)) :
 						$elements = $this->query($ref[1]);
-
 						foreach ($elements as $element) :
 							$postMetaOut[$key][] = str_replace(
 								$ref[0],
@@ -313,11 +312,11 @@ class SyndicatedPost {
 	 * elements or attributes
 	 */
 	 function query ($path) {
-	 	 $urlHash = array();
+	 	$urlHash = array();
 
-	 	 // Allow {url} notation for namespaces. URLs will contain : and /, so...
-	 	 preg_match_all('/{([^}]+)}/', $path, $match, PREG_SET_ORDER);
-	 	 foreach ($match as $ref) :
+	 	// Allow {url} notation for namespaces. URLs will contain : and /, so...
+	 	preg_match_all('/{([^}]+)}/', $path, $match, PREG_SET_ORDER);
+	 	foreach ($match as $ref) :
 	 	 	$urlHash[md5($ref[1])] = $ref[1];
 		endforeach;
 	
@@ -439,7 +438,7 @@ class SyndicatedPost {
 			$ns = array($this->xpath_default_namespace(), '');
 			$element = $node;
 		endif;
-		return array($ns, $attr.$element);
+		return array(array_unique($ns), $attr.$element);
 	} /* SyndicatedPost::xpath_extended_name () */
 
 	function content () {
