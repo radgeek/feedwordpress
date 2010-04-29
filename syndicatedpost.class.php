@@ -159,6 +159,7 @@ class SyndicatedPost {
 			endif;
 			
 			$postMetaIn = array_merge($default_custom_settings, $custom_settings);
+			$postMetaOut = array();
 
 			// Big ugly fuckin loop to do any element substitutions
 			// that we may need.
