@@ -336,47 +336,74 @@ class SyndicatedPost {
 				endif;
 			endif;
 		endforeach;
-	
+
 		// Start out with a get_item_tags query.
-		$node = array_shift($path);
-		list($ns, $element) = $this->xpath_extended_name($node);
+		$node = '';
+		while (strlen($node)==0 and !is_null($node)) :
+			$node = array_shift($path);
+		endwhile;
 		
-		$matches = array();
-		foreach ($ns as $namespace) :
-			$el = $this->entry->get_item_tags($namespace, $element);
-			if (!is_null($el)) :
-				$matches = array_merge($matches, $el);
-			endif;
-		endforeach;
-		$data = $matches;
-	
-		$node = array_shift($path);
-		while ($node) :
-			$matches = array();
-	
+		switch ($node) :
+		case 'feed' :
+		case 'channel' :
+			$method = "get_${node}_tags";
+			$node = array_shift($path);
+			break;
+		case 'item' :
+			$node = array_shift($path);
+		default :
+			$method = NULL;
+		endswitch;
+
+		$data = array();
+		if (!is_null($node)) :
 			list($ns, $element) = $this->xpath_extended_name($node);
-	
-			if (preg_match('/^@(.*)$/', $element, $ref)) :
-				$element = $ref[1];
-				$axis = 'attribs';
-			else :
-				$axis = 'child';
-			endif;
-			
-			foreach ($data as $datum) :
-				foreach ($ns as $namespace) :
-					if (!is_string($datum)
-					and isset($datum[$axis][$namespace][$element])) :
-						if (is_string($datum[$axis][$namespace][$element])) :
-							$matches[] = $datum[$axis][$namespace][$element];
-						else :
-							$matches = array_merge($matches, $datum[$axis][$namespace][$element]);
-						endif;
-					endif;
-				endforeach;
+		
+			$matches = array();
+			foreach ($ns as $namespace) :
+				if (!is_null($method)) :	
+					$el = $this->link->simplepie->{$method}($namespace, $element);
+				else :
+					$el = $this->entry->get_item_tags($namespace, $element);
+				endif;
+				
+				if (!is_null($el)) :
+					$matches = array_merge($matches, $el);
+				endif;
 			endforeach;
-	
 			$data = $matches;
+		
+			$node = array_shift($path);
+		endif;
+
+		while (!is_null($node)) :
+			if (strlen($node) > 0) :
+				$matches = array();
+		
+				list($ns, $element) = $this->xpath_extended_name($node);
+		
+				if (preg_match('/^@(.*)$/', $element, $ref)) :
+					$element = $ref[1];
+					$axis = 'attribs';
+				else :
+					$axis = 'child';
+				endif;
+				
+				foreach ($data as $datum) :
+					foreach ($ns as $namespace) :
+						if (!is_string($datum)
+						and isset($datum[$axis][$namespace][$element])) :
+							if (is_string($datum[$axis][$namespace][$element])) :
+								$matches[] = $datum[$axis][$namespace][$element];
+							else :
+								$matches = array_merge($matches, $datum[$axis][$namespace][$element]);
+							endif;
+						endif;
+					endforeach;
+				endforeach;
+		
+				$data = $matches;
+			endif;
 			$node = array_shift($path);
 		endwhile;
 	
