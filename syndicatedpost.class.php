@@ -20,6 +20,8 @@ class SyndicatedPost {
 	var $feed = null;
 	var $feedmeta = null;
 	
+	var $xmlns = array ();
+
 	var $post = array ();
 
 	var $_freshness = null;
@@ -48,6 +50,19 @@ class SyndicatedPost {
 		$this->link = $source;
 		$this->feed = $source->magpie;
 		$this->feedmeta = $source->settings;
+
+		# Dealing with namespaces can get so fucking fucked.
+		$this->xmlns['forward'] = $source->magpie->_XMLNS_FAMILIAR;
+		$this->xmlns['reverse'] = array();
+		foreach ($this->xmlns['forward'] as $url => $ns) :
+			if (!isset($this->xmlns['reverse'][$ns])) :
+				$this->xmlns['reverse'][$ns] = array();
+			endif;
+			$this->xmlns['reverse'][$ns][] = $url; 
+		endforeach;
+		
+		// Fucking SimplePie.
+		$this->xmlns['reverse']['rss'][] = '';
 
 		# These globals were originally an ugly kludge around a bug in
 		# apply_filters from WordPress 1.5. The bug was fixed in 1.5.1,
@@ -142,8 +157,39 @@ class SyndicatedPost {
 			if (!is_array($custom_settings)) :
 				$custom_settings = array();
 			endif;
-			$this->post['meta'] = array_merge($default_custom_settings, $custom_settings);
+			
+			$postMetaIn = array_merge($default_custom_settings, $custom_settings);
 
+			// Big ugly fuckin loop to do any element substitutions
+			// that we may need.
+			foreach ($postMetaIn as $key => $values) :
+				if (is_string($values)) : $values = array($values); endif;
+				
+				$postMetaOut[$key] = array();
+				foreach ($values as $value) :
+					if (preg_match('/\$\( ([^)]+) \)/x', $value, $ref)) :
+						$elements = $this->query($ref[1]);
+
+						foreach ($elements as $element) :
+							$postMetaOut[$key][] = str_replace(
+								$ref[0],
+								$element,
+								$value
+							);
+						endforeach;
+					else :
+						$postMetaOut[$key][] = $value;	
+					endif;
+				endforeach;
+			endforeach;
+
+			foreach ($postMetaOut as $key => $values) :
+				$this->post['meta'][$key] = array();
+				foreach ($values as $value) :
+					$this->post['meta'][$key][] = apply_filters("syndicated_post_meta_{$key}", $value, $this);
+				endforeach;
+			endforeach;
+			
 			// RSS 2.0 / Atom 1.0 enclosure support
 			$enclosures = $this->entry->get_enclosures();
 			if (is_array($enclosures)) : foreach ($enclosures as $enclosure) :
@@ -256,6 +302,145 @@ class SyndicatedPost {
 	#####################################
 	#### EXTRACT DATA FROM FEED ITEM ####
 	#####################################
+	
+	/**
+	 * SyndicatedPost::query uses an XPath-like syntax to query arbitrary
+	 * elements within the syndicated item.
+	 *
+	 * @param string $path
+	 * @returns array of string values representing contents of matching
+	 * elements or attributes
+	 */
+	 function query ($path) {
+	 	 $urlHash = array();
+
+	 	 // Allow {url} notation for namespaces. URLs will contain : and /, so...
+	 	 preg_match_all('/{([^}]+)}/', $path, $match, PREG_SET_ORDER);
+	 	 foreach ($match as $ref) :
+	 	 	$urlHash[md5($ref[1])] = $ref[1];
+		endforeach;
+	
+		foreach ($urlHash as $hash => $url) :
+			$path = str_replace('{'.$url.'}', '{#'.$hash.'}', $path); 
+		endforeach;
+
+		$path = explode('/', $path);
+		foreach ($path as $index => $node) :
+			if (preg_match('/{#([^}]+)}/', $node, $ref)) :
+				if (isset($urlHash[$ref[1]])) :
+					$path[$index] = str_replace(
+						'{#'.$ref[1].'}',
+						'{'.$urlHash[$ref[1]].'}',
+						$node
+					);
+				endif;
+			endif;
+		endforeach;
+	
+		// Start out with a get_item_tags query.
+		$node = array_shift($path);
+		list($ns, $element) = $this->xpath_extended_name($node);
+		
+		$matches = array();
+		foreach ($ns as $namespace) :
+			$el = $this->entry->get_item_tags($namespace, $element);
+			if (!is_null($el)) :
+				$matches = array_merge($matches, $el);
+			endif;
+		endforeach;
+		$data = $matches;
+	
+		$node = array_shift($path);
+		while ($node) :
+			$matches = array();
+	
+			list($ns, $element) = $this->xpath_extended_name($node);
+	
+			if (preg_match('/^@(.*)$/', $element, $ref)) :
+				$element = $ref[1];
+				$axis = 'attribs';
+			else :
+				$axis = 'child';
+			endif;
+			
+			foreach ($data as $datum) :
+				foreach ($ns as $namespace) :
+					if (!is_string($datum)
+					and isset($datum[$axis][$namespace][$element])) :
+						if (is_string($datum[$axis][$namespace][$element])) :
+							$matches[] = $datum[$axis][$namespace][$element];
+						else :
+							$matches = array_merge($matches, $datum[$axis][$namespace][$element]);
+						endif;
+					endif;
+				endforeach;
+			endforeach;
+	
+			$data = $matches;
+			$node = array_shift($path);
+		endwhile;
+	
+		$matches = array();
+		foreach ($data as $datum) :
+			if (is_string($datum)) :
+				$matches[] = $datum;
+			elseif (isset($datum['data'])) :
+				$matches[] = $datum['data'];
+			endif;
+		endforeach;
+		return $matches;
+	} /* SyndicatedPost::query() */
+
+	function xpath_default_namespace () {
+		// Get the default namespace.
+		$type = $this->link->simplepie->get_type();
+		if ($type & SIMPLEPIE_TYPE_ATOM_10) :
+			$defaultNS = SIMPLEPIE_NAMESPACE_ATOM_10;
+		elseif ($type & SIMPLEPIE_TYPE_ATOM_03) :
+			$defaultNS = SIMPLEPIE_NAMESPACE_ATOM_03;
+		elseif ($type & SIMPLEPIE_TYPE_RSS_090) :
+			$defaultNS = SIMPLEPIE_NAMESPACE_RSS_090;
+		elseif ($type & SIMPLEPIE_TYPE_RSS_10) :
+			$defaultNS = SIMPLEPIE_NAMESPACE_RSS_10;
+		elseif ($type & SIMPLEPIE_TYPE_RSS_20) :
+			$defaultNS = SIMPLEPIE_NAMESPACE_RSS_20;
+		else :
+			$defaultNS = SIMPLEPIE_NAMESPACE_RSS_20;
+		endif;
+		return $defaultNS;	
+	} /* SyndicatedPost::xpath_default_namespace() */
+	
+	function xpath_extended_name ($node) {
+		$ns = NULL; $element = NULL;
+		if ($node[0] == '@') :
+			$attr = '@'; $node = substr($node, 1);
+		else :
+			$attr = '';
+		endif;
+				
+		if (preg_match('/^{([^}]*)}(.*)$/', $node, $ref)) :
+			$ns = array($ref[1]); $element = $ref[2];
+		elseif (strpos($node, ':') !== FALSE) :
+			list($xmlns, $element) = explode(':', $node, 2);
+			if (isset($this->xmlns['reverse'][$xmlns])) :
+				$ns = $this->xmlns['reverse'][$xmlns];
+			else :
+				$ns = array($xmlns);
+			endif;
+			
+			// Fucking SimplePie. For attributes in default xmlns.
+			if ($xmlns==$this->xmlns['forward'][$defaultNS[0]]) :
+				$ns[] = '';
+			endif;
+		else :
+			// Often in SimplePie, the default namespace gets stored
+			// as an empty string rather than a URL.
+			$ns = array($this->xpath_default_namespace(), '');
+			$element = $node;
+		endif;
+		return array($ns, $attr.$element);
+	} /* SyndicatedPost::xpath_extended_name () */
+
 	function content () {
 		$content = NULL;
 		if (isset($this->item['atom_content'])) :
