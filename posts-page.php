@@ -445,6 +445,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 		?>
 		<div id="postcustomstuff">
+		<p>Custom fields can be used to add extra metadata to a post that you can <a href="http://codex.wordpress.org/Using_Custom_Fields">use in your theme</a>.</p>
 		<table id="meta-list" cellpadding="3">
 		<tr>
 		<th>Key</th>
@@ -471,9 +472,15 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		endforeach;
 		?>
 
-		  <tr>
+		  <tr style="vertical-align: top">
 		    <th scope="row"><input type="text" size="10" name="notes[<?php echo $i; ?>][key1]" value="" /></th>
-		    <td><textarea name="notes[<?php echo $i; ?>][value]" rows="2" cols="40"></textarea></td>
+		    <td><textarea name="notes[<?php echo $i; ?>][value]" rows="2" cols="40"></textarea>
+		      <p>Enter a text value, or a path to a data element from the syndicated item.<br/>
+		      For data elements, you can use an XPath-like syntax wrapped in <code>$( ... )</code>.<br/>
+		      <code>hello</code> = the text value <code><span style="background-color: #30FFA0;">hello</span></code><br/>
+		      <code>$(author/email)</code> = the contents of <code>&lt;author&gt;&lt;email&gt;<span style="background-color: #30FFA0">...</span>&lt;/email&gt;&lt;/author&gt;</code><br/>
+		      <code>$(media:content/@url)</code> = the contents of <code>&lt;media:content url="<span style="background-color: #30FFA0">...</span>"&gt;...&lt;/media:content&gt;</code></p>
+		    </td>
 		    <td><em>add new setting...</em><input type="hidden" name="notes[<?php echo $i; ?>][action]" value="update" /></td>
 		  </tr>
 		</table>
