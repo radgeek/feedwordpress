@@ -226,12 +226,16 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 		add_action('feedwordpress_update_complete', 'log_feedwordpress_update_complete', 100);
 	endif;
 	
-	if (FeedWordPress::update_requested() and FEEDWORDPRESS_DEBUG) :
-		add_action('post_syndicated_item', 'debug_out_feedwordpress_post', 100);
-		add_action('update_syndicated_item', 'debug_out_feedwordpress_update_post', 100);
-		add_action('feedwordpress_update', 'debug_out_feedwordpress_update_feeds', 100);
-		add_action('feedwordpress_check_feed', 'debug_out_feedwordpress_check_feed', 100);
-		add_action('feedwordpress_update_complete', 'debug_out_feedwordpress_update_complete', 100);
+	if (FeedWordPress::update_requested()) :
+		if (FEEDWORDPRESS_DEBUG) :
+			add_action('post_syndicated_item', 'debug_out_feedwordpress_post', 100);
+			add_action('update_syndicated_item', 'debug_out_feedwordpress_update_post', 100);
+			add_action('feedwordpress_update', 'debug_out_feedwordpress_update_feeds', 100);
+			add_action('feedwordpress_check_feed', 'debug_out_feedwordpress_check_feed', 100);
+			add_action('feedwordpress_update_complete', 'debug_out_feedwordpress_update_complete', 100);
+		endif;
+
+		add_action('feedwordpress_check_feed_complete', 'debug_out_feedwordpress_feed_error', 100, 3);
 	endif;
 
 	# Cron-less auto-update. Hooray!
@@ -361,6 +365,15 @@ function debug_out_feedwordpress_update_complete ($delta) {
 	print ("[".date('Y-m-d H:i:s')."][feedwordpress] "
 		.(is_null($delta) ? "Error: I don't syndicate that URI"
 		: implode(' and ', $mesg))."\n");
+}
+
+function debug_out_feedwordpress_feed_error ($feed, $added, $dt) {
+	if (is_wp_error($added)) :
+		$mesgs = $added->get_error_messages();
+		foreach ($mesgs as $mesg) :
+			echo "[feedwordpress] Error updating [{$feed['link/uri']}]: $mesg\n";
+		endforeach;		
+	endif;
 }
 
 ################################################################################
