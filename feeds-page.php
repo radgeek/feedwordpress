@@ -331,9 +331,9 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 	function feed_information_box ($page, $box = NULL) {
 		global $wpdb;
 		if ($page->for_feed_settings()) :
-			$info['name'] = wp_specialchars($page->link->link->link_name, 1);
-			$info['description'] = wp_specialchars($page->link->link->link_description, 'both');
-			$info['url'] = wp_specialchars($page->link->link->link_url, 1);
+			$info['name'] = esc_html($page->link->link->link_name);
+			$info['description'] = esc_html($page->link->link->link_description);
+			$info['url'] = esc_html($page->link->link->link_url);
 			$rss_url = $page->link->link->link_rss;
 
 			$hardcode['name'] = $page->link->hardcode('name');
@@ -384,9 +384,9 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 
 		<tr>
 		<th scope="row"><?php _e('Feed URL:') ?></th>
-		<td><a href="<?php echo wp_specialchars($rss_url, 'both'); ?>"><?php echo wp_specialchars($rss_url, 'both'); ?></a>
+		<td><a href="<?php echo esc_html($rss_url); ?>"><?php echo esc_html($rss_url); ?></a>
 		(<a href="<?php echo FEEDVALIDATOR_URI; ?>?url=<?php echo urlencode($rss_url); ?>"
-		title="Check feed &lt;<?php echo wp_specialchars($rss_url, 'both'); ?>&gt; for validity">validate</a>)
+		title="Check feed &lt;<?php echo esc_html($rss_url); ?>&gt; for validity">validate</a>)
 		<input type="submit" name="feedfinder" value="switch &rarr;" style="font-size:smaller" /></td>
 		</tr>
 
@@ -439,7 +439,7 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 				if ($row->cat_id == $cat_id) :
 					echo " selected='selected'";
 				endif;
-				echo ">$row->cat_id: ".wp_specialchars($row->cat_name);
+				echo ">$row->cat_id: ".esc_html($row->cat_name);
 				echo "</option>\n";
 			endforeach;
 		?></select></p>
@@ -502,9 +502,9 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			if (!preg_match("\007^((".implode(')|(', $page->special_settings)."))$\007i", $key)) :
 	?>
 				<tr style="vertical-align:top">
-				<th width="30%" scope="row"><input type="hidden" name="notes[<?php echo $i; ?>][key0]" value="<?php echo wp_specialchars($key, 'both'); ?>" />
-				<input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo $i; ?>][key1]" value="<?php echo wp_specialchars($key, 'both'); ?>" /></th>
-				<td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo wp_specialchars($value, 'both'); ?></textarea></td>
+				<th width="30%" scope="row"><input type="hidden" name="notes[<?php echo $i; ?>][key0]" value="<?php echo esc_html($key); ?>" />
+				<input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo $i; ?>][key1]" value="<?php echo esc_html($key); ?>" /></th>
+				<td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo esc_html($value); ?></textarea></td>
 				<td width="10%"><select name="notes[<?php echo $i; ?>][action]">
 				<option value="update">save changes</option>
 				<option value="delete">delete this setting</option>
@@ -532,9 +532,9 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 
 		if ($this->for_feed_settings()) : // Existing feed?
 			if (is_null($lookup)) : $lookup = $this->link->link->link_url; endif;
-			$name = wp_specialchars($this->link->link->link_name, 'both');
+			$name = esc_html($this->link->link->link_name);
 		else: // Or a new subscription to add?
-			$name = "Subscribe to <code>".wp_specialchars(feedwordpress_display_url($lookup))."</code>";
+			$name = "Subscribe to <code>".esc_html(feedwordpress_display_url($lookup))."</code>";
 		endif;
 		?>
 		<style type="text/css">
@@ -597,13 +597,13 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					// and homepage URL for the new Link.
 					if (!$this->for_feed_settings()):
 						?>
-						<input type="hidden" name="feed_title" value="<?php echo wp_specialchars($feed_title, 'both'); ?>" />
-						<input type="hidden" name="feed_link" value="<?php echo wp_specialchars($feed_link, 'both'); ?>" />
+						<input type="hidden" name="feed_title" value="<?php echo esc_html($feed_title); ?>" />
+						<input type="hidden" name="feed_link" value="<?php echo esc_html($feed_link); ?>" />
 						<?php
 					endif;
 					?>
 
-					<input type="hidden" name="feed" value="<?php echo wp_specialchars($f, 'both'); ?>" />
+					<input type="hidden" name="feed" value="<?php echo esc_html($f); ?>" />
 					<input type="hidden" name="action" value="switchfeed" />
 
 					<div>
@@ -647,9 +647,9 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					<h3>Feed Information</h3>
 					<ul>
 					<li><strong>Homepage:</strong> <a href="<?php echo $feed_link; ?>"><?php echo is_null($feed_title)?'<em>Unknown</em>':$feed_title; ?></a></li>
-					<li><strong>Feed URL:</strong> <a href="<?php echo wp_specialchars($f, 'both'); ?>"><?php echo wp_specialchars($f, 'both'); ?></a> (<a title="Check feed &lt;<?php echo wp_specialchars($f, 'both'); ?>&gt; for validity" href="http://feedvalidator.org/check.cgi?url=<?php echo urlencode($f); ?>">validate</a>)</li>
-					<li><strong>Encoding:</strong> <?php echo isset($rss->encoding)?wp_specialchars($rss->encoding, 'both'):"<em>Unknown</em>"; ?></li>
-					<li><strong>Description:</strong> <?php echo isset($rss->channel['description'])?wp_specialchars($rss->channel['description'], 'both'):"<em>Unknown</em>"; ?></li>
+					<li><strong>Feed URL:</strong> <a href="<?php echo esc_html($f); ?>"><?php echo esc_html($f); ?></a> (<a title="Check feed &lt;<?php echo esc_html($f); ?>&gt; for validity" href="http://feedvalidator.org/check.cgi?url=<?php echo urlencode($f); ?>">validate</a>)</li>
+					<li><strong>Encoding:</strong> <?php echo isset($rss->encoding)?esc_html($rss->encoding):"<em>Unknown</em>"; ?></li>
+					<li><strong>Description:</strong> <?php echo isset($rss->channel['description'])?esc_html($rss->channel['description']):"<em>Unknown</em>"; ?></li>
 					</ul>
 					<div class="submit"><input type="submit" name="Use" value="&laquo; Use this feed" /></div>
 					<div class="submit"><input type="submit" name="Cancel" value="&laquo; Cancel" /></div>

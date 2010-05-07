@@ -351,7 +351,7 @@ function fwp_authors_page () {
 ?>
 <div class="updated"><p>Syndicated author settings updated.</p></div>
 <?php elseif (!is_null($mesg)) : ?>
-<div class="updated"><p><?php print wp_specialchars($mesg, 1); ?></p></div>
+<div class="updated"><p><?php print esc_html($mesg); ?></p></div>
 <?php endif;
 
 	if (function_exists('add_meta_box')) :

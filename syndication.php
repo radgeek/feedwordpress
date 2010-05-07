@@ -409,7 +409,7 @@ function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
 	endif;
 ?>
 <td>
-<strong><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/feeds-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php echo wp_specialchars($link->link_name, 'both'); ?></a></strong>
+<strong><a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/feeds-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php echo esc_html($link->link_name); ?></a></strong>
 <div class="row-actions"><div><strong>Settings &gt;</strong>
 <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/feeds-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Feed'); ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php&amp;link_id=<?php echo $link->link_id; ?>"><?php _e('Posts'); ?></a>
@@ -418,22 +418,11 @@ function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
 <div><strong>Actions &gt;</strong>
 <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=feedfinder"><?php echo $caption; ?></a>
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>&amp;link_id=<?php echo $link->link_id; ?>&amp;action=Unsubscribe"><?php _e('Unsubscribe'); ?></a>
-| <a href="<?php echo wp_specialchars($link->link_url, 'both'); ?>"><?php _e('View')?></a></div>
+| <a href="<?php echo esc_html($link->link_url); ?>"><?php _e('View')?></a></div>
 </div>
 </td>
-<?php 
-			if (strlen($link->link_rss) > 0):
-				$uri_bits = parse_url($link->link_rss);
-				$uri_bits['host'] = preg_replace('/^www\./i', '', $uri_bits['host']);
-				$display_uri =
-					(isset($uri_bits['user'])?$uri_bits['user'].'@':'')
-					.(isset($uri_bits['host'])?$uri_bits['host']:'')
-					.(isset($uri_bits['port'])?':'.$uri_bits['port']:'')
-					.(isset($uri_bits['path'])?$uri_bits['path']:'')
-					.(isset($uri_bits['query'])?'?'.$uri_bits['query']:'');
-				if (strlen($display_uri) > 32) : $display_uri = substr($display_uri, 0, 32).'&#8230;'; endif;
-?>
-				<td><a href="<?php echo wp_specialchars($link->link_rss, 'both'); ?>"><?php echo wp_specialchars($display_uri, 'both'); ?></a></td>
+			<?php if (strlen($link->link_rss) > 0): ?>
+				<td><a href="<?php echo esc_html($link->link_rss); ?>"><?php echo esc_html(feedwordpress_display_url($link->link_rss, 32)); ?></a></td>
 			<?php else: ?>
 				<td style="background-color:#FFFFD0"><p><strong>no
 				feed assigned</strong></p></td>
@@ -508,12 +497,12 @@ function fwp_switchfeed_page () {
 			$changed = true;
 			$link_id = FeedWordPress::syndicate_link($fwp_post['feed_title'], $fwp_post['feed_link'], $fwp_post['feed']);
 			if ($link_id): ?>
-<div class="updated"><p><a href="<?php print $fwp_post['feed_link']; ?>"><?php print wp_specialchars($fwp_post['feed_title'], 'both'); ?></a>
+<div class="updated"><p><a href="<?php print $fwp_post['feed_link']; ?>"><?php print esc_html($fwp_post['feed_title']); ?></a>
 has been added as a contributing site, using the feed at
-&lt;<a href="<?php print $fwp_post['feed']; ?>"><?php print wp_specialchars($fwp_post['feed'], 'both'); ?></a>&gt;.
+&lt;<a href="<?php print $fwp_post['feed']; ?>"><?php print esc_html($fwp_post['feed']); ?></a>&gt;.
 | <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/feeds-page.php&amp;link_id=<?php print $link_id; ?>">Configure settings</a>.</p></div>
 <?php			else: ?>
-<div class="updated"><p>There was a problem adding the feed. [SQL: <?php echo wp_specialchars(mysql_error(), 'both'); ?>]</p></div>
+<div class="updated"><p>There was a problem adding the feed. [SQL: <?php echo esc_html(mysql_error()); ?>]</p></div>
 <?php			endif;
 		elseif (isset($fwp_post['save_link_id'])):
 			$existingLink = new SyndicatedLink($fwp_post['save_link_id']);
@@ -523,8 +512,8 @@ has been added as a contributing site, using the feed at
 				$home = $existingLink->homepage(/*from feed=*/ false);
 				$name = $existingLink->name(/*from feed=*/ false);
 				?> 
-<div class="updated"><p>Feed for <a href="<?php echo wp_specialchars($home, 'both'); ?>"><?php echo wp_specialchars($name, 'both'); ?></a>
-updated to &lt;<a href="<?php echo wp_specialchars($fwp_post['feed'], 'both'); ?>"><?php echo wp_specialchars($fwp_post['feed'], 'both'); ?></a>&gt;.</p></div>
+<div class="updated"><p>Feed for <a href="<?php echo esc_html($home); ?>"><?php echo esc_html($name); ?></a>
+updated to &lt;<a href="<?php echo esc_html($fwp_post['feed']); ?>"><?php echo esc_html($fwp_post['feed']); ?></a>&gt;.</p></div>
 				<?php
 			endif;
 		endif;
@@ -642,10 +631,10 @@ function fwp_multidelete_page () {
 
 <h2>Unsubscribe from Syndicated Links:</h2>
 <?php	foreach ($targets as $link) :
-		$link_url = wp_specialchars($link->link_url, 1);
-		$link_name = wp_specialchars($link->link_name, 1);
-		$link_description = wp_specialchars($link->link_description, 'both');
-		$link_rss = wp_specialchars($link->link_rss, 'both');
+		$link_url = esc_html($link->link_url);
+		$link_name = esc_html($link->link_name);
+		$link_description = esc_html($link->link_description);
+		$link_rss = esc_html($link->link_rss);
 ?>
 <fieldset>
 <legend><?php echo $link_name; ?></legend>

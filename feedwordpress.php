@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2010.0308
+Version: 2010.0507
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2010.0308
+ * @version 2010.0507
  */
 
 # This uses code derived from:
@@ -33,7 +33,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2010.0308');
+define ('FEEDWORDPRESS_VERSION', '2010.0507');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 // Defaults
@@ -410,6 +410,7 @@ function feedwordpress_display_url ($url, $before = 60, $after = 0) {
 	$url = (isset($bits['user'])?$bits['user'].'@':'')
 		.(isset($bits['host'])?$bits['host']:'')
 		.(isset($bits['path'])?$bits['path']:'')
+		.(isset($uri_bits['port'])?':'.$uri_bits['port']:'')
 		.(isset($bits['query'])?'?'.$bits['query']:'');
 
 	if (strlen($url) > ($before+$after)) :
@@ -677,7 +678,7 @@ function syndication_permalink_escaped ($permalink) {
 		// This is a foreign link; WordPress can't vouch for its not
 		// having any entities that need to be &-escaped. So we'll do
 		// it here.
-		$permalink = wp_specialchars($permalink, ENT_QUOTES);
+		$permalink = esc_html($permalink);
 	endif;
 	return $permalink;
 } /* function syndication_permalink_escaped() */ 
@@ -713,7 +714,7 @@ function syndication_comments_feed_link ($link) {
 				// This is a foreign link; WordPress can't vouch for its not
 				// having any entities that need to be &-escaped. So we'll do it
 				// here.
-				$replacement = wp_specialchars($replacement, ENT_QUOTES);
+				$replacement = esc_html($replacement);
 			endif;
 		endif;
 		
@@ -860,8 +861,8 @@ function fwp_publish_post_hook ($post_id) {
 		if (is_syndicated($post->ID)) :
 		?>
 		<p>This is a syndicated post, which originally appeared at
-		<cite><?php print wp_specialchars(get_syndication_source(NULL, $post->ID)); ?></cite>.
-		<a href="<?php print wp_specialchars(get_syndication_permalink($post->ID)); ?>">View original post</a>.</p>
+		<cite><?php print esc_html(get_syndication_source(NULL, $post->ID)); ?></cite>.
+		<a href="<?php print esc_html(get_syndication_permalink($post->ID)); ?>">View original post</a>.</p>
 		
 		<p><input type="hidden" name="feedwordpress_noncename" id="feedwordpress_noncename" value="<?php print wp_create_nonce(plugin_basename(__FILE__)); ?>" />
 		<label><input type="checkbox" name="freeze_updates" value="yes" <?php if ($frozen_post) : ?>checked="checked"<?php endif; ?> /> <strong>Manual editing.</strong>

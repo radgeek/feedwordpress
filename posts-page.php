@@ -458,9 +458,9 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		foreach ($custom_settings as $key => $value) :
 		?>
 		  <tr style="vertical-align:top">
-		    <th width="30%" scope="row"><input type="hidden" name="notes[<?php echo $i; ?>][key0]" value="<?php echo wp_specialchars($key, 'both'); ?>" />
-		    <input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo $i; ?>][key1]" value="<?php echo wp_specialchars($key, 'both'); ?>" /></th>
-		    <td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo wp_specialchars($value, 'both'); ?></textarea></td>
+		    <th width="30%" scope="row"><input type="hidden" name="notes[<?php echo $i; ?>][key0]" value="<?php echo esc_html($key); ?>" />
+		    <input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo $i; ?>][key1]" value="<?php echo esc_html($key); ?>" /></th>
+		    <td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo esc_html($value); ?></textarea></td>
 		    <td width="10%"><select name="notes[<?php echo $i; ?>][action]">
 		    <option value="update">save changes</option>
 		    <option value="delete">delete this setting</option>
@@ -521,7 +521,7 @@ function fwp_posts_page () {
 	if ($postsPage->updated) : ?>
 <div class="updated"><p>Syndicated posts settings updated.</p></div>
 <?php elseif (!is_null($mesg)) : ?>
-<div class="updated"><p><?php print wp_specialchars($mesg, 1); ?></p></div>
+<div class="updated"><p><?php print esc_html($mesg); ?></p></div>
 <?php endif; ?>
 
 <?php
