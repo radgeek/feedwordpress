@@ -78,7 +78,7 @@ class FeedTime {
 			  \s*\$
 			/x";
 
-		if ( preg_match( $pat, $date_str, $match ) ) :
+		if ( preg_match( $pat, $this->rep, $match ) ) :
 			$year = (isset($match[1]) ? $match[1] : NULL);
 			$month = (isset($match[3]) ? $match[3] : NULL);
 			$day = (isset($match[5]) ? $match[5] : NULL);
