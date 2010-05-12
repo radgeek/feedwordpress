@@ -512,12 +512,15 @@ class MagpieFromSimplePie {
 	 		endif;
 
 	 		for ($i = 1; $i <= $n; $i++) :
-	 			if (isset($via)) : // custom callback for ninja attacks
+	 			if (isset($via) and is_callable(array($this, $via))) : // custom callback for ninja attacks
 	 				$this->{$via}($source, $from, $dest, $to, $i);
 				else : // just make it the same
 					$from_id = $this->element_id($from, $i);
 					$to_id = $this->element_id($to, $i);
-					$dest[$to_id] = $source[$from_id];
+					
+					if (isset($source[$from_id])) : // Avoid PHP notice nastygrams
+						$dest[$to_id] = $source[$from_id];
+					endif;
 				endif;
 			endfor;
 		endif;
