@@ -20,12 +20,12 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 	function accept_POST ($post) {
 		global $wpdb;
-		
-		$link_id = $this->link->id;
 
 		// User mashed a Save Changes button
 		if (isset($post['save']) or isset($post['submit'])) :
 			// custom post settings
+			$custom_settings = $this->custom_post_settings();
+
 			foreach ($post['notes'] as $mn) :
 				$mn['key0'] = trim($mn['key0']);
 				$mn['key1'] = trim($mn['key1']);
@@ -72,6 +72,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 				$this->updated = true;
 
 				// Reset, reload
+				$link_id = $this->link->id;
 				unset($this->link);
 				$this->link = new SyndicatedLink($link_id);
 			else :
@@ -414,6 +415,28 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressPostsPage::comments_and_pings_box() */
 	
+	/*static*/ function custom_post_settings ($page = NULL) {
+		if (is_null($page)) :
+			$page = $this;
+		endif;
+
+		if ($page->for_feed_settings()) :
+			$custom_settings = $page->link->settings["postmeta"];
+		else :
+			$custom_settings = get_option('feedwordpress_custom_settings');
+		endif;
+
+		if ($custom_settings and !is_array($custom_settings)) :
+			$custom_settings = unserialize($custom_settings);
+		endif;
+		
+		if (!is_array($custom_settings)) :
+			$custom_settings = array();
+		endif;
+
+		return $custom_settings;
+	} /* FeedWordPressPostsPage::custom_post_settings() */
+	
 	/**
 	 * Output "Custom Post Settings" settings box
 	 *
@@ -423,26 +446,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 * @param array $box
 	 */
 	/*static*/ function custom_post_settings_box ($page, $box = NULL) {
-		if ($page->for_feed_settings()) :
-			$custom_settings = $page->link->settings["postmeta"];
-			if ($custom_settings and !is_array($custom_settings)) :
-				$custom_settings = unserialize($custom_settings);
-			endif;
-			
-			if (!is_array($custom_settings)) :
-				$custom_settings = array();
-			endif;
-		else :
-			$custom_settings = get_option('feedwordpress_custom_settings');
-			if ($custom_settings and !is_array($custom_settings)) :
-				$custom_settings = unserialize($custom_settings);
-			endif;
-	
-			if (!is_array($custom_settings)) :
-				$custom_settings = array();
-			endif;
-		endif;
-
+		$custom_settings = FeedWordPressPostsPage::custom_post_settings($page);
 		?>
 		<div id="postcustomstuff">
 		<p>Custom fields can be used to add extra metadata to a post that you can <a href="http://codex.wordpress.org/Using_Custom_Fields">use in your theme</a>.</p>
@@ -503,7 +507,7 @@ function fwp_posts_page () {
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_posts_settings', /*capability=*/ 'manage_links');
 
 	$link = FeedWordPressAdminPage::submitted_link();
-	$link_id = $link->id;
+
 	$postsPage = new FeedWordPressPostsPage($link);
 
 	$mesg = null;
