@@ -611,8 +611,8 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					<?php
 					if (!is_wp_error($rss) and count($rss->items) > 0):
 						// Prepare to display Sample Item
-						$link = new MagpieMockLink($rss, $f);
-						$post = new SyndicatedPost(array('magpie' => $rss->items[0], 'simplepie' => $rss->originals[0]), $link);
+						$link = new MagpieMockLink(array('simplepie' => $pie, 'magpie' => $rss), $f);
+						$post = new SyndicatedPost(array('simplepie' => $rss->originals[0], 'magpie' => $rss->items[0]), $link);
 						?>
 						<h3>Sample Item</h3>
 						<ul>

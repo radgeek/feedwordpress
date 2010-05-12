@@ -6,7 +6,14 @@ class MagpieMockLink extends SyndicatedLink {
 
 	function MagpieMockLink ($rss, $url) {
 		$this->link = $rss;
-		$this->magpie = $rss;
+		
+		if (is_array($rss) and isset($rss['simplepie']) and isset($rss['magpie'])) :
+			$this->simplepie = $rss['simplepie'];
+			$this->magpie = $rss['magpie'];
+		else :
+			$this->magpie = $rss;
+		endif;
+
 		$this->url = $url;
 		$this->id = -1;
 		$this->settings = array(
