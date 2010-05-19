@@ -679,6 +679,12 @@ class SyndicatedPost {
 			$author['email'] = $this->item['author_email'];
 		elseif (isset($this->feed->channel['author_email'])) :
 			$author['email'] = $this->feed->channel['author_email'];
+		else :
+		// WordPress 3 is going to pitch a fit if we attempt to register
+		// more than one user account with an empty e-mail address, so we
+		// need *something* here. Ugh.
+			$url = parse_url($this->feed->channel['link']);
+			$author['email'] = sanitize_user($author['name']).'@'.$url['host'];
 		endif;
 		
 		if (isset($this->item['author_url'])):
