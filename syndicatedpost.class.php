@@ -679,12 +679,6 @@ class SyndicatedPost {
 			$author['email'] = $this->item['author_email'];
 		elseif (isset($this->feed->channel['author_email'])) :
 			$author['email'] = $this->feed->channel['author_email'];
-		else :
-		// WordPress 3 is going to pitch a fit if we attempt to register
-		// more than one user account with an empty e-mail address, so we
-		// need *something* here. Ugh.
-			$url = parse_url($this->feed->channel['link']);
-			$author['email'] = sanitize_user($author['name']).'@'.$url['host'];
 		endif;
 		
 		if (isset($this->item['author_url'])):
@@ -1505,69 +1499,48 @@ class SyndicatedPost {
 		else :
 			// Check the database for an existing author record that might fit
 
-			#-- WordPress 2.0+
-			if (fwp_test_wp_version(FWP_SCHEMA_HAS_USERMETA)) :
-
-				// First try the user core data table.
-				$id = $wpdb->get_var(
-				"SELECT ID FROM $wpdb->users
-				WHERE
-					TRIM(LCASE(user_login)) = TRIM(LCASE('$login'))
-					OR (
-						LENGTH(TRIM(LCASE(user_email))) > 0
-						AND TRIM(LCASE(user_email)) = TRIM(LCASE('$test_email'))
-					)
-					OR TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author'))
-				");
+			// First try the user core data table.
+			$id = $wpdb->get_var(
+			"SELECT ID FROM $wpdb->users
+			WHERE
+				TRIM(LCASE(user_login)) = TRIM(LCASE('$login'))
+				OR (
+					LENGTH(TRIM(LCASE(user_email))) > 0
+					AND TRIM(LCASE(user_email)) = TRIM(LCASE('$test_email'))
+				)
+				OR TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author'))
+			");
 	
-				// If that fails, look for aliases in the user meta data table
-				if (is_null($id)) :
-					$id = $wpdb->get_var(
-					"SELECT user_id FROM $wpdb->usermeta
-					WHERE
-						(meta_key = 'description' AND TRIM(LCASE(meta_value)) = TRIM(LCASE('$author')))
-						OR (
-							meta_key = 'description'
-							AND TRIM(LCASE(meta_value))
-							RLIKE CONCAT(
-								'(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*',
-								TRIM(LCASE('$reg_author')),
-								'( |\\t|\\r)*(\\n|\$)'
-							)
-						)
-					");
-				endif;
-
-			#-- WordPress 1.5.x
-			else :
+			// If that fails, look for aliases in the user meta data table
+			if (is_null($id)) :
 				$id = $wpdb->get_var(
-				"SELECT ID from $wpdb->users
-				 WHERE
-					TRIM(LCASE(user_login)) = TRIM(LCASE('$login')) OR
-					(
-						LENGTH(TRIM(LCASE(user_email))) > 0
-						AND TRIM(LCASE(user_email)) = TRIM(LCASE('$test_email'))
-					) OR
-					TRIM(LCASE(user_firstname)) = TRIM(LCASE('$author')) OR
-					TRIM(LCASE(user_nickname)) = TRIM(LCASE('$author')) OR
-					TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author')) OR
-					TRIM(LCASE(user_description)) = TRIM(LCASE('$author')) OR
-					(
-						LOWER(user_description)
+				"SELECT user_id FROM $wpdb->usermeta
+				WHERE
+					(meta_key = 'description' AND TRIM(LCASE(meta_value)) = TRIM(LCASE('$author')))
+					OR (
+						meta_key = 'description'
+						AND TRIM(LCASE(meta_value))
 						RLIKE CONCAT(
 							'(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*',
-							LCASE('$reg_author'),
+							TRIM(LCASE('$reg_author')),
 							'( |\\t|\\r)*(\\n|\$)'
 						)
 					)
 				");
-
 			endif;
 
 			// ... if you don't find one, then do what you need to do
 			if (is_null($id)) :
 				if ($unfamiliar_author === 'create') :
 					$userdata = array();
+
+					// WordPress 3 is going to pitch a fit if we attempt to register
+					// more than one user account with an empty e-mail address, so we
+					// need *something* here. Ugh.
+					if (strlen($email) == 0 or FeedWordPress::is_null_email($email)) :
+						$url = parse_url($this->feed->channel['link']);
+						$email = $nice_author.'@'.$url['host'];
+					endif;
 
 					#-- user table data
 					$userdata['ID'] = NULL; // new user
@@ -1577,7 +1550,7 @@ class SyndicatedPost {
 					$userdata['user_email'] = $email;
 					$userdata['user_url'] = $url;
 					$userdata['display_name'] = $author;
-	
+
 					$id = wp_insert_user($userdata);
 				elseif (is_numeric($unfamiliar_author) and get_userdata((int) $unfamiliar_author)) :
 					$id = (int) $unfamiliar_author;
