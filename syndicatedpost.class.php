@@ -39,7 +39,9 @@ class SyndicatedPost {
 	function SyndicatedPost ($item, $source) {
 		global $wpdb;
 
-		if (is_array($item) and isset($item['simplepie']) and isset($item['magpie'])) :
+		if (is_array($item)
+		and isset($item['simplepie'])
+		and isset($item['magpie'])) :
 			$this->entry = $item['simplepie'];
 			$this->item = $item['magpie'];
 			$item = $item['magpie'];
@@ -79,7 +81,15 @@ class SyndicatedPost {
 		global $fwp_channel, $fwp_feedmeta;
 		$fwp_channel = $this->feed; $fwp_feedmeta = $this->feedmeta;
 
+		// Trigger global syndicated_item filter.
 		$this->item = apply_filters('syndicated_item', $this->item, $this);
+		
+		// Allow for feed-specific syndicated_item filters.
+		$this->item = apply_filters(
+			"syndicated_item_".$source->uri(),
+			$this->item,
+			$this
+		);
 
 		# Filters can halt further processing by returning NULL
 		if (is_null($this->item)) :
