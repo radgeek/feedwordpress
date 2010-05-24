@@ -113,15 +113,6 @@ class SyndicatedPost {
 				$this->post['post_excerpt'] = $excerpt;
 			endif;
 			
-			### Legacy ### Supports WP < 2.2 ########################
-			// If we use wp_insert_post(), that will generate the
-			// post_name for us automatically. Otherwise, we have to
-			// do it here.
-			if (!$this->use_api('wp_insert_post')) :
-				$this->post['post_name'] = sanitize_title($this->post['post_title']);
-			endif;
-			### End of Legacy #######################################
-
 			$this->post['epoch']['issued'] = apply_filters('syndicated_item_published', $this->published(), $this);
 			$this->post['epoch']['created'] = apply_filters('syndicated_item_created', $this->created(), $this);
 			$this->post['epoch']['modified'] = apply_filters('syndicated_item_updated', $this->updated(), $this);
