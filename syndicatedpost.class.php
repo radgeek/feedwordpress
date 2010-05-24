@@ -1097,6 +1097,13 @@ class SyndicatedPost {
 		if (!$this->filtered() and $freshness > 0) :
 			unset($this->post['named']);
 			$this->post = apply_filters('syndicated_post', $this->post, $this);
+
+			// Allow for feed-specific syndicated_post filters.
+			$this->post = apply_filters(
+				"syndicated_post_".$this->link->uri(),
+				$this->post,
+				$this
+			);
 		endif;
 		
 		if (!$this->filtered() and $freshness == 2) :

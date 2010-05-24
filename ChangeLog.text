@@ -2,17 +2,21 @@ FeedWordPress Change Log
 ========================
 Changes from 2009.0707 to Trunk
 -------------------------------
-*	WORDPRESS 2.9.2 COMPATIBILITY: This release has been tested for
-	compatibility with the newly released WordPress 2.9, 2.9.1, and 2.9.2.
-	Changes in the user interface JavaScript between WordPress 2.8.x and
-	WordPress 2.9 caused the tag box interface element to break in the
-	Syndication --> Categories & Tags settings page; this breakage has been
-	fixed.
+*	SIMPLEPIE IS NOW USED TO PARSE FEEDS; NO MORE MAGPIERSS UPGRADES NEEDED:
 
-*	PHP 5.3 COMPATIBILITY: This release eliminates a few potential conflicts
-	with new idioms and reserved words introduced in PHP 5.3, including the
-	new "namespace" construct and the deprecation of assignments by
-	reference from "new" constructors.
+*	COMPATIBILITY WITH WORDPRESS 2.9.x and 3.0: This release has been tested
+	for the existing WordPress 2.9.x branch and with the upcoming release of
+	WordPress 3.0. 	Changes in the user interface JavaScript between WordPress
+	2.8.x and WordPress 2.9 caused the tag box interface element to break in
+	the Syndication --> Categories & Tags settings page; changes in the API
+	functions for adding new authors caused fatal errors under certain
+	conditions in WordPress 3.0. These breakages have been fixed.
+
+*	DROPPED LEGACY SUPPORT FOR WORDPRESS PRIOR TO 2.8: [2.8 released 6/2009;
+	2.7 from 12/2008; 1.5 from 2/2005]
+
+
+*	FEATURE: Custom meta
 
 *	FULL-TEXT "EXCERPTS" NOW PROPERLY SHORTENED. Based on a straightforward
 	reading of the existing RSS specs, it's reasonable for the
@@ -44,6 +48,8 @@ Changes from 2009.0707 to Trunk
 	(31 December 1969 or 1 January 1970).
 	
 *	NEW INTERFACE HOOKS
+
+*	FILTERS: $fwp_channel and $fwp_feedmeta GLOBALS DEPRECATED.
 
 *	FILTER API: SyndicatedPost::isTaggedAs
 
