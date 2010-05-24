@@ -149,7 +149,11 @@ class SyndicatedLink {
 	function poll ($crash_ts = NULL) {
 		global $wpdb;
 
-		$this->simplepie = FeedWordPress::fetch($this->link->link_rss);
+		$this->simplepie = apply_filters(
+			'syndicated_feed',
+			FeedWordPress::fetch($this->link->link_rss),
+			$this
+		);
 		
 		// Filter compatibility mode
 		if (is_wp_error($this->simplepie)) :
@@ -169,7 +173,6 @@ class SyndicatedLink {
 			$processed = array();
 		endif;
 
-		
 		if (is_wp_error($this->simplepie)) :
 			$new_count = $this->simplepie;
 		elseif (is_object($this->simplepie)) :
@@ -239,12 +242,18 @@ class SyndicatedLink {
 				SET $update_set
 				WHERE link_id='$this->id'
 			");
+			do_action('update_syndicated_feed', $this->id, $this);
 
 			# -- Add new posts from feed and update any updated posts
 			$crashed = false;
 
-			if (is_array($this->magpie->originals)) :
-				foreach ($this->magpie->originals as $key => $original) :
+			$posts = apply_filters(
+				'syndicated_feed_items',
+				$this->magpie->originals,
+				$this
+			);
+			if (is_array($posts)) :
+				foreach ($posts as $key => $original) :
 					$item = $this->magpie->items[$key];
 					$post = new SyndicatedPost(array(
 						'simplepie' => $original,
@@ -266,7 +275,10 @@ class SyndicatedLink {
 					unset($post);
 				endforeach;
 			endif;
-			
+			$suffix = ($crashed ? 'crashed' : 'completed');
+			do_action('update_syndicated_feed_items', $this->id, $this);
+			do_action("update_syndicated_feed_items_${suffix}", $this->id, $this);
+
 			// Copy back any changes to feed settings made in the course of updating (e.g. new author rules)
 			$to_notes = $this->settings;
 
@@ -283,6 +295,8 @@ class SyndicatedLink {
 			SET $update_set
 			WHERE link_id='$this->id'
 			");
+			
+			do_action("update_syndicated_feed_completed", $this->id, $this);
 		endif;
 		
 		return $new_count;
