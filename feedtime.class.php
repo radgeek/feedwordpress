@@ -100,7 +100,7 @@ class FeedTime {
 			$unix = gmmktime( $hours, $minutes, $seconds, $month, $day, $year);
 
 			$offset = 0;
-			if ( $match[15] == 'Z' ) :
+			if ( isset($match[15]) and $match[15] == 'Z' ) :
 				# zulu time, aka GMT
 			else :
 				$tz_mod = $match[12];

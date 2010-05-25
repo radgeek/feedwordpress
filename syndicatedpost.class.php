@@ -440,7 +440,8 @@ class SyndicatedPost {
 	
 	function xpath_extended_name ($node) {
 		$ns = NULL; $element = NULL;
-		if ($node[0] == '@') :
+		
+		if (substr($node, 0, 1)) :
 			$attr = '@'; $node = substr($node, 1);
 		else :
 			$attr = '';
