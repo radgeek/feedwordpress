@@ -1336,6 +1336,25 @@ class FeedWordPress {
 		echo "<p>Upgrade complete. FeedWordPress is now ready to use again.</p>";
 	} /* FeedWordPress::upgrade_database() */
 
+	function has_guid_index () {
+		global $wpdb;
+		
+		$found = false; // Guilty until proven innocent.
+
+		$results = $wpdb->get_results("
+		SHOW INDEXES FROM {$wpdb->posts}
+		");
+		if ($results) :
+			foreach ($results as $index) :
+				if (isset($index->Column_name)
+				and ('guid' == $index->Column_name)) :
+					$found = true;
+				endif;
+			endforeach;
+		endif;
+		return $found;
+	} /* FeedWordPress::has_guid_index () */
+	
 	function create_guid_index () {
 		global $wpdb;
 		
@@ -1344,6 +1363,14 @@ class FeedWordPress {
 		");
 	} /* FeedWordPress::create_guid_index () */
 	
+	function remove_guid_index () {
+		global $wpdb;
+		
+		$wpdb->query("
+		DROP INDEX {$wpdb->posts}_guid_idx ON {$wpdb->posts}
+		");
+	}
+
 	/*static*/ function fetch ($url) {
 		require_once (ABSPATH . WPINC . '/class-feed.php');
 		$feed = new SimplePie();

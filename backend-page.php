@@ -77,10 +77,14 @@ class FeedWordPressBackendPage extends FeedWordPressAdminPage {
 
 		if (isset($post['create_index'])) :
 			FeedWordPress::create_guid_index();
-			$this->updated = __('Index created on database table.');
+			$this->updated = __('guid column index created on database table.');
 		endif;
-	
-		if (isset($_POST['clear_cache'])) :
+		if (isset($post['remove_index'])) :
+			FeedWordPress::remove_guid_index();
+			$this->updated = __('guid column index removed from database table.');
+		endif;
+
+		if (isset($post['clear_cache'])) :
 			FeedWordPress::clear_cache();
 			$this->updated = __("Cleared all cached feeds from WordPress database.");
 		endif;
@@ -98,9 +102,21 @@ and force FeedWordPress to make a fresh scan for updates on syndicated feeds.</p
 
 <tr style="vertical-align: top">
 <th width="33%" scope="row">Guid index:</th>
-<td width="67%"><input class="button" type="submit" name="create_index" value="Create index on guid column in posts database table" />
+<td width="67%"><?php if (!FeedWordPress::has_guid_index()) : ?>
+<input class="button" type="submit" name="create_index" value="Create index on guid column in posts database table" />
 <p>Creating this index may significantly improve performance on some large
-FeedWordPress installations.</p></td>
+FeedWordPress installations.</p>
+<?php else : ?>
+
+<p>You have already created an index on the guid column in the WordPress posts
+table. If you'd like to remove the index for any reason, you can do so here.</p>
+
+<input class="button" type="submit" name="remove_index" value="Remove index on guid column in posts database table" />
+
+<?php endif; ?>
+
+
+</td>
 </tr>
 </table>
 		<?php
