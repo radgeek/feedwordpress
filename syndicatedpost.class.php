@@ -367,7 +367,7 @@ class SyndicatedPost {
 				else :
 					$el = $this->entry->get_item_tags($namespace, $element);
 				endif;
-				
+
 				if (!is_null($el)) :
 					$matches = array_merge($matches, $el);
 				endif;
@@ -389,7 +389,7 @@ class SyndicatedPost {
 				else :
 					$axis = 'child';
 				endif;
-				
+
 				foreach ($data as $datum) :
 					foreach ($ns as $namespace) :
 						if (!is_string($datum)

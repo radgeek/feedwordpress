@@ -609,6 +609,8 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					<div>
 					<div class="feed-sample">
 					<?php
+					$link = NULL;
+					$post = NULL;
 					if (!is_wp_error($rss) and count($rss->items) > 0):
 						// Prepare to display Sample Item
 						$link = new MagpieMockLink(array('simplepie' => $pie, 'magpie' => $rss), $f);
@@ -623,8 +625,7 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 						<?php print $post->post['post_content']; ?>
 						</div>
 						<?php
-						unset($link);
-						unset($post);
+						do_action('feedwordpress_feed_finder_sample_item', $f, $post, $link);
 					else:
 						if (is_wp_error($rss)) :
 							print '<div class="feed-problem">';
@@ -651,6 +652,7 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					<li><strong>Encoding:</strong> <?php echo isset($rss->encoding)?esc_html($rss->encoding):"<em>Unknown</em>"; ?></li>
 					<li><strong>Description:</strong> <?php echo isset($rss->channel['description'])?esc_html($rss->channel['description']):"<em>Unknown</em>"; ?></li>
 					</ul>
+					<?php do_action('feedwordpress_feedfinder_form', $f, $post, $link, $this->for_feed_settings()); ?>
 					<div class="submit"><input type="submit" name="Use" value="&laquo; Use this feed" /></div>
 					<div class="submit"><input type="submit" name="Cancel" value="&laquo; Cancel" /></div>
 					</div>
@@ -658,6 +660,8 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					</fieldset>
 					</form>
 					<?php
+				unset($link);
+				unset($post);
 			endforeach;
 		else:
 			print "<p><strong>".__('Error').":</strong> ".__("FeedWordPress couldn't find any feeds at").' <code><a href="'.htmlspecialchars($lookup).'">'.htmlspecialchars($lookup).'</a></code>';

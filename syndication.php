@@ -496,7 +496,9 @@ function fwp_switchfeed_page () {
 		if (isset($fwp_post['save_link_id']) and ($fwp_post['save_link_id']=='*')) :
 			$changed = true;
 			$link_id = FeedWordPress::syndicate_link($fwp_post['feed_title'], $fwp_post['feed_link'], $fwp_post['feed']);
-			if ($link_id): ?>
+			if ($link_id):
+				$existingLink = new SyndicatedLink($link_id);
+			?>
 <div class="updated"><p><a href="<?php print $fwp_post['feed_link']; ?>"><?php print esc_html($fwp_post['feed_title']); ?></a>
 has been added as a contributing site, using the feed at
 &lt;<a href="<?php print $fwp_post['feed']; ?>"><?php print esc_html($fwp_post['feed']); ?></a>&gt;.
@@ -519,6 +521,10 @@ updated to &lt;<a href="<?php echo esc_html($fwp_post['feed']); ?>"><?php echo e
 		endif;
 	endif;
 
+	if (isset($existingLink)) :
+		do_action('feedwordpress_admin_switchfeed', $fwp_post['feed'], $existingLink); 
+	endif;
+	
 	if (!$changed) :
 		?>
 <div class="updated"><p>Nothing was changed.</p></div>
