@@ -2,8 +2,30 @@ FeedWordPress Change Log
 ========================
 Changes from 2009.0707 to Trunk
 -------------------------------
-*	SIMPLEPIE IS NOW USED TO PARSE FEEDS; NO MORE MAGPIERSS UPGRADES NEEDED:
 
+### Compatibility ###
+
+*	SIMPLEPIE IS NOW USED TO PARSE FEEDS; NO MORE MAGPIERSS UPGRADES NEEDED:
+	One of the biggest changes in this release is that FeedWordPress no
+	longer depends on MagpieRSS to parse feeds, and has switched to the much
+	more up-to-date and flexible SimplePie feed parser, which is included as
+	a standard part of WordPress versions 2.8 and later. Using SimplePie will
+	hopefully allow for better handling of feeds going further, and will
+	allow me greater flexibility in determining how exactly the feed parser
+	will operate. It also means that FeedWordPress no longer requires
+	special upgrades to the WordPress core MagpieRSS files, and should
+	eliminate quite a bit of complexity.
+
+*	MAGPIERSS COMPATIBILITY LAYER FOR EXISTING FILTERS AND ADD-ONS: However,
+	I have also implemented a compatibility layer to ensure that existing
+	filters and add-ons for FeedWordPress which depended on the MagpieRSS
+	data format *should not be broken* by the switch to SimplePie. Going
+	forward, I recommend that new filters and add-ons be written to take
+	advantage of the SimplePie object representations of items, feeds, etc.,
+	rather than the MagpieRSS arrays, but the MagpieRSS arrays will still
+	be available and older filters should continue to work as they have in
+	the past.
+	
 *	COMPATIBILITY WITH WORDPRESS 2.9.x and 3.0: This release has been tested
 	for the existing WordPress 2.9.x branch and with the upcoming release of
 	WordPress 3.0. 	Changes in the user interface JavaScript between WordPress
@@ -12,12 +34,83 @@ Changes from 2009.0707 to Trunk
 	functions for adding new authors caused fatal errors under certain
 	conditions in WordPress 3.0. These breakages have been fixed.
 
-*	DROPPED LEGACY SUPPORT FOR WORDPRESS PRIOR TO 2.8: [2.8 released 6/2009;
-	2.7 from 12/2008; 1.5 from 2/2005]
+*	DROPPED LEGACY SUPPORT FOR WORDPRESS PRIOR TO 2.8: Because SimplePie is
+	not included with versions of WordPress prior to 2.8, I have chosen to
+	drop legacy support for WordPress versions 1.5 through 2.7. If you are
+	using FeedWordPress with a version of WordPress before 2.8, you will
+	have to upgrade your installation of WordPress in order to take
+	advantage of this release.
 
+*	PHP 5.3 COMPATIBILITY: A couple of compatibility issues, which were
+	causing fatal errors amd ugly warnings for users of PHP 5.3,
+	have been eliminated.
 
-*	FEATURE: Custom meta
+### Features and Processing ###
 
+*	INTERFACE REORGANIZATION: The interface restructuring, began with
+	Version 2009.0612, has been completed. Catch-all settings pages have
+	been eliminated entirely for pages that cover each aspect of handling
+	a feed: Feeds & Updates, Posts & Links, Authors, Categories & Tags,
+	and Back End handling of the database and diagnostic information.
+	Extensive new interface hooks allow add-on modules to significantly
+	change or extend the FeedWordPress admin interface and workflow. 
+
+*	STORING INFORMATION FROM THE FEED IN CUSTOM FIELDS: Many users
+	have written to request the ability to store information from elements
+	in the feed in a custom field on each post. (So that, for example, if
+	post includes a `itunes:duration` element, you could store the contents
+	in a Custom Field called `duration` on the post (for a Theme to access
+	later). The Custom Post Settings under Syndication --> Posts & Links now
+	allow you to access any item or feed tag, using a syntax similar to
+	a much-simplified version of XPath. See Posts & Links settings for
+	details.
+
+*	UPDATE-FREEZING ON MANUALLY EDITED POSTS: FeedWordPress now allows you
+	to mark posts that have been manually edited, so that the changes you
+	make will not be overwritten by later updates from the feed. If you make
+	manual edits to a particular post, just check the "Manual editing"
+	checkbox in order to protect your changes from being overwritten. If you
+	want to block *all* posts from being updated after they are imported
+	for the first time, a new "Updated Posts" setting in Posts & Links
+	allows you to freeze all posts from a particular feed, or all syndicated
+	posts.
+
+*	SETTING: FEED-BY-FEED SETTINGS FOR WHERE PERMALINKS POINT TO: You've
+	always been able to tell FeedWordPress whether permalinks for posts
+	should point to the original source of the story or the local copy. Now
+	you can choose different policies for different feeds, instead of one
+	global policy for all feeds. (Of course, you can still use a global
+	default if you prefer.)
+
+*	SETTING: USER CONTROL OVER TIMING BASIS. You can now determine the
+	schedule on which feeds are considered ready to poll for updates --
+	by default feeds become ready for polling after about 1 hour. You can
+	now increase or decrease the time window under Syndication --> Feeds &
+	Updates. (However, please pay *CAREFUL ATTENTION* to the recommendations
+	and DO NOT set the scheduling lower than 60 minutes unless you are
+	ABSOLUTELY SURE that you have specific permission from webmaster who
+	provides that specific feed to poll more frequently than that. If you
+	set this too low (and about 60 minutes is the polite minimum if you
+	haven't been given a different figure), most webmasters will consider
+	the frequent hits on their server as rude, or even downright abusive.
+
+*	OTHER SETTINGS: New settings also include the ability to stop FWP from
+	resolving relative URLs within syndicated content, and the ability to
+	choose whether FeedWordPress should indicate the comment feed from the
+	original source, or the local comment feed, when providing the comment
+	feed URL for a syndicated post.
+
+### PARSING ###
+
+*	BETTER DATE HANDLING -- FEWER FLASHBACKS TO 1969 and 1970: FeedWordPress
+	has made some bugfixes and some improvements in the logic for parsing
+	dates. This should allow FeedWordPress to correctly parse more dates in
+	more feeds; and, in the last resort, when FeedWordPress fails to
+	correctly parse a date, to fall back to a more intelligent default. This
+	should hopefully avoid most or all error conditions that have resulted
+	in articles being erroneously dated to the dawn of the Unix epoch
+	(31 December 1969 or 1 January 1970).
+	
 *	FULL-TEXT "EXCERPTS" NOW PROPERLY SHORTENED. Based on a straightforward
 	reading of the existing RSS specs, it's reasonable for the
 	rss:description element to be read as a plaintext summary or excerpt for
@@ -38,24 +131,62 @@ Changes from 2009.0707 to Trunk
 	description element as the full text of the article, and generate a
 	shortened excerpt automatically from that text.
 
-*	BETTER DATE HANDLING -- FEWER FLASHBACKS TO 1969 and 1970: FeedWordPress
-	has made some bugfixes and some improvements in the logic for parsing
-	dates. This should allow FeedWordPress to correctly parse more dates in
-	more feeds; and, in the last resort, when FeedWordPress fails to
-	correctly parse a date, to fall back to a more intelligent default. This
-	should hopefully avoid most or all error conditions that have resulted
-	in articles being erroneously dated to the dawn of the Unix epoch
-	(31 December 1969 or 1 January 1970).
+### API ###
+
+*	TEMPLATE API: new template tags `get_local_permalink()` and
+	`the_local_permalink()` allow you to access the permalink for a post on
+	your aggregator site, even when FeedWordPress is rewriting permalinks to
+	point to the original source site.
+
+*	NEW HOOKS FOR ADD-ONS AND FILTERS: I have added a number of new hooks
+	which allow add-on modules to filter more precisely, gather information
+	at more points, and to enhance the FeedWordPress admin interface. For
+	a list of new hooks and documentation, see the FeedWordPress
+	documentation wiki at
+	<http://feedwordpress.radgeek.com/wiki/add-ons-and-filters>
+
+*	FILTER API: A number of new utility methods have been added to the
+	SyndicatedPost 	class to make it easier for filters and add-ons to 
+
+*	FILTER API: Globals $fwp_channel and $fwp_feedmeta DEPRECATED. These
+	global variables, originally introduced to allow filters access to
+	information about the source feed in `syndicated_item` filters (which
+	were passed in through global 	variables rather than as parameters
+	because of a bug in WP 1.5 which was then fixed in 1.5.1) have been
+	DEPRECATED. If you have any filters or add-ons which still depend on
+	these global variables, you should see about fixing them to access data
+	about the source feed using the SyndicatedPost::link element instead.
+	For documentation, see the FeedWordPress documentation wiki at
+	<http://feedwordpress.radgeek.com/wiki/syndicatedpost> and
+	<http://feedwordpress.radgeek.com/wiki/syndicatedlink>.
+
+*	DIAGNOSTICS: I've included a number of new diagnostic options and
+	messages, which should allow an experienced user to better investigate
+	any problems that may crop up.
+
+### Bug Fixes ###
+
+*	BUGFIX: & IN PERMALINKS NO LONGER CAUSING ATOM OR HTML VALIDATION
+	EFFORTS: Many users reported an issue in which syndicating a feed with
+	special XML characters in the URLs (& was the most common, since it is
+	used to separate HTTP GET parameters) would cause the aggregator's
+	feeds to produce invalid (malformed) XML. This update addresses the
+	issue in Atom feeds. Unfortunately, it has not been technically possible
+	to address the problem in RSS 2.0 feeds, due to limitations on
+	WordPress's internal templates for RSS feeds.
+
+*	BUGFIX: BROKEN URLS IN "POPULAR POSTS" AND SIMILAR PLUGINS SHOULD NO
+	LONGER BE BROKEN. A number of users noticed an issue where plugins and
+	templates that listed posts in locations outside of the post loop
+	(for example, "Popular Posts"-style plugins that listed posts in the
+	sidebar), often produced the wrong URL for post links. (Typically, all
+	the posts listed would get the same wrong URL.) This should now be
+	fixed. Thanks to Björn for sending in a quick fix!
+
+*	MINOR BUGFIXES: This release includes a number of fixes to minor bugs
+	and compatibility issues, including: silent failures of the "Syndicate"
+	button, "Illegal Offset Type" error messages from MagpieRSS, 
 	
-*	NEW INTERFACE HOOKS
-
-*	FILTERS: $fwp_channel and $fwp_feedmeta GLOBALS DEPRECATED.
-
-*	FILTER API: SyndicatedPost::isTaggedAs
-
-*	BUGIFX: SILENT FAILURE OF "SYNDICATE" BUTTON FIXED 
-
-*	BUGFIX: MagpieRSS "ILLEGAL OFFSET TYPE" ERROR MESSAGE FIXED
 
 Changes from 2009.0618 to 2009.0707
 -----------------------------------
