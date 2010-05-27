@@ -133,7 +133,7 @@ class FeedWordPressAdminPage {
 				position:relative;
 			}
 			.fwpfs {
-				color: #dddddd;
+				color: #dddddd !important; background-color: #333 !important;
 				background:#797979 url(<?php bloginfo('home') ?>/wp-admin/images/fav.png) repeat-x scroll left center;
 				border-color:#777777 #777777 #666666 !important; -moz-border-radius-bottomleft:12px;
 				-moz-border-radius-bottomright:12px;
