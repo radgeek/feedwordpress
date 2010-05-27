@@ -358,14 +358,14 @@ class SyndicatedPost {
 
 		$data = array();
 		if (!is_null($node)) :
-			list($ns, $element) = $this->xpath_extended_name($node);
+			list($namespaces, $element) = $this->xpath_extended_name($node);
 			
 			$matches = array();
-			foreach ($ns as $namespace) :
+			foreach ($namespaces as $ns) :
 				if (!is_null($method)) :	
-					$el = $this->link->simplepie->{$method}($namespace, $element);
+					$el = $this->link->simplepie->{$method}($ns, $element);
 				else :
-					$el = $this->entry->get_item_tags($namespace, $element);
+					$el = $this->entry->get_item_tags($ns, $element);
 				endif;
 
 				if (!is_null($el)) :
@@ -391,13 +391,13 @@ class SyndicatedPost {
 				endif;
 
 				foreach ($data as $datum) :
-					foreach ($ns as $namespace) :
+					foreach ($namespaces as $ns) :
 						if (!is_string($datum)
-						and isset($datum[$axis][$namespace][$element])) :
-							if (is_string($datum[$axis][$namespace][$element])) :
-								$matches[] = $datum[$axis][$namespace][$element];
+						and isset($datum[$axis][$ns][$element])) :
+							if (is_string($datum[$axis][$ns][$element])) :
+								$matches[] = $datum[$axis][$ns][$element];
 							else :
-								$matches = array_merge($matches, $datum[$axis][$namespace][$element]);
+								$matches = array_merge($matches, $datum[$axis][$ns][$element]);
 							endif;
 						endif;
 					endforeach;
