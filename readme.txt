@@ -3,8 +3,8 @@ Contributors: Charles Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 2.8
-Tested up to: 3.0 beta
-Stable tag: 2010.0127
+Tested up to: 3.0
+Stable tag: 2010.0528
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
