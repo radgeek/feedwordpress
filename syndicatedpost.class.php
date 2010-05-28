@@ -1110,24 +1110,36 @@ class SyndicatedPost {
 			);
 		endif;
 		
+		// Hook in early to make sure these get inserted if at all possible
+		add_action(
+			/*hook=*/ 'transition_post_status',
+			/*callback=*/ array($this, 'add_rss_meta'),
+			/*priority=*/ -10000, /* very early */
+			/*arguments=*/ 3
+		);
+
 		if (!$this->filtered() and $freshness == 2) :
 			// The item has not yet been added. So let's add it.
 			$this->insert_new();
-			$this->add_rss_meta();
 			do_action('post_syndicated_item', $this->wp_id(), $this);
 
 			$ret = 'new';
 		elseif (!$this->filtered() and $freshness == 1) :
 			$this->post['ID'] = $this->wp_id();
 			$this->update_existing();
-			$this->add_rss_meta();
 			do_action('update_syndicated_item', $this->wp_id(), $this);
 
 			$ret = 'updated';			
 		else :
 			$ret = false;
 		endif;
-		
+
+		// Remove add_rss_meta hook
+		remove_action(
+			/*hook=*/ 'transition_post_status',
+			/*callback=*/ array($this, 'add_rss_meta')
+		);
+
 		return $ret;
 	} /* function SyndicatedPost::store () */
 	
@@ -1412,7 +1424,7 @@ class SyndicatedPost {
 	// syndicated post other than author, title, timestamp, categories, and
 	// guid). It's also used to hook into WordPress's support for
 	// enclosures.
-	function add_rss_meta () {
+	function add_rss_meta ($new_status, $old_status, $post) {
 		global $wpdb;
 		if ( is_array($this->post) and isset($this->post['meta']) and is_array($this->post['meta']) ) :
 			$postId = $this->wp_id();
