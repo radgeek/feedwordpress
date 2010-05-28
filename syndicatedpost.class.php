@@ -10,7 +10,7 @@ require_once(dirname(__FILE__).'/feedtime.class.php');
  * different feed formats, which may be useful to FeedWordPress users
  * who make use of feed data in PHP add-ons and filters.
  *
- * @version 2010.0403
+ * @version 2010.0528
  */
 class SyndicatedPost {
 	var $item = null;	// MagpieRSS representation
