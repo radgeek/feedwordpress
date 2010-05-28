@@ -893,14 +893,17 @@ class SyndicatedPost {
 	function resolve_relative_uris ($content, $obj) {
 		$set = $obj->link->setting('resolve relative', 'resolve_relative', 'yes');
 		if ($set and $set != 'no') : 
-			# The MagpieRSS upgrade has some `xml:base` support baked in.
-			# However, sometimes people do silly things, like putting
-			# relative URIs out on a production RSS 2.0 feed or other feeds
-			# with no good support for `xml:base`. So we'll do our best to
-			# try to catch any remaining relative URIs and resolve them as
-			# best we can.
+			// Fallback: if we don't have anything better, use the
+			// item link from the feed
 			$obj->_base = $obj->item['link']; // Reset the base for resolving relative URIs
-	
+
+			// What we should do here, properly, is to use
+			// SimplePie_Item::get_base() -- but that method is
+			// currently broken. Or getting down and dirty in the
+			// SimplePie representation of the content tags and
+			// grabbing the xml_base member for the content element.
+			// Maybe someday...
+
 			foreach ($obj->uri_attrs as $pair) :
 				list($tag, $attr) = $pair;
 				$pattern = FeedWordPressHTML::attributeRegex($tag, $attr);
