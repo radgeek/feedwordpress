@@ -213,6 +213,30 @@ if (!function_exists('wp_die')) {
 	} /* wp_die() */
 } /* if */
 
+if (!function_exists('add_post_meta')) :
+	function add_post_meta ($postId, $key, $value, $unique) {
+		global $wpdb;
+
+		$postId = (int) $postId;
+		$key = $wpdb->escape($key);
+		$value = $wpdb->escape($value);
+		
+		$result = $wpdb->query("
+		INSERT INTO $wpdb->postmeta
+		SET
+			post_id='$postId',
+			meta_key='$key',
+			meta_value='$value'
+		");
+		if (!$result) :
+			$err = mysql_error();
+			if (FEEDWORDPRESS_DEBUG) :
+				echo "[DEBUG:".date('Y-m-d H:i:S')."][feedwordpress]: post metadata insertion FAILED for field '$key' := '$value': [$err]";
+			endif;
+		endif;
+	} /* add_post_meta() */
+} /* if */
+
 function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selected_cats = false) {
 	if (function_exists('wp_category_checklist')) :
 		wp_category_checklist($post_id, $descendents_and_self, $selected_cats);

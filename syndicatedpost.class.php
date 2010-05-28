@@ -1428,36 +1428,19 @@ class SyndicatedPost {
 
 			foreach ( $this->post['meta'] as $key => $values ) :
 
-				$key = $wpdb->escape($key);
+				$eKey = $wpdb->escape($key);
 
 				// If this is an update, clear out the old
 				// values to avoid duplication.
 				$result = $wpdb->query("
 				DELETE FROM $wpdb->postmeta
-				WHERE post_id='$postId' AND meta_key='$key'
+				WHERE post_id='$postId' AND meta_key='$eKey'
 				");
 
 				// Allow for either a single value or an array
 				if (!is_array($values)) $values = array($values);
 				foreach ( $values as $value ) :
-					if (function_exists('add_post_meta')) :
-						add_post_meta($postId, $key, $value, /*unique=*/ false);
-					else :
-						$value = $wpdb->escape($value);
-						$result = $wpdb->query("
-						INSERT INTO $wpdb->postmeta
-						SET
-							post_id='$postId',
-							meta_key='$key',
-							meta_value='$value'
-						");
-						if (!$result) :
-							$err = mysql_error();
-							if (FEEDWORDPRESS_DEBUG) :
-								echo "[DEBUG:".date('Y-m-d H:i:S')."][feedwordpress]: post metadata insertion FAILED for field '$key' := '$value': [$err]";
-							endif;
-						endif;
-					endif;
+					add_post_meta($postId, $key, $value, /*unique=*/ false);
 				endforeach;
 			endforeach;
 		endif;
