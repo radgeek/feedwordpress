@@ -213,7 +213,7 @@ if (!function_exists('wp_die')) {
 	} /* wp_die() */
 } /* if */
 
-if (!function_exists('add_post_meta')) :
+if (!function_exists('add_post_meta')) {
 	function add_post_meta ($postId, $key, $value, $unique) {
 		global $wpdb;
 
