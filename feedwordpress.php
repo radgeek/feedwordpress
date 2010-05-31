@@ -913,12 +913,14 @@ function fwp_publish_post_hook ($post_id) {
 		
 		// OK, we're golden. Now let's save some data.
 		if (isset($_POST['freeze_updates'])) :
-			update_post_meta($post_id, '_syndication_freeze_updates', $_POST['freeze_updates']); 
+			update_post_meta($post_id, '_syndication_freeze_updates', $_POST['freeze_updates']);
+			$ret = $_POST['freeze_updates'];
 		else :
 			delete_post_meta($post_id, '_syndication_freeze_updates');
+			$ret = NULL;
 		endif;
 		
-		return $_POST['freeze_updates'];
+		return $ret;
 	} // function feedwordpress_save_edit_controls
 
 ################################################################################
