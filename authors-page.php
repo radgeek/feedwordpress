@@ -164,7 +164,6 @@ function fwp_authors_page () {
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_author_settings', /*capability=*/ 'manage_links');
 
 	$link = FeedWordPressAdminPage::submitted_link();
-	$link_id = $link->id;
 	$authorsPage = new FeedWordPressAuthorsPage($link);
 
 	$mesg = null;
@@ -204,7 +203,7 @@ function fwp_authors_page () {
 			FROM {$wpdb->posts}, {$wpdb->postmeta}
 			WHERE ({$wpdb->posts}.id = {$wpdb->postmeta}.post_id)
 			AND {$wpdb->postmeta}.meta_key = 'syndication_feed_id'
-			AND {$wpdb->postmeta}.meta_value = '{$link_id}'
+			AND {$wpdb->postmeta}.meta_value = '{$link->id}'
 			AND {$wpdb->posts}.post_author = '{$fix_mismatch_from_id}'
 			");
 			
@@ -292,6 +291,7 @@ function fwp_authors_page () {
 			$updated_link = true;
 			
 			// Reset, reload
+			$link_id = $link->id;
 			unset($link);
 			$link = new SyndicatedLink($link_id);
 		else :
