@@ -17,11 +17,8 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 		$unfamiliar = array ('create' => '','default' => '','filter' => '');
 
 		if ($page->for_feed_settings()) :
-			if (is_string($link->settings["unfamiliar author"])) :
-				$key = $link->settings["unfamiliar author"];
-			else:
-				$key = 'site-default';
-			endif;
+			$key = $link->setting('unfamiliar author', NULL, 'site-default');
+			$unfamiliar['site-default'] = '';
 		else :
 			$key = FeedWordPress::on_unfamiliar('author');
 		endif;
@@ -41,9 +38,9 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 <?php if ($page->for_feed_settings()) : ?>
     <option value="site-default"<?php print $unfamiliar['site-default']; ?>>are handled according to the default for all feeds</option>
 <?php endif; ?>
-    <option value="create"<?php $unfamiliar['create']; ?>>will have a new author account created for them</option>
+    <option value="create"<?php print $unfamiliar['create']; ?>>will have a new author account created for them</option>
     <?php foreach ($page->authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>"<?php print $unfamiliar[$author_id]; ?>>will have their posts attributed to <?php echo $author_name; ?></option>
+      <option value="<?php echo $author_id; ?>"<?php print (isset($unfamiliar[$author_id]) ? $unfamiliar[$author_id] : ''); ?>>will have their posts attributed to <?php echo $author_name; ?></option>
     <?php endforeach; ?>
     <option value="newuser">will have their posts attributed to a new user...</option>
     <option value="filter"<?php print $unfamiliar['filter'] ?>>get filtered out</option>
