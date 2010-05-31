@@ -995,7 +995,7 @@ class SyndicatedPost {
 					$stored_update_hash = $stored_update_hashes[0];
 					$update_hash_changed = ($stored_update_hash != $this->update_hash());
 				else :
-					$update_hash_changed = false;
+					$update_hash_changed = true; // Can't find syndication meta-data
 				endif;
 
 				preg_match('/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+)/', $result->post_modified_gmt, $backref);
