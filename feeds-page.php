@@ -342,10 +342,14 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 		else :
 			$cat_id = FeedWordPress::link_category_id();
 
-			$results = get_categories(array(
-				"taxonomy" => 'link_category',
-				"hide_empty" => false,	
-			));
+			$params = array();
+			if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_USES_ARGS_TAXONOMY)) :
+				$params['taxonomy'] = 'link_category';
+			else :
+				$params['type'] = 'link';
+			endif;
+			$params['hide_empty'] = false;
+			$results = get_categories($params);
 				
 			// Guarantee that the Contributors category will be in the drop-down chooser, even if it is empty.
 			$found_link_category_id = false;

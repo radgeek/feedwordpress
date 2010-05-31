@@ -58,6 +58,7 @@ define ('FEEDVALIDATOR_URI', 'http://feedvalidator.org/check.cgi');
 define ('FEEDWORDPRESS_FRESHNESS_INTERVAL', 10*60); // Every ten minutes
 
 define ('FWP_SCHEMA_HAS_USERMETA', 2966);
+define ('FWP_SCHEMA_USES_ARGS_TAXONOMY', 12694); // Revision # for using $args['taxonomy'] to get link categories
 define ('FWP_SCHEMA_20', 3308); // Database schema # for WP 2.0
 define ('FWP_SCHEMA_21', 4772); // Database schema # for WP 2.1
 define ('FWP_SCHEMA_23', 5495); // Database schema # for WP 2.3
