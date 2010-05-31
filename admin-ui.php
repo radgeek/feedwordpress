@@ -134,7 +134,7 @@ class FeedWordPressAdminPage {
 			}
 			.fwpfs {
 				color: #dddddd !important; background-color: #333 !important;
-				background:#797979 url(<?php bloginfo('home') ?>/wp-admin/images/fav.png) repeat-x scroll left center;
+				background:#797979 url(<?php bloginfo('url') ?>/wp-admin/images/fav.png) repeat-x scroll left center;
 				border-color:#777777 #777777 #666666 !important; -moz-border-radius-bottomleft:12px;
 				-moz-border-radius-bottomright:12px;
 				-moz-border-radius-topleft:12px;
@@ -150,7 +150,7 @@ class FeedWordPressAdminPage {
 				-moz-border-radius-bottomright:0;
 				-moz-border-radius-topleft:12px;
 				-moz-border-radius-topright:12px;
-				background-image:url(<?php bloginfo('home') ?>/wp-admin/images/fav-top.png);
+				background-image:url(<?php bloginfo('url') ?>/wp-admin/images/fav-top.png);
 				background-position:0 top;
 				background-repeat:repeat-x;
 				border-bottom-style:solid;

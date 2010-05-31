@@ -227,9 +227,9 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<div id="cron-job-explanation" class="setting-description">
 		<p>If you want to use a cron job,
 		you can perform scheduled updates by sending regularly-scheduled
-		requests to <a href="<?php bloginfo('home'); ?>?update_feedwordpress=1"><code><?php bloginfo('home') ?>?update_feedwordpress=1</code></a>
+		requests to <a href="<?php bloginfo('home'); ?>?update_feedwordpress=1"><code><?php bloginfo('url') ?>?update_feedwordpress=1</code></a>
 		For example, inserting the following line in your crontab:</p>
-		<pre style="font-size: 0.80em"><code>*/10 * * * * /usr/bin/curl --silent <?php bloginfo('home'); ?>?update_feedwordpress=1</code></pre>
+		<pre style="font-size: 0.80em"><code>*/10 * * * * /usr/bin/curl --silent <?php bloginfo('url'); ?>?update_feedwordpress=1</code></pre>
 		<p class="setting-description">will check in every 10 minutes
 		and check for updates on any feeds that are ready to be polled for updates.</p>
 		</div>
@@ -341,24 +341,23 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			$hardcode['url'] = $page->link->hardcode('url');
 		else :
 			$cat_id = FeedWordPress::link_category_id();
-			if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_21)) :
-				$results = get_categories(array(
-					"type" => 'link',
-					"hide_empty" => false,	
-				));
-				
-				// Guarantee that the Contributors category will be in the drop-down chooser, even if it is empty.
-				$found_link_category_id = false;
-				foreach ($results as $row) :
-					// Normalize case
-					if (!isset($row->cat_id)) : $row->cat_id = $row->cat_ID; endif;
 
-					if ($row->cat_id == $cat_id) :	$found_link_category_id = true;	endif;
-				endforeach;
+			$results = get_categories(array(
+				"taxonomy" => 'link_category',
+				"hide_empty" => false,	
+			));
 				
-				if (!$found_link_category_id) :	$results[] = get_category($cat_id); endif;
-			else :
-				$results = $wpdb->get_results("SELECT cat_id, cat_name, auto_toggle FROM $wpdb->linkcategories ORDER BY cat_id");
+			// Guarantee that the Contributors category will be in the drop-down chooser, even if it is empty.
+			$found_link_category_id = false;
+			foreach ($results as $row) :
+				// Normalize case
+				if (!isset($row->cat_id)) : $row->cat_id = $row->cat_ID; endif;
+
+				if ($row->cat_id == $cat_id) :	$found_link_category_id = true;	endif;
+			endforeach;
+			
+			if (!$found_link_category_id) :
+				$results[] = get_category($cat_id);
 			endif;
 	
 			$info = array();

@@ -2,6 +2,21 @@ FeedWordPress Change Log
 ========================
 Changes from 2010.0528 to Trunk
 -------------------------------
+*	PERMALINK / CUSTOM FIELDS PROBLEM RESOLVED: An issue in 2010.0528 caused
+	some posts to be imported without the proper syndication-related
+	meta-data being attached (thus causing permalinks to point back to the
+	aggregator website rather than to the source website, among other
+	problems). This problem has been resolved (and a fix has been applied
+	which will resolve the problem for any posts affected by this problem,
+	if the original post is recent enough to still be available on the feed).
+
+*	UI: The "Back End" section has been split into two separate sections --
+	"Performance" (dealing with caching, database index, and other
+	performance tweaks), and "Diagnostics" (dealing with debug mode,
+	update logging, and a number of new diagnostic tests which I will be
+	rolling out over the next few releases).
+
+*	Several minor interface bug fixes and PHP warning notices eliminated.
 
 Changes from 2009.0707 to 2010.0528
 -----------------------------------
