@@ -470,15 +470,18 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 	} /* FeedWordPressFeedsPage::feed_information_box() */
 
 	function posts_box ($page, $box = NULL) {
-		FeedWordPressSettingsUI::instead_of_posts_box($page->link->id);
+		$id = (isset($page->link) ? $page->link->id : NULL); 
+		FeedWordPressSettingsUI::instead_of_posts_box($id);
 	} /* FeedWordPressFeedsPage::posts_box() */
 
 	function authors_box ($page, $box = NULL) {
-		FeedWordPressSettingsUI::instead_of_authors_box($page->link->id);
+		$id = (isset($page->link) ? $page->link->id : NULL); 
+		FeedWordPressSettingsUI::instead_of_authors_box($id);
 	} /* FeedWordPressFeedsPage::authors_box() */
 	
 	function categories_box ($page, $box = NULL) {
-		FeedWordPressSettingsUI::instead_of_categories_box($page->link->id);
+		$id = (isset($page->link) ? $page->link->id : NULL); 
+		FeedWordPressSettingsUI::instead_of_categories_box($id);
 	} /* FeedWordPressFeedsPage::categories_box() */
 
 	function custom_settings_box ($page, $box = NULL) {
@@ -577,17 +580,19 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					$feed_title = isset($rss->channel['title'])?$rss->channel['title']:$rss->channel['link'];
 					$feed_link = isset($rss->channel['link'])?$rss->channel['link']:'';
 					$feed_type = ($rss->feed_type ? $rss->feed_type : 'Unknown');
+					$feed_version = $rss->feed_version;
 				else :
 					// Give us some sucky defaults
 					$feed_title = feedwordpress_display_url($lookup);
 					$feed_link = $lookup;
 					$feed_type = 'Unknown';
+					$feed_version = '';
 				endif;
 				?>
 					<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication.php" method="post">
 					<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_switchfeed'); ?></div>
 					<fieldset>
-					<legend><?php echo $feed_type; ?> <?php echo $rss->feed_version; ?> feed</legend>
+					<legend><?php echo $feed_type; ?> <?php echo $feed_version; ?> feed</legend>
 
 					<?php
 					$this->stamp_link_id();
