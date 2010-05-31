@@ -203,6 +203,8 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_action('admin_menu', 'feedwordpress_add_post_edit_controls');
 	add_action('save_post', 'feedwordpress_save_post_edit_controls');
 
+	add_action('admin_footer', array('FeedWordPress', 'admin_footer'));
+	
 	# Inbound XML-RPC update methods
 	add_filter('xmlrpc_methods', 'feedwordpress_xmlrpc_hook');
 	
@@ -779,7 +781,8 @@ function fwp_add_pages () {
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Posts & Links', 'Posts & Links', $fwp_capability['manage_options'], $fwp_path.'/posts-page.php');
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Authors', 'Authors', $fwp_capability['manage_options'], $fwp_path.'/authors-page.php');
 	add_submenu_page($fwp_path.'/syndication.php', 'Categories'.FEEDWORDPRESS_AND_TAGS, 'Categories'.FEEDWORDPRESS_AND_TAGS, $fwp_capability['manage_options'], $fwp_path.'/categories-page.php');
-	add_submenu_page($fwp_path.'/syndication.php', 'FeedWordPress Back End', 'Back End', $fwp_capability['manage_options'], $fwp_path.'/backend-page.php');
+	add_submenu_page($fwp_path.'/syndication.php', 'FeedWordPress Performance', 'Performance', $fwp_capability['manage_options'], $fwp_path.'/performance-page.php');
+	add_submenu_page($fwp_path.'/syndication.php', 'FeedWordPress Diagnostics', 'Diagnostics', $fwp_capability['manage_options'], $fwp_path.'/diagnostics-page.php');
 } /* function fwp_add_pages () */
 
 function fwp_check_debug () {
@@ -1399,10 +1402,11 @@ class FeedWordPress {
 		// these records are stored in `_transient_timeout_feed_{md5}`.
 		// Since the md5 is always 32 characters in length, the
 		// option_name is always over 32 characters.
-		$wpdb->query("
+		$ret = $wpdb->query("
 		DELETE FROM {$wpdb->options}
 		WHERE option_name LIKE '_transient%_feed_%' AND LENGTH(option_name) > 32
 		");
+		return (int) ($ret / 4); // Each transient has 4 rows: the data, the modified timestamp; and the timeouts for each
 	} /* FeedWordPress::clear_cache () */
 
 	function cache_duration () {
@@ -1458,7 +1462,52 @@ class FeedWordPress {
 			FeedWordPress::critical_bug($varname, $var, $line);
 		endif;
 	}
+	
+	function val ($v, $no_newlines = false) {
+		ob_start();
+		var_dump($v);
+		$out = ob_get_contents(); ob_end_clean();
+		
+		if ($no_newlines) :
+			$out = preg_replace('/\s+/', " ", $out);
+		endif;
+		return $out;
+	} /* FeedWordPress:val () */
+
+	function diagnostic ($level, $out) {
+		global $feedwordpress_admin_footer;
+
+		$output = get_option('feedwordpress_diagnostics_output', array());
+		$show = get_option('feedwordpress_diagnostics_show', array());
+		
+		$diagnostic_nesting = count(explode(":", $level));
+
+		if (in_array($level, $show)) :
+			foreach ($output as $method) :
+				switch ($method) :
+				case 'echo' :
+					echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.esc_html($out)."</pre></div>";
+					break;
+				case 'admin_footer' :
+					$feedwordpress_admin_footer[] = $out;
+					break;
+				case 'error_log' :
+					error_log('[feedwordpress]' . $out);
+					break;
+				endswitch;
+			endforeach;
+		endif;
+	} /* FeedWordPress::diagnostic () */
+	
+	function admin_footer () {
+		global $feedwordpress_admin_footer;
+		foreach ($feedwordpress_admin_footer as $line) :
+			echo '<div><pre>'.esc_html($line).'</pre></div>';
+		endforeach;
+	} /* FeedWordPress::admin_footer () */
 } // class FeedWordPress
+
+$feedwordpress_admin_footer = array();
 
 require_once(dirname(__FILE__) . '/syndicatedpost.class.php');
 require_once(dirname(__FILE__) . '/syndicatedlink.class.php');

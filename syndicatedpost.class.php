@@ -10,7 +10,7 @@ require_once(dirname(__FILE__).'/feedtime.class.php');
  * different feed formats, which may be useful to FeedWordPress users
  * who make use of feed data in PHP add-ons and filters.
  *
- * @version 2010.0528
+ * @version 2010.0531
  */
 class SyndicatedPost {
 	var $item = null;	// MagpieRSS representation
@@ -48,6 +48,8 @@ class SyndicatedPost {
 		else :
 			$this->item = $item;
 		endif;
+
+		FeedWordPress::diagnostic('feed_items', 'Considering item ['.$this->guid().'] "'.$this->entry->get_title().'"');
 
 		$this->link = $source;
 		$this->feed = $source->magpie;
@@ -1113,18 +1115,22 @@ class SyndicatedPost {
 		// Hook in early to make sure these get inserted if at all possible
 		add_action(
 			/*hook=*/ 'transition_post_status',
-			/*callback=*/ array($this, 'add_rss_meta'),
+			/*callback=*/ array(&$this, 'add_rss_meta'),
 			/*priority=*/ -10000, /* very early */
 			/*arguments=*/ 3
 		);
 
 		if (!$this->filtered() and $freshness == 2) :
 			// The item has not yet been added. So let's add it.
+			FeedWordPress::diagnostic('syndicated_posts', 'Inserting new post "'.$this->post['post_title'].'"');
+
 			$this->insert_new();
 			do_action('post_syndicated_item', $this->wp_id(), $this);
 
 			$ret = 'new';
 		elseif (!$this->filtered() and $freshness == 1) :
+			FeedWordPress::diagnostic('syndicated_posts', 'Updating existing post # '.$this->wp_id().', "'.$this->post['post_title'].'"');
+
 			$this->post['ID'] = $this->wp_id();
 			$this->update_existing();
 			do_action('update_syndicated_item', $this->wp_id(), $this);
@@ -1137,7 +1143,9 @@ class SyndicatedPost {
 		// Remove add_rss_meta hook
 		remove_action(
 			/*hook=*/ 'transition_post_status',
-			/*callback=*/ array($this, 'add_rss_meta')
+			/*callback=*/ array(&$this, 'add_rss_meta'),
+			/*priority=*/ -10000, /* very early */
+			/*arguments=*/ 3
 		);
 
 		return $ret;
@@ -1425,9 +1433,11 @@ class SyndicatedPost {
 	// guid). It's also used to hook into WordPress's support for
 	// enclosures.
 	function add_rss_meta ($new_status, $old_status, $post) {
+		FeedWordPress::diagnostic('syndicated_posts:meta_data', 'Adding post meta-data: {'.implode(", ", array_keys($this->post['meta'])).'}');
+
 		global $wpdb;
 		if ( is_array($this->post) and isset($this->post['meta']) and is_array($this->post['meta']) ) :
-			$postId = $this->wp_id();
+			$postId = $post->ID;
 			
 			// Aggregated posts should NOT send out pingbacks.
 			// WordPress 2.1-2.2 claim you can tell them not to
@@ -1439,7 +1449,6 @@ class SyndicatedPost {
 			");
 
 			foreach ( $this->post['meta'] as $key => $values ) :
-
 				$eKey = $wpdb->escape($key);
 
 				// If this is an update, clear out the old
@@ -1452,6 +1461,7 @@ class SyndicatedPost {
 				// Allow for either a single value or an array
 				if (!is_array($values)) $values = array($values);
 				foreach ( $values as $value ) :
+				FeedWordPress::diagnostic('syndicated_posts:meta_data', "Adding post meta-datum to post [$postId]: [$key] = ".FeedWordPress::val($value, /*no newlines=*/ true));
 					add_post_meta($postId, $key, $value, /*unique=*/ false);
 				endforeach;
 			endforeach;

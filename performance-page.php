@@ -1,11 +1,11 @@
 <?php
 require_once(dirname(__FILE__) . '/admin-ui.php');
 
-class FeedWordPressBackendPage extends FeedWordPressAdminPage {
-	function FeedWordPressBackendPage () {
+class FeedWordPressPerformancePage extends FeedWordPressAdminPage {
+	function FeedWordPressPerformancePage () {
 		// Set meta-box context name
-		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressbackendpage');
-		$this->dispatch = 'feedwordpress_backend';
+		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressperformancepage');
+		$this->dispatch = 'feedwordpress_performance';
 		$this->filename = __FILE__;
 	}
 
@@ -21,38 +21,37 @@ class FeedWordPressBackendPage extends FeedWordPressAdminPage {
 		endif;
 	
 		// If this is a POST, validate source and user credentials
-		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_backend', /*capability=*/ 'manage_options');
+		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_performance', /*capability=*/ 'manage_options');
 	
 		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
 			$this->accept_POST($fwp_post);
-			do_action('feedwordpress_admin_page_backend_save', $GLOBALS['fwp_post'], $this);
+			do_action('feedwordpress_admin_page_performance_save', $GLOBALS['fwp_post'], $this);
 		endif;
 
 		////////////////////////////////////////////////
 		// Prepare settings page ///////////////////////
 		////////////////////////////////////////////////
 
-		$this->display_update_notice_if_updated('Back End');
+		$this->display_update_notice_if_updated('Performance');
 
-		$this->open_sheet('FeedWordPress Back End');
+		$this->open_sheet('FeedWordPress Performance');
 		?>
 		<div id="post-body">
 		<?php
 		$boxes_by_methods = array(
 			'performance_box' => __('Performance'),
-			'diagnostics_box' => __('Diagnostics'),
 		);
 	
 		foreach ($boxes_by_methods as $method => $title) :
 			fwp_add_meta_box(
 				/*id=*/ 'feedwordpress_'.$method,
 				/*title=*/ $title,
-				/*callback=*/ array('FeedWordPressBackendPage', $method),
+				/*callback=*/ array('FeedWordPressPerformancePage', $method),
 				/*page=*/ $this->meta_box_context(),
 				/*context=*/ $this->meta_box_context()
 			);
 		endforeach;
-		do_action('feedwordpress_admin_page_backend_meta_boxes', $this);
+		do_action('feedwordpress_admin_page_performance_meta_boxes', $this);
 		?>
 			<div class="metabox-holder">
 			<?php
@@ -63,18 +62,9 @@ class FeedWordPressBackendPage extends FeedWordPressAdminPage {
 
 		<?php
 		$this->close_sheet();
-	} /* FeedWordPressBackendPage::display () */
+	} /* FeedWordPressPerformancePage::display () */
 
 	function accept_POST ($post) {
-		if (isset($post['submit'])
-		or isset($post['save'])
-		or isset($post['create_index'])
-		or isset($post['clear_cache'])) :
-			update_option('feedwordpress_update_logging', $post['update_logging']);
-			update_option('feedwordpress_debug', $post['feedwordpress_debug']);
-			$this->updated = true; // Default update message
-		endif;
-
 		if (isset($post['create_index'])) :
 			FeedWordPress::create_guid_index();
 			$this->updated = __('guid column index created on database table.');
@@ -85,10 +75,11 @@ class FeedWordPressBackendPage extends FeedWordPressAdminPage {
 		endif;
 
 		if (isset($post['clear_cache'])) :
-			FeedWordPress::clear_cache();
-			$this->updated = __("Cleared all cached feeds from WordPress database.");
+			$N = FeedWordPress::clear_cache();
+			$feeds = (($N == 1) ? __("feed") : __("feeds"));
+			$this->updated = sprintf(__("Cleared %d cached %s from WordPress database."), $N, $feeds);
 		endif;
-	} /* FeedWordPressBackendPage::accept_POST () */
+	} /* FeedWordPressPerformancePage::accept_POST () */
 
 	/*static*/ function performance_box ($page, $box = NULL) {
 		// Hey ho, let's go...
@@ -120,39 +111,9 @@ table. If you'd like to remove the index for any reason, you can do so here.</p>
 </tr>
 </table>
 		<?php
-	} /* FeedWordPressBackendPage::performance_box () */
+	} /* FeedWordPressPerformancePage::performance_box () */
+} /* class FeedWordPressPerformancePage */
 
-	/*static*/ function diagnostics_box ($page, $box = NULL) {
-		$settings = array();
-		$settings['update_logging'] = (get_option('feedwordpress_update_logging')=='yes');
-		$settings['debug'] = (get_option('feedwordpress_debug')=='yes');
-
-		// Hey ho, let's go...
-		?>
-<table class="editform" width="100%" cellspacing="2" cellpadding="5">
-<tr style="vertical-align: top">
-<th width="33%" scope="row">Logging:</th>
-<td width="67%"><select name="update_logging" size="1">
-<option value="yes"<?php echo ($settings['update_logging'] ?' selected="selected"':''); ?>>log updates, new posts, and updated posts in PHP logs</option>
-<option value="no"<?php echo ($settings['update_logging'] ?'':' selected="selected"'); ?>>don't log updates</option>
-</select></td>
-</tr>
-<tr style="vertical-align: top">
-<th width="33%" scope="row">Debugging mode:</th>
-<td width="67%"><select name="feedwordpress_debug" size="1">
-<option value="yes"<?php echo ($settings['debug'] ? ' selected="selected"' : ''); ?>>on</option>
-<option value="no"<?php echo ($settings['debug'] ? '' : ' selected="selected"'); ?>>off</option>
-</select>
-<p>When debugging mode is <strong>ON</strong>, FeedWordPress displays many diagnostic error messages,
-warnings, and notices that are ordinarily suppressed, and turns off all caching of feeds. Use with
-caution: this setting is absolutely inappropriate for a production server.</p>
-</td>
-</tr>
-</table>
-		<?php
-	} /* FeedWordPressBackendPage::performance_box () */
-} /* class FeedWordPressBackendPage */
-
-	$backendPage = new FeedWordPressBackendPage;
-	$backendPage->display();
+	$performancePage = new FeedWordPressPerformancePage;
+	$performancePage->display();
 

@@ -149,6 +149,8 @@ class SyndicatedLink {
 	function poll ($crash_ts = NULL) {
 		global $wpdb;
 
+		FeedWordPress::diagnostic('updated_feeds', 'Polling feed <'.$this->link->link_rss.'>');
+
 		$this->simplepie = apply_filters(
 			'syndicated_feed',
 			FeedWordPress::fetch($this->link->link_rss),
