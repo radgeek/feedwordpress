@@ -123,57 +123,6 @@ class FeedWordPressAdminPage {
 
 	function display_feed_select_dropdown() {
 		$links = FeedWordPress::syndicated_links();
-		if (fwp_test_wp_version(FWP_SCHEMA_27)) :
-	?>
-			<style type="text/css">	
-			#post-search {
-				float: right;
-				margin:11px 12px 0;
-				min-width: 130px;
-				position:relative;
-			}
-			.fwpfs {
-				color: #dddddd !important; background-color: #333 !important;
-				background:#797979 url(<?php bloginfo('url') ?>/wp-admin/images/fav.png) repeat-x scroll left center;
-				border-color:#777777 #777777 #666666 !important; -moz-border-radius-bottomleft:12px;
-				-moz-border-radius-bottomright:12px;
-				-moz-border-radius-topleft:12px;
-				-moz-border-radius-topright:12px;
-				border-style:solid;
-				border-width:1px;
-				line-height:15px;
-				padding:3px 30px 4px 12px;
-			}
-			.fwpfs.slide-down {
-				border-bottom-color: #626262;
-				-moz-border-radius-bottomleft:0;
-				-moz-border-radius-bottomright:0;
-				-moz-border-radius-topleft:12px;
-				-moz-border-radius-topright:12px;
-				background-image:url(<?php bloginfo('url') ?>/wp-admin/images/fav-top.png);
-				background-position:0 top;
-				background-repeat:repeat-x;
-				border-bottom-style:solid;
-				border-bottom-width:1px;
-			}
-			</style>
-			
-			<script type="text/javascript">
-				jQuery(document).ready(function($){
-					$('.fwpfs').toggle(
-						function(){$('.fwpfs').removeClass('slideUp').addClass('slideDown'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideDown') ) { $('.fwpfs').addClass('slide-down'); }}, 10) },
-						function(){$('.fwpfs').removeClass('slideDown').addClass('slideUp'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideUp') ) { $('.fwpfs').removeClass('slide-down'); }}, 10) }
-					);
-					$('.fwpfs').bind(
-						'change',
-						function () { this.form.submit(); }
-					);
-					$('#post-search .button').css( 'display', 'none' );
-				});
-			</script>
-		<?php
-		endif;
-		
 		?>
 		<p id="post-search">
 		<select name="link_id" class="fwpfs" style="max-width: 20.0em;">
@@ -446,60 +395,66 @@ function fwp_tags_box ($tags, $object) {
 	endif;
 }
 
-function fwp_category_box ($checked, $object, $tags = array()) {
+function fwp_category_box ($checked, $object, $tags = array(), $prefix = '') {
 	global $wp_db_version;
 
-	if (fwp_test_wp_version(FWP_SCHEMA_25)) : // WordPress 2.5.x
+	if (strlen($prefix) > 0) :
+		$idPrefix = $prefix.'-';
+		$idSuffix = "-".$prefix;
+		$namePrefix = $prefix . '_';
+	else :
+		$idPrefix = 'feedwordpress-';
+		$idSuffix = "-feedwordpress";
+		$namePrefix = 'feedwordpress_';
+	endif;
+
 ?>
-<div id="category-adder" class="wp-hidden-children">
-    <h4><a id="category-add-toggle" href="#category-add" class="hide-if-no-js" tabindex="3"><?php _e( '+ Add New Category' ); ?></a></h4>
-    <p id="category-add" class="wp-hidden-child">
-	<input type="text" name="newcat" id="newcat" class="form-required form-input-tip" value="<?php _e( 'New category name' ); ?>" tabindex="3" />
-	<?php wp_dropdown_categories( array( 'hide_empty' => 0, 'name' => 'newcat_parent', 'orderby' => 'name', 'hierarchical' => 1, 'show_option_none' => __('Parent category'), 'tab_index' => 3 ) ); ?>
-	<input type="button" id="category-add-sumbit" class="add:categorychecklist:category-add button" value="<?php _e( 'Add' ); ?>" tabindex="3" />
-	<?php wp_nonce_field( 'add-category', '_ajax_nonce', false ); ?>
-	<span id="category-ajax-response"></span>
+<div id="<?php print $idPrefix; ?>taxonomy-category" class="feedwordpress-category-div">
+  <ul id="<?php print $idPrefix; ?>category-tabs" class="category-tabs">
+    <li class="ui-tabs-selected tabs"><a href="#<?php print $idPrefix; ?>categories-all" tabindex="3"><?php _e( 'All posts' ); ?></a>
+    <p style="font-size:smaller;font-style:bold;margin:0">Give <?php print $object; ?> these categories</p>
+    </li>
+  </ul>
+
+<div id="<?php print $idPrefix; ?>categories-all" class="tabs-panel">
+    <ul id="<?php print $idPrefix; ?>categorychecklist" class="list:category categorychecklist form-no-clear">
+	<?php fwp_category_checklist(NULL, false, $checked, $prefix) ?>
+    </ul>
+</div>
+
+<div id="<?php print $idPrefix; ?>category-adder" class="category-adder wp-hidden-children">
+    <h4><a id="<?php print $idPrefix; ?>category-add-toggle" class="category-add-toggle" href="#<?php print $idPrefix; ?>category-add" class="hide-if-no-js" tabindex="3"><?php _e( '+ Add New Category' ); ?></a></h4>
+    <p id="<?php print $idPrefix; ?>category-add" class="wp-hidden-child">
+	<?php
+	if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_30)) :
+		$newcat = 'newcategory'; // Well, thank God they added "egory" before WP 3.0 came out.
+	else :
+		$newcat = 'newcat';
+	endif;
+	?>
+
+    <input type="text" name="<?php print $newcat; ?>" id="<?php print $idPrefix; ?>newcategory" class="newcategory form-required form-input-tip" value="<?php _e( 'New category name' ); ?>" tabindex="3" />
+    <label class="screen-reader-text" for="<?php print $idPrefix; ?>newcategory-parent"><?php _e('Parent Category:'); ?></label>
+    <?php wp_dropdown_categories( array( 
+		'hide_empty' => 0,
+		'id' => $idPrefix.'newcategory-parent',
+		'class' => 'newcategory-parent',
+		'name' => $newcat.'_parent',
+		'orderby' => 'name',
+		'hierarchical' => 1,
+		'show_option_none' => __('Parent category'),
+		'tab_index' => 3,
+    ) ); ?>
+	<input type="button" id="<?php print $idPrefix; ?>category-add-sumbit" class="add:feedwordpress-categorychecklist:category-add add-categorychecklist-category-add button" value="<?php _e( 'Add' ); ?>" tabindex="3" />
+	<?php /* wp_nonce_field currently doesn't let us set an id different from name, but we need a non-unique name and a unique id */ ?>
+	<input type="hidden" id="_ajax_nonce<?php print esc_html($idSuffix); ?>" name="_ajax_nonce" value="<?php print wp_create_nonce('add-category'); ?>" />
+	<input type="hidden" id="_ajax_nonce-add-category<?php print esc_html($idSuffix); ?>" name="_ajax_nonce-add-category" value="<?php print wp_create_nonce('add-category'); ?>" />
+	<span id="<?php print $idPrefix; ?>category-ajax-response" class="category-ajax-response"></span>
     </p>
 </div>
 
-<ul id="category-tabs">
-	<?php /* ui-tabs-selected in WP 2.7 CSS = tabs in WP 2.8 CSS. Thank you, o brilliant wordsmiths of the WordPress 2.8 stylesheet... */ ?>
-	<li class="ui-tabs-selected tabs"><a href="#categories-all" tabindex="3"><?php _e( 'All posts' ); ?></a>
-        <p style="font-size:smaller;font-style:bold;margin:0">Give <?php print $object; ?> these categories</p>
-</li>
-</ul>
-
-<?php /* ui-tabs-panel in WP 2.7 CSS = tabs-panel in WP 2.8 CSS. Thank you, o brilliant wordsmiths of the WordPress 2.8 stylesheet... */ ?>
-<div id="categories-all" class="ui-tabs-panel tabs-panel">
-    <ul id="categorychecklist" class="list:category categorychecklist form-no-clear">
-	<?php fwp_category_checklist(NULL, false, $checked) ?>
-    </ul>
 </div>
 <?php
-	elseif (fwp_test_wp_version(FWP_SCHEMA_20)) : // WordPress 2.x
-?>
-		<div id="moremeta" style="position: relative; right: auto">
-		<div id="grabit" class="dbx-group">
-			<fieldset id="categorydiv" class="dbx-box">
-			<h3 class="dbx-handle"><?php _e('Categories') ?></h3>
-			<div class="dbx-content">
-			<p style="font-size:smaller;font-style:bold;margin:0">Place <?php print $object; ?> under...</p>
-			<p id="jaxcat"></p>
-			<div id="categorychecklist"><?php fwp_category_checklist(NULL, false, $checked); ?></div>
-			</div>
-			</fieldset>
-		</div>
-		</div>
-<?php
-	else : // WordPress 1.5
-?>
-		<fieldset style="width: 60%;">
-		<legend><?php _e('Categories') ?></legend>
-		<p style="font-size:smaller;font-style:bold;margin:0">Place <?php print $object; ?> under...</p>
-		<div style="height: 10em; overflow: scroll;"><?php fwp_category_checklist(NULL, false, $checked); ?></div>
-		</fieldset>
-<?php
-	endif;
 }
 
 function update_feeds_mention ($feed) {

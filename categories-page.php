@@ -109,7 +109,6 @@ function fwp_categories_page () {
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_categories_settings', /*capability=*/ 'manage_links');
 
 	$link = FeedWordPressAdminPage::submitted_link();
-	$link_id = $link->id;
 
 	$catsPage = new FeedWordPressCategoriesPage($link);
 
@@ -169,6 +168,7 @@ function fwp_categories_page () {
 			$catsPage->updated = true;
 			
 			// Reset, reload
+			$link_id = $link->id;
 			unset($link);
 			$link = new SyndicatedLink($link_id);
 		else :

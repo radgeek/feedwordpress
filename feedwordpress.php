@@ -67,6 +67,7 @@ define ('FWP_SCHEMA_26', 8201); // Database schema # for WP 2.6
 define ('FWP_SCHEMA_27', 9872); // Database schema # for WP 2.7
 define ('FWP_SCHEMA_28', 11548); // Database schema # for WP 2.8
 define ('FWP_SCHEMA_29', 12329); // Database schema # for WP 2.9
+define ('FWP_SCHEMA_30', 12694); // Database schema # for WP 3.0
 
 if (FEEDWORDPRESS_DEBUG) :
 	// Help us to pick out errors, if any.
@@ -130,29 +131,28 @@ else : // Something went wrong. Let's just guess.
 endif;
 
 function feedwordpress_admin_scripts () {
+	global $fwp_path;
+
 	wp_enqueue_script('post'); // for magic tag and category boxes
+	if (!FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) : // < 2.9
+		wp_enqueue_script('thickbox'); // for fold-up boxes
+	endif;
 	wp_enqueue_script('admin-forms'); // for checkbox selection
+
+	wp_register_script('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.js');
+	wp_enqueue_script('feedwordpress-elements');
 }
 
 // If this is a FeedWordPress admin page, queue up scripts for AJAX functions that FWP uses
 // If it is a display page or a non-FeedWordPress admin page, don't.
 if (is_admin() and isset($_REQUEST['page']) and preg_match("|^{$fwp_path}/|", $_REQUEST['page'])) :
-	if (function_exists('wp_enqueue_script')) :
-		if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) :
-			add_action('admin_print_scripts', 'feedwordpress_admin_scripts');
-		elseif (FeedWordPressCompatibility::test_version(FWP_SCHEMA_25)) :
-			wp_enqueue_script('post'); // for magic tag and category boxes
-			wp_enqueue_script('thickbox'); // for fold-up boxes
-			wp_enqueue_script('admin-forms'); // for checkbox selection
-		else :
-			wp_enqueue_script( 'ajaxcat' ); // Provides the handy-dandy new category text box
-		endif;
-	endif;
-	if (function_exists('wp_enqueue_style')) :
-		if (fwp_test_wp_version(FWP_SCHEMA_25)) :
-			wp_enqueue_style('dashboard');
-		endif;
-	endif;
+	add_action('admin_print_scripts', 'feedwordpress_admin_scripts');
+
+	wp_register_style('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.css');
+
+	wp_enqueue_style('dashboard');
+	wp_enqueue_style('feedwordpress-elements');
+
 	if (function_exists('wp_admin_css')) :
 		if (fwp_test_wp_version(FWP_SCHEMA_25)) :
 			wp_admin_css('css/dashboard');

@@ -237,9 +237,37 @@ if (!function_exists('add_post_meta')) {
 	} /* add_post_meta() */
 } /* if */
 
-function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selected_cats = false) {
+if (!function_exists('disabled')) {
+	/**
+	 * Outputs the html disabled attribute.
+	 *
+	 * Compares the first two arguments and if identical marks as disabled
+	 *
+	 * @since 3.0.0
+	 *
+	 * @param mixed $disabled One of the values to compare
+	 * @param mixed $current (true) The other value to compare if not just true
+	 * @param bool $echo Whether to echo or just return the string
+	 * @return string html attribute or empty string
+	 */
+	function disabled( $disabled, $current = true, $echo = true ) {
+		return __checked_selected_helper( $disabled, $current, $echo, 'disabled' );
+	}
+} /* if */
+
+require_once(dirname(__FILE__).'/feedwordpress-walker-category-checklist.class.php');
+
+function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selected_cats = false, $prefix = '') {
 	if (function_exists('wp_category_checklist')) :
-		wp_category_checklist($post_id, $descendents_and_self, $selected_cats);
+		$walker = new FeedWordPress_Walker_Category_Checklist;
+		$walker->set_prefix($prefix);
+		wp_category_checklist(
+			/*post_id=*/ $post_id,
+			/*descendents_and_self=*/ $descendents_and_self,
+			/*selected_cats=*/ $selected_cats,
+			/*popular_cats=*/ false,
+			/*walker=*/ $walker
+		);
 	else :
 		// selected_cats is an array of integer cat_IDs / term_ids for
 		// the categories that should be checked
