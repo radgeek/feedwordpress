@@ -93,6 +93,21 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
+= 2010.0601 =
+
+*	CATEGORY BOX INTERFACE ELEMENT FIXED FOR WP 3.0: Stylesheet changes
+	between WordPress 2.9.x and the WordPress 3.0 RC caused the Categories
+	box under **Syndication --> Categories & Tags** to malfunction. This
+	has been fixed.
+
+*	LINK CATEGORY SELECTION BOX IN SYNDICATION ==> FEEDS FIXED FOR WP 2.8
+	AND 2.9: A WP 3.0 compatibility change introduced in 2010.0531
+	inadvertently broke the Syndicated Link Category selector under
+	Syndication --> Feeds & Updates in WP 2.8 and WP 2.9, causing the post
+	categories to be displayed in the selector rather than the link
+	categories. This should now be fixed so that the selector will work
+	correctly under both the current versions of WordPress and the 3.0 RC.
+
 = 2010.0531 =
 
 *	PERMALINK / CUSTOM FIELDS PROBLEM RESOLVED: An issue in 2010.0528 caused
