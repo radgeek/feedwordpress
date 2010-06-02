@@ -131,10 +131,10 @@ class SyndicatedPost {
 
 			// Dealing with timestamps in WordPress is so fucking fucked.
 			$offset = (int) get_option('gmt_offset') * 60 * 60;
-			$this->post['post_date'] = gmdate('Y-m-d H:i:s', $this->published(/*fallback=*/ true, /*default=*/ -1) + $offset);
-			$this->post['post_modified'] = gmdate('Y-m-d H:i:s', $this->updated(/*fallback=*/ true, /*default=*/ -1) + $offset);
-			$this->post['post_date_gmt'] = gmdate('Y-m-d H:i:s', $this->published(/*fallback=*/ true, /*default=*/ -1));
-			$this->post['post_modified_gmt'] = gmdate('Y-m-d H:i:s', $this->updated(/*fallback=*/ true, /*default=*/ -1));
+			$this->post['post_date'] = gmdate('Y-m-d H:i:s', apply_filters('syndicated_item_published', $this->published(/*fallback=*/ true, /*default=*/ -1), $this) + $offset);
+			$this->post['post_modified'] = gmdate('Y-m-d H:i:s', apply_filters('syndicated_item_updated', $this->updated(/*fallback=*/ true, /*default=*/ -1), $this) + $offset);
+			$this->post['post_date_gmt'] = gmdate('Y-m-d H:i:s', apply_filters('syndicated_item_published', $this->published(/*fallback=*/ true, /*default=*/ -1), $this));
+			$this->post['post_modified_gmt'] = gmdate('Y-m-d H:i:s', apply_filters('syndicated_item_updated', $this->updated(/*fallback=*/ true, /*default=*/ -1), $this));
 
 			// Use feed-level preferences or the global default.
 			$this->post['post_status'] = $this->link->syndicated_status('post', 'publish');
