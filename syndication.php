@@ -5,15 +5,9 @@ require_once(dirname(__FILE__) . '/admin-ui.php');
 ## ADMIN MENU ADD-ONS: implement Dashboard management pages ####################
 ################################################################################
 
-if (fwp_test_wp_version(0, FWP_SCHEMA_25)) :
-	define('FWP_UPDATE_CHECKED', 'Update Checked Links');
-	define('FWP_UNSUB_CHECKED', 'Unsubscribe from Checked Links');
-	define('FWP_SYNDICATE_NEW', 'Syndicate ...');
-else :
-	define('FWP_UPDATE_CHECKED', 'Update Checked');
-	define('FWP_UNSUB_CHECKED', 'Unsubscribe');
-	define('FWP_SYNDICATE_NEW', 'Syndicate ...');
-endif;
+define('FWP_UPDATE_CHECKED', 'Update Checked');
+define('FWP_UNSUB_CHECKED', 'Unsubscribe');
+define('FWP_SYNDICATE_NEW', 'Syndicate ...');
 
 class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	function FeedWordPressSyndicationPage () {
