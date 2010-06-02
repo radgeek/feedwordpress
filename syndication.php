@@ -337,11 +337,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 
 	<div class="submit"><input type="hidden" name="update_uri" value="*" /><input class="button-primary" type="submit" name="update" value="Update" /></div>
 	
-	<?php if (fwp_test_wp_version(FWP_SCHEMA_27)) : ?>
-		<br style="clear: both" />
-	<?php /* elseif (fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) :
-		</div> <!-- id="rightnow" -->
-	<?php */ endif; ?>
+	<br style="clear: both" />
 	</form>
 <?php
 } /* function fwp_syndication_manage_page_update_box () */
