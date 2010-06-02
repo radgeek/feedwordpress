@@ -4,7 +4,7 @@ Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 2.8
 Tested up to: 3.0
-Stable tag: 2010.0531
+Stable tag: 2010.0602
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -93,7 +93,7 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
-= 2010.0601 =
+= 2010.0602 =
 
 *	CATEGORY BOX INTERFACE ELEMENT FIXED FOR WP 3.0: Stylesheet changes
 	between WordPress 2.9.x and the WordPress 3.0 RC caused the Categories
@@ -117,6 +117,27 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 	Content-type header. This version includes an extension to SimplePie's
 	content-type sniffer that offers more permissive handling of the HTTP
 	headers.
+
+*	MORE FULL-TEXT "EXCERPTS" NOW PROPERLY SHORTENED. Version 2010.0528
+	introduced code to control for cases in which elements intended for
+	item summaries are (ill-advisedly) used to carry the full text of posts;
+	past versions of FeedWordPress would simply include the full text of the
+	post in the excerpt field, but newer versions now attempt to detect
+	this condition when it arises and to head it off, by blanking out the
+	excerpt field and filling it with an automatically generated short,
+	plain text excerpt from the full content. This release broadens the
+	test conditions that indicate when an excerpt field is treated as
+	identical to the full text of the post, and should therefore improve
+	the handling of some feeds (such as Google Reader feeds) where the full
+	text of each post was still appearing in the excerpt field.
+
+*	FILTERS: `syndicated_item_published` AND `syndicated_item_updated`
+	FILTERS NOW ALLOW FILTER AUTHORS TO CHANGE POST TIMESTAMPS. You can now
+	use the `syndicated_item_published` and `syndicated_item_updated` filter
+	hooks to write filters or add-ons which directly change the post date
+	and most-recently-updated timestamps on incoming syndicated posts. Props
+	to niska for pointing out where the filters needed to be applied in
+	order to change WordPress's internal timestamps for incoming posts. 
 	
 = 2010.0531 =
 
