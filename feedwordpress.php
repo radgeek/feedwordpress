@@ -109,8 +109,10 @@ if (isset($wp_db_version)) :
 	endif;
 endif;
 
+require_once (ABSPATH . WPINC . '/class-feed.php');
 require_once(dirname(__FILE__) . '/compatability.php'); // LEGACY API: Replicate or mock up functions for legacy support purposes
 require_once(dirname(__FILE__) . '/feedwordpresshtml.class.php');
+require_once(dirname(__FILE__) . '/feedwordpress-content-type-sniffer.class.php');
 
 // Magic quotes are just about the stupidest thing ever.
 if (is_array($_POST)) :
@@ -1378,11 +1380,11 @@ class FeedWordPress {
 	}
 
 	/*static*/ function fetch ($url) {
-		require_once (ABSPATH . WPINC . '/class-feed.php');
 		$feed = new SimplePie();
 		$feed->set_feed_url($url);
 		$feed->set_cache_class('WP_Feed_Cache');
 		$feed->set_file_class('WP_SimplePie_File');
+		$feed->set_content_type_sniffer_class('FeedWordPress_Content_Type_Sniffer');
 		$feed->set_cache_duration(FeedWordPress::cache_duration());
 		$feed->init();
 		$feed->handle_content_type();

@@ -108,6 +108,16 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 	categories. This should now be fixed so that the selector will work
 	correctly under both the current versions of WordPress and the 3.0 RC.
 
+*	MORE PERMISSIVE HANDLING OF FEEDS WITH BAD CONTENT-TYPE HEADERS: One of
+	the small advantages that MagpieRSS had over SimplePie is that it was
+	more tolerant about parsing well-formed feeds that the remote web server
+	happened to deliver with weird or incorrect HTTP Content-type headers.
+	In feeds affected by this problem, the new SimplePie parser would simply
+	fail to find a feed, due to its being led astray by the contents of the
+	Content-type header. This version includes an extension to SimplePie's
+	content-type sniffer that offers more permissive handling of the HTTP
+	headers.
+	
 = 2010.0531 =
 
 *	PERMALINK / CUSTOM FIELDS PROBLEM RESOLVED: An issue in 2010.0528 caused
