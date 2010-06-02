@@ -445,7 +445,7 @@ function fwp_category_box ($checked, $object, $tags = array(), $prefix = '') {
 		'show_option_none' => __('Parent category'),
 		'tab_index' => 3,
     ) ); ?>
-	<input type="button" id="<?php print $idPrefix; ?>category-add-sumbit" class="add:feedwordpress-categorychecklist:category-add add-categorychecklist-category-add button" value="<?php _e( 'Add' ); ?>" tabindex="3" />
+	<input type="button" id="<?php print $idPrefix; ?>category-add-sumbit" class="add:<?php print $idPrefix; ?>categorychecklist:category-add add-categorychecklist-category-add button" value="<?php _e( 'Add' ); ?>" tabindex="3" />
 	<?php /* wp_nonce_field currently doesn't let us set an id different from name, but we need a non-unique name and a unique id */ ?>
 	<input type="hidden" id="_ajax_nonce<?php print esc_html($idSuffix); ?>" name="_ajax_nonce" value="<?php print wp_create_nonce('add-category'); ?>" />
 	<input type="hidden" id="_ajax_nonce-add-category<?php print esc_html($idSuffix); ?>" name="_ajax_nonce-add-category" value="<?php print wp_create_nonce('add-category'); ?>" />
