@@ -121,7 +121,7 @@ class SyndicatedPost {
 			);
 			
 			$excerpt = apply_filters('syndicated_item_excerpt', $this->excerpt(), $this);
-			if (!is_null($excerpt)):
+			if (!empty($excerpt)):
 				$this->post['post_excerpt'] = $excerpt;
 			endif;
 			
@@ -497,7 +497,12 @@ class SyndicatedPost {
 		# If that's what happened, we don't want the full
 		# content for the excerpt.
 		$content = $this->content();
-		if ( is_null($excerpt) or $excerpt == $content ) :
+		
+		// Ignore whitespace, case, and tag cruft.
+		$theExcerpt = preg_replace('/\s+/', '', strtolower(strip_tags($excerpt)));
+		$theContent = preg_replace('/\s+/', '', strtolower(strip_Tags($content)));
+
+		if ( empty($excerpt) or $theExcerpt == $theContent ) :
 			# If content is available, generate an excerpt.
 			if ( strlen(trim($content)) > 0 ) :
 				$excerpt = strip_tags($content);
