@@ -65,3 +65,31 @@
 	border-bottom-width:1px;
 }
 
+/* Switchfeed interface elements */
+
+form.fieldset {
+	clear: both;
+}
+.feed-sample { 
+	float: right;
+	background-color: #D0D0D0;
+	color: black;
+	width: 45%;
+	font-size: 70%;
+	border-left: 1px dotted #A0A0A0;
+	margin-left: 1.0em;
+	padding: 3px;
+	max-height: 200px;
+	overflow: auto;
+}
+.feed-sample p, .feed-sample h3 {
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+}
+.feed-sample .feed-problem {
+	background-color: #ffd0d0;
+	border-bottom: 1px dotted black;
+	padding-bottom: 0.5em;
+	margin-bottom: 0.5em;
+}
+

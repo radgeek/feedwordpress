@@ -543,31 +543,6 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			$name = "Subscribe to <code>".esc_html(feedwordpress_display_url($lookup))."</code>";
 		endif;
 		?>
-		<style type="text/css">
-		form.fieldset {
-			clear: both;
-		}
-		.feed-sample { 
-			float: right;
-			background-color: #D0D0D0;
-			color: black;
-			width: 45%;
-			font-size: 70%;
-			border-left: 1px dotted #A0A0A0;
-			margin-left: 1.0em;
-		}
-		.feed-sample p, .feed-sample h3 {
-			padding-left: 0.5em;
-			padding-right: 0.5em;
-		}
-		.feed-sample .feed-problem {
-			background-color: #ffd0d0;
-			border-bottom: 1px dotted black;
-			padding-bottom: 0.5em;
-			margin-bottom: 0.5em;
-		}
-		</style>
-
 		<div class="wrap">
 		<h2>Feed Finder: <?php echo $name; ?></h2>
 
