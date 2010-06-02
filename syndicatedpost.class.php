@@ -689,7 +689,7 @@ class SyndicatedPost {
 			$author['uri'] = $this->item['author_url'];
 		elseif (isset($this->feed->channel['author_url'])) :
 			$author['uri'] = $this->item['author_url'];
-		else:
+		elseif (isset($this->feed->channel['link'])) :
 			$author['uri'] = $this->feed->channel['link'];
 		endif;
 
@@ -1555,7 +1555,11 @@ class SyndicatedPost {
 					// more than one user account with an empty e-mail address, so we
 					// need *something* here. Ugh.
 					if (strlen($email) == 0 or FeedWordPress::is_null_email($email)) :
-						$url = parse_url($this->feed->channel['link']);
+						$hostUrl = $this->link->homepage();
+						if (is_null($hostUrl) or (strlen($hostUrl) < 0)) :
+							$hostUrl = $this->link->uri();
+						endif;
+						$url = parse_url($hostUrl);
 						$email = $nice_author.'@'.$url['host'];
 					endif;
 
