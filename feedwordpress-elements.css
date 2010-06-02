@@ -1,13 +1,39 @@
+/* Category widget */
 .feedwordpress-category-div .tabs-panel {
 	height: 200px;
 	overflow: auto;
 	border: 1px solid #DFDFDF;
 	margin-left: 126px;
 }
+.feedwordpress-category-div ul.category-tabs {
+	float: left;
+	margin: 0 -120px 0 5px;
+	padding: 0;
+	text-align: right;
+	width: 120px;
+}
+.feedwordpress-category-div ul.category-tabs li.tabs {
+	-moz-border-radius: 3px 0 0 3px;
+	-webkit-border-radius: 3px 0 0 3px;
+	border-radius: 3px 0 0 3px;
+	border-color: #DFDFDF;
+	border-style: solid none solid solid;
+	border-width: 1px 0 1px 1px;
+	margin-right: -1px;
+	padding: 8px;
+	background-color: #F1F1F1;
+}
+
 .feedwordpress-category-div ul.categorychecklist ul {
 	margin-left: 18px;
 }
+.feedwordpress-category-div ul.category-tabs a {
+	color: #333333;
+	font-weight: bold;
+	text-decoration: none;
+}
 
+/* Common settings page elements */
 #post-search {
 	float: right;
 	margin:11px 12px 0;
