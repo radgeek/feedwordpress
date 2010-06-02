@@ -50,6 +50,8 @@ class MagpieFromSimplePie {
 	'http://www.itunes.com/dtds/podcast-1.0.dtd' => 'itunes',
 	'http://a9.com/-/spec/opensearchrss/1.0/' => 'openSearch',
 	'http://purl.org/rss/1.0/modules/slash/' => 'slash',
+	'http://www.google.com/schemas/reader/atom/' => 'gr',
+	'urn:atom-extension:indexing' => 'indexing', 
 	);
 
 	/**
