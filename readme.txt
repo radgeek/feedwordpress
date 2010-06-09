@@ -93,6 +93,14 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
+*	MORE EFFICIENT SYNDICATED URL LOOKUPS: Several users noticed that the
+	bug fix introduced in 2010.0528 for compatibility with post-listing
+	plugins caused a lot more queries to the database in order to look up
+	numerical post IDs from the URL provided to the filter. This shouldn't
+	cause any major problems, but it is not as efficient as it could be; the
+	code now takes advantage of a more efficient way of doing things,
+	which usually will not require any additional database queries.
+
 = 2010.0602 =
 
 *	CATEGORY BOX INTERFACE ELEMENT FIXED FOR WP 3.0: Stylesheet changes
@@ -256,7 +264,7 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 	original source, or the local comment feed, when providing the comment
 	feed URL for a syndicated post.
 
-#### PARSING ####
+#### Parsing ####
 
 *	BETTER DATE HANDLING -- FEWER FLASHBACKS TO 1969 and 1970: FeedWordPress
 	has made some bugfixes and some improvements in the logic for parsing

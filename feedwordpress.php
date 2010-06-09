@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2010.0602
+Version: 2010.0609
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2010.0602
+ * @version 2010.0609
  */
 
 # This uses code derived from:
@@ -33,7 +33,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2010.0602');
+define ('FEEDWORDPRESS_VERSION', '2010.0609');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 // Defaults
@@ -183,7 +183,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_action('atom_entry', 'feedwordpress_item_feed_data');
 	
 	# Filter in original permalinks if the user wants that
-	add_filter('post_link', 'syndication_permalink', 1);
+	add_filter('post_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 3);
 
 	# When foreign URLs are used for permalinks in feeds or display
 	# contexts, they need to be escaped properly.
@@ -653,28 +653,41 @@ function feedwordpress_item_feed_data () {
  *	syndicated, or if FWP is set to use internal permalinks, or if the post
  *	was syndicated, but didn't have a proper permalink recorded.
  *
- * @uses FeedWordPress::munge_permalinks()
+ * @uses SyndicatedLink::setting()
  * @uses get_syndication_permalink()
+ * @uses get_syndication_feed_object()
+ * @uses url_to_postid()
+ * @global $id
  * @global $feedwordpress_the_original_permalink
- */ 
-function syndication_permalink ($permalink = '') {
+ */
+function syndication_permalink ($permalink = '', $post = null, $leavename = false) {
+	global $id;
 	global $feedwordpress_the_original_permalink;
 	
 	// Save the local permalink in case we need to retrieve it later.
 	$feedwordpress_the_original_permalink = $permalink;
 
-	// Map this permalink to a post ID so we can get the correct permalink
-	// even outside of the Post Loop. Props Björn.
-	$id = url_to_postid($permalink);
+	if (is_object($post) and isset($post->ID) and !empty($post->ID)) :
+		// Use the post ID we've been provided with.
+		$postId = $post->ID;
+	elseif (is_string($permalink) and strlen($permalink) > 0) :
+		// Map this permalink to a post ID so we can get the correct
+		// permalink even outside of the Post Loop. Props Björn.
+		$postId = url_to_postid($permalink);
+	else :
+		// If the permalink string is empty but Post Loop context
+		// provides an id.
+		$postId = $id;
+	endif;
 
 	$munge = false;
-	$link = get_syndication_feed_object($id);
+	$link = get_syndication_feed_object($postId);
 	if (is_object($link)) :
 		$munge = ($link->setting('munge permalink', 'munge_permalink', 'yes') != 'no');
 	endif;
 
 	if ($munge):
-		$uri = get_syndication_permalink($id);
+		$uri = get_syndication_permalink($postId);
 		$permalink = ((strlen($uri) > 0) ? $uri : $permalink);
 	endif;
 	return $permalink;
@@ -692,6 +705,7 @@ function syndication_permalink ($permalink = '') {
  *
  */
 function syndication_permalink_escaped ($permalink) {
+	/* FIXME: This should review link settings not just global settings */
 	if (is_syndicated() and FeedWordPress::munge_permalinks()) :
 		// This is a foreign link; WordPress can't vouch for its not
 		// having any entities that need to be &-escaped. So we'll do
