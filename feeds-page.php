@@ -543,13 +543,26 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			$name = "Subscribe to <code>".esc_html(feedwordpress_display_url($lookup))."</code>";
 		endif;
 		?>
-		<div class="wrap">
+		<div class="wrap" id="feed-finder">
 		<h2>Feed Finder: <?php echo $name; ?></h2>
 
 		<?php
 		$f = new FeedFinder($lookup);
 		$feeds = $f->find();
 		if (count($feeds) > 0):
+			if (count($feeds) > 1) :
+				$option_template = 'Option %d: ';
+				$form_class = ' class="multi"';
+				?>
+				<p><strong>This web page provides more than one feed.</strong> These feeds may provide the same information
+				in different formats, or may track different items. (You can check the Feed Information and the
+				Sample Item for each feed to get an idea of what the feed provides.) Please select the feed that you'd like to subscribe to.</p>
+				<?php
+			else :
+				$option_template = '';
+				$form_class = '';
+			endif;
+
 			foreach ($feeds as $key => $f):
 				$pie = FeedWordPress::fetch($f);
 				$rss = (is_wp_error($pie) ? $pie : new MagpieFromSimplePie($pie));
@@ -558,19 +571,22 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					$feed_title = isset($rss->channel['title'])?$rss->channel['title']:$rss->channel['link'];
 					$feed_link = isset($rss->channel['link'])?$rss->channel['link']:'';
 					$feed_type = ($rss->feed_type ? $rss->feed_type : 'Unknown');
+					$feed_version_template = '%.1f';
 					$feed_version = $rss->feed_version;
 				else :
 					// Give us some sucky defaults
 					$feed_title = feedwordpress_display_url($lookup);
 					$feed_link = $lookup;
 					$feed_type = 'Unknown';
+					$feed_version_template = '';
 					$feed_version = '';
 				endif;
 				?>
-					<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication.php" method="post">
-					<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_switchfeed'); ?></div>
-					<fieldset>
-					<legend><?php echo $feed_type; ?> <?php echo $feed_version; ?> feed</legend>
+					<form<?php print $form_class; ?> action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication.php" method="post">
+					<div class="inside"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_switchfeed'); ?>
+
+					<fieldset<?php if ($key%2) : ?> class="alt"<?php endif; ?>>
+					<legend><?php printf($option_template, ($key+1)); print $feed_type." "; printf($feed_version_template, $feed_version); ?> feed</legend>
 
 					<?php
 					$this->stamp_link_id();
@@ -631,16 +647,17 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					<h3>Feed Information</h3>
 					<ul>
 					<li><strong>Homepage:</strong> <a href="<?php echo $feed_link; ?>"><?php echo is_null($feed_title)?'<em>Unknown</em>':$feed_title; ?></a></li>
-					<li><strong>Feed URL:</strong> <a href="<?php echo esc_html($f); ?>"><?php echo esc_html($f); ?></a> (<a title="Check feed &lt;<?php echo esc_html($f); ?>&gt; for validity" href="http://feedvalidator.org/check.cgi?url=<?php echo urlencode($f); ?>">validate</a>)</li>
+					<li><strong>Feed URL:</strong> <a title="<?php echo esc_html($f); ?>" href="<?php echo esc_html($f); ?>"><?php echo esc_html(feedwordpress_display_url($f, 40, 10)); ?></a> (<a title="Check feed &lt;<?php echo esc_html($f); ?>&gt; for validity" href="http://feedvalidator.org/check.cgi?url=<?php echo urlencode($f); ?>">validate</a>)</li>
 					<li><strong>Encoding:</strong> <?php echo isset($rss->encoding)?esc_html($rss->encoding):"<em>Unknown</em>"; ?></li>
 					<li><strong>Description:</strong> <?php echo isset($rss->channel['description'])?esc_html($rss->channel['description']):"<em>Unknown</em>"; ?></li>
 					</ul>
 					<?php do_action('feedwordpress_feedfinder_form', $f, $post, $link, $this->for_feed_settings()); ?>
-					<div class="submit"><input type="submit" name="Use" value="&laquo; Use this feed" /></div>
-					<div class="submit"><input type="submit" name="Cancel" value="&laquo; Cancel" /></div>
+					<div class="submit"><input type="submit" class="button-primary" name="Use" value="&laquo; Use this feed" />
+					<input type="submit" class="button" name="Cancel" value="× Cancel" /></div>
 					</div>
 					</div>
 					</fieldset>
+					</div> <!-- class="inside" -->
 					</form>
 					<?php
 				unset($link);
@@ -675,22 +692,26 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 
 		endif;
 	?>
-		</div>
-	
+
 		<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
-		<div><?php
+		<div class="inside"><?php
 			FeedWordPressCompatibility::stamp_nonce(get_class($this));
-		?></div>
-		<div class="wrap">
-		<h2>Use another feed</h2>
-		<div><label>Feed:</label>
-		<input type="text" name="lookup" id="use-another-feed" value="URI" />
+		?>
+		<fieldset>
+		<legend>Alternative feeds</legend>
+		<h3>Use another feed</h3>
+		<div><label>Feed:
+		<input type="text" name="lookup" id="use-another-feed" value="URI" size="64" style="max-width: 80%" /></label>
 		<?php FeedWordPressSettingsUI::magic_input_tip_js('use-another-feed'); ?>
 		<?php $this->stamp_link_id('link_id'); ?>
-		<input type="hidden" name="action" value="feedfinder" /></div>
-		<div class="submit"><input type="submit" value="Use this feed &raquo;" /></div>
+		<input type="hidden" name="action" value="feedfinder" />
+		<div class="submit"><input type="submit" class="button-primary" value="Check feed &raquo;" /></div>
 		</div>
 		</form>
+		</div> <!-- class="inside" -->
+		</fieldset>
+	</div> <!-- class="wrap" -->
+		
 		<?php
 		return false; // Don't continue
 	} /* WordPressFeedsPage::display_feedfinder() */

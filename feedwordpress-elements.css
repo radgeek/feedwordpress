@@ -67,10 +67,55 @@
 
 /* Switchfeed interface elements */
 
-form.fieldset {
-	clear: both;
+#feed-finder form {
+	padding-bottom: 2.0em;
+	border-bottom: 1px dashed #333;
+	margin-bottom: 2.0em;
 }
-.feed-sample { 
+#feed-finder form.multi .inside {
+	margin-left: 1.0em;
+	border-left: 3px solid #333;
+	padding-left: 2.0em;
+}
+
+#feed-finder form fieldset {
+	clear: both;
+	border: 1px solid #777;
+	padding: 5px 25px;
+	background-color: #fff;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-khtml-border-radius: 5px;
+	-webkit-border-radius: 5px;
+}
+#feed-finder form fieldset.alt {
+	background-color: #eee;
+}
+#feed-finder form fieldset legend {
+	border-left: 1px solid #777;
+	border-right: 1px solid #777;
+	border-top: 1px solid #777;
+	border-bottom: 1px solid #777;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-khtml-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	background-color: #7FF;
+	padding: 3px 10px;
+	font-weight: bold;
+}
+#feed-finder form fieldset label {
+	font-weight: bold;
+}
+#feed-finder form fieldset div.submit {
+	clear: both;
+	text-align: left;
+}
+#feed-finder form fieldset div.submit input {
+	margin-right: 3.0em;
+}
+
+#feed-finder .feed-sample { 
 	float: right;
 	background-color: #D0D0D0;
 	color: black;
@@ -82,11 +127,11 @@ form.fieldset {
 	max-height: 200px;
 	overflow: auto;
 }
-.feed-sample p, .feed-sample h3 {
+#feed-finder .feed-sample p, .feed-sample h3 {
 	padding-left: 0.5em;
 	padding-right: 0.5em;
 }
-.feed-sample .feed-problem {
+#feed-finder .feed-sample .feed-problem {
 	background-color: #ffd0d0;
 	border-bottom: 1px dotted black;
 	padding-bottom: 0.5em;
