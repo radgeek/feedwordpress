@@ -539,6 +539,12 @@ function fwp_multidelete_page () {
 			$actions = array();
 		endif;
 
+		$do_it = array(
+			'hide' => array(),
+			'nuke' => array(),
+			'delete' => array(),
+		);
+
 		foreach ($actions as $link_id => $what) :
 			$do_it[$what][] = $link_id;
 		endforeach;
@@ -566,7 +572,16 @@ function fwp_multidelete_page () {
 			// ... and kill them all
 			if (count($post_ids) > 0) :
 				foreach ($post_ids as $post_id) :
-					wp_delete_post($post_id);
+					if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) :
+						// Force scrubbing of deleted post
+						// rather than sending to Trashcan
+						wp_delete_post(
+							/*postid=*/ $post_id,
+							/*force_delete=*/ true
+						);
+					else :
+						wp_delete_post($post_id);
+					endif;
 				endforeach;
 			endif;
 
@@ -644,7 +659,7 @@ function fwp_multidelete_page () {
 <tr style="vertical-align:top"><th width="20%" scope="row">Subscription <?php _e('Options') ?>:</th>
 <td width="80%"><ul style="margin:0; padding: 0; list-style: none">
 <li><input type="radio" id="hide-<?php echo $link->link_id; ?>"
-name="link_action[<?php echo $link->link_id; ?>]" value="hide" />
+name="link_action[<?php echo $link->link_id; ?>]" value="hide" checked="checked" />
 <label for="hide-<?php echo $link->link_id; ?>">Turn off the subscription for this
 syndicated link<br/><span style="font-size:smaller">(Keep the feed information
 and all the posts from this feed in the database, but don't syndicate any
