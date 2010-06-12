@@ -464,6 +464,21 @@ class SyndicatedLink {
 		return (is_object($this->link) ? $this->link->link_rss : NULL);
 	} /* SyndicatedLink::uri () */
 
+	function property_cascade ($fromFeed, $link_field, $setting, $simplepie_method) {
+		$value = NULL;
+		if ($fromFeed) :
+			if (isset($this->settings[$setting])) :
+				$value = $this->settings[$setting];
+			elseif (is_object($this->simplepie)
+			and method_exists($this->simplepie, $simplepie_method)) :
+				$value = $this->simplepie->{$simplepie_method}();
+			endif;
+		else :
+			$value = $this->link->{$link_field};
+		endif;
+		return $value;
+	} /* SyndicatedLink::property_cascade () */
+	
 	function homepage ($fromFeed = true) {
 		if ($fromFeed) :
 			$url = (isset($this->settings['feed/link']) ? $this->settings['feed/link'] : NULL);
@@ -474,12 +489,7 @@ class SyndicatedLink {
 	} /* SyndicatedLink::homepage () */
 
 	function name ($fromFeed = true) {
-		if ($fromFeed) :
-			$name = (isset($this->settings['feed/title']) ? $this->settings['feed/title'] : NULL);
-		else :
-			$name = $this->link->link_name;
-		endif;
-		return $name;
+		return $this->property_cascade($fromFeed, 'link_name', 'feed/title', 'get_title');
 	} /* SyndicatedLink::name () */
 
 	function ttl () {
