@@ -480,12 +480,7 @@ class SyndicatedLink {
 	} /* SyndicatedLink::property_cascade () */
 	
 	function homepage ($fromFeed = true) {
-		if ($fromFeed) :
-			$url = (isset($this->settings['feed/link']) ? $this->settings['feed/link'] : NULL);
-		else :
-			$url = $this->link->link_url;
-		endif;
-		return $url;
+		return $this->property_cascade($fromFeed, 'link_url', 'feed/link', 'get_link');
 	} /* SyndicatedLink::homepage () */
 
 	function name ($fromFeed = true) {
