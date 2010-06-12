@@ -243,6 +243,8 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 		add_action('feedwordpress_check_feed_complete', 'debug_out_feedwordpress_feed_error', 100, 3);
 	endif;
 
+	add_action('init', 'feedwordpress_clear_cache_magic_url');
+
 	# Cron-less auto-update. Hooray!
 	$autoUpdateHook = get_option('feedwordpress_automatic_updates');
 	if ($autoUpdateHook != 'init') :
@@ -267,6 +269,12 @@ function feedwordpress_auto_update () {
 		$feedwordpress->update();
 	endif;
 } /* feedwordpress_auto_update () */
+
+function feedwordpress_clear_cache_magic_url () {
+	if (FeedWordPress::clear_cache_requested()) :
+		FeedWordPress::clear_cache();
+	endif;
+}
 
 function feedwordpress_update_magic_url () {
 	global $wpdb;
@@ -1134,6 +1142,13 @@ class FeedWordPress {
 		return $ret;
 	} // FeedWordPress::stale()
 	
+	function clear_cache_requested () {
+		return (
+			isset($_REQUEST['clear_cache'])
+			and $_REQUEST['clear_cache']
+		);
+	} /* FeedWordPress::clear_cache_requested() */
+
 	function update_requested () {
 		return (
 			isset($_REQUEST['update_feedwordpress'])
@@ -1414,6 +1429,12 @@ class FeedWordPress {
 	function clear_cache () {
 		global $wpdb;
 		
+		// Just in case, clear out any old MagpieRSS cache records.
+		$magpies = $wpdb->query("
+		DELETE FROM {$wpdb->options}
+		WHERE option_name LIKE 'rss_%' AND LENGTH(option_name) > 32
+		");
+
 		// The WordPress SimplePie module stores its cached feeds as
 		// transient records in the options table. The data itself is
 		// stored in `_transient_feed_{md5 of url}` and the last-modified
@@ -1421,11 +1442,12 @@ class FeedWordPress {
 		// these records are stored in `_transient_timeout_feed_{md5}`.
 		// Since the md5 is always 32 characters in length, the
 		// option_name is always over 32 characters.
-		$ret = $wpdb->query("
+		$simplepies = $wpdb->query("
 		DELETE FROM {$wpdb->options}
 		WHERE option_name LIKE '_transient%_feed_%' AND LENGTH(option_name) > 32
 		");
-		return (int) ($ret / 4); // Each transient has 4 rows: the data, the modified timestamp; and the timeouts for each
+		return ((int) $magpies)
+		+ (int) ($simplepies / 4); // Each transient has 4 rows: the data, the modified timestamp; and the timeouts for each
 	} /* FeedWordPress::clear_cache () */
 
 	function cache_duration () {

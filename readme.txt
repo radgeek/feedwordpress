@@ -93,6 +93,14 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
+*	MAGIC URL TO CLEAR THE CACHE: Suppose that you need to clear the feed
+	cache, for whatever reason; suppose, even, that you need to clear it on
+	a regular basis. One way you might do this is by logging into the
+	FeedWordPress administrative interface and going to Syndication -->
+	Performance. Another way you might do it, now, is to simply send an
+	HTTP request to a magic URL provided by FeedWordPress: if your blog is
+	at example.com, the URL would be <http://example.com/?clear_cache=1>
+
 *	MORE EFFICIENT SYNDICATED URL LOOKUPS: Several users noticed that the
 	bug fix introduced in 2010.0528 for compatibility with post-listing
 	plugins caused a lot more queries to the database in order to look up
