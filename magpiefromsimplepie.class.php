@@ -6,7 +6,7 @@ require_once(dirname(__FILE__).'/feedtime.class.php');
  * from breaking.
  *
  * @since 2010.0203
- *
+ * @version 2010.0612
  */
 
 class MagpieFromSimplePie {
@@ -76,6 +76,7 @@ class MagpieFromSimplePie {
 		// In case anyone goes poking around our private members (uh...)
 		$this->feed_type = ($this->is_atom() ? 'Atom' : 'RSS');
 		$this->feed_version = $this->feed_version();
+		$this->encoding = $pie->get_encoding();
 	} /* MagpieFromSimplePie constructor */
 	
 	/**

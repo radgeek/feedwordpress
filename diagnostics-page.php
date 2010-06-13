@@ -131,7 +131,8 @@ caution: this setting is absolutely inappropriate for a production server.</p>
 		$checked = array(
 			'updated_feeds' => '',
 			"syndicated_posts" => '', 'syndicated_posts:meta_data' => '',
-			'feed_items' => ''
+			'feed_items' => '',
+			'memory_usage' => '',
 		);
 
 		$diagnostics_show = get_option('feedwordpress_diagnostics_show', array());
@@ -150,6 +151,7 @@ caution: this setting is absolutely inappropriate for a production server.</p>
 <li><label><input type="checkbox" name="diagnostics_show[]" value="updated_feeds" <?php print $checked['updated_feeds']; ?> /> as each feed checked for updates</label></li>
 <li><label><input type="checkbox" name="diagnostics_show[]" value="syndicated_posts" <?php print $checked['syndicated_posts']; ?> /> as each syndicated post is added to the database</label></li>
 <li><label><input type="checkbox" name="diagnostics_show[]" value="feed_items" <?php print $checked['feed_items']; ?> /> as each syndicated item is considered on the feed</label></li>
+<li><label><input type="checkbox" name="diagnostics_show[]" value="memory_usage" <?php print $checked['memory_usage']; ?> /> indicating how much memory was used</label></li>
 </ul></td>
 </tr>
 <tr style="vertical-align: top">

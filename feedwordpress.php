@@ -243,6 +243,9 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 		add_action('feedwordpress_check_feed_complete', 'debug_out_feedwordpress_feed_error', 100, 3);
 	endif;
 
+	add_action('wp_footer', 'debug_out_feedwordpress_footer', -100);
+	add_action('admin_footer', 'debug_out_feedwordpress_footer', -100);
+	
 	add_action('init', 'feedwordpress_clear_cache_magic_url');
 
 	# Cron-less auto-update. Hooray!
@@ -303,6 +306,7 @@ function feedwordpress_update_magic_url () {
 			echo "[feedwordpress] $wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of "; timer_stop(1); print " seconds.";
 		endif;
 
+		debug_out_feedwordpress_footer();
 
     		// Magic URL should return nothing but a 200 OK header packet
 		// when successful.
@@ -388,6 +392,28 @@ function debug_out_feedwordpress_feed_error ($feed, $added, $dt) {
 		endforeach;		
 	endif;
 }
+
+function debug_out_human_readable_bytes ($quantity) {
+	$quantity = (int) $quantity;
+	$magnitude = 'B';
+	$orders = array('KB', 'MB', 'GB', 'TB');
+	while (($quantity > 1024) and (count($orders) > 0)) :
+		$quantity = floor($quantity / 1024);
+		$magnitude = array_shift($orders);
+	endwhile;
+	return "${quantity} ${magnitude}";
+}
+
+function debug_out_feedwordpress_footer () {
+	if (FeedWordPress::diagnostic_on('memory_usage')) :
+		if (function_exists('memory_get_usage')) :
+			FeedWordPress::diagnostic ('memory_usage', "Memory: Current usage: ".debug_out_human_readable_bytes(memory_get_usage()));
+		endif;
+		if (function_exists('memory_get_peak_usage')) :
+			FeedWordPress::diagnostic ('memory_usage', "Memory: Peak usage: ".debug_out_human_readable_bytes(memory_get_peak_usage()));
+		endif;
+	endif;
+} /* debug_out_feedwordpress_footer() */
 
 ################################################################################
 ## TEMPLATE API: functions to make your templates syndication-aware ############
@@ -1513,17 +1539,21 @@ class FeedWordPress {
 			$out = preg_replace('/\s+/', " ", $out);
 		endif;
 		return $out;
-	} /* FeedWordPress:val () */
+	} /* FeedWordPress::val () */
+
+	function diagnostic_on ($level) {
+		$show = get_option('feedwordpress_diagnostics_show', array());
+		return (in_array($level, $show));
+	} /* FeedWordPress::diagnostic_on () */
 
 	function diagnostic ($level, $out) {
 		global $feedwordpress_admin_footer;
 
 		$output = get_option('feedwordpress_diagnostics_output', array());
-		$show = get_option('feedwordpress_diagnostics_show', array());
 		
 		$diagnostic_nesting = count(explode(":", $level));
 
-		if (in_array($level, $show)) :
+		if (FeedWordPress::diagnostic_on($level)) :
 			foreach ($output as $method) :
 				switch ($method) :
 				case 'echo' :
