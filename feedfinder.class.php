@@ -35,7 +35,7 @@ class FeedFinder {
 		$ret = array ();
 		if (!is_null($this->data($uri))) {
 			if ($this->is_feed($uri)) {
-				$ret = array($this->uri);
+				$href = array($this->uri);
 			} else {
 				// Assume that we have HTML or XHTML (even if we don't, who's it gonna hurt?)
 				// Autodiscovery is the preferred method
@@ -50,21 +50,26 @@ class FeedFinder {
 				// Our search may turn up duplicate URIs. We only need to do any given URI once.
 				// Props to Camilo <http://projects.radgeek.com/2008/12/14/feedwordpress-20081214/#comment-20090122160414>
 				$href = array_unique($href);
-
-				// Verify feeds and resolve relative URIs
-				foreach ($href as $u) {
-					$the_uri = Relative_URI::resolve($u, $this->uri);
-					if ($this->verify) {
-						$feed = new FeedFinder($the_uri);
-						if ($feed->is_feed()) $ret[] = $the_uri;
-						unset($feed);
-					} else {
-						$ret[] = $the_uri;
-					}
-				} /* foreach */
 			} /* if */
+			
+			// Try some clever URL little tricks before we go
+			$href = array_merge($href, $this->_url_manipulation_feeds());
+			$href = array_unique($href);
+
+			// Verify feeds and resolve relative URIs
+			foreach ($href as $u) {
+				$the_uri = Relative_URI::resolve($u, $this->uri);
+				if ($this->verify and ($u != $this->uri and $the_uri != $this->uri)) {
+					$feed = new FeedFinder($the_uri);
+					if ($feed->is_feed()) : $ret[] = $the_uri; endif;
+					unset($feed);
+				} else {
+					$ret[] = $the_uri;
+				}
+			} /* foreach */
 		} /* if */
-		return array_unique($ret);
+	
+		return array_values($ret);
 	} /* FeedFinder::find () */
 
 	function data ($uri = NULL) {
@@ -169,6 +174,61 @@ class FeedFinder {
 			} /* if */
 		} /* for */
 		return $href;
+	}
+
+	function _url_manipulation_feeds () {
+		$href = array();
+		
+		// check for HTTP GET parameters that look feed-like.
+		$bits = parse_url($this->uri);
+		foreach (array('rss', 'rss2', 'atom', 'rdf') as $format) :
+			if (isset($bits['query']) and (strlen($bits['query']) > 0)) :
+				$newQuery = preg_replace('/([?&=])(rss2?|atom|rdf)/i', '$1'.$format, $bits['query']);
+			else :
+				$newQuery = NULL;
+			endif;
+			
+			if (isset($bits['path']) and (strlen($bits['path']) > 0)) :
+				$newPath = preg_replace('!([/.])(rss2?|atom|rdf)!i', '$1'.$format, $bits['path']);
+			else :
+				$newPath = NULL;
+			endif;
+
+			// Reassemble, check and return
+			$credentials = '';
+			if (isset($bits['user'])) :
+				$credentials = $bits['user'];
+				if (isset($bits['pass'])) :
+					$credentials .= ':'.$bits['pass'];
+				endif;
+				$credentials .= '@';
+			endif;
+			
+			// Variations on a theme
+			$newUrl[0] = (''
+				.(isset($bits['scheme']) ? $bits['scheme'].':' : '')
+				.(isset($bits['host']) ? '//'.$credentials.$bits['host'] : '')
+				.(!is_null($newPath) ? $newPath : '')
+				.(!is_null($newQuery) ? '?'.$newQuery : '')
+				.(isset($bits['fragment']) ? '#'.$bits['fragment'] : '')
+			);
+			$newUrl[1] = (''
+				.(isset($bits['scheme']) ? $bits['scheme'].':' : '')
+				.(isset($bits['host']) ? '//'.$credentials.$bits['host'] : '')
+				.(!is_null($newPath) ? $newPath : '')
+				.(isset($bits['query']) ? '?'.$bits['query'] : '')
+				.(isset($bits['fragment']) ? '#'.$bits['fragment'] : '')
+			);
+			$newUrl[2] = (''
+				.(isset($bits['scheme']) ? $bits['scheme'].':' : '')
+				.(isset($bits['host']) ? '//'.$credentials.$bits['host'] : '')
+				.(isset($bits['path']) ? $bits['path'] : '')
+				.(!is_null($newQuery) ? '?'.$newQuery : '')
+				.(isset($bits['fragment']) ? '#'.$bits['fragment'] : '')
+			);
+			$href = array_merge($href, $newUrl);
+		endforeach;
+		return array_unique($href);
 	}
 
 	function _tags ($tag) {

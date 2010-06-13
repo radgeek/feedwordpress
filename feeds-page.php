@@ -561,19 +561,31 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 		<?php
 		if ($feedSwitch) :
 			$this->display_alt_feed_box($lookup);
-			?>
-			<h3>Feeds Found</h3>
-			<?php
 		endif;
 
-		$f = new FeedFinder($lookup);
+		$finder = array();
+		if (!is_null($current)) :
+			$finder[$current] = new FeedFinder($current);
+		endif;
+		$finder[$lookup] = new FeedFinder($lookup);
+		
+		foreach ($finder as $url => $ff) :
+			$feeds = array_merge($feeds, $ff->find());
+		endforeach;
+		
 		$feeds = array_values( // Renumber from 0..(N-1)
 				array_unique( // Eliminate duplicates
-					array_merge($feeds, $f->find())
+					$feeds
 				)
 		);
 
 		if (count($feeds) > 0):
+			if ($feedSwitch) :
+				?>
+				<h3>Feeds Found</h3>
+				<?php
+			endif;
+
 			if (count($feeds) > 1) :
 				$option_template = 'Option %d: ';
 				$form_class = ' class="multi"';
@@ -698,32 +710,35 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 				unset($post);
 			endforeach;
 		else:
-			print "<p><strong>".__('Error').":</strong> ".__("FeedWordPress couldn't find any feeds at").' <code><a href="'.htmlspecialchars($lookup).'">'.htmlspecialchars($lookup).'</a></code>';
-			print ". ".__('Try another URL').".</p>";
+			foreach ($finder as $url => $ff) :
+				$url = esc_html($url);
+				print "<h3>Searched for feeds at ${url}</h3>\n";
+				print "<p><strong>".__('Error').":</strong> ".__("FeedWordPress couldn't find any feeds at").' <code><a href="'.htmlspecialchars($lookup).'">'.htmlspecialchars($lookup).'</a></code>';
+				print ". ".__('Try another URL').".</p>";
 			
-			// Diagnostics
-			print "<div class=\"updated\" style=\"margin-left: 3.0em; margin-right: 3.0em;\">\n";
-			print "<h3>".__('Diagnostic information')."</h3>\n";
-			if (!is_null($f->error()) and strlen($f->error()) > 0) :
-				print "<h4>".__('HTTP request failure')."</h4>\n";
-				print "<p>".$f->error()."</p>\n";
-			else :
-				print "<h4>".__('HTTP request completed')."</h4>\n";
-				print "<p><strong>Status ".$f->status().":</strong> ".$this->HTTPStatusMessages[(int) $f->status()]."</p>\n";
-			endif;
+				// Diagnostics
+				print "<div class=\"updated\" style=\"margin-left: 3.0em; margin-right: 3.0em;\">\n";
+				print "<h3>".__('Diagnostic information')."</h3>\n";
+				if (!is_null($ff->error()) and strlen($ff->error()) > 0) :
+					print "<h4>".__('HTTP request failure')."</h4>\n";
+					print "<p>".$ff->error()."</p>\n";
+				else :
+					print "<h4>".__('HTTP request completed')."</h4>\n";
+					print "<p><strong>Status ".$ff->status().":</strong> ".$this->HTTPStatusMessages[(int) $ff->status()]."</p>\n";
+				endif;
 
-			// Do some more diagnostics if the API for it is available.
-			if (function_exists('_wp_http_get_object')) :
-				$httpObject = _wp_http_get_object();
-				$transports = $httpObject->_getTransport();
-
-				print "<h4>".__('HTTP Transports available').":</h4>\n";
-				print "<ol>\n";
-				print "<li>".implode("</li>\n<li>", array_map('get_class', $transports))."</li>\n";
-				print "</ol>\n";
-				print "</div>\n";
-			endif;
-
+				// Do some more diagnostics if the API for it is available.
+				if (function_exists('_wp_http_get_object')) :
+					$httpObject = _wp_http_get_object();
+					$transports = $httpObject->_getTransport();
+	
+					print "<h4>".__('HTTP Transports available').":</h4>\n";
+					print "<ol>\n";
+					print "<li>".implode("</li>\n<li>", array_map('get_class', $transports))."</li>\n";
+					print "</ol>\n";
+					print "</div>\n";
+				endif;
+			endforeach;
 		endif;
 		
 		if (!$feedSwitch) :
