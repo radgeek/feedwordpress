@@ -536,8 +536,20 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 	
 		$lookup = (isset($_REQUEST['lookup']) ? $_REQUEST['lookup'] : NULL);
 
+		$feeds = array(); $feedSwitch = false; $current = null;
 		if ($this->for_feed_settings()) : // Existing feed?
-			if (is_null($lookup)) : $lookup = $this->link->link->link_url; endif;
+			$feedSwitch = true;
+			if (is_null($lookup)) :
+				// Switch Feed without a specific feed yet suggested
+				// Go to the human-readable homepage to look for
+				// auto-detection links
+				$lookup = $this->link->link->link_url;
+				
+				// Guarantee that you at least have the option to
+				// stick with what works.
+				$current = $this->link->link->link_rss;
+				$feeds[] = $current;
+			endif;
 			$name = esc_html($this->link->link->link_name);
 		else: // Or a new subscription to add?
 			$name = "Subscribe to <code>".esc_html(feedwordpress_display_url($lookup))."</code>";
@@ -547,14 +559,26 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 		<h2>Feed Finder: <?php echo $name; ?></h2>
 
 		<?php
+		if ($feedSwitch) :
+			$this->display_alt_feed_box($lookup);
+			?>
+			<h3>Feeds Found</h3>
+			<?php
+		endif;
+
 		$f = new FeedFinder($lookup);
-		$feeds = $f->find();
+		$feeds = array_values( // Renumber from 0..(N-1)
+				array_unique( // Eliminate duplicates
+					array_merge($feeds, $f->find())
+				)
+		);
+
 		if (count($feeds) > 0):
 			if (count($feeds) > 1) :
 				$option_template = 'Option %d: ';
 				$form_class = ' class="multi"';
 				?>
-				<p><strong>This web page provides more than one feed.</strong> These feeds may provide the same information
+				<p><strong>This web page provides at least <?php print count($feeds); ?> different feeds.</strong> These feeds may provide the same information
 				in different formats, or may track different items. (You can check the Feed Information and the
 				Sample Item for each feed to get an idea of what the feed provides.) Please select the feed that you'd like to subscribe to.</p>
 				<?php
@@ -585,8 +609,18 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 					<form<?php print $form_class; ?> action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication.php" method="post">
 					<div class="inside"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_switchfeed'); ?>
 
-					<fieldset<?php if ($key%2) : ?> class="alt"<?php endif; ?>>
-					<legend><?php printf($option_template, ($key+1)); print $feed_type." "; printf($feed_version_template, $feed_version); ?> feed</legend>
+					<?php
+					$classes = array('feed-found'); $currentFeed = '';
+					if (!is_null($current) and $current==$f) :
+						$classes[] = 'current';
+						$currentFeed = ' (currently subscribed)';
+					endif;
+					if ($key%2) :
+						$classes[] = 'alt';
+					endif;
+					?>
+					<fieldset class="<?php print implode(" ", $classes); ?>">
+					<legend><?php printf($option_template, ($key+1)); print $feed_type." "; printf($feed_version_template, $feed_version); ?> feed<?php print $currentFeed; ?></legend>
 
 					<?php
 					$this->stamp_link_id();
@@ -691,31 +725,51 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			endif;
 
 		endif;
-	?>
-
-		<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
-		<div class="inside"><?php
-			FeedWordPressCompatibility::stamp_nonce(get_class($this));
-		?>
-		<fieldset>
-		<legend>Alternative feeds</legend>
-		<h3>Use another feed</h3>
-		<div><label>Feed:
-		<input type="text" name="lookup" id="use-another-feed" value="URI" size="64" style="max-width: 80%" /></label>
-		<?php FeedWordPressSettingsUI::magic_input_tip_js('use-another-feed'); ?>
-		<?php $this->stamp_link_id('link_id'); ?>
-		<input type="hidden" name="action" value="feedfinder" />
-		<div class="submit"><input type="submit" class="button-primary" value="Check feed &raquo;" /></div>
-		</div>
-		</form>
-		</div> <!-- class="inside" -->
-		</fieldset>
-	</div> <!-- class="wrap" -->
 		
+		if (!$feedSwitch) :
+			$this->display_alt_feed_box($lookup, /*alt=*/ true);
+		endif;
+		?>
+	</div> <!-- class="wrap" -->
 		<?php
 		return false; // Don't continue
 	} /* WordPressFeedsPage::display_feedfinder() */
 
+	function display_alt_feed_box ($lookup, $alt = false) {
+		global $fwp_post;
+		?>
+		<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
+		<div class="inside"><?php
+			FeedWordPressCompatibility::stamp_nonce(get_class($this));
+		?>
+		<fieldset class="alt"
+		<?php if (!$alt): ?>style="margin: 1.0em 3.0em; font-size: smaller;"<?php endif; ?>>
+		<legend><?php if ($alt) : ?>Alternative feeds<?php else: ?>Find feeds<?php endif; ?></legend>
+		<?php if ($alt) : ?><h3>Use a different feed</h3><?php endif; ?>
+		<div><label>Address:
+		<input type="text" name="lookup" id="use-another-feed"
+		placeholder="URL"
+ 		<?php if (is_null($lookup)) : ?>
+			value="URL"
+		<?php else : ?>
+			value="<?php print esc_html($lookup); ?>"
+		<?php endif; ?>
+		size="64" style="max-width: 80%" /></label>
+		<?php if (is_null($lookup)) : ?>
+		<?php FeedWordPressSettingsUI::magic_input_tip_js('use-another-feed'); ?>
+		<?php endif; ?>
+		<?php $this->stamp_link_id('link_id'); ?>
+		<input type="hidden" name="action" value="feedfinder" />
+		<input type="submit" class="button<?php if ($alt): ?>-primary<?php endif; ?>" value="Check &raquo;" /></div>
+		<p>This can be the address of a feed, or of a website. FeedWordPress
+		will try to automatically detect any feeds associated with a
+		website.</p>
+		</div> <!-- class="inside" -->
+		</fieldset></form>
+		
+		<?php
+	} /* WordPressFeedsPage::display_alt_feed_box() */
+	
 	function accept_POST ($post) {
 		global $wpdb;
 			

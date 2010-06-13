@@ -91,6 +91,12 @@
 #feed-finder form fieldset.alt {
 	background-color: #eee;
 }
+#feed-finder form fieldset.current {
+	background-color: #efe;
+}
+#feed-finder form fieldset.current legend {
+	background-color: #7f7;
+}
 #feed-finder form fieldset legend {
 	border-left: 1px solid #777;
 	border-right: 1px solid #777;
