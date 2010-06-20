@@ -34,13 +34,21 @@ class FeedWordPress_Content_Type_Sniffer extends SimplePie_Content_Type_Sniffer 
 			if (!is_null($contentType)) :
 				$outHeader[] = $contentType;
 			else :
-				$outHeader[] = 'application/xml'; // Generic
+				$outHeader[] = 'text/xml'; // Generic
 			endif;
 			if (!is_null($charset)) :
 				$outHeader[] = $charset;
 			endif;
 			
 			$this->file->headers['content-type'] = implode("; ", $outHeader);
+		else :
+			// The default SimplePie behavior seems to be to return
+			// text/plain if it can't find a Content-Type header.
+			// The default SimplePie behavior sucks. Particularly
+			// since SimplePie gets so draconian about Content-Type.
+			// And since the WP SimplePie seems to drop Content-Type
+			// from cached copies for some unfortunate reason.
+			$this->file->headers['content-type'] = 'text/xml'; // Generic
 		endif;
 		return parent::get_type();
 	} /* FeedWordPress_Content_Type_Sniffer::get_type() */

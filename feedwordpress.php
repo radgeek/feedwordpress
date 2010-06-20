@@ -1170,8 +1170,8 @@ class FeedWordPress {
 	
 	function clear_cache_requested () {
 		return (
-			isset($_REQUEST['clear_cache'])
-			and $_REQUEST['clear_cache']
+			isset($_GET['clear_cache'])
+			and $_GET['clear_cache']
 		);
 	} /* FeedWordPress::clear_cache_requested() */
 
@@ -1434,12 +1434,14 @@ class FeedWordPress {
 		");
 	}
 
-	/*static*/ function fetch ($url) {
+	/*static*/ function fetch ($url, $force_feed = true) {
 		$feed = new SimplePie();
 		$feed->set_feed_url($url);
 		$feed->set_cache_class('WP_Feed_Cache');
 		$feed->set_file_class('WP_SimplePie_File');
 		$feed->set_content_type_sniffer_class('FeedWordPress_Content_Type_Sniffer');
+		$feed->set_file_class('FeedWordPress_File');
+		$feed->force_feed($force_feed);
 		$feed->set_cache_duration(FeedWordPress::cache_duration());
 		$feed->init();
 		$feed->handle_content_type();
@@ -1472,8 +1474,9 @@ class FeedWordPress {
 		DELETE FROM {$wpdb->options}
 		WHERE option_name LIKE '_transient%_feed_%' AND LENGTH(option_name) > 32
 		");
-		return ((int) $magpies)
-		+ (int) ($simplepies / 4); // Each transient has 4 rows: the data, the modified timestamp; and the timeouts for each
+		$simplepies = (int) ($simplepies / 4); // Each transient has 4 rows: the data, the modified timestamp; and the timeouts for each
+
+		return ($magpies + $simplepies);
 	} /* FeedWordPress::clear_cache () */
 
 	function cache_duration () {
@@ -1577,6 +1580,18 @@ class FeedWordPress {
 		endforeach;
 	} /* FeedWordPress::admin_footer () */
 } // class FeedWordPress
+
+class FeedWordPress_File extends WP_SimplePie_File {
+	function FeedWordPress_File ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
+		WP_SimplePie_File::WP_SimplePie_File($url, $timeout, $redirects, $headers, $useragent, $force_fsockopen);
+
+		// SimplePie makes a strongly typed check against integers with
+		// this, but WordPress puts a string in. Which causes caching
+		// to break and fall on its ass when SimplePie is getting a 304,
+		// but doesn't realize it because this member is "304" instead.
+		$this->status_code = (int) $this->status_code;
+	}
+} /* class FeedWordPress_File () */
 
 $feedwordpress_admin_footer = array();
 
