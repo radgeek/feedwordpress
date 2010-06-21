@@ -96,20 +96,10 @@ add_filter('wp_feed_cache_transient_lifetime', array('FeedWordPress', 'cache_lif
 // Ensure that we have SimplePie loaded up and ready to go.
 // We no longer need a MagpieRSS upgrade module. Hallelujah!
 require_once(ABSPATH . WPINC . '/feed.php');
+require_once(ABSPATH . WPINC . '/class-feed.php');
 
-if (isset($wp_db_version)) :
-	if ($wp_db_version >= FWP_SCHEMA_23) :
-		require_once (ABSPATH . WPINC . '/registration.php'); 		// for wp_insert_user
-	elseif ($wp_db_version >= FWP_SCHEMA_21) : // WordPress 2.1 and 2.2, but not 2.3
-		require_once (ABSPATH . WPINC . '/registration.php'); 		// for wp_insert_user
-		require_once (ABSPATH . 'wp-admin/admin-db.php'); 		// for wp_insert_category 
-	elseif ($wp_db_version >= FWP_SCHEMA_20) : // WordPress 2.0
-		require_once (ABSPATH . WPINC . '/registration-functions.php');	// for wp_insert_user
-		require_once (ABSPATH . 'wp-admin/admin-db.php');		// for wp_insert_category
-	endif;
-endif;
+require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
 
-require_once (ABSPATH . WPINC . '/class-feed.php');
 require_once(dirname(__FILE__) . '/compatability.php'); // LEGACY API: Replicate or mock up functions for legacy support purposes
 require_once(dirname(__FILE__) . '/feedwordpresshtml.class.php');
 require_once(dirname(__FILE__) . '/feedwordpress-content-type-sniffer.class.php');

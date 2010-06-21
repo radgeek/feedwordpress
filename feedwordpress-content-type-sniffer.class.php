@@ -1,4 +1,6 @@
 <?php
+require_once(ABSPATH . WPINC . '/class-feed.php');
+
 class FeedWordPress_Content_Type_Sniffer extends SimplePie_Content_Type_Sniffer {
 	/**
 	 * Get the Content-Type of the specified file
