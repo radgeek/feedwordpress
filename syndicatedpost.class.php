@@ -1574,7 +1574,7 @@ class SyndicatedPost {
 					$userdata['user_nicename'] = $nice_author;
 					$userdata['user_pass'] = substr(md5(uniqid(microtime())), 0, 6); // just something random to lock it up
 					$userdata['user_email'] = $email;
-					$userdata['user_url'] = $url;
+					$userdata['user_url'] = $hostUrl;
 					$userdata['display_name'] = $author;
 
 					$id = wp_insert_user($userdata);
