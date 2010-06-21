@@ -156,7 +156,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 <p><a href="http://feedwordpress.radgeek.com/">FeedWordPress</a> makes syndication
 simple and empowers you to stream content from all over the web into your
 WordPress hub. That's got to be worth a few lattes. If you're finding FWP useful,
-<a href="http://feedwordpress.radgeek.com/donation/">a modest gift</a>
+<a href="http://feedwordpress.radgeek.com/donate/">a modest gift</a>
 is the best way to support steady progress on development, enhancements,
 support, and documentation.</p>
 <div class="donate">
