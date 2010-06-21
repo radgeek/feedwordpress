@@ -499,6 +499,32 @@ function fwp_author_list () {
 }
 
 class FeedWordPressSettingsUI {
+	function is_admin () {
+		global $fwp_path;
+		
+		$admin_page = false; // Innocent until proven guilty
+		if (isset($_REQUEST['page'])) :
+			$admin_page = (
+				is_admin()
+				and preg_match("|^{$fwp_path}/|", $_REQUEST['page'])
+			);
+		endif;
+		return $admin_page;
+	}
+	
+	function admin_scripts () {
+		global $fwp_path;
+	
+		wp_enqueue_script('post'); // for magic tag and category boxes
+		if (!FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) : // < 2.9
+			wp_enqueue_script('thickbox'); // for fold-up boxes
+		endif;
+		wp_enqueue_script('admin-forms'); // for checkbox selection
+	
+		wp_register_script('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.js');
+		wp_enqueue_script('feedwordpress-elements');
+	}
+	
 	function instead_of_posts_box ($link_id = null) {
 		if (!is_null($link_id)) :
 			$from_this_feed = 'from this feed';

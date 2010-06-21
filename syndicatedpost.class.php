@@ -1610,7 +1610,7 @@ class SyndicatedPost {
 		foreach ($cats as $cat_name) :
 			if (preg_match('/^{#([0-9]+)}$/', $cat_name, $backref)) :
 				$cat_id = (int) $backref[1];
-				if (function_exists('is_term') and is_term($cat_id, 'category')) :
+				if (term_exists($cat_id, 'category')) :
 					$cat_ids[] = $cat_id;
 				elseif (get_category($cat_id)) :
 					$cat_ids[] = $cat_id;
@@ -1619,63 +1619,28 @@ class SyndicatedPost {
 				$esc = $wpdb->escape($cat_name);
 				$resc = $wpdb->escape(preg_quote($cat_name));
 				
-				// WordPress 2.3+
-				if (function_exists('is_term')) :
-					$cat_id = is_term($cat_name, 'category');
-					if ($cat_id) :
-						$cat_ids[] = $cat_id['term_id'];
-					// There must be a better way to do this...
-					elseif ($results = $wpdb->get_results(
-						"SELECT	term_id
-						FROM $wpdb->term_taxonomy
-						WHERE
-							LOWER(description) RLIKE
-							CONCAT('(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*', LOWER('{$resc}'), '( |\\t|\\r)*(\\n|\$)')"
-					)) :
-						foreach ($results AS $term) :
-							$cat_ids[] = (int) $term->term_id;
-						endforeach;
-					elseif ('tag'==$unfamiliar_category) :
-						$tags[] = $cat_name;
-					elseif ('create'===$unfamiliar_category) :
-						$term = wp_insert_term($cat_name, 'category');
-						if (is_wp_error($term)) :
-							FeedWordPress::noncritical_bug('term insertion problem', array('cat_name' => $cat_name, 'term' => $term, 'this' => $this), __LINE__);
-						else :
-							$cat_ids[] = $term['term_id'];
-						endif;
-					endif;
-				
-				// WordPress 1.5.x - 2.2.x
-				else :
-					$results = $wpdb->get_results(
-					"SELECT cat_ID
-					FROM $wpdb->categories
+				$cat_id = term_exists($cat_name, 'category');
+				if ($cat_id) :
+					$cat_ids[] = $cat_id['term_id'];
+				// There must be a better way to do this...
+				elseif ($results = $wpdb->get_results(
+					"SELECT	term_id
+					FROM $wpdb->term_taxonomy
 					WHERE
-					  (LOWER(cat_name) = LOWER('$esc'))
-					  OR (LOWER(category_description)
-					  RLIKE CONCAT('(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*', LOWER('{$resc}'), '( |\\t|\\r)*(\\n|\$)'))
-					");
-					if ($results) :
-						foreach  ($results as $term) :
-							$cat_ids[] = (int) $term->cat_ID;
-						endforeach;
-					elseif ('create'===$unfamiliar_category) :
-						if (function_exists('wp_insert_category')) :
-							$cat_id = wp_insert_category(array('cat_name' => $esc));
-						// And into the database we go.
-						else :
-							$nice_kitty = sanitize_title($cat_name);
-							$wpdb->query(sprintf("
-								INSERT INTO $wpdb->categories
-								SET
-								  cat_name='%s',
-								  category_nicename='%s'
-								", $esc, $nice_kitty
-							));
-							$cat_id = $wpdb->insert_id;
-						endif;
-						$cat_ids[] = $cat_id;
+						LOWER(description) RLIKE
+						CONCAT('(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*', LOWER('{$resc}'), '( |\\t|\\r)*(\\n|\$)')"
+				)) :
+					foreach ($results as $term) :
+						$cat_ids[] = (int) $term->term_id;
+					endforeach;
+				elseif ('tag'==$unfamiliar_category) :
+					$tags[] = $cat_name;
+				elseif ('create'===$unfamiliar_category) :
+					$term = wp_insert_term($cat_name, 'category');
+					if (is_wp_error($term)) :
+						FeedWordPress::noncritical_bug('term insertion problem', array('cat_name' => $cat_name, 'term' => $term, 'this' => $this), __LINE__);
+					else :
+						$cat_ids[] = $term['term_id'];
 					endif;
 				endif;
 			endif;

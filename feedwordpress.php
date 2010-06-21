@@ -100,6 +100,7 @@ require_once(ABSPATH . WPINC . '/class-feed.php');
 
 require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
 
+require_once(dirname(__FILE__) . '/admin-ui.php');
 require_once(dirname(__FILE__) . '/compatability.php'); // LEGACY API: Replicate or mock up functions for legacy support purposes
 require_once(dirname(__FILE__) . '/feedwordpresshtml.class.php');
 require_once(dirname(__FILE__) . '/feedwordpress-content-type-sniffer.class.php');
@@ -122,23 +123,10 @@ else : // Something went wrong. Let's just guess.
 	$fwp_path = 'feedwordpress';
 endif;
 
-function feedwordpress_admin_scripts () {
-	global $fwp_path;
-
-	wp_enqueue_script('post'); // for magic tag and category boxes
-	if (!FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) : // < 2.9
-		wp_enqueue_script('thickbox'); // for fold-up boxes
-	endif;
-	wp_enqueue_script('admin-forms'); // for checkbox selection
-
-	wp_register_script('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.js');
-	wp_enqueue_script('feedwordpress-elements');
-}
-
 // If this is a FeedWordPress admin page, queue up scripts for AJAX functions that FWP uses
 // If it is a display page or a non-FeedWordPress admin page, don't.
-if (is_admin() and isset($_REQUEST['page']) and preg_match("|^{$fwp_path}/|", $_REQUEST['page'])) :
-	add_action('admin_print_scripts', 'feedwordpress_admin_scripts');
+if (FeedWordPressSettingsUI::is_admin()) :
+	add_action('admin_print_scripts', array('FeedWordPressSettingsUI', 'admin_scripts'));
 
 	wp_register_style('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.css');
 
@@ -1292,13 +1280,12 @@ class FeedWordPress {
 		return (get_option('feedwordpress_munge_permalink', /*default=*/ 'yes') != 'no');
 	} /* FeedWordPress::munge_permalinks() */
 
-	function syndicated_links () {
+	function syndicated_links ($args = array()) {
 		$contributors = FeedWordPress::link_category_id();
-		if (function_exists('get_bookmarks')) :
-			$links = get_bookmarks(array("category" => $contributors));
-		else: 
-			$links = get_linkobjects($contributors); // deprecated as of WP 2.1
-		endif;
+		$links = get_bookmarks(array_merge(
+			array("category" => $contributors),
+			$args
+		));
 		return $links;
 	} // function FeedWordPress::syndicated_links()
 
@@ -1500,7 +1487,6 @@ class FeedWordPress {
 		$affirmo = array ('y', 'yes', 't', 'true', 1);
 		return (isset($f[$setting]) and in_array(strtolower($f[$setting]), $affirmo));
 	}
-
 
 	# Internal debugging functions
 	function critical_bug ($varname, $var, $line) {
