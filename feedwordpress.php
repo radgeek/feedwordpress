@@ -16,8 +16,9 @@ License: GPL
 
 # This uses code derived from:
 # -	wp-rss-aggregate.php by Kellan Elliot-McCrea <kellan@protest.net>
-# -	HTTP Navigator 2 by Keyvan Minoukadeh <keyvan@k1m.com>
+# -	MagpieRSS by Kellan Elliot-McCrea <kellan@protest.net>
 # -	Ultra-Liberal Feed Finder by Mark Pilgrim <mark@diveintomark.org>
+# -	WordPress Blog Tool and Publishing Platform <http://wordpress.org/>
 # according to the terms of the GNU General Public License.
 #
 # INSTALLATION: see readme.txt or <http://projects.radgeek.com/install>
