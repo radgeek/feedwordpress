@@ -93,13 +93,7 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
-*	MAGIC URL TO CLEAR THE CACHE: Suppose that you need to clear the feed
-	cache, for whatever reason; suppose, even, that you need to clear it on
-	a regular basis. One way you might do this is by logging into the
-	FeedWordPress administrative interface and going to Syndication -->
-	Performance. Another way you might do it, now, is to simply send an
-	HTTP request to a magic URL provided by FeedWordPress: if your blog is
-	at example.com, the URL would be <http://example.com/?clear_cache=1>
+= 2010.0622 =
 
 *	MORE EFFICIENT SYNDICATED URL LOOKUPS: Several users noticed that the
 	bug fix introduced in 2010.0528 for compatibility with post-listing
@@ -108,6 +102,46 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 	cause any major problems, but it is not as efficient as it could be; the
 	code now takes advantage of a more efficient way of doing things,
 	which usually will not require any additional database queries.
+
+*	SIMPLEPIE FEED UPDATE ISSUES: If you have been having significant
+	problems with getting feeds to update correctly, this may be the result
+	of some bugs in the implementation of SimplePie caching that ships with
+	WordPress (as of version 3.0). (You would most commonly experience this
+	error if you continually saw errors such as "No feed found at <...>" in
+	your updates.) Fortunately, SimplePie allows for a great deal of
+	extensibility and this allows me to work around the problem; these
+	error conditions should now be mostly eliminated when the underlying
+	feed is valid.
+
+*	UI: SHOW INACTIVE SOURCES: When you use the default unsubscribe option
+	-- which turns off the subscription to a feed while preserving the posts
+	from it and the syndication-related meta-data for the feed -- the
+	unsubscribed feed can now easily be viewed in a special "Inactive"
+	section of the Syndicated Sources page. (As a side benefit, if you've
+	accidentally, or only temporarily, turned off the subscription to a
+	feed, it is now much easier to restore the feed to being active, or to
+	delete it permanently, if you prefer. 
+
+*	UI: FEED FINDER / SWITCH FEED INTERFACE IMPROVEMENTS: changes to styling
+	and options for the feed finder / switch feed, which should now make it
+	easier, in some cases, to find alternative feeds, and make interface
+	options more clearly visible. 
+
+*	FILTERS: `syndicated_item_published` and `syndicated_item_updated` NOW
+	PROPERLY AFFECT THE DATING OF POSTS. These filters used to affect some
+	date-related settings, but not others -- and, most importantly, not the
+	final date that is set for a post's publication or last-modified date
+	in the WordPress database. Now, they do affect that, as they should.
+	(Filters should receive, and return, a long integer, representing a Unix
+	epoch relative timestamp.)
+
+*	MAGIC URL TO CLEAR THE CACHE: Suppose that you need to clear the feed
+	cache, for whatever reason; suppose, even, that you need to clear it on
+	a regular basis. One way you might do this is by logging into the
+	FeedWordPress administrative interface and going to Syndication -->
+	Performance. Another way you might do it, now, is to simply send an
+	HTTP request to a magic URL provided by FeedWordPress: if your blog is
+	at example.com, the URL would be <http://example.com/?clear_cache=1>
 
 = 2010.0602 =
 
