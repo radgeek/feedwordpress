@@ -177,7 +177,40 @@ class SyndicatedLink {
 
 		if (is_wp_error($this->simplepie)) :
 			$new_count = $this->simplepie;
+			// Error; establish an error setting.
+			$theError = array();
+			$theError['ts'] = time();
+			$theError['since'] = time();
+			$theError['object'] = $this->simplepie;
+
+			$oldError = $this->setting('update/error', NULL, NULL);
+			if (is_string($oldError)) :
+				$oldError = unserialize($oldError);
+			endif;
+
+			if (!is_null($oldError)) :
+				// Copy over the in-error-since timestamp
+				$theError['since'] = $oldError['since'];
+				
+				// If this is a repeat error, then we should take
+				// a step back before we try to fetch it again.
+				$this->settings['update/last'] = time();
+				$this->settings['update/ttl'] = $this->automatic_ttl();
+				$this->settings['update/ttl'] = apply_filters('syndicated_feed_ttl', $this->settings['update/ttl'], $this);
+				$this->settings['update/ttl'] = apply_filters('syndicated_feed_ttl_from_error', $this->settings['update/ttl'], $this);
+
+				$this->settings['update/timed'] = 'automatically';
+			endif;
+			
+			$this->settings['update/error'] = serialize($theError);
+			$this->save_settings(/*reload=*/ true);
+
 		elseif (is_object($this->simplepie)) :
+			// Success; clear out error setting, if any.
+			if (isset($this->settings['update/error'])) :
+				unset($this->settings['update/error']);
+			endif;
+
 			$new_count = array('new' => 0, 'updated' => 0);
 
 			# -- Update Link metadata live from feed
@@ -211,18 +244,7 @@ class SyndicatedLink {
 				$this->settings['update/ttl'] = $ttl;
 				$this->settings['update/timed'] = 'feed';
 			else :
-				// spread out over a time interval for staggered updates
-				$updateWindow = $this->setting(
-					'update/window',
-					'update_window',
-					DEFAULT_UPDATE_PERIOD
-				);
-				if (!is_numeric($updateWindow) or ($updateWindow < 1)) :
-					$updateWindow = DEFAULT_UPDATE_PERIOD;
-				endif;
-				
-				$fudgedInterval = $updateWindow+rand(0, 2*($updateWindow/3));
-				$this->settings['update/ttl'] = apply_filters('syndicated_feed_automatic_ttl', $fudgedInterval, $this);
+				$this->settings['update/ttl'] = $this->automatic_ttl();
 				$this->settings['update/timed'] = 'automatically';
 			endif;
 			$this->settings['update/ttl'] = apply_filters('syndicated_feed_ttl', $this->settings['update/ttl'], $this);
@@ -532,6 +554,17 @@ class SyndicatedLink {
 		endif;
 		return $ret;
 	} /* SyndicatedLink::ttl() */
+
+	function automatic_ttl () {
+		// spread out over a time interval for staggered updates
+		$updateWindow = $this->setting('update/window', 'update_window', DEFAULT_UPDATE_PERIOD);
+		if (!is_numeric($updateWindow) or ($updateWindow < 1)) :
+			$updateWindow = DEFAULT_UPDATE_PERIOD;
+		endif;
+
+		$fudgedInterval = $updateWindow+rand(0, 2*($updateWindow/3));
+		return apply_filters('syndicated_feed_automatic_ttl', $fudgedInterval, $this);
+	} /* SyndicatedLink::automatic_ttl () */
 
 	// SyndicatedLink::flatten_array (): flatten an array. Useful for
 	// hierarchical and namespaced elements.

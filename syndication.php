@@ -175,6 +175,9 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			.unsubscribed tr.alternate {
 				background-color: #FFF0F0;
 			}
+			tr.feed-error {
+				background-color: #FFFFD0;
+			}
 		</style>
 		<?php
 			$links = $this->sources('Y');
@@ -443,9 +446,59 @@ function fwp_syndication_manage_page_links_table_rows ($links, $visible = 'Y') {
 		$alt_row = true; 
 		if (count($links) > 0):
 			foreach ($links as $link):
+				$trClass = array();
+
+				// Prep: Get last updated timestamp
+				$sLink = new SyndicatedLink($link->link_id);
+				if (!is_null($sLink->setting('update/last'))) :
+					$lastUpdated = fwp_time_elapsed($sLink->setting('update/last'));
+				else :
+					$lastUpdated = __('None yet');
+				endif;
+
+				// Prep: get last error timestamp, if any
+				if (is_null($sLink->setting('update/error'))) :
+					$errorsSince = '';
+				else :
+					$trClass[] = 'feed-error';
+
+					$theError = unserialize($sLink->setting('update/error'));
+					
+					$errorsSince = "<div class=\"returning-errors\">"
+						."<p><strong>Returning errors</strong> since "
+						.fwp_time_elapsed($theError['since'])
+						."</p>"
+						."<p>Most recent ("
+						.fwp_time_elapsed($theError['ts'])
+						."):<br/><code>"
+						.implode("</code><br/><code>", $theError['object']->get_error_messages())
+						."</code></p>"
+						."</div>\n";
+				endif;
+
+				$nextUpdate = "<div style='font-style:italic;size:0.9em'>Ready for next update ";
+				if (isset($sLink->settings['update/ttl']) and is_numeric($sLink->settings['update/ttl'])) :
+					if (isset($sLink->settings['update/timed']) and $sLink->settings['update/timed']=='automatically') :
+						$next = $sLink->settings['update/last'] + ((int) $sLink->settings['update/ttl'] * 60);
+						$nextUpdate .= fwp_time_elapsed($next);
+						if (FEEDWORDPRESS_DEBUG) : $nextUpdate .= " [".(($next-time())/60)." minutes]"; endif;
+					else :
+						$nextUpdate .= "every ".$sLink->settings['update/ttl']." minute".(($sLink->settings['update/ttl']!=1)?"s":"");
+					endif;
+				else:
+					$nextUpdate .= "as soon as possible";
+				endif;
+				$nextUpdate .= "</div>";
+
+				unset($sLink);
+				
 				$alt_row = !$alt_row;
+				
+				if ($alt_row) :
+					$trClass[] = 'alternate';
+				endif;
 				?>
-	<tr<?php echo ($alt_row?' class="alternate"':''); ?>>
+	<tr<?php echo ((count($trClass) > 0) ? ' class="'.implode(" ", $trClass).'"':''); ?>>
 	<th class="check-column" scope="row"><input type="checkbox" name="link_ids[]" value="<?php echo $link->link_id; ?>" /></th>
 				<?php
 				$hrefPrefix = "admin.php?link_id={$link->link_id}&amp;page=${fwp_path}/";
@@ -481,29 +534,10 @@ function fwp_syndication_manage_page_links_table_rows ($links, $visible = 'Y') {
 	<td class="feed-missing"><p><strong>no feed assigned</strong></p></td>
 				<?php endif; ?>
 
-	<td><?php
-				$sLink = new SyndicatedLink($link->link_id);
-				if (!is_null($sLink->setting('update/last'))) :
-					print fwp_time_elapsed($sLink->setting('update/last'));
-				else :
-					_e('None yet');
-				endif;
-
-				print "<div style='font-style:italic;size:0.9em'>Ready for next update ";
-				if (isset($sLink->settings['update/ttl']) and is_numeric($sLink->settings['update/ttl'])) :
-					if (isset($sLink->settings['update/timed']) and $sLink->settings['update/timed']=='automatically') :
-						$next = $sLink->settings['update/last'] + ((int) $sLink->settings['update/ttl'] * 60);
-						print fwp_time_elapsed($next);
-						if (FEEDWORDPRESS_DEBUG) : print " [".(($next-time())/60)." minutes]"; endif;
-					else :
-						echo "every ".$sLink->settings['update/ttl']." minute".(($sLink->settings['update/ttl']!=1)?"s":"");
-					endif;
-				else:
-					echo "as soon as possible";
-				endif;
-				unset($sLink);
-				print "</div>";
-	?></td>
+	<td><?php print $lastUpdated; ?>
+	<?php print $errorsSince; ?>
+	<?php print $nextUpdate; ?>
+	</td>
 	</tr>
 			<?php
 			endforeach;
