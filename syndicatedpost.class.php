@@ -1481,7 +1481,7 @@ class SyndicatedPost {
 		$a = $this->author();
 		$author = $a['name'];
 		$email = (isset($a['email']) ? $a['email'] : NULL);
-		$hostUrl = (isset($a['uri']) ? $a['uri'] : NULL);
+		$authorUrl = (isset($a['uri']) ? $a['uri'] : NULL);
 
 		$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
 		if ($match_author_by_email and !FeedWordPress::is_null_email($email)) :
@@ -1501,7 +1501,7 @@ class SyndicatedPost {
 		$author = $wpdb->escape($author);
 		$email = $wpdb->escape($email);
 		$test_email = $wpdb->escape($test_email);
-		$hostUrl = $wpdb->escape($hostUrl);
+		$authorUrl = $wpdb->escape($authorUrl);
 
 		// Check for an existing author rule....
 		if (isset($this->link->settings['map authors']['name'][strtolower(trim($author))])) :
@@ -1574,7 +1574,7 @@ class SyndicatedPost {
 					$userdata['user_nicename'] = $nice_author;
 					$userdata['user_pass'] = substr(md5(uniqid(microtime())), 0, 6); // just something random to lock it up
 					$userdata['user_email'] = $email;
-					$userdata['user_url'] = $hostUrl;
+					$userdata['user_url'] = $authorUrl;
 					$userdata['display_name'] = $author;
 
 					$id = wp_insert_user($userdata);
