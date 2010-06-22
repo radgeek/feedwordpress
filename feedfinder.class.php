@@ -1,7 +1,11 @@
 <?php
-################################################################################
-## class FeedFinder: find likely feeds using autodetection and/or guesswork ####
-################################################################################
+/**
+ * class FeedFinder: find likely feeds using autodetection and/or guesswork
+ * @version 2010.0622
+ * @uses SimplePie_Misc
+ */
+
+require_once(ABSPATH . WPINC . '/class-simplepie.php');
 
 class FeedFinder {
 	var $uri = NULL;
@@ -58,7 +62,7 @@ class FeedFinder {
 
 			// Verify feeds and resolve relative URIs
 			foreach ($href as $u) {
-				$the_uri = Relative_URI::resolve($u, $this->uri);
+				$the_uri = SimplePie_Misc::absolutize_url($u, $this->uri);
 				if ($this->verify and ($u != $this->uri and $the_uri != $this->uri)) {
 					$feed = new FeedFinder($the_uri);
 					if ($feed->is_feed()) : $ret[] = $the_uri; endif;

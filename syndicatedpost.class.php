@@ -893,7 +893,7 @@ class SyndicatedPost {
 
 	function resolve_single_relative_uri ($refs) {
 		$tag = FeedWordPressHTML::attributeMatch($refs);
-		$url = Relative_URI::resolve($tag['value'], $this->_base);
+		$url = SimplePie_Misc::absolutize_url($tag['value'], $this->_base);
 		return $tag['prefix'] . $url . $tag['suffix'];
 	} /* function SyndicatedPost::resolve_single_relative_uri() */
 

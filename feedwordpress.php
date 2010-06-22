@@ -97,6 +97,7 @@ add_filter('wp_feed_cache_transient_lifetime', array('FeedWordPress', 'cache_lif
 // We no longer need a MagpieRSS upgrade module. Hallelujah!
 require_once(ABSPATH . WPINC . '/feed.php');
 require_once(ABSPATH . WPINC . '/class-feed.php');
+require_once(ABSPATH . WPINC . '/class-simplepie.php');
 
 require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
 
@@ -1596,8 +1597,6 @@ function feedwordpress_pong ($args) {
 		return array('flerror' => false, 'message' => "Thanks for the ping.".implode(' and', $mesg));
 	endif;
 }
-
-require_once(dirname(__FILE__) . '/relative_uri.class.php');
 
 // take your best guess at the realname and e-mail, given a string
 define('FWP_REGEX_EMAIL_ADDY', '([^@"(<\s]+@[^"@(<\s]+\.[^"@(<\s]+)');
