@@ -354,18 +354,7 @@ class SyndicatedLink {
 		global $wpdb;
 
 		if (strlen($newuser_name) > 0) :
-			$userdata = array();
-			$userdata['ID'] = NULL;
-			
-			$userdata['user_login'] = sanitize_user($newuser_name);
-			$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
-			
-			$userdata['user_nicename'] = sanitize_title($newuser_name);
-			$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
-			
-			$userdata['display_name'] = $wpdb->escape($newuser_name);
-		
-			$newuser_id = wp_insert_user($userdata);
+			$newuser_id = fwp_insert_new_user($newuser_name);
 			if (is_numeric($newuser_id)) :
 				if (is_null($name)) : // Unfamiliar author
 					$this->settings['unfamiliar author'] = $newuser_id;

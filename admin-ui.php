@@ -648,21 +648,16 @@ function fwp_insert_new_user ($newuser_name) {
 	if (strlen($newuser_name) > 0) :
 		$userdata = array();
 		$userdata['ID'] = NULL;
+		$userdata['user_login'] = apply_filters('pre_user_login', sanitize_user($newuser_name));
+		$userdata['user_nicename'] = apply_filters('pre_user_nicename', sanitize_title($newuser_name));
+		$userdata['display_name'] = $newuser_name;
+		$userdata['user_pass'] = substr(md5(uniqid(microtime())), 0, 6); // just something random to lock it up
 		
-		$userdata['user_login'] = sanitize_user($newuser_name);
-		$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
+		$blahUrl = get_bloginfo('url'); $url = parse_url($blahUrl);
+		$userdata['user_email'] = substr(md5(uniqid(microtime())), 0, 6).'@'.$url['host'];
 		
-		$userdata['user_nicename'] = sanitize_title($newuser_name);
-		$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
-		
-		$userdata['display_name'] = $wpdb->escape($newuser_name);
-
 		$newuser_id = wp_insert_user($userdata);
-		if (is_numeric($newuser_id)) :
-			$ret = $newuser_id;
-		else :
-			// TODO: Add some error detection and reporting
-		endif;
+		$ret = $newuser_id; // Either a numeric ID or a WP_Error object
 	else :
 		// TODO: Add some error reporting
 	endif;

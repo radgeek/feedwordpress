@@ -7,9 +7,13 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 	
 	function FeedWordPressAuthorsPage ($link) {
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressauthors', $link);
-		$this->authorlist = fwp_author_list();
+		$this->refresh_author_list();
 		$this->dispatch = 'feedwordpress_author_settings';
 		$this->filename = __FILE__;
+	}
+	
+	function refresh_author_list () {
+		$this->authorlist = fwp_author_list();
 	}
 	
 	/*static*/ function syndicated_authors_box ($page, $box = NULL) {
@@ -171,27 +175,7 @@ function fwp_authors_page () {
 	if (isset($GLOBALS['fwp_post']['fix_mismatch'])) :
 		if ('newuser'==$GLOBALS['fwp_post']['fix_mismatch_to']) :
 			$newuser_name = trim($GLOBALS['fwp_post']['fix_mismatch_to_newuser']);
-			if (strlen($newuser_name) > 0) :
-				$userdata = array();
-				$userdata['ID'] = NULL;
-				
-				$userdata['user_login'] = sanitize_user($newuser_name);
-				$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
-				
-				$userdata['user_nicename'] = sanitize_title($newuser_name);
-				$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
-				
-				$userdata['display_name'] = $wpdb->escape($newuser_name);
-
-				$newuser_id = wp_insert_user($userdata);
-				if (is_numeric($newuser_id)) :
-					$fix_mismatch_to_id = $newuser_id;
-				else :
-					// TODO: Add some error detection and reporting
-				endif;
-			else :
-				// TODO: Add some error reporting
-			endif;			
+			$fix_mismatch_to_id = fwp_insert_new_user($newuser_name);
 		else :
 			$fix_mismatch_to_id = $GLOBALS['fwp_post']['fix_mismatch_to'];
 		endif;
@@ -238,6 +222,7 @@ function fwp_authors_page () {
 				$mesg = "Couldn't find any posts that matched your criteria.";
 			endif;
 		endif;
+		$updated_link = false;
 	elseif (isset($GLOBALS['fwp_post']['save'])) :
 		if (is_object($link) and $link->found()) :
 			$alter = array ();
@@ -297,27 +282,12 @@ function fwp_authors_page () {
 		else :
 			if ('newuser'==$GLOBALS['fwp_post']['unfamiliar_author']) :
 				$newuser_name = trim($GLOBALS['fwp_post']['unfamiliar_author_newuser']);
-				if (strlen($newuser_name) > 0) :
-					$userdata = array();
-					$userdata['ID'] = NULL;
-					
-					$userdata['user_login'] = sanitize_user($newuser_name);
-					$userdata['user_login'] = apply_filters('pre_user_login', $userdata['user_login']);
-					
-					$userdata['user_nicename'] = sanitize_title($newuser_name);
-					$userdata['user_nicename'] = apply_filters('pre_user_nicename', $userdata['user_nicename']);
-					
-					$userdata['display_name'] = $wpdb->escape($newuser_name);
-
-					$newuser_id = wp_insert_user($userdata);
-					if (is_numeric($newuser_id)) :
-						update_option('feedwordpress_unfamiliar_author', $newuser_id);
-					else :
-						// TODO: Add some error detection and reporting
-					endif;
+				$newuser_id = fwp_insert_new_user($newuser_name);
+				if (is_numeric($newuser_id)) :
+					update_option('feedwordpress_unfamiliar_author', $newuser_id);
 				else :
-					// TODO: Add some error reporting
-				endif;			
+					// TODO: Add some error detection and reporting
+				endif;
 			else :
 				update_option('feedwordpress_unfamiliar_author', $GLOBALS['fwp_post']['unfamiliar_author']);
 			endif;
@@ -336,6 +306,7 @@ function fwp_authors_page () {
 		endif;
 
 		do_action('feedwordpress_admin_page_authors_save', $GLOBALS['fwp_post'], $authorsPage);
+		$authorsPage->refresh_author_list();
 	else :
 		$updated_link = false;
 	endif;
