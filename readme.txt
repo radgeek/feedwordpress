@@ -93,8 +93,15 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
-= 2010.0622 =
+= 2010.0623 =
 
+*	WORDPRESS 3.0 COMPATIBILITY / AUTHOR MAPPING INTERFACE ISSUES: I
+	resolved a couple of outstanding issues with the author mapping
+	interface (Syndication --> Authors), which were preventing new users
+	from being created correctly and author mapping rules from being set up
+	correctly. These partly had to do with new restrictions on user account
+	creation introduced in WordPress 3.0; anyway, they should now be fixed.
+	
 *	MORE EFFICIENT SYNDICATED URL LOOKUPS: Several users noticed that the
 	bug fix introduced in 2010.0528 for compatibility with post-listing
 	plugins caused a lot more queries to the database in order to look up
