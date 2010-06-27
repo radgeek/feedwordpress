@@ -49,11 +49,11 @@ class SyndicatedPost {
 			$this->item = $item;
 		endif;
 
-		FeedWordPress::diagnostic('feed_items', 'Considering item ['.$this->guid().'] "'.$this->entry->get_title().'"');
-
 		$this->link = $source;
 		$this->feed = $source->magpie;
 		$this->feedmeta = $source->settings;
+
+		FeedWordPress::diagnostic('feed_items', 'Considering item ['.$this->guid().'] "'.$this->entry->get_title().'"');
 
 		# Dealing with namespaces can get so fucking fucked.
 		$this->xmlns['forward'] = $source->magpie->_XMLNS_FAMILIAR;
@@ -580,6 +580,7 @@ class SyndicatedPost {
 
 	function published ($fallback = true, $default = NULL) {
 		$date = '';
+		$epoch = null;
 
 		# RSS is a fucking mess. Figure out whether we have a date in
 		# <dc:date>, <issued>, <pubDate>, etc., and get it into Unix
@@ -618,6 +619,7 @@ class SyndicatedPost {
 
 	function updated ($fallback = true, $default = -1) {
 		$date = '';
+		$epoch = null;
 
 		# As far as I know, only dcterms and Atom have reliable ways to
 		# specify when something was *modified* last. If neither is
@@ -670,7 +672,7 @@ class SyndicatedPost {
 			// unique identifier, so we'll have to cobble together
 			// a tag: URI that might work for us. The base of the
 			// URI will be the host name of the feed source ...
-			$bits = parse_url($this->feedmeta['link/uri']);
+			$bits = parse_url($this->link->uri());
 			$guid = 'tag:'.$bits['host'];
 
 			// If we have a date of creation, then we can use that
@@ -689,7 +691,9 @@ class SyndicatedPost {
 			// title *and* the same link for two different items. So
 			// this is about the best we can do.
 			else :
-				$guid .= '://'.md5($this->item['link'].'/'.$this->item['title']);
+				$link = $this->permalink();
+				if (is_null($link)) : $link = $this->link->uri(); endif;
+				$guid .= '://'.md5($link.'/'.$this->item['title']);
 			endif;
 		endif;
 		return $guid;
@@ -723,8 +727,11 @@ class SyndicatedPost {
 					$author['name'] = $this->feed->channel['title'];
 				endif;
 			endif;
+		elseif ($this->link->name()) :
+			$author['name'] = $this->link->name();
 		else :
-			$author['name'] = $this->feed->channel['title'];
+			$url = parse_url($this->link->uri());
+			$author['name'] = $url['host'];
 		endif;
 		
 		if (isset($this->item['author_email'])):
@@ -945,7 +952,7 @@ class SyndicatedPost {
 		if ($set and $set != 'no') : 
 			// Fallback: if we don't have anything better, use the
 			// item link from the feed
-			$obj->_base = $obj->item['link']; // Reset the base for resolving relative URIs
+			$obj->_base = $obj->permalink(); // Reset the base for resolving relative URIs
 
 			// What we should do here, properly, is to use
 			// SimplePie_Item::get_base() -- but that method is

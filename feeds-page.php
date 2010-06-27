@@ -604,8 +604,8 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 				$rss = (is_wp_error($pie) ? $pie : new MagpieFromSimplePie($pie));
 
 				if ($rss and !is_wp_error($rss)):
-					$feed_title = isset($rss->channel['title'])?$rss->channel['title']:$rss->channel['link'];
-					$feed_link = isset($rss->channel['link'])?$rss->channel['link']:'';
+					$feed_link = (isset($rss->channel['link'])?$rss->channel['link']:'');
+					$feed_title = (isset($rss->channel['title'])?$rss->channel['title']:$feed_link);
 					$feed_type = ($rss->feed_type ? $rss->feed_type : 'Unknown');
 					$feed_version_template = '%.1f';
 					$feed_version = $rss->feed_version;
