@@ -349,60 +349,48 @@ class SyndicatedPost {
 		switch ($node) :
 		case 'feed' :
 		case 'channel' :
-			$method = "get_${node}_tags";
 			$node = array_shift($path);
+			$data = $this->get_feed_root_element();
+			$data = array_merge($data, $this->get_feed_channel_elements());
 			break;
 		case 'item' :
 			$node = array_shift($path);
 		default :
+			$data = array($this->entry->data);
 			$method = NULL;
 		endswitch;
-
-		$data = array();
-		if (!is_null($node)) :
-			list($namespaces, $element) = $this->xpath_extended_name($node);
-			
-			$matches = array();
-			foreach ($namespaces as $ns) :
-				if (!is_null($method)) :	
-					$el = $this->link->simplepie->{$method}($ns, $element);
-				else :
-					$el = $this->entry->get_item_tags($ns, $element);
-				endif;
-
-				if (!is_null($el)) :
-					$matches = array_merge($matches, $el);
-				endif;
-			endforeach;
-			$data = $matches;
-		
-			$node = array_shift($path);
-		endif;
 
 		while (!is_null($node)) :
 			if (strlen($node) > 0) :
 				$matches = array();
-		
-				list($ns, $element) = $this->xpath_extended_name($node);
-		
-				if (preg_match('/^@(.*)$/', $element, $ref)) :
-					$element = $ref[1];
-					$axis = 'attribs';
-				else :
-					$axis = 'child';
-				endif;
+
+				list($axis, $element) = $this->xpath_name_and_axis($node);
 
 				foreach ($data as $datum) :
-					foreach ($namespaces as $ns) :
-						if (!is_string($datum)
-						and isset($datum[$axis][$ns][$element])) :
-							if (is_string($datum[$axis][$ns][$element])) :
-								$matches[] = $datum[$axis][$ns][$element];
-							else :
-								$matches = array_merge($matches, $datum[$axis][$ns][$element]);
+					if (!is_string($datum) and isset($datum[$axis])) :
+						foreach ($datum[$axis] as $ns => $elements) :
+							if (isset($elements[$element])) :
+								// Potential match.
+								// Check namespace.
+								if (is_string($elements[$element])) : // Attribute
+									$addenda = array($elements[$element]);
+									$contexts = array($datum);
+								else : // Element
+									$addenda = $elements[$element];
+									$contexts = $elements[$element];
+								endif;
+								
+								foreach ($addenda as $index => $addendum) :
+									$context = $contexts[$index];
+
+									$namespaces = $this->xpath_possible_namespaces($node, $context);
+									if (in_array($ns, $namespaces)) :
+										$matches[] = $addendum;
+									endif;
+								endforeach;
 							endif;
-						endif;
-					endforeach;
+						endforeach;						
+					endif;
 				endforeach;
 		
 				$data = $matches;
@@ -420,6 +408,34 @@ class SyndicatedPost {
 		endforeach;
 		return $matches;
 	} /* SyndicatedPost::query() */
+
+	function get_feed_root_element () {
+		$matches = array();
+		foreach ($this->link->simplepie->data['child'] as $ns => $root) :
+			foreach ($root as $element => $data) :
+				$matches = array_merge($matches, $data);
+			endforeach;
+		endforeach;
+		return $matches;
+	} /* SyndicatedPost::get_feed_root_element() */
+
+	function get_feed_channel_elements () {
+		$rss = array(
+				SIMPLEPIE_NAMESPACE_RSS_090,
+				SIMPLEPIE_NAMESPACE_RSS_10,
+				'http://backend.userland.com/RSS2',
+				SIMPLEPIE_NAMESPACE_RSS_20,
+		);
+		
+		$matches = array();
+		foreach ($rss as $ns) :
+			$data = $this->link->simplepie->get_feed_tags($ns, 'channel');
+			if (!is_null($data)) :
+				$matches = array_merge($matches, $data);
+			endif;
+		endforeach;
+		return $matches;
+	} /* SyndicatedPost::get_feed_channel_elements() */
 
 	function xpath_default_namespace () {
 		// Get the default namespace.
@@ -439,20 +455,40 @@ class SyndicatedPost {
 		endif;
 		return $defaultNS;	
 	} /* SyndicatedPost::xpath_default_namespace() */
-	
-	function xpath_extended_name ($node) {
+
+	function xpath_name_and_axis ($node) {
 		$ns = NULL; $element = NULL;
-		
+
+		if (substr($node, 0, 1)=='@') :
+			$axis = 'attribs'; $node = substr($node, 1);
+		else :
+			$axis = 'child';
+		endif;
+
+		if (preg_match('/^{([^}]*)}(.*)$/', $node, $ref)) :
+			$element = $ref[2];
+		elseif (strpos($node, ':') !== FALSE) :
+			list($xmlns, $element) = explode(':', $node, 2);
+		else :
+			$element = $node;
+		endif;
+		return array($axis, $element);
+	} /* SyndicatedPost::xpath_local_name () */
+
+	function xpath_possible_namespaces ($node, $datum = array()) {
+		$ns = NULL; $element = NULL;
+
 		if (substr($node, 0, 1)=='@') :
 			$attr = '@'; $node = substr($node, 1);
 		else :
 			$attr = '';
 		endif;
-				
+
 		if (preg_match('/^{([^}]*)}(.*)$/', $node, $ref)) :
-			$ns = array($ref[1]); $element = $ref[2];
+			$ns = array($ref[1]);
 		elseif (strpos($node, ':') !== FALSE) :
 			list($xmlns, $element) = explode(':', $node, 2);
+			
 			if (isset($this->xmlns['reverse'][$xmlns])) :
 				$ns = $this->xmlns['reverse'][$xmlns];
 			else :
@@ -460,17 +496,24 @@ class SyndicatedPost {
 			endif;
 			
 			// Fucking SimplePie. For attributes in default xmlns.
-			if ($xmlns==$this->xmlns['forward'][$defaultNS[0]]) :
+			$defaultNS = $this->xpath_default_namespace();
+			if (isset($this->xmlns['forward'][$defaultNS])
+			and ($xmlns==$this->xmlns['forward'][$defaultNS])) :
 				$ns[] = '';
+			endif;
+			
+			if (isset($datum['xmlns'])) :
+				if (isset($datum['xmlns'][$xmlns])) :
+					$ns[] = $datum['xmlns'][$xmlns];
+				endif;
 			endif;
 		else :
 			// Often in SimplePie, the default namespace gets stored
 			// as an empty string rather than a URL.
 			$ns = array($this->xpath_default_namespace(), '');
-			$element = $node;
 		endif;
-		return array(array_unique($ns), $attr.$element);
-	} /* SyndicatedPost::xpath_extended_name () */
+		return array_unique($ns);
+	} /* SyndicatedPost::xpath_possible_namespaces() */
 
 	function content () {
 		$content = NULL;
