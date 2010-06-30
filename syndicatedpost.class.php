@@ -298,6 +298,10 @@ class SyndicatedPost {
 			if (isset($this->feedmeta['tags']) and is_array($this->feedmeta['tags'])) :
 				$this->post['tags_input'] = array_merge($this->post['tags_input'], $this->feedmeta['tags']);
 			endif;
+			
+			// Scan post for /a[@rel='tag'] and use as tags if present
+			$this->post['tags_input'] = array_merge($this->post['tags_input'], $this->inline_tags());
+
 			$this->post['tags_input'] = apply_filters('syndicated_item_tags', $this->post['tags_input'], $this);
 		endif;
 	} /* SyndicatedPost::SyndicatedPost() */
@@ -751,6 +755,27 @@ class SyndicatedPost {
 		return $author;
 	} /* SyndicatedPost::author() */
 
+	/**
+	 * SyndicatedPost::inline_tags: Return a list of all the tags embedded
+	 * in post content using the a[@rel="tag"] microformat.
+	 *
+	 * @since 2010.0630
+	 * @return array of string values containing the name of each tag
+	 */
+	function inline_tags () {
+		$tags = array();
+		$content = $this->content();
+		$pattern = FeedWordPressHTML::tagWithAttributeRegex('a', 'rel', 'tag');
+		preg_match_all($pattern, $content, $refs, PREG_SET_ORDER);
+		if (count($refs) > 0) :
+			foreach ($refs as $ref) :
+				$tag = FeedWordPressHTML::tagWithAttributeMatch($ref);
+				$tags[] = $tag['content'];
+			endforeach;
+		endif;
+		return $tags;
+	}
+	
 	/**
 	 * SyndicatedPost::isTaggedAs: Test whether a feed item is
 	 * tagged / categorized with a given string. Case and leading and
@@ -1684,7 +1709,7 @@ class SyndicatedPost {
 					foreach ($results as $term) :
 						$cat_ids[] = (int) $term->term_id;
 					endforeach;
-				elseif ($tag_id) :
+				elseif ($tags_too and $tag_id) :
 					$tags[] = $cat_name;
 				elseif ('tag'==$unfamiliar_category) :
 					$tags[] = $cat_name;
