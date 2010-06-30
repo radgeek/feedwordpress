@@ -27,15 +27,19 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			$custom_settings = $this->custom_post_settings();
 
 			foreach ($post['notes'] as $mn) :
-				$mn['key0'] = trim($mn['key0']);
-				$mn['key1'] = trim($mn['key1']);
-	
-				if (strlen($mn['key0']) > 0) :
-					unset($custom_settings[$mn['key0']]); // out with the old
+				if (isset($mn['key0'])) :
+					$mn['key0'] = trim($mn['key0']);
+					if (strlen($mn['key0']) > 0) :
+						unset($custom_settings[$mn['key0']]); // out with the old
+					endif;
 				endif;
 				
-				if (($mn['action']=='update') and (strlen($mn['key1']) > 0)) :
-					$custom_settings[$mn['key1']] = $mn['value']; // in with the new
+				if (isset($mn['key1'])) :
+					$mn['key1'] = trim($mn['key1']);
+
+					if (($mn['action']=='update') and (strlen($mn['key1']) > 0)) :
+						$custom_settings[$mn['key1']] = $mn['value']; // in with the new
+					endif;
 				endif;
 			endforeach;
 	
@@ -82,7 +86,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 				endif;
 
 				update_option('feedwordpress_custom_settings', serialize($custom_settings));
-	
+
 				update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
 				update_option('feedwordpress_use_aggregator_source_data', $_REQUEST['use_aggregator_source_data']);
 				update_option('feedwordpress_formatting_filters', $_REQUEST['formatting_filters']);
@@ -277,23 +281,42 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			),
 		);
 
-		$global_munge_permalink = get_option('feedwordpress_munge_permalink');
-		if ($page->for_feed_settings()) :
-			$munge_permalink = $page->link->setting('munge permalink', NULL);
-		else :
-			$munge_permalink = $global_munge_permalink;
-			$use_aggregator_source_data = get_option('feedwordpress_use_aggregator_source_data');
+		$global_munge_permalink = get_option('feedwordpress_munge_permalink', NULL);
+		if (is_null($global_munge_permalink)) :
+			$global_munge_permalink = 'yes';
 		endif;
 
+		$checked = array(
+			'munge_permalink' => array(
+				'yes' => '',
+				'no' => '',
+			),
+		);
+		if ($page->for_feed_settings()) :
+			$munge_permalink = $page->link->setting('munge permalink', NULL);
+			
+			$checked['munge_permalink']['default'] = '';
+			if (is_null($munge_permalink)) :
+				$checked['munge_permalink']['default'] = ' checked="checked"';
+			else :
+				$checked['munge_permalink'][$munge_permalink] = ' checked="checked"';
+			endif;
+		else :
+			$munge_permalink = $global_munge_permalink;
+			$checked['munge_permalink'][$munge_permalink] = ' checked="checked"';
+
+			$use_aggregator_source_data = get_option('feedwordpress_use_aggregator_source_data');
+		endif;
 		?>
 		<table class="form-table" cellspacing="2" cellpadding="5">
 		<tr><th  scope="row">Permalinks point to:</th>
 		<td><ul class="options">	
 		<?php if ($page->for_feed_settings()) : ?>
-		<li><label><input type="radio" name="munge_permalink" value="default"<?php echo ($munge_permalink!='yes' and $munge_permalink != 'no')?' checked="checked"':''; ?>/> use site-wide setting (currently <?php print $setting['munge_permalink'][$global_munge_permalink]; ?>)</label></li>
+		<li><label><input type="radio" name="munge_permalink" value="default"<?php print $checked['munge_permalink']['default']; ?> /> use site-wide setting
+		(currently <?php print $setting['munge_permalink'][$global_munge_permalink]; ?>)</label></li>
 		<?php endif; ?>
-		<li><label><input type="radio" name="munge_permalink" value="yes"<?php echo ($munge_permalink=='yes')?' checked="checked"':''; ?>><?php print $setting['munge_permalink']['yes']; ?></label></li>
-		<li><label><input type="radio" name="munge_permalink" value="no"<?php echo ($munge_permalink=='no')?' checked="checked"':''; ?>><?php print $setting['munge_permalink']['no']; ?></label></li>
+		<li><label><input type="radio" name="munge_permalink" value="yes"<?php print $checked['munge_permalink']['yes']; ?> /><?php print $setting['munge_permalink']['yes']; ?></label></li>
+		<li><label><input type="radio" name="munge_permalink" value="no"<?php print $checked['munge_permalink']['no']; ?> /><?php print $setting['munge_permalink']['no']; ?></label></li>
 		</ul></td>
 		</tr>
 		
@@ -421,7 +444,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		endif;
 
 		if ($page->for_feed_settings()) :
-			$custom_settings = $page->link->settings["postmeta"];
+			$custom_settings = $page->link->setting("postmeta", NULL, array());
 		else :
 			$custom_settings = get_option('feedwordpress_custom_settings');
 		endif;

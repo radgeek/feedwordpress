@@ -436,8 +436,10 @@ function feedwordpress_display_url ($url, $before = 60, $after = 0) {
 	$bits = parse_url($url);
 	
 	// Strip out crufty subdomains
-  	$bits['host'] = preg_replace('/^www[0-9]*\./i', '', $bits['host']);
-
+	if (isset($bits['host'])) :
+  		$bits['host'] = preg_replace('/^www[0-9]*\./i', '', $bits['host']);
+  	endif;
+  
   	// Reassemble bit-by-bit with minimum of crufty elements
 	$url = (isset($bits['user'])?$bits['user'].'@':'')
 		.(isset($bits['host'])?$bits['host']:'')
