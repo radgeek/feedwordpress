@@ -27,7 +27,8 @@ class UpdatedPostsControl {
 		of the post be updated to match the revised version?</p>
 		<ul>
 		<?php if ($this->page->for_feed_settings()) : ?>
-		<li><label><input type="radio" name="freeze_updates" value="default" <?php print ($freeze_updates=='default') ? 'checked="checked"':'' ?> /> Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename(__FILE__); ?>">site-wide setting</a> (currently: <strong><?php print $setting[$global_freeze_updates]; ?></strong>)</label></li>
+		<li><label><input type="radio" name="freeze_updates" value="default" <?php print ($freeze_updates=='default') ? 'checked="checked"':'' ?> /> Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename(__FILE__); ?>">site-wide setting</a>
+		<span class="current-setting">Currently: <strong><?php print $setting[$global_freeze_updates]; ?></strong></span></label></li>
 		<?php endif; ?>
 		<li><label><input type="radio" name="freeze_updates" value="no" <?php print ($freeze_updates!='yes' and $freeze_updates!='default') ? 'checked="checked"':'' ?> /> Yes, update the syndicated copy to match</label></li>
 		<li><label><input type="radio" name="freeze_updates" value="yes" <?php print ($freeze_updates=='yes') ? 'checked="checked"':'' ?>  /> No, leave the syndicated copy unmodified</label></li>

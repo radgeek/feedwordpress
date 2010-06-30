@@ -65,6 +65,12 @@
 	border-bottom-width:1px;
 }
 
+.current-setting {
+	display: block;
+	font-size: smaller; 
+	margin-left: 2.0em;
+}
+
 /* Switchfeed interface elements */
 
 #feed-finder form {

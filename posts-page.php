@@ -152,7 +152,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			$href = $fwp_path.'/'.basename(__FILE__);
 			$currently = str_replace('%s', '', strtolower(strtok($setting[$post_status_global]['label'], ';')));
 			$setting['site-default'] = array('label' => "Use <a href=\"admin.php?page=${href}\">site-wide setting</a>", 'checked' => '');
-			$setting['site-default']['label'] .= " (currently: <strong>${currently}</strong>)";
+			$setting['site-default']['label'] .= " <span class=\"current-setting\">Currently: <strong>${currently}</strong></span>";
 	
 			$checked = $page->link->syndicated_status('post', 'site-default', /*fallback=*/ false);
 		else :
@@ -251,7 +251,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		<ul>
 		<?php if ($page->for_feed_settings()) : ?>
 		<li><p><label><input type="radio" name="resolve_relative" value='default' <?php echo ($resolve_relative=='default')?' checked="checked"':''; ?>/> Use <a href="admin.php?page=<?php print $href; ?>">site-wide setting</a><br/>
-		<small style="margin-left: 2.0em;">Currently: <strong><?php print $setting[$global_resolve_relative]; ?></strong></small></label></p></li>
+		<span class="current-setting">Currently: <strong><?php print $setting[$global_resolve_relative]; ?></strong></span></label></p></li>
 		<?php endif; ?>
 		<li><p><label><input type="radio" name="resolve_relative" value="yes"<?php echo ($resolve_relative!='no' and $resolve_relative!='default')?' checked="checked"':''; ?>/> Resolve the URI so it points to <code><?php print $url; ?></code><br/>
 		<small style="margin-left: 2.0em;"><code>/contact</code> is rewritten as <code><?php print $url; ?>/contact</code></label></small></p></li>
@@ -274,10 +274,12 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 *
 	 */
 	/*static*/ function links_box ($page, $box = NULL) {
+		global $fwp_path;
+
 		$setting = array(
 			'munge_permalink' => array(
-				'yes' => 'the copy on the original website',
-				'no' => 'the local copy on this website',
+				'yes' => __('The copy on the original website'),
+				'no' => __('The local copy on this website'),
 			),
 		);
 
@@ -301,6 +303,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			else :
 				$checked['munge_permalink'][$munge_permalink] = ' checked="checked"';
 			endif;
+			$href = $fwp_path.'/'.basename(__FILE__);
 		else :
 			$munge_permalink = $global_munge_permalink;
 			$checked['munge_permalink'][$munge_permalink] = ' checked="checked"';
@@ -312,11 +315,11 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		<tr><th  scope="row">Permalinks point to:</th>
 		<td><ul class="options">	
 		<?php if ($page->for_feed_settings()) : ?>
-		<li><label><input type="radio" name="munge_permalink" value="default"<?php print $checked['munge_permalink']['default']; ?> /> use site-wide setting
-		(currently <?php print $setting['munge_permalink'][$global_munge_permalink]; ?>)</label></li>
+		<li><label><input type="radio" name="munge_permalink" value="default"<?php print $checked['munge_permalink']['default']; ?> /> Use <a href="admin.php?page=<?php print $href; ?>">site-wide setting</a>
+		<span class="current-setting">Currently: <strong><?php print $setting['munge_permalink'][$global_munge_permalink]; ?></strong></span></label></li>
 		<?php endif; ?>
-		<li><label><input type="radio" name="munge_permalink" value="yes"<?php print $checked['munge_permalink']['yes']; ?> /><?php print $setting['munge_permalink']['yes']; ?></label></li>
-		<li><label><input type="radio" name="munge_permalink" value="no"<?php print $checked['munge_permalink']['no']; ?> /><?php print $setting['munge_permalink']['no']; ?></label></li>
+		<li><label><input type="radio" name="munge_permalink" value="yes"<?php print $checked['munge_permalink']['yes']; ?> /> <?php print $setting['munge_permalink']['yes']; ?></label></li>
+		<li><label><input type="radio" name="munge_permalink" value="no"<?php print $checked['munge_permalink']['no']; ?> /> <?php print $setting['munge_permalink']['no']; ?></label></li>
 		</ul></td>
 		</tr>
 		
@@ -387,7 +390,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 				$href = $fwp_path.'/'.basename(__FILE__);
 				$currently = trim(str_replace('%s', '', strtolower(strtok($setting[$whatsits[$what]['default']]['label'], ';'))));
 				$setting['site-default'] = array('label' => "Use <a href=\"admin.php?page=${href}\">site-wide setting</a>", 'checked' => '');
-				$setting['site-default']['label'] .= " (currently: <strong>${currently}</strong>)";
+				$setting['site-default']['label'] .= " <span class=\"current-setting\">Currently: <strong>${currently}</strong></span>";
 		
 				$checked = $page->link->syndicated_status($what, 'site-default', /*fallback=*/ false);
 			else :
@@ -428,7 +431,8 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		  URLs for the feeds should...</p>
 		  <ul class="options">
 		  <?php if ($page->for_feed_settings()) : ?>
-		  <li><label><input type="radio" name="munge_comments_feed_links" value="default"<?php print $selected['munge_comments_feed_links']['default']; ?> /> Use <a href="admin.php?page=<?php print $href; ?>">site-wide setting</a> (currently: <strong><?php _e($siteWide); ?></strong>)</label></li>
+		  <li><label><input type="radio" name="munge_comments_feed_links" value="default"<?php print $selected['munge_comments_feed_links']['default']; ?> /> Use <a href="admin.php?page=<?php print $href; ?>">site-wide setting</a>
+		  <span class="current-setting">Currently: <strong><?php _e($siteWide); ?></strong></span></label></li>
 		  <?php endif; ?>
 		  <li><label><input type="radio" name="munge_comments_feed_links" value="yes"<?php print $selected['munge_comments_feed_links']['yes']; ?> /> <?php _e('Point to comment feeds from the original website (when provided by the syndicated feed)'); ?></label></li>
 		  <li><label><input type="radio" name="munge_comments_feed_links" value="no"<?php print $selected['munge_comments_feed_links']['no']; ?> /> <?php _e('Point to local comment feeds on this website'); ?></label></li>
