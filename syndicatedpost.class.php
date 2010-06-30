@@ -1670,6 +1670,7 @@ class SyndicatedPost {
 				$resc = $wpdb->escape(preg_quote($cat_name));
 				
 				$cat_id = term_exists($cat_name, 'category');
+				$tag_id = term_exists($cat_name, 'post_tag');
 				if ($cat_id) :
 					$cat_ids[] = $cat_id['term_id'];
 				// There must be a better way to do this...
@@ -1683,6 +1684,8 @@ class SyndicatedPost {
 					foreach ($results as $term) :
 						$cat_ids[] = (int) $term->term_id;
 					endforeach;
+				elseif ($tag_id) :
+					$tags[] = $cat_name;
 				elseif ('tag'==$unfamiliar_category) :
 					$tags[] = $cat_name;
 				elseif ('create'===$unfamiliar_category) :
