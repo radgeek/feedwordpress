@@ -93,6 +93,23 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
+*	MAPPING CATEGORIES ON SYNDICATED POSTS TO TAGS NOW BETTER SUPPORTED:
+	In previous versions, the only way for the Categories provided by a
+	syndicated feed to be mapped into Post Tags was to instruct FWP to
+	create new tags, rather than new categories, for unfamiliar categories
+	from the feed. This works fine if you want tags to be the default; but
+	if you want only a *specific* set of tags, there was no way to get them
+	without getting most or all other categories imported as tags. You can
+	now do this by creating a tag (under Posts ==> Post Tags) before
+	importing the post; when the syndicated category matches a pre-existing
+	tag, the incoming post will be tagged with that tag, without creating
+	a local Post Category.
+	
+*	REL-TAG MICROFORMAT SUPPORT FOR INLINE TAGS: Syndicated posts that
+	contain inline tags, marked up using the Rel-Tag microformat
+	<http://microformats.org/wiki/rel-tag>, are now tagged with the tags
+	provided by Rel-Tag format links.
+
 = 2010.0623 =
 
 *	WORDPRESS 3.0 COMPATIBILITY / AUTHOR MAPPING INTERFACE ISSUES: I
