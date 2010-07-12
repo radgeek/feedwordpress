@@ -182,6 +182,11 @@ class FeedWordPressAdminPage {
 	
 	/*static*/ function has_link () { return true; }
 
+	function form_action () {
+		global $fwp_path;
+		return "admin.php?page=${fwp_path}/".basename($this->filename);
+	} /* FeedWordPressAdminPage::form_action () */
+
 	function open_sheet ($header) {
 		// Set up prepatory AJAX stuff
 		$this->ajax_interface_js();
@@ -203,7 +208,7 @@ class FeedWordPressAdminPage {
 
 		if (!is_null($this->dispatch)) :
 			?>
-			<form action="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/<?php echo basename($this->filename); ?>" method="post">
+			<form action="<?php print $this->form_action(); ?>" method="post">
 			<div><?php
 				FeedWordPressCompatibility::stamp_nonce($this->dispatch);
 				$this->stamp_link_id();
