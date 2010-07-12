@@ -144,7 +144,7 @@ class FeedWordPressAdminPage {
 		endif;
 		?>
 
-		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->link->link_name); ?><?php endif; ?></h2>
+		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name()); ?><?php endif; ?></h2>
 		<?php
 	}
 
