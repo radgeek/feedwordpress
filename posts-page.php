@@ -559,11 +559,6 @@ function fwp_posts_page () {
 	$links = FeedWordPress::syndicated_links();
 	$postsPage->open_sheet('Syndicated Posts & Links');
 ?>
-<style type="text/css">
-	table.edit-form th, table.form-table th { width: 27%; vertical-align: top; }
-	table.edit-form td, table.form-table td { width: 73%; vertical-align: top; }
-	ul.options { margin: 0; padding: 0; list-style: none; }
-</style>
 <div id="post-body">
 <?php
 $boxes_by_methods = array(

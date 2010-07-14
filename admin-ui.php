@@ -796,4 +796,147 @@ function fwp_remove_meta_box($id, $page, $context) {
 	endif;
 } /* function fwp_remove_meta_box() */
 
+function fwp_syndication_manage_page_links_table_rows ($links, $visible = 'Y') {
+	global $fwp_path;
+	
+	$subscribed = ('Y' == strtoupper($visible));
+	if ($subscribed or (count($links) > 0)) :
+	?>
+	<table class="widefat<?php if (!$subscribed) : ?> unsubscribed<?php endif; ?>">
+	<thead>
+	<tr>
+	<th class="check-column" scope="col"><input type="checkbox" /></th>
+	<th scope="col"><?php _e('Name'); ?></th>
+	<th scope="col"><?php _e('Feed'); ?></th>
+	<th scope="col"><?php _e('Updated'); ?></th>
+	</tr>
+	</thead>
+
+	<tbody>
+<?php
+		$alt_row = true; 
+		if (count($links) > 0):
+			foreach ($links as $link):
+				$trClass = array();
+
+				// Prep: Get last updated timestamp
+				$sLink = new SyndicatedLink($link->link_id);
+				if (!is_null($sLink->setting('update/last'))) :
+					$lastUpdated = fwp_time_elapsed($sLink->setting('update/last'));
+				else :
+					$lastUpdated = __('None yet');
+				endif;
+
+				// Prep: get last error timestamp, if any
+				if (is_null($sLink->setting('update/error'))) :
+					$errorsSince = '';
+				else :
+					$trClass[] = 'feed-error';
+
+					$theError = unserialize($sLink->setting('update/error'));
+					
+					$errorsSince = "<div class=\"returning-errors\">"
+						."<p><strong>Returning errors</strong> since "
+						.fwp_time_elapsed($theError['since'])
+						."</p>"
+						."<p>Most recent ("
+						.fwp_time_elapsed($theError['ts'])
+						."):<br/><code>"
+						.implode("</code><br/><code>", $theError['object']->get_error_messages())
+						."</code></p>"
+						."</div>\n";
+				endif;
+
+				$nextUpdate = "<div style='font-style:italic;size:0.9em'>Ready for next update ";
+				if (isset($sLink->settings['update/ttl']) and is_numeric($sLink->settings['update/ttl'])) :
+					if (isset($sLink->settings['update/timed']) and $sLink->settings['update/timed']=='automatically') :
+						$next = $sLink->settings['update/last'] + ((int) $sLink->settings['update/ttl'] * 60);
+						$nextUpdate .= fwp_time_elapsed($next);
+						if (FEEDWORDPRESS_DEBUG) : $nextUpdate .= " [".(($next-time())/60)." minutes]"; endif;
+					else :
+						$nextUpdate .= "every ".$sLink->settings['update/ttl']." minute".(($sLink->settings['update/ttl']!=1)?"s":"");
+					endif;
+				else:
+					$nextUpdate .= "as soon as possible";
+				endif;
+				$nextUpdate .= "</div>";
+
+				unset($sLink);
+				
+				$alt_row = !$alt_row;
+				
+				if ($alt_row) :
+					$trClass[] = 'alternate';
+				endif;
+				?>
+	<tr<?php echo ((count($trClass) > 0) ? ' class="'.implode(" ", $trClass).'"':''); ?>>
+	<th class="check-column" scope="row"><input type="checkbox" name="link_ids[]" value="<?php echo $link->link_id; ?>" /></th>
+				<?php
+				$hrefPrefix = "admin.php?link_id={$link->link_id}&amp;page=${fwp_path}/";
+				$caption = (
+					(strlen($link->link_rss) > 0)
+					? __('Switch Feed')
+					: $caption=__('Find Feed')
+				);
+				?>
+	<td>
+	<strong><a href="<?php print $hrefPrefix; ?>feeds-page.php"><?php print esc_html($link->link_name); ?></a></strong>
+	<div class="row-actions"><?php if ($subscribed) : ?>
+	<div><strong>Settings &gt;</strong>
+	<a href="<?php print $hrefPrefix; ?>feeds-page.php"><?php _e('Feed'); ?></a>
+	| <a href="<?php print $hrefPrefix; ?>posts-page.php"><?php _e('Posts'); ?></a>
+	| <a href="<?php print $hrefPrefix; ?>authors-page.php"><?php _e('Authors'); ?></a>
+	| <a href="<?php print $hrefPrefix; ?>categories-page.php"><?php print htmlspecialchars(__('Categories'.FEEDWORDPRESS_AND_TAGS)); ?></a></div>
+	<?php endif; ?>
+
+	<div><strong>Actions &gt;</strong>
+	<?php if ($subscribed) : ?>
+	<a href="<?php print $hrefPrefix; ?><?php echo basename(__FILE__); ?>&amp;action=feedfinder"><?php echo $caption; ?></a>
+	<?php else : ?>
+	<a href="<?php print $hrefPrefix; ?><?php echo basename(__FILE__); ?>&amp;action=<?php print FWP_RESUB_CHECKED; ?>"><?php _e('Re-subscribe'); ?></a>
+	<?php endif; ?>
+	| <a href="<?php print $hrefPrefix; ?><?php echo basename(__FILE__); ?>&amp;action=Unsubscribe"><?php _e(($subscribed ? 'Unsubscribe' : 'Delete permanently')); ?></a>
+	| <a href="<?php print esc_html($link->link_url); ?>"><?php _e('View')?></a></div>
+	</div>
+	</td>
+				<?php if (strlen($link->link_rss) > 0): ?>
+	<td><a href="<?php echo esc_html($link->link_rss); ?>"><?php echo esc_html(feedwordpress_display_url($link->link_rss, 32)); ?></a></td>
+				<?php else: ?>
+	<td class="feed-missing"><p><strong>no feed assigned</strong></p></td>
+				<?php endif; ?>
+
+	<td><?php print $lastUpdated; ?>
+	<?php print $errorsSince; ?>
+	<?php print $nextUpdate; ?>
+	</td>
+	</tr>
+			<?php
+			endforeach;
+		else :
+?>
+<tr><td colspan="4"><p>There are no websites currently listed for syndication.</p></td></tr>
+<?php
+		endif;
+?>
+</tbody>
+</table>
+	<?php
+	endif;
+} /* function fwp_syndication_manage_page_links_table_rows () */
+
+function fwp_syndication_manage_page_links_subsubsub ($sources, $showInactive) {
+	global $fwp_path;
+	$hrefPrefix = "admin.php?page=${fwp_path}/".basename(__FILE__);
+	?>
+	<ul class="subsubsub">
+	<li><a <?php if (!$showInactive) : ?>class="current" <?php endif; ?>href="<?php print $hrefPrefix; ?>&amp;visibility=Y">Subscribed
+	<span class="count">(<?php print count($sources['Y']); ?>)</span></a></li>
+	<?php if ($showInactive or (count($sources['N']) > 0)) : ?>
+	<li><a <?php if ($showInactive) : ?>class="current" <?php endif; ?>href="<?php print $hrefPrefix; ?>&amp;visibility=N">Inactive</a>
+	<span class="count">(<?php print count($sources['N']); ?>)</span></a></li>
+	<?php endif; ?>
+
+	</ul> <!-- class="subsubsub" -->
+	<?php
+}
 

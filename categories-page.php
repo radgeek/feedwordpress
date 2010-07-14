@@ -203,12 +203,6 @@ function fwp_categories_page () {
 	$catsPage->display_update_notice_if_updated('Syndicated categories'.FEEDWORDPRESS_AND_TAGS, $mesg);
 	$catsPage->open_sheet('Categories'.FEEDWORDPRESS_AND_TAGS);
 	?>
-	<style type="text/css">
-		table.edit-form th { width: 27%; vertical-align: top; }
-		table.edit-form td { width: 73%; vertical-align: top; }
-		table.edit-form td ul.options { margin: 0; padding: 0; list-style: none; }
-	</style>
-
 	<div id="post-body">
 	<?php
 	////////////////////////////////////////////////

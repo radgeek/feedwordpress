@@ -127,10 +127,9 @@ endif;
 
 // If this is a FeedWordPress admin page, queue up scripts for AJAX functions that FWP uses
 // If it is a display page or a non-FeedWordPress admin page, don't.
+wp_register_style('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.css');
 if (FeedWordPressSettingsUI::is_admin()) :
 	add_action('admin_print_scripts', array('FeedWordPressSettingsUI', 'admin_scripts'));
-
-	wp_register_style('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.css');
 
 	wp_enqueue_style('dashboard');
 	wp_enqueue_style('feedwordpress-elements');
@@ -1082,6 +1081,8 @@ class FeedWordPress {
 		$feed_set = $this->feeds;
 		shuffle($feed_set);
 
+		$feed_set = apply_filters('feedwordpress_update_feeds', $feed_set, $uri);
+		
 		// Loop through and check for new posts
 		$delta = NULL;
 		foreach ($feed_set as $feed) :

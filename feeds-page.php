@@ -374,13 +374,6 @@ contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 
 		// Hey ho, let's go
 		?>
-		<style type="text/css">
-		table.edit-form { width: 100%; }
-		table.edit-form th { width: 25%; vertical-align: top; text-align: right; padding: 0.5em; }
-		table.edit-form td { width: 75%; vertical-align: top; padding: 0.5em; }
-		table.edit-form td ul.options { margin: 0; padding: 0; list-style: none; }
-		</style>
-	
 		<table class="edit-form">
 
 		<?php if ($page->for_feed_settings()) : ?>

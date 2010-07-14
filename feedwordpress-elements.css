@@ -150,3 +150,10 @@
 	margin-bottom: 0.5em;
 }
 
+table.edit-form { width: 100%; }
+table.edit-form th { width: 27%; vertical-align: top; text-align: right; padding: 0.5em; }
+table.edit-form td { width: 73%; vertical-align: top; padding: 0.5em; }
+table.edit-form td ul.options { margin: 0; padding: 0; list-style: none; }
+table.edit-form.narrow th { width: 15%; }
+table.edit-form.narrow td { width: 85%; }
+
