@@ -200,25 +200,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_action('feedwordpress_update', 'fwp_hold_pings');
 	add_action('feedwordpress_update_complete', 'fwp_release_pings');
 
-	# Hook in logging functions only if the logging option is ON
-	$update_logging = get_option('feedwordpress_update_logging');
-	if ($update_logging == 'yes') :
-		add_action('post_syndicated_item', 'log_feedwordpress_post', 100);
-		add_action('update_syndicated_item', 'log_feedwordpress_update_post', 100);
-		add_action('feedwordpress_update', 'log_feedwordpress_update_feeds', 100);
-		add_action('feedwordpress_check_feed', 'log_feedwordpress_check_feed', 100);
-		add_action('feedwordpress_update_complete', 'log_feedwordpress_update_complete', 100);
-	endif;
-	
 	if (FeedWordPress::update_requested()) :
-		if (FEEDWORDPRESS_DEBUG) :
-			add_action('post_syndicated_item', 'debug_out_feedwordpress_post', 100);
-			add_action('update_syndicated_item', 'debug_out_feedwordpress_update_post', 100);
-			add_action('feedwordpress_update', 'debug_out_feedwordpress_update_feeds', 100);
-			add_action('feedwordpress_check_feed', 'debug_out_feedwordpress_check_feed', 100);
-			add_action('feedwordpress_update_complete', 'debug_out_feedwordpress_update_complete', 100);
-		endif;
-
 		add_action('feedwordpress_check_feed_complete', 'debug_out_feedwordpress_feed_error', 100, 3);
 	endif;
 
@@ -282,7 +264,7 @@ function feedwordpress_update_magic_url () {
 					print "[".(sprintf('%4.4f', $time/1000.0)) . "ms] $query\n";
 				endforeach;
 			endforeach;
-			echo "[feedwordpress] $wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of "; timer_stop(1); print " seconds.";
+			echo FeedWordPress::log_prefix()."$wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of "; timer_stop(1); print " seconds.";
 		endif;
 
 		debug_out_feedwordpress_footer();
@@ -297,77 +279,11 @@ function feedwordpress_update_magic_url () {
 ## LOGGING FUNCTIONS: log status updates to error_log if you want it ###########
 ################################################################################
 
-function log_feedwordpress_post ($id) {
-	$post = wp_get_single_post($id);
-	error_log("[".date('Y-m-d H:i:s')."][feedwordpress] posted "
-		."'{$post->post_title}' ({$post->post_date})");
-}
-
-function log_feedwordpress_update_post ($id) {
-	$post = wp_get_single_post($id);
-	error_log("[".date('Y-m-d H:i:s')."][feedwordpress] updated "
-		."'{$post->post_title}' ({$post->post_date})"
-		." (as of {$post->post_modified})");
-}
-
-function log_feedwordpress_update_feeds ($uri) {
-	error_log("[".date('Y-m-d H:i:s')."][feedwordpress] update('$uri')");
-}
-
-function log_feedwordpress_check_feed ($feed) {
-	$uri = $feed['link/uri']; $name = $feed['link/name'];
-	error_log("[".date('Y-m-d H:i:s')."][feedwordpress] Examining $name <$uri>");
-}
-
-function log_feedwordpress_update_complete ($delta) {
-	$mesg = array();
-	if (isset($delta['new'])) $mesg[] = 'added '.$delta['new'].' new posts';
-	if (isset($delta['updated'])) $mesg[] = 'updated '.$delta['updated'].' existing posts';
-	if (empty($mesg)) $mesg[] = 'nothing changed';
-
-	error_log("[".date('Y-m-d H:i:s')."][feedwordpress] "
-		.(is_null($delta) ? "Error: I don't syndicate that URI"
-		: implode(' and ', $mesg)));
-}
-
-function debug_out_feedwordpress_post ($id) {
-	$post = wp_get_single_post($id);
-	print ("[".date('Y-m-d H:i:s')."][feedwordpress] posted "
-		."'{$post->post_title}' ({$post->post_date})\n");
-}
-
-function debug_out_feedwordpress_update_post ($id) {
-	$post = wp_get_single_post($id);
-	print ("[".date('Y-m-d H:i:s')."][feedwordpress] updated "
-		."'{$post->post_title}' ({$post->post_date})"
-		." (as of {$post->post_modified})\n");
-}
-
-function debug_out_feedwordpress_update_feeds ($uri) {
-	print ("[".date('Y-m-d H:i:s')."][feedwordpress] update('$uri')\n");
-}
-
-function debug_out_feedwordpress_check_feed ($feed) {
-	$uri = $feed['link/uri']; $name = $feed['link/name'];
-	print ("[".date('Y-m-d H:i:s')."][feedwordpress] Examining $name <$uri>\n");
-}
-
-function debug_out_feedwordpress_update_complete ($delta) {
-	$mesg = array();
-	if (isset($delta['new'])) $mesg[] = 'added '.$delta['new'].' new posts';
-	if (isset($delta['updated'])) $mesg[] = 'updated '.$delta['updated'].' existing posts';
-	if (empty($mesg)) $mesg[] = 'nothing changed';
-
-	print ("[".date('Y-m-d H:i:s')."][feedwordpress] "
-		.(is_null($delta) ? "Error: I don't syndicate that URI"
-		: implode(' and ', $mesg))."\n");
-}
-
 function debug_out_feedwordpress_feed_error ($feed, $added, $dt) {
 	if (is_wp_error($added)) :
 		$mesgs = $added->get_error_messages();
 		foreach ($mesgs as $mesg) :
-			echo "[feedwordpress] Error updating [{$feed['link/uri']}]: $mesg\n";
+			echo FeedWordPress::log_prefix()." Error updating [{$feed['link/uri']}]: $mesg\n";
 		endforeach;		
 	endif;
 }
@@ -1548,7 +1464,7 @@ class FeedWordPress {
 					$feedwordpress_admin_footer[] = $out;
 					break;
 				case 'error_log' :
-					error_log('[feedwordpress]' . $out);
+					error_log(FeedWordPress::log_prefix().' '.$out);
 					break;
 				endswitch;
 			endforeach;
@@ -1561,6 +1477,15 @@ class FeedWordPress {
 			echo '<div><pre>'.esc_html($line).'</pre></div>';
 		endforeach;
 	} /* FeedWordPress::admin_footer () */
+	
+	function log_prefix ($date = false) {
+		$home = get_bloginfo('url');
+		$prefix = '['.feedwordpress_display_url($home).'] [feedwordpress] ';
+		if ($date) :
+			$prefix = "[".date('Y-m-d H:i:s')."]".$prefix;
+		endif;
+		return $prefix;
+	} /* FeedWordPress::log_prefix () */
 } // class FeedWordPress
 
 class FeedWordPress_File extends WP_SimplePie_File {
