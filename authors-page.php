@@ -171,6 +171,7 @@ function fwp_authors_page () {
 	$authorsPage = new FeedWordPressAuthorsPage($link);
 
 	$mesg = null;
+	$updated_link = false;
 
 	if (isset($GLOBALS['fwp_post']['fix_mismatch'])) :
 		if ('newuser'==$GLOBALS['fwp_post']['fix_mismatch_to']) :
