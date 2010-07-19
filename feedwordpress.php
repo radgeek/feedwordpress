@@ -114,7 +114,7 @@ endif;
 
 // Get the path relative to the plugins directory in which FWP is stored
 preg_match (
-	'|/wp-content/plugins/(.+)$|',
+	'|'.WP_CONTENT_DIR.'/plugins/(.+)$|',
 	dirname(__FILE__),
 	$ref
 );
