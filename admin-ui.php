@@ -891,11 +891,11 @@ function fwp_syndication_manage_page_links_table_rows ($links, $visible = 'Y') {
 
 	<div><strong>Actions &gt;</strong>
 	<?php if ($subscribed) : ?>
-	<a href="<?php print $hrefPrefix; ?><?php echo basename(__FILE__); ?>&amp;action=feedfinder"><?php echo $caption; ?></a>
+	<a href="<?php print $hrefPrefix; ?>syndication.php&amp;action=feedfinder"><?php echo $caption; ?></a>
 	<?php else : ?>
-	<a href="<?php print $hrefPrefix; ?><?php echo basename(__FILE__); ?>&amp;action=<?php print FWP_RESUB_CHECKED; ?>"><?php _e('Re-subscribe'); ?></a>
+	<a href="<?php print $hrefPrefix; ?>syndication.php&amp;action=<?php print FWP_RESUB_CHECKED; ?>"><?php _e('Re-subscribe'); ?></a>
 	<?php endif; ?>
-	| <a href="<?php print $hrefPrefix; ?><?php echo basename(__FILE__); ?>&amp;action=Unsubscribe"><?php _e(($subscribed ? 'Unsubscribe' : 'Delete permanently')); ?></a>
+	| <a href="<?php print $hrefPrefix; ?>syndication.php&amp;action=Unsubscribe"><?php _e(($subscribed ? 'Unsubscribe' : 'Delete permanently')); ?></a>
 	| <a href="<?php print esc_html($link->link_url); ?>"><?php _e('View')?></a></div>
 	</div>
 	</td>
