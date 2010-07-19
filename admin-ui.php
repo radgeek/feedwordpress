@@ -104,15 +104,13 @@ class FeedWordPressAdminPage {
 		if (typeof(visibleStyle)=='undefined') visibleStyle = 'block';
 
 		var rollup=document.getElementById(item);
-		var newuser=document.getElementById(appear);
-		var sitewide=document.getElementById(disappear);
 		if (rollup) {
 			if ((checkbox && rollup.checked) || (!checkbox && value==rollup.value)) {
-				if (newuser) newuser.style.display=visibleStyle;
-				if (sitewide) sitewide.style.display='none';
+				jQuery('#'+disappear).hide();
+				jQuery('#'+appear).show(600);
 			} else {
-				if (newuser) newuser.style.display='none';
-				if (sitewide) sitewide.style.display=visibleStyle;
+				jQuery('#'+appear).hide();
+				jQuery('#'+disappear).show(600);
 			}
 		}
 	}
