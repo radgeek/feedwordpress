@@ -171,26 +171,39 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			?>
 			</div> <!-- class="metabox-holder" -->
 			</div> <!-- id="post-body" -->
-			<?php $this->close_sheet(); ?>
-
-			<script type="text/javascript">
-				var els = ['name', 'description', 'url'];
-				for (var i = 0; i < els.length; i++) {
-					contextual_appearance(
-						/*item=*/ 'basics-hardcode-'+els[i],
-						/*appear=*/ 'basics-'+els[i]+'-view',
-						/*disappear=*/ 'basics-'+els[i]+'-edit',
-						/*value=*/ 'no',
-						/*visibleStyle=*/ 'block',
-						/*checkbox=*/ true
-					);
-				} /* for */
-			</script>
-			<?php
+			<?php $this->close_sheet();
 		endif;
 		return false; // Don't continue
 	} /* FeedWordPressFeedsPage::display() */
 
+	function ajax_interface_js () {
+		FeedWordPressAdminPage::ajax_interface_js();
+		?>
+		<script type="text/javascript">
+		jQuery(document).ready( function () {
+			contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');
+			contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
+			contextual_appearance('use-default-update-window-no', 'update-scheduling-note', null, null, 'block', true);
+			jQuery('.use-default-update-window').click( function () {
+				contextual_appearance('use-default-update-window-no', 'update-scheduling-note', null, null, 'block', true);
+			} );
+
+			var els = ['name', 'description', 'url'];
+			for (var i = 0; i < els.length; i++) {
+				contextual_appearance(
+					/*item=*/ 'basics-hardcode-'+els[i],
+					/*appear=*/ 'basics-'+els[i]+'-view',
+					/*disappear=*/ 'basics-'+els[i]+'-edit',
+					/*value=*/ 'no',
+					/*visibleStyle=*/ 'block',
+					/*checkbox=*/ true
+				);
+			} /* for */
+		} );
+		</script>
+		<?php
+	}
+	
 	/*static*/ function updated_posts_box ($page, $box = NULL) {
 		?>
 		<table class="edit-form">
@@ -321,16 +334,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 
 </table>
-<script type="text/javascript">
-jQuery(document).ready( function () {
-	contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');
-	contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
-	contextual_appearance('use-default-update-window-no', 'update-scheduling-note', null, null, 'block', true);
-	jQuery('.use-default-update-window').click( function () {
-		contextual_appearance('use-default-update-window-no', 'update-scheduling-note', null, null, 'block', true);
-	} );
-} );
-</script>
 <?php
 	} /* FeedWordPressFeedsPage::global_feeds_box() */
 
