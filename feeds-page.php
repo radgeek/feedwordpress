@@ -308,11 +308,11 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<th scope="row"><?php print __('Update scheduling:') ?></th>
 		<td><p style="margin-top:0px">How long should FeedWordPress wait between updates before it considers this feed ready to be polled for updates again?</p>
 		<ul>
-		<li><label><input type="radio" name="use_default_update_window" value="Yes" <?php if ($useDefaultUpdateWindow) : ?>checked="checked"<?php endif; ?> /> Use site-wide setting (currently <?php print $defaultUpdateWindow; ?> minutes)</li>
-		<li><label><input type="radio" name="use_default_update_window" value="No" <?php if (!$useDefaultUpdateWindow) : ?>checked="checked"<?php endif; ?> /> Wait <input type="text" name="update_window" value="<?php print $updateWindow; ?>" size="4" /> minutes between polling.</label></li>
+		<li><label><input type="radio" name="use_default_update_window" class="use-default-update-window" value="Yes" <?php if ($useDefaultUpdateWindow) : ?>checked="checked"<?php endif; ?> /> Use site-wide setting (currently <?php print $defaultUpdateWindow; ?> minutes)</li>
+		<li><label><input type="radio" name="use_default_update_window" class="use-default-update-window" id="use-default-update-window-no" value="No" <?php if (!$useDefaultUpdateWindow) : ?>checked="checked"<?php endif; ?> /> Wait <input type="text" name="update_window" value="<?php print $updateWindow; ?>" size="4" /> minutes between polling.</label></li>
 		</ul>
 		
-		<div class="setting-description">
+		<div class="setting-description" id="update-scheduling-note">
 		<p<?php if ($updateWindow<50) : ?> style="color: white; background-color: #703030; padding: 1.0em;"<?php endif; ?>><strong>Recommendation.</strong> Unless you are positive that you have the webmaster's permission, you generally should not set FeedWordPress to poll feeds more frequently than once every 60 minutes. Many webmasters consider more frequent automated polling to be abusive, and may complain to your web host, or ban your IP address, as retaliation for hammering their servers too hard.</p>
 		<p><strong>Note.</strong> This is a default setting that FeedWordPress uses to schedule updates when the feed does not provide any scheduling requests. If this feed does provide update scheduling information (through elements such as <code>&lt;rss:ttl&gt;</code> or <code>&lt;sy:updateFrequency&gt;</code>), FeedWordPress will respect the feed's request.</p>
 		</div></td>
@@ -322,8 +322,14 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 </table>
 <script type="text/javascript">
-contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');
-contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
+jQuery(document).ready( function () {
+	contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');
+	contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
+	contextual_appearance('use-default-update-window-no', 'update-scheduling-note', null, null, 'block', true);
+	jQuery('.use-default-update-window').click( function () {
+		contextual_appearance('use-default-update-window-no', 'update-scheduling-note', null, null, 'block', true);
+	} );
+} );
 </script>
 <?php
 	} /* FeedWordPressFeedsPage::global_feeds_box() */

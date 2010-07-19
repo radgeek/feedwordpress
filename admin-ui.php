@@ -232,62 +232,34 @@ class FeedWordPressAdminPage {
 		endif;
 
 		if (!is_null($this->dispatch)) :
-			fwp_settings_form_single_submit();
+			$this->save_button();
 		endif;
 	} /* FeedWordPressAdminPage::open_sheet () */
 	
 	function close_sheet () {
-		// WordPress 2.5+
-		if (function_exists('do_meta_boxes')) :
-			?>
-			</div> <!-- id="poststuff" -->
-			<?php if (!is_null($this->dispatch)) : ?>
-			<?php fwp_settings_form_single_submit_closer(); ?>
-			</form>
-			<?php endif; ?>
-			</div> <!-- class="wrap" -->
-			<?php
+		?>
+		
+		</div> <!-- id="poststuff" -->
+		<?php
+		if (!is_null($this->dispatch)) :
+			$this->save_button();
+			print "</form>\n";
 		endif;
+		?>
+		</div> <!-- class="wrap" -->
+		
+		<?php
 	}
-} /* class FeedWordPressAdminPage */
-
-function fwp_settings_form_single_submit ($caption = NULL) {
-	if (fwp_test_wp_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) :
-		if (is_null($caption)) : $caption = __('Save'); endif;
-?>
-<div class="submitbox" id="submitlink">
-<div id="previewview"></div>
-<div class="inside"></div>
-
-<p class="submit">
-<input type="submit" name="save" value="<?php print $caption; ?>" />
-</p>
-</div>
-<?php
-	endif;
-}
-
-function fwp_settings_form_periodic_submit ($caption = NULL) {
-	if (!fwp_test_wp_version(FWP_SCHEMA_25)) :
-		if (is_null($caption)) : $caption = __('Save Changes &raquo;'); endif;
-?>
-<p class="submit">
-<input type="submit" name="save" value="<?php print $caption; ?>" />
-</p>
-<?php
-	endif;
-}
-
-function fwp_settings_form_single_submit_closer ($caption = NULL) {
-	if (fwp_test_wp_version(FWP_SCHEMA_27)) :
+	
+	function save_button ($caption = NULL) {
 		if (is_null($caption)) : $caption = __('Save Changes'); endif;
-?>
+		?>
 <p class="submit">
 <input class="button-primary" type="submit" name="save" value="<?php print $caption; ?>" />
 </p>
-<?php
-	endif;
-}
+		<?php
+	}
+} /* class FeedWordPressAdminPage */
 
 function fwp_authors_single_submit ($link = NULL) {
 	global $wp_db_version;
@@ -762,9 +734,6 @@ function fwp_do_meta_boxes($page, $context, $object) {
 						
 						if (is_object($object) and method_exists($object, 'interstitial')) :
 							$object->interstitial();
-						else :
-							// Submit button for WP 1.5, early 2.x style
-							fwp_settings_form_periodic_submit();
 						endif;
 					}
 				}
