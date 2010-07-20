@@ -725,11 +725,17 @@ function fwp_add_pages () {
 	endif;
 
 	call_user_func_array('add_menu_page', $menu);
+	do_action('feedwordpress_admin_menu_pre_feeds');
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Feeds & Updates', 'Feeds & Updates', $fwp_capability['manage_options'], $fwp_path.'/feeds-page.php');
+	do_action('feedwordpress_admin_menu_pre_posts');
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Posts & Links', 'Posts & Links', $fwp_capability['manage_options'], $fwp_path.'/posts-page.php');
+	do_action('feedwordpress_admin_menu_pre_authors');
 	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Authors', 'Authors', $fwp_capability['manage_options'], $fwp_path.'/authors-page.php');
+	do_action('feedwordpress_admin_menu_pre_categories');
 	add_submenu_page($fwp_path.'/syndication.php', 'Categories'.FEEDWORDPRESS_AND_TAGS, 'Categories'.FEEDWORDPRESS_AND_TAGS, $fwp_capability['manage_options'], $fwp_path.'/categories-page.php');
+	do_action('feedwordpress_admin_menu_pre_performance');
 	add_submenu_page($fwp_path.'/syndication.php', 'FeedWordPress Performance', 'Performance', $fwp_capability['manage_options'], $fwp_path.'/performance-page.php');
+	do_action('feedwordpress_admin_menu_pre_diagnostics');
 	add_submenu_page($fwp_path.'/syndication.php', 'FeedWordPress Diagnostics', 'Diagnostics', $fwp_capability['manage_options'], $fwp_path.'/diagnostics-page.php');
 } /* function fwp_add_pages () */
 
