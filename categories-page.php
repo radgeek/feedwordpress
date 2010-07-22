@@ -2,9 +2,18 @@
 require_once(dirname(__FILE__) . '/admin-ui.php');
 
 class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
-	function FeedWordPressCategoriesPage ($link) {
+	function FeedWordPressCategoriesPage ($link = -1) {
+		if (is_numeric($link) and -1 == $link) :
+			$link = $this->submitted_link();
+		endif;
+		
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpresscategories', $link);
-		$this->dispatch = 'feedwordpress_categories_settings';
+		$this->dispatch = 'feedwordpress_admin_page_categories';
+		$this->pagenames = array(
+			'default' => 'Categories'.FEEDWORDPRESS_AND_TAGS,
+			'settings-update' => 'Syndicated Categories'.FEEDWORDPRESS_AND_TAGS,
+			'open-sheet' => 'Categories'.FEEDWORDPRESS_AND_TAGS,
+		);
 		$this->filename = __FILE__;
 	}
 	
@@ -15,7 +24,7 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 		$unfamiliar = array ('create'=>'','tag' => '', 'default'=>'','filter'=>'');
 		if ($page->for_feed_settings()) :
 			$unfamiliar['site-default'] = '';
-			$ucKey = $link->settings["unfamiliar category"];
+			$ucKey = $link->setting("unfamiliar category", NULL, NULL);
 			$ucDefault = 'site-default';
 		else :
 			$ucKey = FeedWordPress::on_unfamiliar('category');
@@ -71,7 +80,7 @@ blank.</p></td>
 	function categories_box ($page, $box = NULL) {
 		$link = $page->link;
 		if ($page->for_feed_settings()) :
-			if (is_array($link->settings['cats'])) : $cats = $link->settings['cats'];
+			if (is_array($link->setting('cats', NULL, NULL))) : $cats = $link->settings['cats'];
 			else : $cats = array();
 			endif;
 		else :
@@ -87,7 +96,7 @@ blank.</p></td>
 	function tags_box ($page, $box = NULL) {
 		$link = $page->link;
 		if ($page->for_feed_settings()) :
-			$tags = $link->settings['tags'];
+			$tags = $link->setting('tags', NULL, NULL);
 		else :
 			$tags = array_map('trim',
 				preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, get_option('feedwordpress_syndication_tags'))
@@ -96,81 +105,50 @@ blank.</p></td>
 
 		fwp_tags_box($tags, 'all '.$page->these_posts_phrase());
 	} /* FeedWordPressCategoriesPage::tags_box () */
-}
-
-function fwp_categories_page () {
-	global $wpdb, $wp_db_version;
 	
-	if (FeedWordPress::needs_upgrade()) :
-		fwp_upgrade_page();
-		return;
-	endif;
-
-	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_categories_settings', /*capability=*/ 'manage_links');
-
-	$link = FeedWordPressAdminPage::submitted_link();
-
-	$catsPage = new FeedWordPressCategoriesPage($link);
-
-	$mesg = null;
-
-	////////////////////////////////////////////////
-	// Process POST request, if any /////////////////
-	////////////////////////////////////////////////
-	if (isset($GLOBALS['fwp_post']['save']) or isset($GLOBALS['fwp_post']['submit'])) :
+	function save_settings ($post) {
 		$saveCats = array();
-		if (isset($GLOBALS['fwp_post']['post_category'])) :
-			foreach ($GLOBALS['fwp_post']['post_category'] as $cat_id) :
+		if (isset($post['post_category'])) :
+			foreach ($post['post_category'] as $cat_id) :
 				$saveCats[] = '{#'.$cat_id.'}';
 			endforeach;
 		endif;
-
+	
 		// Different variable names to cope with different WordPress AJAX UIs
 		$syndicatedTags = array();
-		if (isset($GLOBALS['fwp_post']['tax_input']['post_tag'])) :
-			$syndicatedTags = explode(",", $GLOBALS['fwp_post']['tax_input']['post_tag']);
-		elseif (isset($GLOBALS['fwp_post']['tags_input'])) :
-			$syndicatedTags = explode(",", $GLOBALS['fwp_post']['tags_input']);
+		if (isset($post['tax_input']['post_tag'])) :
+			$syndicatedTags = explode(",", $post['tax_input']['post_tag']);
+		elseif (isset($post['tags_input'])) :
+			$syndicatedTags = explode(",", $post['tags_input']);
 		endif;
 		$syndicatedTags = array_map('trim', $syndicatedTags);
-
-		if (is_object($link) and $link->found()) :
-			$alter = array ();
-
+	
+		if ($this->for_feed_settings()) :
 			// Categories
-			if (!empty($saveCats)) : $link->settings['cats'] = $saveCats;
-			else : unset($link->settings['cats']);
+			if (!empty($saveCats)) : $this->link->settings['cats'] = $saveCats;
+			else : unset($this->link->settings['cats']);
 			endif;
-
+	
 			// Tags
-			$link->settings['tags'] = $syndicatedTags;
-
+			$this->link->settings['tags'] = $syndicatedTags;
+	
 			// Unfamiliar categories
-			if (isset($GLOBALS['fwp_post']["unfamiliar_category"])) :
-				if ('site-default'==$GLOBALS['fwp_post']["unfamiliar_category"]) :
-					unset($link->settings["unfamiliar category"]);
+			if (isset($post["unfamiliar_category"])) :
+				if ('site-default'==$post["unfamiliar_category"]) :
+					unset($this->link->settings["unfamiliar category"]);
 				else :
-					$link->settings["unfamiliar category"] = $GLOBALS['fwp_post']["unfamiliar_category"];
+					$this->link->settings["unfamiliar category"] = $post["unfamiliar_category"];
 				endif;
 			endif;
-
-			// Category spitting regex
-			if (isset($GLOBALS['fwp_post']['cat_split'])) :
-				if (strlen(trim($GLOBALS['fwp_post']['cat_split'])) > 0) :
-					$link->settings['cat_split'] = trim($GLOBALS['fwp_post']['cat_split']);
+	
+			// Category splitting regex
+			if (isset($post['cat_split'])) :
+				if (strlen(trim($post['cat_split'])) > 0) :
+					$this->link->settings['cat_split'] = trim($post['cat_split']);
 				else :
-					unset($link->settings['cat_split']);
+					unset($this->link->settings['cat_split']);
 				endif;
 			endif;
-
-			// Save settings
-			$link->save_settings(/*reload=*/ true);
-			$catsPage->updated = true;
-			
-			// Reset, reload
-			$link_id = $link->id;
-			unset($link);
-			$link = new SyndicatedLink($link_id);
 		else :
 			// Categories
 			if (!empty($saveCats)) :
@@ -178,74 +156,41 @@ function fwp_categories_page () {
 			else :
 				delete_option('feedwordpress_syndication_cats');
 			endif;
-	
+		
 			// Tags
 			if (!empty($syndicatedTags)) :
 				update_option('feedwordpress_syndication_tags', implode(FEEDWORDPRESS_CAT_SEPARATOR, $syndicatedTags));
 			else :
 				delete_option('feedwordpress_syndication_tags');
 			endif;
-
-			update_option('feedwordpress_unfamiliar_category', $_REQUEST['unfamiliar_category']);
-
-			$catsPage->updated = true;
-		endif;
-		
-		do_action('feedwordpress_admin_page_categories_save', $GLOBALS['fwp_post'], $catsPage);
-	else :
-		$catsPage->updated = false;
-	endif;
-
-	////////////////////////////////////////////////
-	// Prepare settings page ///////////////////////
-	////////////////////////////////////////////////
 	
-	$catsPage->display_update_notice_if_updated('Syndicated categories'.FEEDWORDPRESS_AND_TAGS, $mesg);
-	$catsPage->open_sheet('Categories'.FEEDWORDPRESS_AND_TAGS);
-	?>
-	<div id="post-body">
-	<?php
-	////////////////////////////////////////////////
-	// Display settings boxes //////////////////////
-	////////////////////////////////////////////////
-
-	$boxes_by_methods = array(
-		'feed_categories_box' => __('Feed Categories'.FEEDWORDPRESS_AND_TAGS),
-		'categories_box' => array('title' => __('Categories'), 'id' => 'categorydiv'),
-		'tags_box' => __('Tags'),
-	);
-	if (!FeedWordPressCompatibility::post_tags()) :
-		unset($boxes_by_methods['tags_box']);
-	endif;
-
-	foreach ($boxes_by_methods as $method => $row) :
-		if (is_array($row)) :
-			$id = $row['id'];
-			$title = $row['title'];
-		else :
-			$id = 'feedwordpress_'.$method;
-			$title = $row;
+			update_option('feedwordpress_unfamiliar_category', $_REQUEST['unfamiliar_category']);
+		endif;
+		parent::save_settings($post);
+	} /* FeedWordPressCategoriesPage::save_settings() */
+	
+	function display () {
+		////////////////////////////////////////////////
+		// Display settings boxes //////////////////////
+		////////////////////////////////////////////////
+	
+		$this->boxes_by_methods = array(
+			'feed_categories_box' => __('Feed Categories'.FEEDWORDPRESS_AND_TAGS),
+			'categories_box' => array('title' => __('Categories'), 'id' => 'categorydiv'),
+			'tags_box' => __('Tags'),
+		);
+		if (!FeedWordPressCompatibility::post_tags()) :
+			unset($this->boxes_by_methods['tags_box']);
 		endif;
 
-		fwp_add_meta_box(
-			/*id=*/ $id,
-			/*title=*/ $title,
-			/*callback=*/ array('FeedWordPressCategoriesPage', $method),
-			/*page=*/ $catsPage->meta_box_context(),
-			/*context=*/ $catsPage->meta_box_context()
-		);
-	endforeach;
-	do_action('feedwordpress_admin_page_categories_meta_boxes', $catsPage);
-?>
-	<div class="metabox-holder">
-<?php
-	fwp_do_meta_boxes($catsPage->meta_box_context(), $catsPage->meta_box_context(), $catsPage);
-?>
-	</div> <!-- class="metabox-holder" -->
-	</div> <!-- id="post-body" -->
-	<?php $catsPage->close_sheet(); ?>
-<?php
+		parent::display();	
+	}
+}
+
+function fwp_categories_page () {
+
 } /* function fwp_categories_page () */
 
-	fwp_categories_page();
+	$categoriesPage = new FeedWordPressCategoriesPage;
+	$categoriesPage->display();
 

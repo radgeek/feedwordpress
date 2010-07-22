@@ -5,6 +5,7 @@ class FeedWordPressAdminPage {
 	var $link = NULL;
 	var $dispatch = NULL;
 	var $filename = NULL;
+	var $pagenames = array();
 
 	/**
 	 * Construct the admin page object.
@@ -21,8 +22,49 @@ class FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressAdminPage constructor */
 
+	function pagename ($context = NULL) {
+		if (is_null($context)) :
+			$context = 'default';
+		endif;
+
+		if (isset($this->pagenames[$context])) :
+			$name = $this->pagenames[$context];
+		elseif (isset($tis->pagenames['default'])) :
+			$name = $this->pagenames['default'];
+		else :
+			$name = preg_replace('/FeedWordPress(.*)Page/', '$1', get_class($this));
+		endif;
+		return __($name);
+	} /* FeedWordPressAdminPage::pagename () */
+
+	function accept_POST ($post) {
+		if ($this->save_requested_in($post)) : // User mashed Save Changes
+			$this->save_settings($post);
+		endif;
+		do_action($this->dispatch.'_post', $post, $this);		
+	}
+
+	function save_settings ($post) {
+		if ($this->for_feed_settings()) :
+			// Save settings
+			$this->link->save_settings(/*reload=*/ true);
+			$this->updated = true;
+			
+			// Reset, reload
+			$link_id = $this->link->id;
+			unset($this->link);
+			$this->link = new SyndicatedLink($link_id);
+		else :
+			$this->updated = true;
+		endif;
+		do_action($this->dispatch.'_save', $post, $this);
+	} /* FeedWordPressAdminPage::save_settings () */
+
 	function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
 	function for_default_settings () { return !$this->for_feed_settings(); }
+	function save_requested_in ($post) {
+		return (isset($post['save']) or isset($post['submit']));
+	}
 
 	/*static*/ function submitted_link_id () {
 		global $fwp_post;
@@ -184,6 +226,69 @@ class FeedWordPressAdminPage {
 		global $fwp_path;
 		return "admin.php?page=${fwp_path}/".basename($this->filename);
 	} /* FeedWordPressAdminPage::form_action () */
+
+	function update_message () {
+		return NULL;
+	}
+
+	function display () {
+		if (FeedWordPress::needs_upgrade()) :
+			fwp_upgrade_page();
+			return;
+		endif;
+
+		FeedWordPressCompatibility::validate_http_request(/*action=*/ $this->dispatch, /*capability=*/ 'manage_links');
+
+		////////////////////////////////////////////////
+		// Process POST request, if any ////////////////
+		////////////////////////////////////////////////
+		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
+			$this->accept_POST($GLOBALS['fwp_post']);
+		else :
+			$this->updated = false;
+		endif;
+
+		////////////////////////////////////////////////
+		// Prepare settings page ///////////////////////
+		////////////////////////////////////////////////
+
+		$this->display_update_notice_if_updated(
+			$this->pagename('settings-update'),
+			$this->update_message()
+		);
+		
+		$this->open_sheet($this->pagename('open-sheet'));
+		?>
+		<div id="post-body">
+		<?php
+		foreach ($this->boxes_by_methods as $method => $row) :
+			if (is_array($row)) :
+				$id = $row['id'];
+				$title = $row['title'];
+			else :
+				$id = 'feedwordpress_'.$method;
+				$title = $row;
+			endif;
+	
+			fwp_add_meta_box(
+				/*id=*/ $id,
+				/*title=*/ $title,
+				/*callback=*/ array(&$this, $method),
+				/*page=*/ $this->meta_box_context(),
+				/*context=*/ $this->meta_box_context()
+			);
+		endforeach;
+		do_action($this->dispatch.'_meta_boxes', $this);
+		?>
+		<div class="metabox-holder">
+		<?php
+			fwp_do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
+		?>
+		</div> <!-- class="metabox-holder" -->
+		</div> <!-- id="post-body" -->
+		<?php $this->close_sheet(); ?>
+	<?php
+	}
 
 	function open_sheet ($header) {
 		// Set up prepatory AJAX stuff
