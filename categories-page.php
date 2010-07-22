@@ -187,10 +187,6 @@ blank.</p></td>
 	}
 }
 
-function fwp_categories_page () {
-
-} /* function fwp_categories_page () */
-
 	$categoriesPage = new FeedWordPressCategoriesPage;
 	$categoriesPage->display();
 

@@ -141,7 +141,6 @@ class FeedWordPressAdminPage {
 
 	 function ajax_interface_js () {
 ?>
-<script type="text/javascript">
 	function contextual_appearance (item, appear, disappear, value, visibleStyle, checkbox) {
 		if (typeof(visibleStyle)=='undefined') visibleStyle = 'block';
 
@@ -156,8 +155,6 @@ class FeedWordPressAdminPage {
 			}
 		}
 	}
-</script>
-
 <?php
 	} /* FeedWordPressAdminPage::ajax_interface_js () */
 
@@ -292,7 +289,14 @@ class FeedWordPressAdminPage {
 
 	function open_sheet ($header) {
 		// Set up prepatory AJAX stuff
+		?>
+		<script type="text/javascript">
+		<?php
 		$this->ajax_interface_js();
+		?>
+		</script>
+		
+		<?php
 		if (function_exists('add_meta_box')) :
 			add_action(
 				FeedWordPressCompatibility::bottom_script_hook($this->filename),

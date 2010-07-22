@@ -59,7 +59,12 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressfeeds', $link);
 
-		$this->dispatch = get_class($this);
+		$this->dispatch = 'feedwordpress_admin_page_feeds';
+		$this->pagenames = array(
+			'default' => 'Feeds',
+			'settings-update' => 'Syndicated feed',
+			'open-sheet' => 'Feed and Update',
+		);
 		$this->filename = __FILE__;
 		$this->updatedPosts = new UpdatedPostsControl($this);
 	} /* FeedWordPressFeedsPage constructor */
@@ -89,97 +94,47 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	);
 
 	function display () {
-		global $wpdb;
 		global $fwp_post;
 		global $post_source;
-	
-		if (FeedWordPress::needs_upgrade()) :
-			fwp_upgrade_page();
-			return;
-		endif;
 
+		$this->boxes_by_methods = array(
+			'feed_information_box' => __('Feed Information'),
+			'global_feeds_box' => __('Update Scheduling'),
+			'updated_posts_box' => __('Updated Posts'),
+			'posts_box' => __('Syndicated Posts, Links, Comments & Pings'),
+			'authors_box' => __('Syndicated Authors'),
+			'categories_box' => __('Categories'.FEEDWORDPRESS_AND_TAGS),
+			'custom_settings_box' => __('Custom Feed Settings (for use in templates)'),
+		);
+		if ($this->for_default_settings()) :
+			unset($this->boxes_by_methods['custom_settings_box']);
+		endif;	
+			
 		// Allow overriding of normal source for FeedFinder, which may
 		// be called from multiple points.
 		if (isset($post_source) and !is_null($post_source)) :
 			$source = $post_source;
 		else :
-			$source = get_class($this);
+			$source = $this->dispatch;
 		endif;
-
-		// If this is a POST, validate source and user credentials
-		FeedWordPressCompatibility::validate_http_request(/*action=*/ $source, /*capability=*/ 'manage_links');
 
 		if (isset($_REQUEST['feedfinder'])
 		or (isset($_REQUEST['action']) and $_REQUEST['action']=='feedfinder')
 		or (isset($_REQUEST['action']) and $_REQUEST['action']==FWP_SYNDICATE_NEW)) :
+			// If this is a POST, validate source and user credentials
+			FeedWordPressCompatibility::validate_http_request(/*action=*/ $source, /*capability=*/ 'manage_links');
+
 			return $this->display_feedfinder(); // re-route to Feed Finder page
-		else :
-			if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
-				$this->accept_POST($fwp_post);
-				do_action('feedwordpress_admin_page_feeds_save', $GLOBALS['fwp_post'], $this);
-			endif;
-			
-			////////////////////////////////////////////////
-			// Prepare settings page ///////////////////////
-			////////////////////////////////////////////////
-			
-			$this->ajax_interface_js();
-			$this->display_update_notice_if_updated('Syndicated feed');
-			$this->open_sheet('Feed and Update');
-			?>
-			<div id="post-body">
-			<?php
-			////////////////////////////////////////////////
-			// Display settings boxes //////////////////////
-			////////////////////////////////////////////////
-		
-			$boxes_by_methods = array(
-				'feed_information_box' => __('Feed Information'),
-				'global_feeds_box' => __('Update Scheduling'),
-				'updated_posts_box' => __('Updated Posts'),
-				'posts_box' => __('Syndicated Posts, Links, Comments & Pings'),
-				'authors_box' => __('Syndicated Authors'),
-				'categories_box' => __('Categories'.FEEDWORDPRESS_AND_TAGS),
-				'custom_settings_box' => __('Custom Feed Settings (for use in templates)'),
-			);
-			if ($this->for_default_settings()) :
-				unset($boxes_by_methods['custom_settings_box']);
-			endif;
-		
-			foreach ($boxes_by_methods as $method => $row) :
-				if (is_array($row)) :
-					$id = $row['id'];
-					$title = $row['title'];
-				else :
-					$id = 'feedwordpress_'.$method;
-					$title = $row;
-				endif;
-		
-				fwp_add_meta_box(
-					/*id=*/ $id,
-					/*title=*/ $title,
-					/*callback=*/ array(get_class($this), $method),
-					/*page=*/ $this->meta_box_context(),
-					/*context=*/ $this->meta_box_context()
-				);
-			endforeach;
-			do_action('feedwordpress_admin_page_feeds_meta_boxes', $this);
-			?>
-			<div class="metabox-holder">
-			<?php
-				fwp_do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
-			?>
-			</div> <!-- class="metabox-holder" -->
-			</div> <!-- id="post-body" -->
-			<?php $this->close_sheet();
 		endif;
+
+		parent::display();
 		return false; // Don't continue
 	} /* FeedWordPressFeedsPage::display() */
 
 	function ajax_interface_js () {
 		FeedWordPressAdminPage::ajax_interface_js();
 		?>
-		<script type="text/javascript">
+
 		jQuery(document).ready( function () {
 			contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');
 			contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
@@ -200,7 +155,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				);
 			} /* for */
 		} );
-		</script>
+
 		<?php
 	}
 	
@@ -750,7 +705,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	</div> <!-- class="wrap" -->
 		<?php
 		return false; // Don't continue
-	} /* WordPressFeedsPage::display_feedfinder() */
+	} /* FeedWordPressFeedsPage::display_feedfinder() */
 
 	function display_alt_feed_box ($lookup, $alt = false) {
 		global $fwp_post;
@@ -785,116 +740,83 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		</fieldset></form>
 		
 		<?php
-	} /* WordPressFeedsPage::display_alt_feed_box() */
+	} /* FeedWordPressFeedsPage::display_alt_feed_box() */
 	
-	function accept_POST ($post) {
-		global $wpdb;
+	function save_settings ($post) {
+		if ($this->for_feed_settings()) :
+			// custom feed settings first
+			foreach ($post['notes'] as $mn) :
+				$mn['key0'] = (isset($mn['key0']) ? trim($mn['key0']) : NULL);
+				$mn['key1'] = trim($mn['key1']);
+				if (preg_match("\007^(("
+						.implode(')|(',$this->special_settings)
+						."))$\007i",
+						$mn['key1'])) :
+					$mn['key1'] = 'user/'.$mn['key1'];
+				endif;
+
+				if (strlen($mn['key0']) > 0) :
+					unset($this->link->settings[$mn['key0']]); // out with the old
+				endif;
+				
+				if (($mn['action']=='update') and (strlen($mn['key1']) > 0)) :
+					$this->link->settings[$mn['key1']] = $mn['value']; // in with the new
+				endif;
+			endforeach;
 			
-		// User mashed a Save Changes button
-		if (isset($post['save']) or isset($post['submit'])) :
+			// now stuff through the web form
+			// hardcoded feed info
 			
-			if ($this->for_feed_settings()) :
-				$alter = array ();
-					
-				// custom feed settings first
-				foreach ($post['notes'] as $mn) :
-					$mn['key0'] = trim($mn['key0']);
-					$mn['key1'] = trim($mn['key1']);
-					if (preg_match("\007^(("
-							.implode(')|(',$this->special_settings)
-							."))$\007i",
-							$mn['key1'])) :
-						$mn['key1'] = 'user/'.$mn['key1'];
-					endif;
-
-					if (strlen($mn['key0']) > 0) :
-						unset($this->link->settings[$mn['key0']]); // out with the old
-					endif;
-					
-					if (($mn['action']=='update') and (strlen($mn['key1']) > 0)) :
-						$this->link->settings[$mn['key1']] = $mn['value']; // in with the new
-					endif;
-				endforeach;
-				
-				// now stuff through the web form
-				// hardcoded feed info
-				
-				foreach (array('name', 'description', 'url') as $what) :
-					// We have a checkbox for "No," so if it's unchecked, mark as "Yes."
-					$this->link->settings["hardcode {$what}"] = (isset($post["hardcode_{$what}"]) ? $post["hardcode_{$what}"] : 'yes');
-					if (FeedWordPress::affirmative($this->link->settings, "hardcode {$what}")) :
-						$this->link->link->{'link_'.$what} = $post['link'.$what];
-					endif;
-				endforeach;
-				
-				// Update scheduling
-				if (isset($post['update_schedule'])) :
-					$this->link->settings['update/hold'] = $post['update_schedule'];
+			foreach (array('name', 'description', 'url') as $what) :
+				// We have a checkbox for "No," so if it's unchecked, mark as "Yes."
+				$this->link->settings["hardcode {$what}"] = (isset($post["hardcode_{$what}"]) ? $post["hardcode_{$what}"] : 'yes');
+				if (FeedWordPress::affirmative($this->link->settings, "hardcode {$what}")) :
+					$this->link->link->{'link_'.$what} = $post['link'.$what];
 				endif;
-
-				if (isset($post['use_default_update_window']) and strtolower($post['use_default_update_window'])=='yes') :
-					unset($this->link->settings['update/window']);
-				elseif (isset($post['update_window'])):
-					if ((int) $post['update_window'] > 0) :
-						$this->link->settings['update/window'] = (int) $post['update_window'];
-					endif;
-				endif;
-				
-			else :
-				// Global
-				update_option('feedwordpress_cat_id', $post['syndication_category']);
-				
-				if (!isset($post['automatic_updates']) or !in_array($post['automatic_updates'], array('init', 'shutdown'))) :
-					$automatic_updates = false;
-				else :
-					$automatic_updates = $post['automatic_updates'];
-				endif;
-				update_option('feedwordpress_automatic_updates', $automatic_updates);
-
-				if (isset($post['update_window'])):
-					if ((int) $post['update_window'] > 0) :
-						update_option('feedwordpress_update_window', (int) $post['update_window']);
-					endif;
-				endif;
-
-				update_option('feedwordpress_update_time_limit', ($post['update_time_limit']=='yes')?(int) $post['time_limit_seconds']:0);
-
-				foreach (array('name', 'description', 'url') as $what) :
-					// We have a checkbox for "No," so if it's unchecked, mark as "Yes."
-					$hardcode = (isset($post["hardcode_{$what}"]) ? $post["hardcode_{$what}"] : 'yes');
-					update_option("feedwordpress_hardcode_{$what}", $hardcode);
-				endforeach;
-				
-				$this->updated = true;
-			endif;
-			$this->updatedPosts->accept_POST($post);
-
-			if ($this->for_feed_settings()) :
-				// Save changes to channel-level meta-data
-				//$alter_set = implode(", ", $alter);
-
-				// issue update query
-				//$result = $wpdb->query("
-				//UPDATE $wpdb->links
-				//SET $alter_set
-				//WHERE link_id='{$this->link->id}'
-				//");
-				
-				// Save settings
-				$this->link->save_settings(/*reload=*/ true);
-
-				$this->updated = true;
-
-				// Reset, reload
-				$link_id = $this->link->id; unset($this->link);
-				$this->link = new SyndicatedLink($link_id);
+			endforeach;
+			
+			// Update scheduling
+			if (isset($post['update_schedule'])) :
+				$this->link->settings['update/hold'] = $post['update_schedule'];
 			endif;
 
-		// Probably a "Go" button for the drop-down
+			if (isset($post['use_default_update_window']) and strtolower($post['use_default_update_window'])=='yes') :
+				unset($this->link->settings['update/window']);
+			elseif (isset($post['update_window'])):
+				if ((int) $post['update_window'] > 0) :
+					$this->link->settings['update/window'] = (int) $post['update_window'];
+				endif;
+			endif;
+			
 		else :
-			$this->updated = false;
+			// Global
+			update_option('feedwordpress_cat_id', $post['syndication_category']);
+			
+			if (!isset($post['automatic_updates']) or !in_array($post['automatic_updates'], array('init', 'shutdown'))) :
+				$automatic_updates = false;
+			else :
+				$automatic_updates = $post['automatic_updates'];
+			endif;
+			update_option('feedwordpress_automatic_updates', $automatic_updates);
+
+			if (isset($post['update_window'])):
+				if ((int) $post['update_window'] > 0) :
+					update_option('feedwordpress_update_window', (int) $post['update_window']);
+				endif;
+			endif;
+
+			update_option('feedwordpress_update_time_limit', ($post['update_time_limit']=='yes')?(int) $post['time_limit_seconds']:0);
+
+			foreach (array('name', 'description', 'url') as $what) :
+				// We have a checkbox for "No," so if it's unchecked, mark as "Yes."
+				$hardcode = (isset($post["hardcode_{$what}"]) ? $post["hardcode_{$what}"] : 'yes');
+				update_option("feedwordpress_hardcode_{$what}", $hardcode);
+			endforeach;
 		endif;
-	} /* WordPressFeedsPage::accept_POST() */
+		
+		$this->updatedPosts->accept_POST($post);
+		parent::save_settings($post);
+	} /* FeedWordPressFeedsPage::save_settings() */
 
 } /* class FeedWordPressFeedsPage */
 
