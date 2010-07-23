@@ -712,7 +712,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		?>
 		<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 		<div class="inside"><?php
-			FeedWordPressCompatibility::stamp_nonce(get_class($this));
+			FeedWordPressCompatibility::stamp_nonce($this->dispatch);
 		?>
 		<fieldset class="alt"
 		<?php if (!$alt): ?>style="margin: 1.0em 3.0em; font-size: smaller;"<?php endif; ?>>
