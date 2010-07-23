@@ -79,18 +79,68 @@ blank.</p></td>
 
 	function categories_box ($page, $box = NULL) {
 		$link = $page->link;
+		$globalCats = array_map('trim',
+			preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, get_option('feedwordpress_syndication_cats'))
+		);
+			
 		if ($page->for_feed_settings()) :
+			$add_global_categories = $link->setting('add global categories', NULL, 'yes');
+			$checked = array('yes' => '', 'no' => '');
+			$checked[$add_global_categories] = ' checked="checked"';
+			
 			if (is_array($link->setting('cats', NULL, NULL))) : $cats = $link->settings['cats'];
 			else : $cats = array();
 			endif;
 		else :
-			$cats = array_map('trim',
-				preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, get_option('feedwordpress_syndication_cats'))
-			);
+			$cats = $globalCats;
 		endif;
+		
+		if ($page->for_feed_settings()) :
+		?>
+		<table class="twofer">
+		<tbody>
+		<tr>
+		<td class="primary">
+		<?php
+		endif;
+		
 		$dogs = SyndicatedPost::category_ids($cats, /*unfamiliar=*/ NULL);
-
 		fwp_category_box($dogs, 'all '.$page->these_posts_phrase());
+		
+		$globalDogs = SyndicatedPost::category_ids($globalCats, /*unfamiliar=*/ NULL);
+
+		$siteWideHref = 'admin.php?page='.$GLOBALS['fwp_path'].'/'.basename(__FILE__);
+		if ($page->for_feed_settings()) :
+		?>
+		</td>
+		<td class="secondary">
+		<h4>Site-wide Categories</h4>
+		<?php if (count($globalCats) > 0) : ?>
+		<ul class="current-setting">
+		<?php foreach ($globalDogs as $dog) : ?>
+		<li><?php $cat = get_term($dog, 'category'); print $cat->name; ?></li>
+		<?php endforeach; ?>
+		</ul>
+		</div>
+		<p>
+		<?php else : ?>
+		<p>Site-wide settings may also assign categories to syndicated
+		posts.
+		<?php endif; ?>
+		Should <?php print $page->these_posts_phrase(); ?> be assigned
+		these categories from the <a href="<?php print esc_html($siteWideHref); ?>">site-wide settings</a>, in
+		addition to the feed-specific categories you set up here?</p>
+		
+		<ul class="settings">
+		<li><p><label><input type="radio" name="add_global_categories" value="yes" <?php print $checked['yes']; ?> /> Yes. Place <?php print $page->these_posts_phrase(); ?> under all these categories.</label></p></li>
+		<li><p><label><input type="radio" name="add_global_categories" value="no" <?php print $checked['no']; ?> /> No. Only use the categories I set up on the left. Do not ise the global defaults for <?php print $page->these_posts_phrase(); ?></label></p></li>
+		</ul>
+		</td>
+		</tr>
+		</tbody>
+		</table>
+		<?php
+		endif;
 	} /* FeedWordPressCategoriesPage::categories_box () */
 	
 	function tags_box ($page, $box = NULL) {
@@ -149,6 +199,11 @@ blank.</p></td>
 					unset($this->link->settings['cat_split']);
 				endif;
 			endif;
+			
+			if (isset($post['add_global_categories'])) :
+				$this->link->settings['add global categories'] = $post['add_global_categories'];
+			endif;
+
 		else :
 			// Categories
 			if (!empty($saveCats)) :

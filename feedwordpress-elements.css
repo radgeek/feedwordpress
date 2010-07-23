@@ -69,6 +69,15 @@
 	display: block;
 	font-size: smaller; 
 	margin-left: 2.0em;
+	font-size: smaller;
+}
+.twofer tr td h4 {
+	margin-top: 0px;
+	margin-bottom: 3px;
+}
+ul.current-setting {
+	list-style: disc outside;
+	padding-left: 2.0em;
 }
 
 /* Switchfeed interface elements */
@@ -156,4 +165,9 @@ table.edit-form td { width: 73%; vertical-align: top; padding: 0.5em; }
 table.edit-form td ul.options { margin: 0; padding: 0; list-style: none; }
 table.edit-form.narrow th { width: 15%; }
 table.edit-form.narrow td { width: 85%; }
+
+table.twofer { width: 100%; border: none; }
+table.twofer tr { vertical-align: top; }
+table.twofer td.primary { width: 69%; border-right: 1px dotted #777; padding-right: 10px; }
+table.twofer td.secondary { padding-left: 10px; width: 30%; }
 

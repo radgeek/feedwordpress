@@ -259,15 +259,17 @@ class SyndicatedPost {
 			$this->post['named']['unfamiliar']['category'] = (isset($this->feedmeta['unfamiliar category']) ? $this->feedmeta['unfamiliar category'] : null);
 
 			// Categories: start with default categories, if any
-			$fc = get_option("feedwordpress_syndication_cats");
-			if ($fc) :
-				$this->post['named']['preset/category'] = explode("\n", $fc);
-			else :
-				$this->post['named']['preset/category'] = array();
+			$this->post['named']['preset/category'] = array();
+			if ('no' != $this->link->setting('add global categories', NULL, 'yes')) :
+				$fc = get_option("feedwordpress_syndication_cats");
+				if ($fc) :
+					$this->post['named']['preset/category'] = explode("\n", $fc);
+				endif;
 			endif;
 
-			if (isset($this->feedmeta['cats']) and is_array($this->feedmeta['cats'])) :
-				$this->post['named']['preset/category'] = array_merge($this->post['named']['preset/category'], $this->feedmeta['cats']);
+			$fc = $this->link->setting('cats', NULL, array());
+			if (is_array($fc)) :
+				$this->post['named']['preset/category'] = array_merge($this->post['named']['preset/category'], $fc);
 			endif;
 
 			// Now add categories from the post, if we have 'em
