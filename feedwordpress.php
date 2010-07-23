@@ -135,9 +135,7 @@ if (FeedWordPressSettingsUI::is_admin()) :
 	wp_enqueue_style('feedwordpress-elements');
 
 	if (function_exists('wp_admin_css')) :
-		if (fwp_test_wp_version(FWP_SCHEMA_25)) :
-			wp_admin_css('css/dashboard');
-		endif;
+		wp_admin_css('css/dashboard');
 	endif;
 endif;
 
@@ -719,10 +717,8 @@ function fwp_add_pages () {
 	global $fwp_path;
 
 	$menu = array('Syndicated Sites', 'Syndication', $fwp_capability['manage_links'], $fwp_path.'/syndication.php', NULL);
-	if (fwp_test_wp_version(FWP_SCHEMA_27)) :
-		// add icon parameter
-		$menu[] = WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-tiny.png';
-	endif;
+	// add icon parameter
+	$menu[] = WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-tiny.png';
 
 	call_user_func_array('add_menu_page', $menu);
 	do_action('feedwordpress_admin_menu_pre_feeds');
@@ -1107,37 +1103,16 @@ class FeedWordPress {
 		// WordPress gets cranky if there's no homepage URI
 		if (!isset($uri) or strlen($uri)<1) : $uri = $rss; endif;
 		
-		if (function_exists('wp_insert_link')) : // WordPress 2.x
-			if (FeedWordPressCompatibility::test_version(0, FWP_SCHEMA_21)) :
-				// Morons.
-				$name = $wpdb->escape($name);
-				$uri = $wpdb->escape($uri);
-				$rss = $wpdb->escape($rss);
-				
-				// Comes in as a single category
-				$linkCats = $cat_id;
-			else :
-				// Comes in as an array of categories
-				$linkCats = array($cat_id);
-			endif;
+		// Comes in as an array of categories
+		$linkCats = array($cat_id);
 
-			$link_id = wp_insert_link(array(
-				"link_name" => $name,
-				"link_url" => $uri,
-				"link_category" => $linkCats,
-				"link_rss" => $rss
-			));
-		else : // WordPress 1.5.x
-			$result = $wpdb->query("
-			INSERT INTO $wpdb->links
-			SET
-				link_name = '".$wpdb->escape($name)."',
-				link_url = '".$wpdb->escape($uri)."',
-				link_category = '".$wpdb->escape($cat_id)."',
-				link_rss = '".$wpdb->escape($rss)."'
-			");
-			$link_id = $wpdb->insert_id;
-		endif;
+		$link_id = wp_insert_link(array(
+		"link_name" => $name,
+		"link_url" => $uri,
+		"link_category" => $linkCats,
+		"link_rss" => $rss
+		));
+
 		return $link_id;
 	} // function FeedWordPress::syndicate_link()
 
@@ -1269,13 +1244,12 @@ class FeedWordPress {
 				endif;
 			elseif ($fwp_db_version < 2009.0707) :
 				// We need to clear out any busted AJAX crap
-				if (fwp_test_wp_version(FWP_SCHEMA_HAS_USERMETA)) :
-					$wpdb->query("
-					DELETE FROM $wpdb->usermeta
-					WHERE LOCATE('feedwordpress', meta_key)
-					AND LOCATE('box', meta_key);
-					");
-				endif;
+				$wpdb->query("
+				DELETE FROM $wpdb->usermeta
+				WHERE LOCATE('feedwordpress', meta_key)
+				AND LOCATE('box', meta_key);
+				");
+
 				update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
 			else :
 				// No. Just brand it with the new version.

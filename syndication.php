@@ -204,15 +204,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 				/*page=*/ $this->meta_box_context(),
 				/*context =*/ $this->meta_box_context()
 			);
-			if (FeedWordPressCompatibility::test_version(0, FWP_SCHEMA_25)) :
-				fwp_add_meta_box(
-					/*id=*/ 'feedwordpress_add_feed_box',
-					/*title=*/ 'Add a new syndicated source',
-					/*callback=*/ 'fwp_syndication_manage_page_add_feed_box',
-					/*page=*/ $this->meta_box_context(),
-					/*context=*/ $this->meta_box_context()
-				);
-			endif;
 					
 			do_action('feedwordpress_admin_page_syndication_meta_boxes', $this);
 		?>
@@ -347,20 +338,6 @@ function fwp_dashboard_update_if_requested ($object) {
 		endif;
 		echo "</div> <!-- class=\"updated\" -->\n";
 	endif;
-}
-
-function fwp_syndication_manage_page_add_feed_box ($object = NULL, $box = NULL) {
-	?>
-	<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename(__FILE__); ?>" method="post">
-	<div>
-	<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
-	<label for="add-uri">Website or feed:</label>
-	<input type="text" name="lookup" id="add-uri" value="URI" size="64" />
-	<input type="hidden" name="action" value="feedfinder" />
-	</div>
-	<div class="submit"><input type="submit" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
-	</form>
-	<?php
 }
 
 define('FEEDWORDPRESS_BLEG_MAYBE_LATER_OFFSET', (60 /*sec/min*/ * 60 /*min/hour*/ * 24 /*hour/day*/ * 31 /*days*/));

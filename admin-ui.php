@@ -174,13 +174,8 @@ class FeedWordPressAdminPage {
 	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
 
 	function display_sheet_header ($pagename = 'Syndication', $all = false) {
-		if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_27)) :
-			?>
-			<div class="icon32"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></div>
-			<?php
-		endif;
 		?>
-
+		<div class="icon32"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></div>
 		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name()); ?><?php endif; ?></h2>
 		<?php
 	}
@@ -369,9 +364,6 @@ class FeedWordPressAdminPage {
 } /* class FeedWordPressAdminPage */
 
 function fwp_authors_single_submit ($link = NULL) {
-	global $wp_db_version;
-	
-	if (fwp_test_wp_version(FWP_SCHEMA_25)) :
 ?>
 <div class="submitbox" id="submitlink">
 <div id="previewview">
@@ -384,23 +376,14 @@ function fwp_authors_single_submit ($link = NULL) {
 </p>
 </div>
 <?php
-	endif;
 }
 
 function fwp_option_box_opener ($legend, $id, $class = "stuffbox") {
-	// WordPress 2.5+
-	if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_25)) :
 ?>
 <div id="<?php print $id; ?>" class="<?php print $class; ?>">
 <h3><?php print htmlspecialchars($legend); ?></h3>
 <div class="inside">
 <?php
-	else :
-?>
-		<div class="wrap">
-		<h2><?php print htmlspecialchars($legend); ?></h2>
-<?php
-	endif;
 }
 
 function fwp_option_box_closer () {
@@ -422,7 +405,7 @@ function fwp_tags_box ($tags, $object) {
 	
 	$desc = "<p style=\"font-size:smaller;font-style:bold;margin:0\">Tag $object as...</p>";
 
-	if (fwp_test_wp_version(FWP_SCHEMA_29)) : // WordPress 2.9+
+	if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) : // WordPress 2.9+
 		print $desc;
 		$tax_name = 'post_tag';
 	        $helps = __('Separate tags with commas.');
@@ -444,8 +427,8 @@ function fwp_tags_box ($tags, $object) {
 	        <div class="tagchecklist"></div>
 	        </div>
 	        <p class="hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-<?php echo $tax_name; ?>"><?php printf( __('Choose from the most used tags in %s'), $box['title'] ); ?></a></p>
-<?php		
-	elseif (fwp_test_wp_version(FWP_SCHEMA_28)) : // WordPress 2.8+
+<?php
+	elseif (FeedWordPressCompatibility::test_version(FWP_SCHEMA_28)) : // WordPress 2.8+
 ?>
 		<?php print $desc; ?>
 		<div class="tagsdiv" id="post_tag">
@@ -562,18 +545,11 @@ function fwp_author_list () {
 	global $wpdb;
 	$ret = array();
 
-	// display_name introduced in WP 2.0
-	if (fwp_test_wp_version(FWP_SCHEMA_20)) :
-		$name_column = 'display_name';
-	else :
-		$name_column = 'user_nickname';
-	endif;
-
-	$users = $wpdb->get_results("SELECT * FROM $wpdb->users ORDER BY {$name_column}");
+	$users = $wpdb->get_results("SELECT * FROM $wpdb->users ORDER BY display_name");
 	if (is_array($users)) :
 		foreach ($users as $user) :
 			$id = (int) $user->ID;
-			$ret[$id] = $user->{$name_column};
+			$ret[$id] = $user->display_name;
 			if (strlen(trim($ret[$id])) == 0) :
 				$ret[$id] = $user->user_login;
 			endif;
@@ -682,28 +658,21 @@ settings page to set up how new posts <?php print $from_this_feed; ?> are assign
 					tagBox.init();
 				}
 			<?php endif; ?>
-			<?php if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_25, FWP_SCHEMA_27)) : ?>
-				// In case someone got here first...
-				jQuery('.postbox h3').unbind('click');
-
-				add_postbox_toggles('<?php print $context; ?>');
-			<?php elseif (FeedWordPressCompatibility::test_version(FWP_SCHEMA_27)) : ?>
-				// In case someone got here first...
-				$('.postbox h3, .postbox .handlediv').unbind('click');
-				$('.postbox h3 a').unbind('click');
-				$('.hide-postbox-tog').unbind('click');
-				$('.columns-prefs input[type="radio"]').unbind('click');
-				$('.meta-box-sortables').sortable('destroy');
+			
+			// In case someone got here first...
+			$('.postbox h3, .postbox .handlediv').unbind('click');
+			$('.postbox h3 a').unbind('click');
+			$('.hide-postbox-tog').unbind('click');
+			$('.columns-prefs input[type="radio"]').unbind('click');
+			$('.meta-box-sortables').sortable('destroy');
 				
-				postboxes.add_postbox_toggles('<?php print $context; ?>');
-			<?php endif; ?>
+			postboxes.add_postbox_toggles('<?php print $context; ?>');
 			} );
 		</script>
 	<?php
 	} /* FeedWordPressSettingsUI::fix_toggles_js () */
 	
 	function magic_input_tip_js ($id) {
-		if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_25)) :
 		?>
 			<script type="text/javascript">
 			jQuery(document).ready( function () {
@@ -721,7 +690,6 @@ settings page to set up how new posts <?php print $from_this_feed; ?> are assign
 			} );
 			</script>
 		<?php
-		endif;
 	} /* FeedWordPressSettingsUI::magic_input_tip_js () */
 } /* class FeedWordPressSettingsUI */
 

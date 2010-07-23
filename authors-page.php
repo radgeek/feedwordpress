@@ -198,11 +198,7 @@ function fwp_authors_page () {
 					$post_set = "(".implode(",", $post_ids).")";
 					
 					// Getting the revisions too, if there are any
-					if (fwp_test_wp_version(FWP_SCHEMA_26)) :
-						$parent_in_clause = "OR {$wpdb->posts}.post_parent IN $post_set";
-					else :
-						$parent_in_clause = '';
-					endif;
+					$parent_in_clause = "OR {$wpdb->posts}.post_parent IN $post_set";
 					
 					$wpdb->query("
 					UPDATE {$wpdb->posts}

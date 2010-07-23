@@ -3,21 +3,17 @@
 ## LEGACY API: Replicate or mock up functions for legacy support purposes ######
 ################################################################################
 
-// version testing
-function fwp_test_wp_version ($floor, $ceiling = NULL) {
-	global $wp_db_version;
-	
-	$ver = (isset($wp_db_version) ? $wp_db_version : 0);
-	$good = ($ver >= $floor);
-	if (!is_null($ceiling)) :
-		$good = ($good and ($ver < $ceiling));
-	endif;
-	return $good;
-} /* function fwp_test_wp_version () */
-
 class FeedWordPressCompatibility {
+	// version testing based on database schema version
 	/*static*/ function test_version ($floor, $ceiling = null) {
-		return fwp_test_wp_version($floor, $ceiling);
+		global $wp_db_version;
+		
+		$ver = (isset($wp_db_version) ? $wp_db_version : 0);
+		$good = ($ver >= $floor);
+		if (!is_null($ceiling)) :
+			$good = ($good and ($ver < $ceiling));
+		endif;
+		return $good;
 	} /* FeedWordPressCompatibility::test_version() */
 
 	/*static*/ function insert_link_category ($name) {
@@ -26,30 +22,8 @@ class FeedWordPressCompatibility {
 		$name = $wpdb->escape($name);
 
 		// WordPress 2.3+ term/taxonomy API
-		if (function_exists('wp_insert_term')) :
-			$term = wp_insert_term($name, 'link_category');
-			$cat_id = $term['term_id'];
-		// WordPress 2.1, 2.2 category API. By the way, why the fuck is this API function only available in a wp-admin module?
-		elseif (function_exists('wp_insert_category') and !fwp_test_wp_version(FWP_SCHEMA_20, FWP_SCHEMA_21)) : 
-			$cat_id = wp_insert_category(array('cat_name' => $name));
-		// WordPress 1.5 and 2.0.x
-		elseif (fwp_test_wp_version(0, FWP_SCHEMA_21)) :
-			$result = $wpdb->query("
-			INSERT INTO $wpdb->linkcategories
-			SET
-				cat_id = 0,
-				cat_name='$name',
-				show_images='N',
-				show_description='N',
-				show_rating='N',
-				show_updated='N',
-				sort_order='name'
-			");
-			$cat_id = $wpdb->insert_id;
-		// This should never happen.
-		else :
-			FeedWordPress::critical_bug('FeedWordPress::link_category_id::wp_db_version', $wp_db_version, __LINE__);
-		endif;
+		$term = wp_insert_term($name, 'link_category');
+		$cat_id = $term['term_id'];
 		
 		// Return newly-created category ID
 		return $cat_id;
