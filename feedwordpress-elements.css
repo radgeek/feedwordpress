@@ -165,6 +165,7 @@ table.edit-form td { width: 73%; vertical-align: top; padding: 0.5em; }
 table.edit-form td ul.options { margin: 0; padding: 0; list-style: none; }
 table.edit-form.narrow th { width: 15%; }
 table.edit-form.narrow td { width: 85%; }
+table.edit-form td p { margin-top: 0px; }
 
 table.twofer { width: 100%; border: none; }
 table.twofer tr { vertical-align: top; }
