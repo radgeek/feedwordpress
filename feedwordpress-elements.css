@@ -169,6 +169,9 @@ table.edit-form td p { margin-top: 0px; }
 
 table.twofer { width: 100%; border: none; }
 table.twofer tr { vertical-align: top; }
+table.twofer td.equals.first { width: 49%; border-right: 1px doted #777; padding-right: 10px; }
+table.twofer td.equals.second { width: 49%; padding-left: 10px; }
+
 table.twofer td.primary { width: 69%; border-right: 1px dotted #777; padding-right: 10px; }
 table.twofer td.secondary { padding-left: 10px; width: 30%; }
 
