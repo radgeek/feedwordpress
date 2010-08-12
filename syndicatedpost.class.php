@@ -1412,7 +1412,9 @@ class SyndicatedPost {
 			endif;
 		endforeach;
 
-		if (strlen($out['post_title'].$out['post_content'].$out['post_excerpt']) == 0) :
+		$fullPost = $out['post_title'].$out['post_content'];
+		$fullPost .= (isset($out['post_excerpt']) ? $out['post_excerpt'] : '');
+		if (strlen($fullPost) < 1) :
 			// FIXME: Option for filtering out empty posts
 		endif;
 		if (strlen($out['post_title'])==0) :
@@ -1653,8 +1655,30 @@ class SyndicatedPost {
 					$userdata['user_email'] = $email;
 					$userdata['user_url'] = $authorUrl;
 					$userdata['display_name'] = $author;
-
-					$id = wp_insert_user($userdata);
+					
+					do { // Keep trying until you get it right. Or until PHP crashes, I guess.
+						$id = wp_insert_user($userdata);
+						if (is_wp_error($id)) :
+							$codes = $id->get_error_code();
+							switch ($codes) :
+							case 'empty_user_login' :
+							case 'existing_user_login' :
+								// Add a random disambiguator
+								$userdata['user_login'] .= substr(md5(uniqid(microtime())), 0, 6);
+								break;
+							case 'existing_user_email' :
+								// No disassemble!
+								$parts = explode('@', $userdata['user_email'], 2);
+								
+								// Add a random disambiguator as a gmail-style username extension
+								$parts[0] .= '+'.substr(md5(uniqid(microtime())), 0, 6);
+								
+								// Reassemble
+								$userdata['user_email'] = $parts[0].'@'.$parts[1];
+								break;
+							endswitch;
+						endif;
+					} while (is_wp_error($id));
 				elseif (is_numeric($unfamiliar_author) and get_userdata((int) $unfamiliar_author)) :
 					$id = (int) $unfamiliar_author;
 				elseif ($unfamiliar_author === 'default') :
