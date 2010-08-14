@@ -11,26 +11,33 @@
 // Fucking fuck.
 
 class FeedWordPress_Walker_Category_Checklist extends Walker_Category_Checklist {
-	var $prefix = '';
+	var $prefix = ''; var $taxonomy = 'category';
+	function FeedWordPress_Walker_Category_Checklist () {
+		$this->set_taxonomy('category');
+	}
+	
 	function set_prefix ($prefix) {
 		$this->prefix = $prefix;
+	}
+	function set_taxonomy ($taxonomy) {
+		$this->taxonomy = $taxonomy;
 	}
 
 	function start_el (&$output, $category, $depth, $args) {
 		extract($args);
-                if ( empty($taxonomy) ) :
-                	$taxonomy = 'category';
-                endif; 
-                
-                if ( $taxonomy == 'category' ) :
-                	$name = 'post_category';
+               if ( empty($taxonomy) ) :
+			$taxonomy = 'category';
+		endif; 
+
+		if ($taxonomy=='category') :
+			$name = 'post_category';
 		else :
-                	$name = 'tax_input['.$taxonomy.']';
-                endif;
-                
-                $unit = array();
-                if (strlen($this->prefix) > 0) :
-                	$unit[] = $this->prefix;
+			$name = 'tax_input['.$taxonomy.']';
+		endif;
+		
+		$unit = array();
+		if (strlen($this->prefix) > 0) :
+			$unit[] = $this->prefix;
 		endif;
 		$unit[] = $taxonomy;
 		$unit[] = $category->term_id;

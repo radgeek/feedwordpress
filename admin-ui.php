@@ -62,6 +62,23 @@ class FeedWordPressAdminPage {
 
 	function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
 	function for_default_settings () { return !$this->for_feed_settings(); }
+
+	function update_setting ($names, $value, $default = 'default') {
+		if (is_string($names)) :
+			$feed_name = $names;
+			$global_name = 'feedwordpress_'.preg_replace('/\s+/', '_', $names);
+		else :
+			$feed_name = $names['feed'];
+			$global_name = 'feedwordpress_'.$names['global'];
+		endif;
+		
+		if ($this->for_feed_settings()) : // Update feed-specific setting
+			$this->link->update_setting($feed_name, $value, $default);
+		else : // Update global setting
+			update_option($global_name, $value);
+		endif;
+	} /* FeedWordPressAdminPage::update_setting () */
+
 	function save_requested_in ($post) {
 		return (isset($post['save']) or isset($post['submit']));
 	}
@@ -400,16 +417,14 @@ function fwp_option_box_closer () {
 	endif;
 }
 
-function fwp_tags_box ($tags, $object) {
+function fwp_tags_box ($tags, $object, $params = array()) {
 	if (!is_array($tags)) : $tags = array(); endif;
-	
+	$tax_name = (isset($params['taxonomy']) ? $params['taxonomy'] : 'post_tag');
 	$desc = "<p style=\"font-size:smaller;font-style:bold;margin:0\">Tag $object as...</p>";
 
-	if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) : // WordPress 2.9+
-		print $desc;
-		$tax_name = 'post_tag';
-	        $helps = __('Separate tags with commas.');
-	        $box['title'] = __('Tags');
+	print $desc;
+	$helps = __('Separate tags with commas.');
+	$box['title'] = __('Tags');
 	?>
 		<div class="tagsdiv" id="<?php echo $tax_name; ?>">
 	        <div class="jaxtag">
@@ -420,50 +435,29 @@ function fwp_tags_box ($tags, $object) {
 	        <div class="ajaxtag hide-if-no-js">
 	                <label class="screen-reader-text" for="new-tag-<?php echo $tax_name; ?>"><?php echo $box['title']; ?></label>
 	                <div class="taghint"><?php _e('Add new tag'); ?></div>
+	                <p>
 	                <input type="text" id="new-tag-<?php echo $tax_name; ?>" name="newtag[<?php echo $tax_name; ?>]" class="newtag form-input-tip" size="16" autocomplete="off" value="" />
 	                <input type="button" class="button tagadd" value="<?php esc_attr_e('Add'); ?>" tabindex="3" />
+	                </p>
 	        </div></div>
 	        <p class="howto"><?php echo $helps; ?></p>
 	        <div class="tagchecklist"></div>
 	        </div>
 	        <p class="hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-<?php echo $tax_name; ?>"><?php printf( __('Choose from the most used tags in %s'), $box['title'] ); ?></a></p>
-<?php
-	elseif (FeedWordPressCompatibility::test_version(FWP_SCHEMA_28)) : // WordPress 2.8+
-?>
-		<?php print $desc; ?>
-		<div class="tagsdiv" id="post_tag">
-		<div class="jaxtag">
-		 <div class="nojs-tags hide-if-js">
-		  <p><?php _e('Add or remove tags'); ?></p>
-		  <textarea name="tax_input[post_tag]" class="the-tags" id="tax-input[post_tag]"><?php echo implode(",", $tags); ?></textarea>
-		 </div>
-		
-		 <span class="ajaxtag hide-if-no-js">
-			<label class="screen-reader-text" for="new-tag-post_tag"><?php _e('Tags'); ?></label>
-			<input type="text" id="new-tag-post_tag" name="newtag[post_tag]" class="newtag form-input-tip" size="16" autocomplete="off" value="<?php esc_attr_e('Add new tag'); ?>" />
-			<input type="button" class="button tagadd" value="<?php esc_attr_e('Add'); ?>" />
-		 </span>
-		</div>
-		<p class="howto"><?php echo __('Separate tags with commas.'); ?></p>
-		<div class="tagchecklist"></div>
-		</div>
-		<p class="tagcloud-link hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-post_tag"><?php printf( __('Choose from the most used tags in %s'), 'Post Tags'); ?></a></p>
-		</div>
-		</div>
-<?php
-	else :
-?>
-		<?php print $desc; ?>
-		<p id="jaxtag"><input type="text" name="tags_input" class="tags-input" id="tags-input" size="40" tabindex="3" value="<?php echo implode(",", $tags); ?>" /></p>
-		<div id="tagchecklist"></div>
-		</div>
-		</div>
-<?php
-	endif;
+        <?php
 }
 
-function fwp_category_box ($checked, $object, $tags = array(), $prefix = '') {
+function fwp_category_box ($checked, $object, $tags = array(), $params = array()) {
 	global $wp_db_version;
+
+	if (is_string($params)) :
+		$prefix = $params;
+		$taxonomy = 'category';
+	elseif (is_array($params)) :
+		$prefix = (isset($params['prefix']) ? $params['prefix'] : '');
+		$taxonomy = (isset($params['taxonomy']) ? $params['taxonomy'] : 'category');
+	endif;
+	$tax = get_taxonomy($taxonomy);
 
 	if (strlen($prefix) > 0) :
 		$idPrefix = $prefix.'-';
@@ -476,47 +470,58 @@ function fwp_category_box ($checked, $object, $tags = array(), $prefix = '') {
 	endif;
 
 ?>
-<div id="<?php print $idPrefix; ?>taxonomy-category" class="feedwordpress-category-div">
-  <ul id="<?php print $idPrefix; ?>category-tabs" class="category-tabs">
-    <li class="ui-tabs-selected tabs"><a href="#<?php print $idPrefix; ?>categories-all" tabindex="3"><?php _e( 'All posts' ); ?></a>
-    <p style="font-size:smaller;font-style:bold;margin:0">Give <?php print $object; ?> these categories</p>
+<div id="<?php print $idPrefix; ?>taxonomy-<?php print $taxonomy; ?>" class="feedwordpress-category-div">
+  <ul id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-tabs" class="category-tabs">
+    <li class="ui-tabs-selected tabs"><a href="#<?php print $idPrefix; ?><?php print $taxonomy; ?>-all" tabindex="3"><?php _e( 'All posts' ); ?></a>
+    <p style="font-size:smaller;font-style:bold;margin:0">Give <?php print $object; ?> these <?php print $tax->labels->name; ?></p>
     </li>
   </ul>
 
-<div id="<?php print $idPrefix; ?>categories-all" class="tabs-panel">
-    <ul id="<?php print $idPrefix; ?>categorychecklist" class="list:category categorychecklist form-no-clear">
-	<?php fwp_category_checklist(NULL, false, $checked, $prefix) ?>
+<div id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-all" class="tabs-panel">
+    <input type="hidden" value="0" name="tax_input[<?php print $taxonomy; ?>][]" />
+    <ul id="<?php print $idPrefix; ?><?php print $taxonomy; ?>checklist" class="list:<?php print $taxonomy; ?> categorychecklist form-no-clear">
+	<?php fwp_category_checklist(NULL, false, $checked, $params) ?>
     </ul>
 </div>
 
-<div id="<?php print $idPrefix; ?>category-adder" class="category-adder wp-hidden-children">
-    <h4><a id="<?php print $idPrefix; ?>category-add-toggle" class="category-add-toggle" href="#<?php print $idPrefix; ?>category-add" class="hide-if-no-js" tabindex="3"><?php _e( '+ Add New Category' ); ?></a></h4>
-    <p id="<?php print $idPrefix; ?>category-add" class="wp-hidden-child">
+<div id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-adder" class="<?php print $taxonomy; ?>-adder wp-hidden-children">
+    <h4><a id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-add-toggle" class="category-add-toggle" href="#<?php print $idPrefix; ?><?php print $taxonomy; ?>-add" class="hide-if-no-js" tabindex="3"><?php _e( '+ Add New Category' ); ?></a></h4>
+    <p id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-add" class="category-add wp-hidden-child">
 	<?php
-	if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_30)) :
-		$newcat = 'newcategory'; // Well, thank God they added "egory" before WP 3.0 came out.
-	else :
+	$newcat = 'new'.$taxonomy;
+	
+	// Well, thank God they added "egory" before WP 3.0 came out.
+	if ('newcategory'==$newcat
+	and !FeedWordPressCompatibility::test_version(FWP_SCHEMA_30)) :
 		$newcat = 'newcat';
 	endif;
 	?>
-
-    <input type="text" name="<?php print $newcat; ?>" id="<?php print $idPrefix; ?>newcategory" class="newcategory form-required form-input-tip" value="<?php _e( 'New category name' ); ?>" tabindex="3" />
-    <label class="screen-reader-text" for="<?php print $idPrefix; ?>newcategory-parent"><?php _e('Parent Category:'); ?></label>
-    <?php wp_dropdown_categories( array( 
+    <label class="screen-reader-text" for="<?php print $idPrefix; ?>new<?php print $taxonomy; ?>"><?php _e('Add New Category'); ?></label>
+    <input
+    	id="<?php print $idPrefix; ?>new<?php print $taxonomy; ?>"
+    	class="new<?php print $taxonomy; ?> form-required form-input-tip"
+    	aria-required="true"
+    	tabindex="3"
+    	type="text" name="<?php print $newcat; ?>" 
+    	value="<?php _e( 'New category name' ); ?>"
+    />
+    <label class="screen-reader-text" for="<?php print $idPrefix; ?>new<?php print $taxonomy; ?>-parent"><?php _e('Parent Category:'); ?></label>
+    <?php wp_dropdown_categories( array(
+    	    	'taxonomy' => $taxonomy,
 		'hide_empty' => 0,
-		'id' => $idPrefix.'newcategory-parent',
-		'class' => 'newcategory-parent',
+		'id' => $idPrefix.'new'.$taxonomy.'-parent',
+		'class' => 'new'.$taxonomy.'-parent',
 		'name' => $newcat.'_parent',
 		'orderby' => 'name',
 		'hierarchical' => 1,
 		'show_option_none' => __('Parent category'),
 		'tab_index' => 3,
     ) ); ?>
-	<input type="button" id="<?php print $idPrefix; ?>category-add-sumbit" class="add:<?php print $idPrefix; ?>categorychecklist:category-add add-categorychecklist-category-add button" value="<?php _e( 'Add' ); ?>" tabindex="3" />
+	<input type="button" id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-add-sumbit" class="add:<?php print $idPrefix; ?><?php print $taxonomy; ?>checklist:<?php print $taxonomy; ?>-add add-categorychecklist-category-add button category-add-submit" value="<?php _e( 'Add' ); ?>" tabindex="3" />
 	<?php /* wp_nonce_field currently doesn't let us set an id different from name, but we need a non-unique name and a unique id */ ?>
-	<input type="hidden" id="_ajax_nonce<?php print esc_html($idSuffix); ?>" name="_ajax_nonce" value="<?php print wp_create_nonce('add-category'); ?>" />
-	<input type="hidden" id="_ajax_nonce-add-category<?php print esc_html($idSuffix); ?>" name="_ajax_nonce-add-category" value="<?php print wp_create_nonce('add-category'); ?>" />
-	<span id="<?php print $idPrefix; ?>category-ajax-response" class="category-ajax-response"></span>
+	<input type="hidden" id="_ajax_nonce<?php print esc_html($idSuffix); ?>" name="_ajax_nonce" value="<?php print wp_create_nonce('add-'.$taxonomy); ?>" />
+	<input type="hidden" id="_ajax_nonce-add-<?php print $taxonomy; ?><?php print esc_html($idSuffix); ?>" name="_ajax_nonce-add-<?php print $taxonomy; ?>" value="<?php print wp_create_nonce('add-'.$taxonomy); ?>" />
+	<span id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-ajax-response" class="<?php print $taxonomy; ?>-ajax-response"></span>
     </p>
 </div>
 
@@ -652,13 +657,7 @@ settings page to set up how new posts <?php print $from_this_feed; ?> are assign
 	/*static*/ function fix_toggles_js ($context) {
 	?>
 		<script type="text/javascript">
-			jQuery(document).ready( function($) {
-			<?php if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) : ?>
-				if ( $('#post_tag').length ) {
-					tagBox.init();
-				}
-			<?php endif; ?>
-			
+			jQuery(document).ready( function($) {	
 			// In case someone got here first...
 			$('.postbox h3, .postbox .handlediv').unbind('click');
 			$('.postbox h3 a').unbind('click');

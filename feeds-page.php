@@ -72,25 +72,29 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	var $special_settings = array ( /* Regular expression syntax is OK here */
 		'cats',
 		'cat_split',
+		'freeze updates',
 		'hardcode name',
 		'hardcode url',
 		'hardcode description',
 		'hardcode categories', /* Deprecated */
-		'post status',
 		'comment status',
+		'terms',
+		'map authors',
+		'munge permalink',
 		'ping status',
+		'post status',
+		'postmeta',
+		'resolve relative',
+		'syndicated post type',
+		'tags',
 		'unfamiliar author',
 		'unfamliar categories', /* Deprecated */
 		'unfamiliar category',
-		'map authors',
-		'tags',
-		'postmeta',
-		'resolve relative',
-		'freeze updates',
-		'munge permalink',
+		'unfamiliar post_tag',
 		'update/.*',
 		'feed/.*',
 		'link/.*',
+		'match/.*',
 	);
 
 	function display () {

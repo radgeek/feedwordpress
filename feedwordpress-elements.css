@@ -161,17 +161,26 @@ ul.current-setting {
 
 table.edit-form { width: 100%; }
 table.edit-form th { width: 27%; vertical-align: top; text-align: right; padding: 0.5em; }
+table.edit-form th .setting-description { font-weight: normal; font-size: smaller; font-style: italic; }
+
 table.edit-form td { width: 73%; vertical-align: top; padding: 0.5em; }
 table.edit-form td ul.options { margin: 0; padding: 0; list-style: none; }
+table.edit-form td ul.options.compact li { display: inline; margin-left: 3.0em; white-space: nowrap; }
 table.edit-form.narrow th { width: 15%; }
 table.edit-form.narrow td { width: 85%; }
 table.edit-form td p { margin-top: 0px; }
 
 table.twofer { width: 100%; border: none; }
 table.twofer tr { vertical-align: top; }
-table.twofer td.equals.first { width: 49%; border-right: 1px doted #777; padding-right: 10px; }
-table.twofer td.equals.second { width: 49%; padding-left: 10px; }
+table.twofer td.equals.first { width: 49% !important; border-right: 1px dotted #777; padding-top: 0px; padding-bottom: 0px; padding-left: 0px; padding-right: 10px; }
+table.twofer td.equals.second { width: 49% !important; padding-top: 0px; padding-bottom: 0px; padding-left: 10px; padding-right: 0px; }
+
+table.twofer td.active { color: black; background-color: #cfc; border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px; -khtml-border-radius: 5px; }
+table.twofer td.inactive { color: #333; }
+table.twofer td.equals.first.active { border-right: none; }
+table.twofer td.equals.first.inactive { border-right: none; }
 
 table.twofer td.primary { width: 69%; border-right: 1px dotted #777; padding-right: 10px; }
 table.twofer td.secondary { padding-left: 10px; width: 30%; }
+
 

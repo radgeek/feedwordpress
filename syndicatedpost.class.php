@@ -10,7 +10,7 @@ require_once(dirname(__FILE__).'/feedtime.class.php');
  * different feed formats, which may be useful to FeedWordPress users
  * who make use of feed data in PHP add-ons and filters.
  *
- * @version 2010.0531
+ * @version 2010.0814
  */
 class SyndicatedPost {
 	var $item = null;	// MagpieRSS representation
@@ -254,57 +254,89 @@ class SyndicatedPost {
 			// Store a hash of the post content for checking whether something needs to be updated
 			$this->post['meta']['syndication_item_hash'] = $this->update_hash();
 
-			// Feed-by-feed options for author and category creation
-			$this->post['named']['unfamiliar']['author'] = (isset($this->feedmeta['unfamiliar author']) ? $this->feedmeta['unfamiliar author'] : null);
-			$this->post['named']['unfamiliar']['category'] = (isset($this->feedmeta['unfamiliar category']) ? $this->feedmeta['unfamiliar category'] : null);
-
-			// Categories: start with default categories, if any
-			$this->post['named']['preset/category'] = array();
-			if ('no' != $this->link->setting('add global categories', NULL, 'yes')) :
+			// Categories: start with default categories, if any.
+			$cats = array();
+			if ('no' != $this->link->setting('add/category', NULL, 'yes')) :
 				$fc = get_option("feedwordpress_syndication_cats");
 				if ($fc) :
-					$this->post['named']['preset/category'] = explode("\n", $fc);
+					$cats = array_merge($cats, explode("\n", $fc));
 				endif;
 			endif;
 
 			$fc = $this->link->setting('cats', NULL, array());
 			if (is_array($fc)) :
-				$this->post['named']['preset/category'] = array_merge($this->post['named']['preset/category'], $fc);
+				$cats = array_merge($cats, $fc);
 			endif;
-
+			$this->post['pretax']['category'] = $cats;
+			
 			// Now add categories from the post, if we have 'em
-			$this->post['named']['category'] = array();
-			if ( isset($this->item['category#']) ) :
-				for ($i = 1; $i <= $this->item['category#']; $i++) :
-					$cat_idx = (($i > 1) ? "#{$i}" : "");
-					$cat = $this->item["category{$cat_idx}"];
+			$cats = array();
+			foreach ($this->entry->get_categories() as $cat) :
+				$cat_name = $cat->get_term();
+				if (!$cat_name) : $cat_name = $cat->get_label(); endif;
+				
+				if ($this->link->setting('cat_split', NULL, NULL)) :
+					$pcre = "\007".$this->feedmeta['cat_split']."\007";
+					$cats = array_merge(
+						$cats,
+						preg_split(
+							$pcre,
+							$cat_name,
+							-1 /*=no limit*/,
+							PREG_SPLIT_NO_EMPTY
+						)
+					);
+				else :
+					$cats[] = $cat_name;
+				endif;
+			endforeach;
 
-					if ( isset($this->feedmeta['cat_split']) and strlen($this->feedmeta['cat_split']) > 0) :
-						$pcre = "\007".$this->feedmeta['cat_split']."\007";
-						$this->post['named']['category'] = array_merge($this->post['named']['category'], preg_split($pcre, $cat, -1 /*=no limit*/, PREG_SPLIT_NO_EMPTY));
-					else :
-						$this->post['named']['category'][] = $cat;
-					endif;
-				endfor;
-			endif;
-			$this->post['named']['category'] = apply_filters('syndicated_item_categories', $this->post['named']['category'], $this);
+			$this->post['taxed']['category'] = apply_filters('syndicated_item_categories', $cats, $this);
 			
 			// Tags: start with default tags, if any
-			$ft = get_option("feedwordpress_syndication_tags");
-			if ($ft) :
-				$this->post['tags_input'] = explode(FEEDWORDPRESS_CAT_SEPARATOR, $ft);
-			else :
-				$this->post['tags_input'] = array();
+			$tags = array();
+			if ('no' != $this->link->setting('add/post_tag', NULL, 'yes')) :
+				$ft = get_option("feedwordpress_syndication_tags", NULL);
+				$tags = (is_null($ft) ? array() : explode(FEEDWORDPRESS_CAT_SEPARATOR, $ft));
 			endif;
 			
-			if (isset($this->feedmeta['tags']) and is_array($this->feedmeta['tags'])) :
-				$this->post['tags_input'] = array_merge($this->post['tags_input'], $this->feedmeta['tags']);
+			$ft = $this->link->setting('tags', NULL, array());
+			if (is_array($ft)) :
+				$tags = array_merge($tags, $ft);
 			endif;
+			$this->post['pretax']['post_tag'] = $tags;
 			
 			// Scan post for /a[@rel='tag'] and use as tags if present
-			$this->post['tags_input'] = array_merge($this->post['tags_input'], $this->inline_tags());
+			$tags = $this->inline_tags();
+			$this->post['taxed']['post_tag'] = apply_filters('syndicated_item_tags', $tags, $this);
+			
+			$taxonomies = $this->link->taxonomies();
+			$feedTerms = $this->link->setting('terms', NULL, array());
+			$globalTerms = get_option('feedwordpress_syndication_terms', array());
 
-			$this->post['tags_input'] = apply_filters('syndicated_item_tags', $this->post['tags_input'], $this);
+			$specials = array('category' => 'cats', 'post_tag' => 'tags');
+			foreach ($taxonomies as $tax) :
+				if (!isset($specials[$tax])) :
+					$terms = array();
+				
+					// See if we should get the globals
+					if ('no' != $this->link->setting("add/$tax", NULL, 'yes')) :
+						if (isset($globalTerms[$tax])) :
+							$terms = $globalTerms[$tax];
+						endif;
+					endif;
+					
+					// Now merge in the locals
+					if (isset($feedTerms[$tax])) :
+						$terms = array_merge($terms, $feedTerms[$tax]);
+					endif;
+
+					// That's all, folks.
+					$this->post['pretax'][$tax] = $terms;
+				endif;
+			endforeach;
+
+			$this->post['post_type'] = apply_filters('syndicated_post_type', $this->link->setting('syndicated post type', 'syndicated_post_type', 'post'), $this);
 		endif;
 	} /* SyndicatedPost::SyndicatedPost() */
 
@@ -1105,7 +1137,7 @@ class SyndicatedPost {
 					and !$frozen_post
 					and !$frozen_feed
 				); 
-				
+
 				if ($updated) :
 					$this->_freshness = 1; // Updated content
 					$this->_wp_id = $result->id;
@@ -1144,7 +1176,7 @@ class SyndicatedPost {
 		if ($freshness > 0) :
 			# -- Look up, or create, numeric ID for author
 			$this->post['post_author'] = $this->author_id (
-				FeedWordPress::on_unfamiliar('author', $this->post['named']['unfamiliar']['author'])
+				$this->link->setting('unfamiliar author', 'unfamiliar_author', 'create')
 			);
 
 			if (is_null($this->post['post_author'])) :
@@ -1153,32 +1185,77 @@ class SyndicatedPost {
 		endif;
 		
 		if (!$this->filtered() and $freshness > 0) :
-			# -- Look up, or create, numeric ID for categories
-			list($pcats, $ptags) = $this->category_ids (
-				$this->post['named']['category'],
-				FeedWordPress::on_unfamiliar('category', $this->post['named']['unfamiliar']['category']),
-				/*tags_too=*/ true
+			$consider = array(
+				'category' => array('abbr' => 'cats', 'domain' => array('category', 'post_tag')),
+				'post_tag' => array('abbr' => 'tags', 'domain' => array('post_tag')),
 			);
 
-			$this->post['post_category'] = $pcats;
-			$this->post['tags_input'] = array_merge($this->post['tags_input'], $ptags);
+			$termSet = array(); $valid = null;
+			foreach ($consider as $what => $taxes) :
+				if (!is_null($this->post)) : // Not filtered out yet
+					# -- Look up, or create, numeric ID for categories
+					$taxonomies = $this->link->setting("match/".$taxes['abbr'], 'match_'.$taxes['abbr'], $taxes['domain']);
+	
+					// Eliminate dummy variables
+					$taxonomies = array_filter($taxonomies, 'remove_dummy_zero');
+	
+					$terms = $this->category_ids (
+						$this->post['taxed'][$what],
+						$this->link->setting("unfamiliar {$what}", "unfamiliar_{$what}", 'create:'.$what),
+						/*taxonomies=*/ $taxonomies,
+						array(
+						  'singleton' => false, // I don't like surprises
+						  'filters' => true,
+						)
+					);
+					
+					if (is_null($terms) or is_null($termSet)) :
+						// filtered out -- no matches
+					else :
+						$valid = true;
 
-			if (is_null($this->post['post_category'])) :
-				// filter mode on, no matching categories; drop the post
-				$this->post = NULL;
-			else :
-				// filter mode off or at least one match; now add on the feed and global presets
-				$this->post['post_category'] = array_merge (
-					$this->post['post_category'],
-					$this->category_ids (
-						$this->post['named']['preset/category'],
-						'default'
-					)
-				);
-
-				if (count($this->post['post_category']) < 1) :
-					$this->post['post_category'][] = 1; // Default to category 1 ("Uncategorized" / "General") if nothing else
+						// filter mode off, or at least one match
+						foreach ($terms as $tax => $term_ids) :
+							if (!isset($termSet[$tax])) :
+								$termSet[$tax] = array();
+							endif;
+							$termSet[$tax] = array_merge($termSet[$tax], $term_ids);
+						endforeach;
+					endif;
 				endif;
+			endforeach;
+
+			if (is_null($valid)) : // Plonked
+				$this->post = NULL;
+			else : // We can proceed
+				$this->post['tax_input'] = array();
+				foreach ($termSet as $tax => $term_ids) :
+					if (!isset($this->post['tax_input'][$tax])) :
+						$this->post['tax_input'][$tax] = array();
+					endif;
+					$this->post['tax_input'][$tax] = array_merge(
+						$this->post['tax_input'][$tax],
+						$term_ids
+					);
+				endforeach;
+
+				// Now let's add on the feed and global presets
+				foreach ($this->post['pretax'] as $tax => $term_ids) :
+					if (!isset($this->post['tax_input'][$tax])) :
+						$this->post['tax_input'][$tax] = array();
+					endif;
+					
+					$this->post['tax_input'][$tax] = array_merge (
+						$this->post['tax_input'][$tax],
+						$this->category_ids (
+						/*terms=*/ $term_ids,
+						/*unfamiliar=*/ 'create:'.$tax, // These are presets; for those added in a tagbox editor, the tag may not yet exist
+						/*taxonomies=*/ array($tax),
+						array(
+						  'singleton' => true,
+						))
+					);
+				endforeach;
 			endif;
 		endif;
 		
@@ -1238,78 +1315,23 @@ class SyndicatedPost {
 
 		$dbpost = $this->normalize_post(/*new=*/ true);
 		if (!is_null($dbpost)) :
-			if ($this->use_api('wp_insert_post')) :
-				$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
+			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
 	
-				// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
-				add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+			// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
+			add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
 				
-				// Kludge to prevent kses filters from stripping the
-				// content of posts when updating without a logged in
-				// user who has `unfiltered_html` capability.
-				add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
-				
-				$this->_wp_id = wp_insert_post($dbpost);
+			// Kludge to prevent kses filters from stripping the
+			// content of posts when updating without a logged in
+			// user who has `unfiltered_html` capability.
+			add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
+			
+			$this->_wp_id = wp_insert_post($dbpost);
 	
-				// Turn off ridiculous fucking kludges #1 and #2
-				remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
-				remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
+			// Turn off ridiculous fucking kludges #1 and #2
+			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+			remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
 	
-				$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
-	
-				// Unfortunately, as of WordPress 2.3, wp_insert_post()
-				// *still* offers no way to use a guid of your choice,
-				// and munges your post modified timestamp, too.
-				$result = $wpdb->query("
-					UPDATE $wpdb->posts
-					SET
-						guid='{$dbpost['guid']}',
-						post_modified='{$dbpost['post_modified']}',
-						post_modified_gmt='{$dbpost['post_modified_gmt']}'
-					WHERE ID='{$this->_wp_id}'
-				");
-			else :
-				# The right way to do this is the above. But, alas,
-				# in earlier versions of WordPress, wp_insert_post has
-				# too much behavior (mainly related to pings) that can't
-				# be overridden. In WordPress 1.5, it's enough of a
-				# resource hog to make PHP segfault after inserting
-				# 50-100 posts. This can get pretty annoying, especially
-				# if you are trying to update your feeds for the first
-				# time.
-	
-				$result = $wpdb->query("
-				INSERT INTO $wpdb->posts
-				SET
-					guid = '{$dbpost['guid']}',
-					post_author = '{$dbpost['post_author']}',
-					post_date = '{$dbpost['post_date']}',
-					post_date_gmt = '{$dbpost['post_date_gmt']}',
-					post_content = '{$dbpost['post_content']}',"
-					.(isset($dbpost['post_excerpt']) ? "post_excerpt = '{$dbpost['post_excerpt']}'," : "")."
-					post_title = '{$dbpost['post_title']}',
-					post_name = '{$dbpost['post_name']}',
-					post_modified = '{$dbpost['post_modified']}',
-					post_modified_gmt = '{$dbpost['post_modified_gmt']}',
-					comment_status = '{$dbpost['comment_status']}',
-					ping_status = '{$dbpost['ping_status']}',
-					post_status = '{$dbpost['post_status']}'
-				");
-				$this->_wp_id = $wpdb->insert_id;
-	
-				$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
-	
-				// WordPress 1.5.x - 2.0.x
-				wp_set_post_cats('1', $this->wp_id(), $this->post['post_category']);
-		
-				// Since we are not going through official channels, we need to
-				// manually tell WordPress that we've published a new post.
-				// We need to make sure to do this in order for FeedWordPress
-				// to play well  with the staticize-reloaded plugin (something
-				// that a large aggregator website is going to *want* to be
-				// able to use).
-				do_action('publish_post', $this->_wp_id);
-			endif;
+			$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
 		endif;
 	} /* SyndicatedPost::insert_new() */
 
@@ -1319,76 +1341,31 @@ class SyndicatedPost {
 		// Why the fuck doesn't wp_insert_post already do this?
 		$dbpost = $this->normalize_post(/*new=*/ false);
 		if (!is_null($dbpost)) :
-			if ($this->use_api('wp_insert_post')) :
-				$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
+			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
 	
-				// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
-				add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+			// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
+			add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
 	
-				// Kludge to prevent kses filters from stripping the
-				// content of posts when updating without a logged in
-				// user who has `unfiltered_html` capability.
-				add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
+			// Kludge to prevent kses filters from stripping the
+			// content of posts when updating without a logged in
+			// user who has `unfiltered_html` capability.
+			add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
 
-				// Don't munge status fields that the user may have reset manually
-				if (function_exists('get_post_field')) :
-					$doNotMunge = array('post_status', 'comment_status', 'ping_status');
-					foreach ($doNotMunge as $field) :
-						$dbpost[$field] = get_post_field($field, $this->wp_id());
-					endforeach;
-				endif;
-
-				$this->_wp_id = wp_insert_post($dbpost);
-	
-				// Turn off ridiculous fucking kludges #1 and #2
-				remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
-				remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
-	
-				$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
-	
-				// Unfortunately, as of WordPress 2.3, wp_insert_post()
-				// munges your post modified timestamp.
-				$result = $wpdb->query("
-					UPDATE $wpdb->posts
-					SET
-						post_modified='{$dbpost['post_modified']}',
-						post_modified_gmt='{$dbpost['post_modified_gmt']}'
-					WHERE ID='{$this->_wp_id}'
-				");
-			else :
-	
-				$result = $wpdb->query("
-				UPDATE $wpdb->posts
-				SET
-					post_author = '{$dbpost['post_author']}',
-					post_content = '{$dbpost['post_content']}',"
-					.(isset($dbpost['post_excerpt']) ? "post_excerpt = '{$dbpost['post_excerpt']}'," : "")."
-					post_title = '{$dbpost['post_title']}',
-					post_name = '{$dbpost['post_name']}',
-					post_modified = '{$dbpost['post_modified']}',
-					post_modified_gmt = '{$dbpost['post_modified_gmt']}'
-				WHERE guid='{$dbpost['guid']}'
-				");
-		
-				// WordPress 2.1.x and up
-				if (function_exists('wp_set_post_categories')) :
-					wp_set_post_categories($this->wp_id(), $this->post['post_category']);
-				// WordPress 1.5.x - 2.0.x
-				elseif (function_exists('wp_set_post_cats')) :
-					wp_set_post_cats('1', $this->wp_id(), $this->post['post_category']);
-				// This should never happen.
-				else :
-					FeedWordPress::critical_bug(__CLASS__.'::'.__FUNCTION.'(): no post categorizing function', array("dbpost" => $dbpost, "this" => $this), __LINE__);
-				endif;
-		
-				// Since we are not going through official channels, we need to
-				// manually tell WordPress that we've published a new post.
-				// We need to make sure to do this in order for FeedWordPress
-				// to play well  with the staticize-reloaded plugin (something
-				// that a large aggregator website is going to *want* to be
-				// able to use).
-				do_action('edit_post', $this->post['ID']);
+			// Don't munge status fields that the user may have reset manually
+			if (function_exists('get_post_field')) :
+				$doNotMunge = array('post_status', 'comment_status', 'ping_status');
+				foreach ($doNotMunge as $field) :
+					$dbpost[$field] = get_post_field($field, $this->wp_id());
+				endforeach;
 			endif;
+
+			$this->_wp_id = wp_insert_post($dbpost);
+	
+			// Turn off ridiculous fucking kludges #1 and #2
+			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
+			remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
+	
+			$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
 		endif;
 	} /* SyndicatedPost::update_existing() */
 
@@ -1693,9 +1670,23 @@ class SyndicatedPost {
 		return $id;	
 	} // function SyndicatedPost::author_id ()
 
-	// look up (and create) category ids from a list of categories
-	function category_ids ($cats, $unfamiliar_category = 'create', $tags_too = false) {
-		global $wpdb;
+	/**
+	 * category_ids: look up (and create) category ids from a list of categories
+	 *
+	 * @param array $cats
+	 * @param string $unfamiliar_category
+	 * @param array|null $taxonomies
+	 * @return array
+	 */ 
+	function category_ids ($cats, $unfamiliar_category = 'create', $taxonomies = NULL, $params = array()) {
+		$singleton = (isset($params['singleton']) ? $params['singleton'] : true);
+		$allowFilters = (isset($params['filters']) ? $params['filters'] : false);
+		
+		$catTax = 'category';
+
+		if (is_null($taxonomies)) :
+			$taxonomies = array('category');
+		endif;
 
 		// We need to normalize whitespace because (1) trailing
 		// whitespace can cause PHP and MySQL not to see eye to eye on
@@ -1705,62 +1696,98 @@ class SyndicatedPost {
 		// distinction between 'Computers' and 'Computers  '
 		$cats = array_map('trim', $cats);
 
-		$tags = array();
-
-		$cat_ids = array ();
+		$terms = array();
+		foreach ($taxonomies as $tax) :
+			$terms[$tax] = array();
+		endforeach;
+		
 		foreach ($cats as $cat_name) :
-			if (preg_match('/^{#([0-9]+)}$/', $cat_name, $backref)) :
-				$cat_id = (int) $backref[1];
-				if (term_exists($cat_id, 'category')) :
-					$cat_ids[] = $cat_id;
-				elseif (get_category($cat_id)) :
-					$cat_ids[] = $cat_id;
+			if (preg_match('/^{([^#}]*)#([0-9]+)}$/', $cat_name, $backref)) :
+				$cat_id = (int) $backref[2];
+				$tax = $backref[1];
+				if (strlen($tax) < 1) :
+					$tax = $catTax;
+				endif;
+
+				$term = term_exists($cat_id, $tax);
+				if (!is_wp_error($term) and !!$term) :
+					if (!isset($terms[$tax])) :
+						$terms[$tax] = array();
+					endif;
+					$terms[$tax][] = $cat_id;
 				endif;
 			elseif (strlen($cat_name) > 0) :
-				$esc = $wpdb->escape($cat_name);
-				$resc = $wpdb->escape(preg_quote($cat_name));
+				$familiar = false;
+				foreach ($taxonomies as $tax) :
+					if ($tax!='category' or strtolower($cat_name)!='uncategorized') :
+						$term = term_exists($cat_name, $tax);
+						if (!is_wp_error($term) and !!$term) :
+							$familiar = true;
+	
+							if (is_array($term)) :
+								$term_id = (int) $term['term_id'];
+							else :
+								$term_id = (int) $term;
+							endif;
+							
+							if (!isset($terms[$tax])) :
+								$terms[$tax] = array();
+							endif;
+							$terms[$tax][] = $term_id;
+							break; // We're done here.
+						endif;
+					endif;
+				endforeach;
 				
-				$cat_id = term_exists($cat_name, 'category');
-				$tag_id = term_exists($cat_name, 'post_tag');
-				if ($cat_id) :
-					$cat_ids[] = $cat_id['term_id'];
-				// There must be a better way to do this...
-				elseif ($results = $wpdb->get_results(
-					"SELECT	term_id
-					FROM $wpdb->term_taxonomy
-					WHERE
-						LOWER(description) RLIKE
-						CONCAT('(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*', LOWER('{$resc}'), '( |\\t|\\r)*(\\n|\$)')"
-				)) :
-					foreach ($results as $term) :
-						$cat_ids[] = (int) $term->term_id;
-					endforeach;
-				elseif ($tags_too and $tag_id) :
-					$tags[] = $cat_name;
-				elseif ('tag'==$unfamiliar_category) :
-					$tags[] = $cat_name;
-				elseif ('create'===$unfamiliar_category) :
-					$term = wp_insert_term($cat_name, 'category');
-					if (is_wp_error($term)) :
-						FeedWordPress::noncritical_bug('term insertion problem', array('cat_name' => $cat_name, 'term' => $term, 'this' => $this), __LINE__);
-					else :
-						$cat_ids[] = $term['term_id'];
+				if (!$familiar) :
+					if ('tag'==$unfamiliar_category) :
+						$unfamiliar_category = 'create:post_tag';
+					endif;
+					
+					if (preg_match('/^create(:(.*))?$/i', $unfamiliar_category, $ref)) :
+						$tax = $catTax; // Default
+						if (isset($ref[2]) and strlen($ref[2]) > 2) :
+							$tax = $ref[2];
+						endif;
+						$term = wp_insert_term($cat_name, $tax);
+						if (is_wp_error($term)) :
+							FeedWordPress::noncritical_bug('term insertion problem', array('cat_name' => $cat_name, 'term' => $term, 'this' => $this), __LINE__);
+						else :
+							if (!isset($terms[$tax])) :
+								$terms[$tax] = array();
+							endif;
+							$terms[$tax][] = (int) $term['term_id'];
+						endif;
 					endif;
 				endif;
 			endif;
 		endforeach;
 
-		if ((count($cat_ids) == 0) and ($unfamiliar_category === 'filter')) :
-			$cat_ids = NULL; // Drop the post
-		else :
-			$cat_ids = array_unique($cat_ids);
+		$filtersOn = $allowFilters;
+		if ($allowFilters) :
+			$filters = array_filter(
+				$this->link->setting('match/filter', 'match_filter', array()),
+				'remove_dummy_zero'
+			);
+			$filtersOn = ($filtersOn and is_array($filters) and (count($filters) > 0));
 		endif;
 		
-		if ($tags_too) : $ret = array($cat_ids, $tags);
-		else : $ret = $cat_ids;
-		endif;
+		// Check for filter conditions
+		foreach ($terms as $tax => $term_ids) :
+			if ($filtersOn
+			and (count($term_ids)==0)
+			and in_array($tax, $filters)) :
+				$terms = NULL; // Drop the post
+				break;
+			else :
+				$terms[$tax] = array_unique($term_ids);
+			endif;
+		endforeach;
 
-		return $ret;
+		if ($singleton and count($terms)==1) : // If we only searched one, just return the term IDs
+			$terms = end($terms);
+		endif;
+		return $terms;
 	} // function SyndicatedPost::category_ids ()
 
 	function use_api ($tag) {

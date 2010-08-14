@@ -76,6 +76,15 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 					endif;
 				endif;
 			endforeach;
+			
+			if (isset($post['syndicated_post_type'])) :
+				if ($post['syndicated_post_type']=='default') :
+					unset($this->link->settings['syndicated post type']);
+				else :
+					$this->link->settings['syndicated post type'] = $post['syndicated_post_type'];
+				endif;
+			endif;
+
 		else :
 			// update_option ...
 			if (isset($post['feed_post_status'])) :
@@ -104,6 +113,10 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 				update_option('feedwordpress_syndicated_ping_status', 'open');
 			else :
 				update_option('feedwordpress_syndicated_ping_status', 'closed');
+			endif;
+			
+			if (isset($post['syndicated_post_type'])) :
+				update_option('feedwordpress_syndicated_post_type', $post['syndicated_post_type']);
 			endif;
 		endif;
 		parent::save_settings($post);
@@ -511,6 +524,77 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressPostsPage::custom_post_settings_box() */
 
+	function custom_post_types_box ($page, $box = NULL) {
+		global $fwp_path;
+		
+		$global_syndicated_post_type = get_option('feedwordpress_syndicated_post_type', 'post');
+		if ($page->for_feed_settings()) :
+			$syndicated_post_type = $page->link->setting('syndicated post type', NULL, NULL);
+			if (is_null($syndicated_post_type)) :
+				$syndicated_post_type = 'default';
+			endif;
+		else :
+			$syndicated_post_type = $global_syndicated_post_type;
+			if (is_null($syndicated_post_type)) :
+				$syndicated_post_type = 'post';
+			endif;
+		endif;
+
+		// Get all custom post types
+		$post_types = get_post_types(array(
+		'_builtin' => false,
+		), 'objects');
+
+		$ul = array();
+		$ul['post'] = array('label' => __('Normal WordPress posts'), 'checked' => '');
+		foreach ($post_types as $post_type) :
+			$ul[$post_type->name] = array('label' => __($post_type->labels->name), 'checked' => '');
+		endforeach;
+		
+		if ($page->for_feed_settings()) :
+			$href = 'admin.php?page='.$fwp_path.'/'.basename(__FILE__);
+			$currently = $ul[$global_syndicated_post_type]['label'];
+			$ul = array_merge(array(
+				'default' => array(
+					'label' => sprintf(
+						__('Use <a href="%s">site-wide setting</a> <span class="current-setting">Currently: <strong>%s</strong></span>'),
+						$href,
+						$currently
+					),
+					'checked' => '',
+				),
+			), $ul);
+		endif;
+		$ul[$syndicated_post_type]['checked'] = ' checked="checked"';
+		
+		?>
+		<table class="edit-form narrow">
+		<tbody>
+		<tr><th><?php _e('Custom Post Types:'); ?></th>
+		<td><p>Incoming syndicated posts should be stored in the
+		posts database as...</p>
+		<ul class="options">
+		<?php
+		
+			foreach ($ul as $post_type_name => $li) :
+		?>
+				<li><label><input
+				type="radio" name="syndicated_post_type"
+				value="<?php print $post_type_name; ?>"
+				<?php print $li['checked']; ?>
+				/>
+				<?php print $li['label']; ?></label></li>
+		<?php
+			endforeach;
+		?>
+		
+		</ul></td></tr>
+		
+		</tbody>
+		</table>
+		<?php
+	} /* FeedWordPressPostsPage::custom_post_types_box() */
+	
 	function display () {
 		$this->boxes_by_methods = array(
 		'publication_box' => __('Syndicated Posts'),
@@ -518,6 +602,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		'formatting_box' => __('Formatting'),
 		'comments_and_pings_box' => __('Comments & Pings'),
 		'custom_post_settings_box' => __('Custom Post Settings (to apply to each syndicated post)'),
+		'custom_post_types_box' => ('Custom Post Types (advanced database settings)'),
 		);
 		
 		parent::display();

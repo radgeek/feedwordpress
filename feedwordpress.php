@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2010.0812
+Version: 2010.0814
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2010.0812
+ * @version 2010.0814
  */
 
 # This uses code derived from:
@@ -34,7 +34,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2010.0812');
+define ('FEEDWORDPRESS_VERSION', '2010.0814');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 // Defaults
@@ -104,6 +104,9 @@ require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
 
 require_once(dirname(__FILE__) . '/admin-ui.php');
 require_once(dirname(__FILE__) . '/compatability.php'); // LEGACY API: Replicate or mock up functions for legacy support purposes
+
+require_once(dirname(__FILE__) . '/syndicatedpost.class.php');
+require_once(dirname(__FILE__) . '/syndicatedlink.class.php');
 require_once(dirname(__FILE__) . '/feedwordpresshtml.class.php');
 require_once(dirname(__FILE__) . '/feedwordpress-content-type-sniffer.class.php');
 
@@ -205,16 +208,15 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_action('wp_footer', 'debug_out_feedwordpress_footer', -100);
 	add_action('admin_footer', 'debug_out_feedwordpress_footer', -100);
 	
-	add_action('init', 'feedwordpress_clear_cache_magic_url');
+	$feedwordpress = new FeedWordPress;
 
 	# Cron-less auto-update. Hooray!
 	$autoUpdateHook = get_option('feedwordpress_automatic_updates');
 	if ($autoUpdateHook != 'init') :
 		$autoUpdateHook = 'shutdown';
 	endif;
-	add_action($autoUpdateHook, 'feedwordpress_auto_update');
-
-	add_action('init', 'feedwordpress_update_magic_url');
+	add_action($autoUpdateHook, array(&$feedwordpress, 'auto_update'));
+	add_action('init', array(&$feedwordpress, 'init'));
 
 	# Default sanitizers
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'resolve_relative_uris'), 0, 2);
@@ -224,54 +226,6 @@ else :
 	# Hook in the menus, which will just point to the upgrade interface
 	add_action('admin_menu', 'fwp_add_pages');
 endif; // if (!FeedWordPress::needs_upgrade())
-
-function feedwordpress_auto_update () {
-	if (FeedWordPress::stale()) :
-		$feedwordpress = new FeedWordPress;
-		$feedwordpress->update();
-	endif;
-} /* feedwordpress_auto_update () */
-
-function feedwordpress_clear_cache_magic_url () {
-	if (FeedWordPress::clear_cache_requested()) :
-		FeedWordPress::clear_cache();
-	endif;
-}
-
-function feedwordpress_update_magic_url () {
-	global $wpdb;
-
-	// Explicit update request in the HTTP request (e.g. from a cron job)
-	if (FeedWordPress::update_requested()) :
-		$feedwordpress = new FeedWordPress;
-		$feedwordpress->update(FeedWordPress::update_requested_url());
-		
-		if (FEEDWORDPRESS_DEBUG and count($wpdb->queries) > 0) :
-			$mysqlTime = 0.0;
-			$byTime = array();
-			foreach ($wpdb->queries as $query) :
-				$time = $query[1] * 1000000.0;
-				$mysqlTime += $query[1];
-				if (!isset($byTime[$time])) : $byTime[$time] = array(); endif;
-				$byTime[$time][] = $query[0]. ' // STACK: ' . $query[2];   
-			endforeach;
-			krsort($byTime);
-       
-			foreach ($byTime as $time => $querySet) :
-				foreach ($querySet as $query) :
-					print "[".(sprintf('%4.4f', $time/1000.0)) . "ms] $query\n";
-				endforeach;
-			endforeach;
-			echo FeedWordPress::log_prefix()."$wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of "; timer_stop(1); print " seconds.";
-		endif;
-
-		debug_out_feedwordpress_footer();
-
-    		// Magic URL should return nothing but a 200 OK header packet
-		// when successful.
-		exit;
-	endif;
-} /* feedwordpress_magic_update_url () */
 
 ################################################################################
 ## LOGGING FUNCTIONS: log status updates to error_log if you want it ###########
@@ -1068,6 +1022,51 @@ class FeedWordPress {
 		endif;
 		return $ret;
 	} // FeedWordPress::stale()
+
+	function init () {
+		$this->clear_cache_magic_url();
+		$this->update_magic_url();
+	} /* FeedWordPress::init() */
+	
+	function update_magic_url () {
+		global $wpdb;
+
+		// Explicit update request in the HTTP request (e.g. from a cron job)
+		if ($this->update_requested()) :
+			$this->update($this->update_requested_url());
+			
+			if (FEEDWORDPRESS_DEBUG and count($wpdb->queries) > 0) :
+				$mysqlTime = 0.0;
+				$byTime = array();
+				foreach ($wpdb->queries as $query) :
+					$time = $query[1] * 1000000.0;
+					$mysqlTime += $query[1];
+					if (!isset($byTime[$time])) : $byTime[$time] = array(); endif;
+					$byTime[$time][] = $query[0]. ' // STACK: ' . $query[2];   
+				endforeach;
+				krsort($byTime);
+	       
+				foreach ($byTime as $time => $querySet) :
+					foreach ($querySet as $query) :
+						print "[".(sprintf('%4.4f', $time/1000.0)) . "ms] $query\n";
+					endforeach;
+				endforeach;
+				echo $this->log_prefix()."$wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of "; timer_stop(1); print " seconds.";
+			endif;
+	
+			debug_out_feedwordpress_footer();
+	
+			// Magic URL should return nothing but a 200 OK header packet
+			// when successful.
+			exit;
+		endif;
+	} /* FeedWordPress::magic_update_url () */
+
+	function clear_cache_magic_url () {
+		if ($this->clear_cache_requested()) :
+			$this->clear_cache();
+		endif;
+	} /* FeedWordPress::clear_cache_magic_url() */
 	
 	function clear_cache_requested () {
 		return (
@@ -1084,15 +1083,21 @@ class FeedWordPress {
 	} // FeedWordPress::update_requested()
 
 	function update_requested_url () {
-			$ret = null;
-			
-			if (($_REQUEST['update_feedwordpress']=='*')
-			or (preg_match('|^http://.*|i', $_REQUEST['update_feedwordpress']))) :
-				$ret = $_REQUEST['update_feedwordpress'];
-			endif;
+		$ret = null;
+		
+		if (($_REQUEST['update_feedwordpress']=='*')
+		or (preg_match('|^http://.*|i', $_REQUEST['update_feedwordpress']))) :
+			$ret = $_REQUEST['update_feedwordpress'];
+		endif;
 
-			return $ret;
+		return $ret;
 	} // FeedWordPress::update_requested_url()
+
+	function auto_update () {
+		if ($this->stale()) :
+			$this->update();
+		endif;
+	} /* FeedWordPress::auto_update () */
 
 	function syndicate_link ($name, $uri, $rss) {
 		global $wpdb;
@@ -1124,26 +1129,14 @@ class FeedWordPress {
 		return $ret;
 	} /* FeedWordPress::syndicated_status() */
 
-	function on_unfamiliar ($what = 'author', $override = NULL) {
-		$set = array(
-			'author' => array('create', 'default', 'filter'),
-			'category' => array('create', 'tag', 'default', 'filter'),
-		);
+	function on_unfamiliar ($what = 'author') {
+		switch ($what) :
+		case 'category' : $suffix = ':category'; break;
+		case 'post_tag' : $suffix = ':post_tag'; break;
+		default: $suffix = '';
+		endswitch;
 		
-		if (is_string($override)) :
-			$ret = strtolower($override);
-		else :
-			$ret = NULL;
-		endif;
-
-		if (!is_numeric($override) and !in_array($ret, $set[$what])) :
-			$ret = get_option('feedwordpress_unfamiliar_'.$what);
-			if (!is_numeric($ret) and !in_array($ret, $set[$what])) :
-				$ret = 'create';
-			endif;
-		endif;
-
-		return $ret;
+		return get_option('feedwordpress_unfamiliar_'.$what, 'create'.$suffix);
 	} // function FeedWordPress::on_unfamiliar()
 
 	function null_email_set () {
@@ -1250,6 +1243,39 @@ class FeedWordPress {
 				AND LOCATE('box', meta_key);
 				");
 
+				update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
+			elseif ($fwp_db_version < 2010.0814) :
+				// Change in terminology.
+				if (get_option('feedwordpress_unfamiliar_category', 'create')=='default') :
+					update_option('feedwordpress_unfamiliar_category', 'null');
+				endif;
+				foreach (FeedWordPress::syndicated_links() as $link) :
+					$sub = new SyndicatedLink($link);
+					
+					$remap_uf = array(
+						'default' => 'null',
+						'filter' => 'null',
+						'create' => 'create:category',
+						'tag' => 'create:post_tag'
+					);
+					if (isset($sub->settings['unfamiliar category'])) :
+						if ($sub->settings['unfamiliar category']=='filter') :
+							$sub->settings['match/filter'] = array('category');
+						endif;
+						foreach ($remap_uf as $from => $to) :
+							if ($sub->settings['unfamiliar category']==$from) :
+								$sub->settings['unfamiliar category'] = $to;
+							endif;
+						endforeach;
+					endif;
+					
+					if (isset($sub->settings['add global categories'])) :
+						$sub->settings['add/category'] = $sub->settings['add global categories'];
+						unset($sub->settings['add global categories']);
+					endif;
+					
+					$sub->save_settings(/*reload=*/ true);
+				endforeach;
 				update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
 			else :
 				// No. Just brand it with the new version.
@@ -1684,9 +1710,6 @@ class FeedWordPress_Parser extends SimplePie_Parser {
 
 $feedwordpress_admin_footer = array();
 
-require_once(dirname(__FILE__) . '/syndicatedpost.class.php');
-require_once(dirname(__FILE__) . '/syndicatedlink.class.php');
-
 ################################################################################
 ## XML-RPC HOOKS: accept XML-RPC update pings from Contributors ################
 ################################################################################
@@ -1697,7 +1720,7 @@ function feedwordpress_xmlrpc_hook ($args = array ()) {
 }
 
 function feedwordpress_pong ($args) {
-	$feedwordpress = new FeedWordPress;
+	global $feedwordpress;
 	$delta = @$feedwordpress->update($args[1]);
 	if (is_null($delta)):
 		return array('flerror' => true, 'message' => "Sorry. I don't syndicate <$args[1]>.");

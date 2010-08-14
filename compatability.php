@@ -220,34 +220,26 @@ if (!function_exists('term_exists')) {
 } /* if */
 require_once(dirname(__FILE__).'/feedwordpress-walker-category-checklist.class.php');
 
-function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selected_cats = false, $prefix = '') {
-	if (function_exists('wp_category_checklist')) :
-		$walker = new FeedWordPress_Walker_Category_Checklist;
-		$walker->set_prefix($prefix);
-		wp_category_checklist(
-			/*post_id=*/ $post_id,
-			/*descendents_and_self=*/ $descendents_and_self,
-			/*selected_cats=*/ $selected_cats,
-			/*popular_cats=*/ false,
-			/*walker=*/ $walker
-		);
-	else :
-		// selected_cats is an array of integer cat_IDs / term_ids for
-		// the categories that should be checked
-		global $post_ID;
-
-		$cats = get_nested_categories();
-		
-		// Undo damage from usort() in WP 2.0
-		$dogs = array();
-		foreach ($cats as $cat) :
-			$dogs[$cat['cat_ID']] = $cat;
-		endforeach;
-		foreach ($selected_cats as $cat_id) :
-			$dogs[$cat_id]['checked'] = true;
-		endforeach;
-		write_nested_categories($dogs);
+function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selected_cats = false, $params = array()) {
+	if (is_string($params)) :
+		$prefix = $params;
+		$taxonomy = 'category';
+	elseif (is_array($params)) :
+		$prefix = (isset($params['prefix']) ? $params['prefix'] : '');
+		$taxonomy = (isset($params['taxonomy']) ? $params['taxonomy'] : 'category');
 	endif;
+	
+	$walker = new FeedWordPress_Walker_Category_Checklist;
+	$walker->set_prefix($prefix);
+	$walker->set_taxonomy($taxonomy); 
+	wp_terms_checklist(/*post_id=*/ $post_id, array(
+		'taxonomy' => $taxonomy,
+		'descendents_and_self' => $descendents_and_self,
+		'selected_cats' => $selected_cats,
+		'popular_cats' => false,
+		'walker' => $walker,
+		'checked_ontop' => true,
+	));
 }
 
 function fwp_time_elapsed ($ts) {
@@ -312,4 +304,8 @@ like me you may want to back up your database before you proceed.</p>
 </div>
 <?php
 } // function fwp_upgrade_page ()
+
+function remove_dummy_zero ($var) {
+	return !(is_numeric($var) and ((int) $var == 0));
+}
 

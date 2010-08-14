@@ -257,7 +257,6 @@ fwpList = {
 
 	add: function( e, s ) {
 		e = $(e);
-
 		var list = $(this),
 			old = false,
 			_s = { pos: 0, id: 0, oldId: null },
@@ -299,6 +298,7 @@ fwpList = {
 			color = fwpList.getColor( e );
 			e.css( 'backgroundColor', s.addColor ).animate( { backgroundColor: color }, { complete: function() { $(this).css( 'backgroundColor', '' ); } } );
 		}
+		
 		list.each( function() { this.fwpList.process( e ); } );
 		return e;
 	},
@@ -387,13 +387,13 @@ jQuery(document).ready( function($) {
 		// Ajax Cat
 		var containerId = $(this).attr('id');
 		var checkboxId = $(this).find('.categorychecklist').attr('id');
-		var newCatId = $(this).find('.newcategory').attr('id');
+		var newCatId = $(this).find('.new'+taxonomy).attr('id');
 		var responseId = $(this).find('.'+taxonomy+'-ajax-response').attr('id');
 		var taxAdderId = $(this).find('.'+taxonomy+'-adder').attr('id');
 
-		$(this).find('.newcategory').one( 'focus', function () { $(this).val('').removeClass('form-input-tip'); } );
+		$(this).find('.new'+taxonomy).one( 'focus', function () { $(this).val('').removeClass('form-input-tip'); } );
 		$(this).find('.add-categorychecklist-category-add').click( function() {
-			$(this).parent().children('.newcategory').focus();
+			$(this).parent().children('.new'+taxonomy).focus();
 		} );
 		
 		catAddBefore = function (s) {
@@ -404,13 +404,16 @@ jQuery(document).ready( function($) {
 		}
 		catAddAfter = function (r, s) {
 			// Clear out input box
-			$('.newcategory', '#'+this_id).val('');
+			$('.new' + taxonomy, '#'+this_id).val('');
 			
 			// Clear out parent dropbox
-			var sup, drop = $('.newcategory-parent', '#'+this_id);
+			var sup, drop = $('.new' + taxonomy + '-parent', '#'+this_id);
+			var keep = $('.new' + taxonomy, '#'+this_id);
 			
 			if ( 'undefined' != s.parsed.responses[0] && (sup = s.parsed.responses[0].supplemental.newcat_parent) ) {
+				sup = sup.replace(/id=['"]new[^'"]*_parent['"]/g, 'id="' + keep.attr('id') + '-parent"');
 				drop.before(sup);
+				$('#'+keep.attr('id')+'-parent').addClass('new' + taxonomy + '-parent');
 				drop.remove();
 			}
 		};
@@ -433,6 +436,10 @@ jQuery(document).ready( function($) {
 } ); /* jQuery(document).ready() */
 
 jQuery(document).ready(function($){
+	if ( $('.jaxtag').length ) {
+		tagBox.init();
+	}
+
 	$('.fwpfs').toggle(
 		function(){$('.fwpfs').removeClass('slideUp').addClass('slideDown'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideDown') ) { $('.fwpfs').addClass('slide-down'); }}, 10) },
 		function(){$('.fwpfs').removeClass('slideDown').addClass('slideUp'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideUp') ) { $('.fwpfs').removeClass('slide-down'); }}, 10) }
@@ -442,5 +449,19 @@ jQuery(document).ready(function($){
 		function () { this.form.submit(); }
 	);
 	$('#post-search .button').css( 'display', 'none' );
+	
+	$('table.twofer td.active input[type="radio"], table.twofer td.inactive input[type="radio"]').each( function () {
+		$(this).click( function () {
+			var name = $(this).attr('name');
+			var table = $(this).closest('table');
+			table.find('td').removeClass('active').addClass('inactive');
+			table.find('td:has(input[name="'+name+'"]:checked)').removeClass('inactive').addClass('active');
+		} );
+		
+		var name = $(this).attr('name');
+		var table = $(this).closest('table');
+		table.find('td').removeClass('active').addClass('inactive');
+		table.find('td:has(input[name="'+name+'"]:checked)').removeClass('inactive').addClass('active');
+	} );
 });
 

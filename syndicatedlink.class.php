@@ -101,11 +101,25 @@ class SyndicatedLink {
 				$this->settings['cat_split'] = '\s'; // Whitespace separates multiple tags in del.icio.us RSS feeds
 			endif;
 
-			if (isset($this->settings['cats'])):
-				$this->settings['cats'] = preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, $this->settings['cats']);
-			endif;
-			if (isset($this->settings['tags'])):
-				$this->settings['tags'] = preg_split(FEEDWORDPRESS_CAT_SEPARATOR_PATTERN, $this->settings['tags']);
+			// Simple lists
+			foreach ($this->imploded_settings() as $what) :
+				if (isset($this->settings[$what])):
+					$this->settings[$what] = explode(
+						FEEDWORDPRESS_CAT_SEPARATOR,
+						$this->settings[$what]
+					);
+				endif;
+			endforeach;
+
+			if (isset($this->settings['terms'])) :
+				$this->settings['terms'] = explode(FEEDWORDPRESS_CAT_SEPARATOR.FEEDWORDPRESS_CAT_SEPARATOR, $this->settings['terms']);
+				$terms = array();
+				foreach ($this->settings['terms'] as $line) :
+					$line = explode(FEEDWORDPRESS_CAT_SEPARATOR, $line);
+					$tax = array_shift($line);
+					$terms[$tax] = $line;
+				endforeach;
+				$this->settings['terms'] = $terms;
 			endif;
 			
 			if (isset($this->settings['map authors'])) :
@@ -369,6 +383,9 @@ class SyndicatedLink {
 		endif;
 	} /* SyndicatedLink::map_name_to_new_user () */
 
+	function imploded_settings () {
+		return array('cats', 'tags', 'match/cats', 'match/tags', 'match/filter');
+	}
 	function settings_to_notes () {
 		$to_notes = $this->settings;
 
@@ -383,13 +400,23 @@ class SyndicatedLink {
 			$to_notes['update/processed'] = implode("\n", $to_notes['update/processed']);
 		endif;
 
-		if (isset($to_notes['cats']) and is_array($to_notes['cats'])) :
-			$to_notes['cats'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['cats']);
+		foreach ($this->imploded_settings() as $what) :
+			if (isset($to_notes[$what]) and is_array($to_notes[$what])) :
+				$to_notes[$what] = implode(
+					FEEDWORDPRESS_CAT_SEPARATOR,
+					$to_notes[$what]
+				);
+			endif;
+		endforeach;
+		
+		if (isset($to_notes['terms']) and is_array($to_notes['terms'])) :
+			$tt = array();
+			foreach ($to_notes['terms'] as $tax => $terms) :
+				$tt[] = $tax.FEEDWORDPRESS_CAT_SEPARATOR.implode(FEEDWORDPRESS_CAT_SEPARATOR, $terms);
+			endforeach;
+			$to_notes['terms'] = implode(FEEDWORDPRESS_CAT_SEPARATOR.FEEDWORDPRESS_CAT_SEPARATOR, $tt);
 		endif;
-		if (isset($to_notes['tags']) and is_array($to_notes['tags'])) :
-			$to_notes['tags'] = implode(FEEDWORDPRESS_CAT_SEPARATOR, $to_notes['tags']);
-		endif;
-
+		
 		// Collapse the author mapping rule structure back into a flat string
 		if (isset($to_notes['map authors'])) :
 			$ma = array();
@@ -471,6 +498,14 @@ class SyndicatedLink {
 		return $ret;
 	} /* SyndicatedLink::setting () */
 
+	function update_setting ($name, $value, $default = 'default') {
+		if (!is_null($value) and $value != $default) :
+			$this->settings[$name] = $value;
+		else : // Zap it.
+			unset($this->settings[$name]);
+		endif;
+	} /* SyndicatedLink::update_setting () */
+	
 	function uri () {
 		return (is_object($this->link) ? $this->link->link_rss : NULL);
 	} /* SyndicatedLink::uri () */
@@ -613,5 +648,11 @@ class SyndicatedLink {
 
 		return $wpdb->escape(trim(strtolower($ret)));
 	} /* SyndicatedLink:syndicated_status () */
+	
+	function taxonomies () {
+		$post_type = $this->setting('syndicated post type', 'syndicated_post_type', 'post');
+		return get_object_taxonomies(array('object_type' => $post_type), 'names');
+	} /* SyndicatedLink::taxonomies () */
+	
 } // class SyndicatedLink
 
