@@ -181,12 +181,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	
 		// Hey ho, let's go...
 		?>
-		<style type="text/css">
-		#syndicated-publication-form th { width: 27%; vertical-align: top; }
-		#syndicated-publication-form td { width: 73%; vertical-align: top; }
-		</style>
-	
-		<table id="syndicated-publication-form" class="form-table" cellspacing="2" cellpadding="5">
+		<table id="syndicated-publication-form" class="edit-form narrow">
 		<tr><th scope="row"><?php _e('New posts:'); ?></th>
 		<td><ul class="options">
 		<?php foreach ($selector as $code => $li) : ?>
@@ -231,7 +226,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			$url = 'http://example.com';
 		endif;
 		?>
-		<table class="form-table" cellspacing="2" cellpadding="5">
+		<table class="edit-form narrow">
 		<?php if (!is_null($formatting_filters)) : ?>
 
 		  <tr><th scope="row">Formatting filters:</th>
@@ -252,16 +247,30 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		refers to a partial URI like <code>/about</code>, where should
 		the syndicated copy point to?</p>
 
-		<ul>
+		
 		<?php if ($page->for_feed_settings()) : ?>
+		<table class="twofer">
+		<tr>
+		<td class="equals first inactive">
+		<ul>
 		<li><p><label><input type="radio" name="resolve_relative" value='default' <?php echo ($resolve_relative=='default')?' checked="checked"':''; ?>/> Use <a href="admin.php?page=<?php print $href; ?>">site-wide setting</a><br/>
 		<span class="current-setting">Currently: <strong><?php print $setting[$global_resolve_relative]; ?></strong></span></label></p></li>
+		</ul>
+		</td>
+		
+		<td class="equals first inactive">
 		<?php endif; ?>
+		<ul>
 		<li><p><label><input type="radio" name="resolve_relative" value="yes"<?php echo ($resolve_relative!='no' and $resolve_relative!='default')?' checked="checked"':''; ?>/> Resolve the URI so it points to <code><?php print $url; ?></code><br/>
 		<small style="margin-left: 2.0em;"><code>/contact</code> is rewritten as <code><?php print $url; ?>/contact</code></label></small></p></li>
 		<li><p><label><input type="radio" name="resolve_relative" value="no"<?php echo ($resolve_relative=='no')?' checked="checked"':''; ?>/> Leave relative URIs unchanged, so they point to this site<br/>
 		<small style="margin-left: 2.0em;"><code>/contact</code> is left as <code>/contact</code></small></label></li>
 		</ul>
+		<?php if ($page->for_feed_settings()) : ?>
+		</td></tr>
+		</table> <!-- class="twofer" -->
+		<?php endif; ?>
+		
 		</td></tr>
 
 		</table>
@@ -315,17 +324,30 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			$use_aggregator_source_data = get_option('feedwordpress_use_aggregator_source_data');
 		endif;
 		?>
-		<table class="form-table" cellspacing="2" cellpadding="5">
+		<table class="edit-form narrow">
 		<tr><th  scope="row">Permalinks point to:</th>
-		<td><ul class="options">	
+		<td>
 		<?php if ($page->for_feed_settings()) : ?>
+		<table class="twofer">
+		<tr>
+		<td class="equals first inactive"><ul class="options">
 		<li><label><input type="radio" name="munge_permalink" value="default"<?php print $checked['munge_permalink']['default']; ?> /> Use <a href="admin.php?page=<?php print $href; ?>">site-wide setting</a>
 		<span class="current-setting">Currently: <strong><?php print $setting['munge_permalink'][$global_munge_permalink]; ?></strong></span></label></li>
+		</ul></td>
+		
+		<td class="equals second inactive">
 		<?php endif; ?>
+		<ul class="options">
 		<li><label><input type="radio" name="munge_permalink" value="yes"<?php print $checked['munge_permalink']['yes']; ?> /> <?php print $setting['munge_permalink']['yes']; ?></label></li>
 		<li><label><input type="radio" name="munge_permalink" value="no"<?php print $checked['munge_permalink']['no']; ?> /> <?php print $setting['munge_permalink']['no']; ?></label></li>
-		</ul></td>
-		</tr>
+		</ul>
+		
+		<?php if ($page->for_feed_settings()) : ?>
+		</td></tr>
+		</table> <!-- class="twofer" -->
+		<?php endif; ?>
+		
+		</td></tr>
 		
 		<?php if (!$page->for_feed_settings()) : ?>
 		<tr><th scope="row">Posts from aggregator feeds:</th>
@@ -418,7 +440,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 		// Hey ho, let's go...
 		?>
-		<table class="form-table" cellspacing="2" cellpadding="5">
+		<table class="edit-form narrow">
 		<?php foreach ($whatsits as $what => $how) : ?>
 		  <tr><th scope="row"><?php print $how['label']; ?>:</th>
 		  <td><ul class="options">
