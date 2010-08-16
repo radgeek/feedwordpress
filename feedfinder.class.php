@@ -6,13 +6,15 @@
  */
 
 require_once(ABSPATH . WPINC . '/class-simplepie.php');
+require_once(dirname(__FILE__).'/feedwordpresshtml.class.php');
 
 class FeedFinder {
 	var $uri = NULL;
 	var $_cache_uri = NULL;
 	
 	var $verify = FALSE;
-	
+	var $fallbacks = 3;
+
 	var $_response = NULL;
 	var $_data = NULL;
 	var $_error = NULL;
@@ -28,50 +30,65 @@ class FeedFinder {
 	);
 	var $_feed_markers = array('\\<feed', '\\<rss', 'xmlns="http://purl.org/rss/1.0');
 	var $_html_markers = array('\\<html');
+	var $_opml_markers = array('\\<opml', '\\<outline');
 	var $_obvious_feed_url = array('[./]rss', '[./]rdf', '[./]atom', '[./]feed', '\.xml');
 	var $_maybe_feed_url = array ('rss', 'rdf', 'atom', 'feed', 'xml');
 
-	function FeedFinder ($uri = NULL, $verify = TRUE) {
+	function FeedFinder ($uri = NULL, $verify = TRUE, $fallbacks = 3) {
 		$this->uri = $uri; $this->verify = $verify;
+		$this->fallbacks = $fallbacks;
 	} /* FeedFinder::FeedFinder () */
 
 	function find ($uri = NULL) {
 		$ret = array ();
-		if (!is_null($this->data($uri))) {
-			if ($this->is_feed($uri)) {
-				$href = array($this->uri);
-			} else {
-				// Assume that we have HTML or XHTML (even if we don't, who's it gonna hurt?)
-				// Autodiscovery is the preferred method
-				$href = $this->_link_rel_feeds();
-				
-				// ... but we'll also take the little orange buttons
-				$href = array_merge($href, $this->_a_href_feeds(TRUE));
-				
-				// If all that failed, look harder
-				if (count($href) == 0) $href = $this->_a_href_feeds(FALSE);
+		if (!is_null($this->data($uri))) :
+			if ($this->is_opml($uri)) :
+				$href = $this->_opml_rss_uris();
+			else :
+				if ($this->is_feed($uri)) :
+					$href = array($this->uri);
+				else :
+					// Assume that we have HTML or XHTML (even if we don't, who's it gonna hurt?)
+					// Autodiscovery is the preferred method
+					$href = $this->_link_rel_feeds();
+					
+					// ... but we'll also take the little orange buttons
+					if ($this->fallbacks > 0) :
+						$href = array_merge($href, $this->_a_href_feeds(TRUE));
+					endif;
+					
+					// If all that failed, look harder
+					if ($this->fallbacks > 1) :
+						if (count($href) == 0) :
+							$href = $this->_a_href_feeds(FALSE);
+						endif;
+					endif;
+					
+					// Our search may turn up duplicate URIs. We only need to do any given URI once.
+					// Props to Camilo <http://projects.radgeek.com/2008/12/14/feedwordpress-20081214/#comment-20090122160414>
+					$href = array_unique($href);
+				endif;
 
-				// Our search may turn up duplicate URIs. We only need to do any given URI once.
-				// Props to Camilo <http://projects.radgeek.com/2008/12/14/feedwordpress-20081214/#comment-20090122160414>
-				$href = array_unique($href);
-			} /* if */
+				// Try some clever URL little tricks before we go
+				if ($this->fallbacks > 2) :
+					$href = array_merge($href, $this->_url_manipulation_feeds());
+				endif;
+			endif;
 			
-			// Try some clever URL little tricks before we go
-			$href = array_merge($href, $this->_url_manipulation_feeds());
 			$href = array_unique($href);
 
 			// Verify feeds and resolve relative URIs
-			foreach ($href as $u) {
+			foreach ($href as $u) :
 				$the_uri = SimplePie_Misc::absolutize_url($u, $this->uri);
-				if ($this->verify and ($u != $this->uri and $the_uri != $this->uri)) {
+				if ($this->verify and ($u != $this->uri and $the_uri != $this->uri)) :
 					$feed = new FeedFinder($the_uri);
 					if ($feed->is_feed()) : $ret[] = $the_uri; endif;
 					unset($feed);
-				} else {
+				else :
 					$ret[] = $the_uri;
-				}
-			} /* foreach */
-		} /* if */
+				endif;
+			endforeach;
+		endif;
 	
 		return array_values($ret);
 	} /* FeedFinder::find () */
@@ -79,8 +96,13 @@ class FeedFinder {
 	function data ($uri = NULL) {
 		$this->_get($uri);
 		return $this->_data;
-	}
+	} /* FeedFinder::data () */
 
+	function upload_data ($data) {
+		$this->uri = 'tag:localhost';
+		$this->_data = $data;
+	} /* FeedFinder::upload_data () */
+	
 	function status ($uri = NULL) {
 		$this->_get($uri);
 		
@@ -118,12 +140,22 @@ class FeedFinder {
 		);
 	} /* FeedFinder::is_feed () */
 
+	function is_opml ($uri = NULL) {
+		$data = $this->data($uri);
+		return (
+			preg_match (
+				"\007(".implode('|',$this->_opml_markers).")\007i",
+				$data
+			)
+		);
+	} /* FeedFinder::is_opml () */
+
 	# --- Private methods ---
 	function _get ($uri = NULL) {
 		if ($uri) $this->uri = $uri;
 
 		// Is the result not yet cached?
-		if ($this->_cache_uri !== $this->uri) :
+		if ($this->uri != 'tag:localhost' and $this->_cache_uri !== $this->uri) :
 			$headers['Connection'] = 'close';
 			$headers['Accept'] = 'application/atom+xml application/rdf+xml application/rss+xml application/xml text/html */*';
 			$headers['User-Agent'] = 'feedfinder/1.2 (compatible; PHP FeedFinder) +http://projects.radgeek.com/feedwordpress';
@@ -148,6 +180,23 @@ class FeedFinder {
 		endif;
 	} /* FeedFinder::_get () */
 
+	function _opml_rss_uris () {
+		// Really we should parse the XML and use the structure to
+		// return something intelligent to programs that want to use it
+		// Oh babe! maybe some day...
+		
+		$opml = $this->data();
+
+		$rx = FeedWordPressHTML::attributeRegex('outline', 'xmlUrl');
+		if (preg_match_all($rx, $opml, $matches, PREG_SET_ORDER)) :
+			foreach ($matches as $m) :
+				$match = FeedWordPressHTML::attributeMatch($m);
+				$r[] = $match['value'];
+			endforeach;
+		endif;
+		return $r;
+	} /* FeedFinder::_opml_rss_uris () */
+
  	function _link_rel_feeds () {
 		$links = $this->_tags('link');
 		$link_count = count($links);
@@ -162,7 +211,7 @@ class FeedFinder {
 			} /* if */
 		} /* for */
 		return $href;
-	}
+	} /* FeedFinder::_link_rel_feeds () */
 
 	function _a_href_feeds ($obvious = TRUE) {
 		$pattern = ($obvious ? $this->_obvious_feed_url : $this->_maybe_feed_url);
@@ -178,11 +227,11 @@ class FeedFinder {
 			} /* if */
 		} /* for */
 		return $href;
-	}
+	} /* FeedFinder::_link_a_href_feeds () */
 
 	function _url_manipulation_feeds () {
 		$href = array();
-		
+
 		// check for HTTP GET parameters that look feed-like.
 		$bits = parse_url($this->uri);
 		foreach (array('rss', 'rss2', 'atom', 'rdf') as $format) :
@@ -233,7 +282,7 @@ class FeedFinder {
 			$href = array_merge($href, $newUrl);
 		endforeach;
 		return array_unique($href);
-	}
+	} /* FeedFinder::_url_manipulation_feeds () */
 
 	function _tags ($tag) {
 		$html = $this->data();
@@ -256,6 +305,6 @@ class FeedFinder {
 			$ret[$n] = $final_link;
 		} /* for */
 		return $ret;
-	}
+	} /* FeedFinder::_tags () */
 } /* class FeedFinder */
 

@@ -463,5 +463,27 @@ jQuery(document).ready(function($){
 		table.find('td').removeClass('active').addClass('inactive');
 		table.find('td:has(input[name="'+name+'"]:checked)').removeClass('inactive').addClass('active');
 	} );
+	
+	$('#turn-on-multiple-sources').click ( function () {
+		$('#add-single-uri').hide();
+		$('#add-multiple-uri').show(600);
+		return false;
+;
+	} );
+	$('#turn-off-multiple-sources').click ( function () {
+		$('#add-multiple-uri').hide(600);
+		$('#add-single-uri').show();
+		return false;
+	} );
+	$('#turn-on-opml-upload').click ( function () {
+		$('#add-single-uri').hide();
+		$('#upload-opml').show(600);
+		return false;
+	} );
+	$('#turn-off-opml-upload').click ( function () {
+		$('#upload-opml').hide(600);
+		$('#add-single-uri').show();
+		return false;
+	} );
 });
 

@@ -66,7 +66,7 @@ class FeedWordPressAdminPage {
 	function update_setting ($names, $value, $default = 'default') {
 		if (is_string($names)) :
 			$feed_name = $names;
-			$global_name = 'feedwordpress_'.preg_replace('/\s+/', '_', $names);
+			$global_name = 'feedwordpress_'.preg_replace('![\s/]+!', '_', $names);
 		else :
 			$feed_name = $names['feed'];
 			$global_name = 'feedwordpress_'.$names['global'];
@@ -969,7 +969,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $visible = 'Y') {
 
 function fwp_syndication_manage_page_links_subsubsub ($sources, $showInactive) {
 	global $fwp_path;
-	$hrefPrefix = "admin.php?page=${fwp_path}/".basename(__FILE__);
+	$hrefPrefix = "admin.php?page=${fwp_path}/syndication.php";
 	?>
 	<ul class="subsubsub">
 	<li><a <?php if (!$showInactive) : ?>class="current" <?php endif; ?>href="<?php print $hrefPrefix; ?>&amp;visibility=Y">Subscribed

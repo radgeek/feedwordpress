@@ -1,5 +1,6 @@
 <?php
 require_once(dirname(__FILE__) . '/admin-ui.php');
+require_once(dirname(__FILE__) . '/feedfinder.class.php');
 
 ################################################################################
 ## ADMIN MENU ADD-ONS: implement Dashboard management pages ####################
@@ -10,6 +11,8 @@ define('FWP_UNSUB_CHECKED', 'Unsubscribe');
 define('FWP_DELETE_CHECKED', 'Delete');
 define('FWP_RESUB_CHECKED', 'Re-subscribe');
 define('FWP_SYNDICATE_NEW', 'Add →');
+define('FWP_UNSUB_FULL', 'Unsubscribe from selected feeds →');
+define('FWP_CANCEL_BUTTON', '× Cancel');
 
 class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	function FeedWordPressSyndicationPage () {
@@ -97,8 +100,202 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		return $update_set;
 	}
 
+	function accept_multiadd () {
+		global $fwp_post;
+
+		// If this is a POST, validate source and user credentials
+		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_feeds', /*capability=*/ 'manage_links');
+
+		$in = (isset($fwp_post['multilookup']) ? $fwp_post['multilookup'] : '')
+			.(isset($fwp_post['opml_lookup']) ? $fwp_post['opml_lookup'] : '');
+		if (isset($fwp_post['confirm']) and $fwp_post['confirm']=='multiadd') :
+			$chex = $fwp_post['multilookup'];
+			$added = array(); $errors = array();
+			foreach ($chex as $feed) :
+				if (isset($feed['add']) and $feed['add']=='yes') :
+					// Then, add in the URL.
+					$link_id = FeedWordPress::syndicate_link(
+						$feed['title'],
+						$feed['link'],
+						$feed['url']
+					);
+					if ($link_id and !is_wp_error($link_id)):
+						$added[] = $link_id; 
+					else :
+						$errors[] = array($feed['url'], $link_id);
+					endif;
+				endif;
+			endforeach;
+			
+			print "<div class='updated'>\n";
+			print "<p>Added ".count($added)." new syndicated sources.</p>";
+			if (count($errors) > 0) :
+				print "<p>FeedWordPress encountered errors trying to add the following sources:</p>
+				<ul>\n";
+				foreach ($errors as $err) :
+					$url = $err[0];
+					$short = esc_html(feedwordpress_display_url($url));
+					$url = esc_html($url);
+					$wp = $err[1];
+					if (is_wp_error($err[1])) :
+						$error = $err[1];
+						$mesg = " (<code>".$error->get_error_messages()."</code>)";
+					else :
+						$mesg = '';
+					endif;
+					print "<li><a href='$url'>$short</a>$mesg</li>\n";
+				endforeach;
+				print "</ul>\n";
+			endif;
+			print "</div>\n";
+
+		elseif (is_array($in) or strlen($in) > 0) :
+			fwp_add_meta_box(
+				/*id=*/ 'feedwordpress_multiadd_box',
+				/*title=*/ __('Add Feeds'),
+				/*callback=*/ array($this, 'multiadd_box'),
+				/*page=*/ $this->meta_box_context(),
+				/*context =*/ $this->meta_box_context()
+			);
+		endif;
+		return true; // Continue...
+	}
+	
+	function display_multiadd_line ($line) {
+		$short_feed = esc_html(feedwordpress_display_url($line['feed']));
+		$feed = esc_html($line['feed']);
+		$link = esc_html($line['link']);
+		$title = esc_html($line['title']);
+		$checked = $line['checked'];
+		$i = esc_html($line['i']);
+		
+		print "<li><label><input type='checkbox' name='multilookup[$i][add]' value='yes' $checked />
+			$title</label> &middot; <a href='$feed'>$short_feed</a>";
+
+		if (isset($line['extra'])) :
+			print " &middot; ".esc_html($line['extra']);
+		endif;
+		
+		print "<input type='hidden' name='multilookup[$i][url]' value='$feed' />
+			<input type='hidden' name='multilookup[$i][link]' value='$link' />
+			<input type='hidden' name='multilookup[$i][title]' value='$title' />
+			</li>\n";
+		
+		flush();
+	}
+
+	function multiadd_box ($page, $box = NULL) {
+		global $fwp_post;
+
+		$localData = NULL;
+
+		if (isset($_FILES['opml_upload']['name']) and
+		(strlen($_FILES['opml_upload']['name']) > 0)) :
+			$in = 'tag:localhost';
+			$localData = file_get_contents($_FILES['opml_upload']['tmp_name']);
+			$merge_all = true;
+		elseif (isset($fwp_post['multilookup'])) :
+			$in = $fwp_post['multilookup'];
+			$merge_all = false;
+		elseif (isset($fwp_post['opml_lookup'])) :
+			$in = $fwp_post['opml_lookup'];
+			$merge_all = true;
+		else :
+			$in = '';
+			$merge_all = false;
+		endif;
+		
+		if (strlen($in) > 0) :
+			$lines = preg_split(
+				"/\s+/",
+				$in,
+				/*no limit soldier*/ -1,
+				PREG_SPLIT_NO_EMPTY
+			);
+
+			$i = 0;
+			?>
+			<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
+			<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
+			<p>Looking up feed information...</p>
+			<?php
+			print "<ul>\n"; flush();
+			foreach ($lines as $line) :
+				$url = trim($line);
+				if (strlen($url) > 0) :
+					// First, use FeedFinder to check the URL.
+					if (is_null($localData)) :
+						$finder = new FeedFinder($url, /*verify=*/ false, /*fallbacks=*/ 1);
+					else :
+						$finder = new FeedFinder('tag:localhost', /*verify=*/ false, /*fallbacks=*/ 1);
+						$finder->upload_data($localData);
+					endif;
+					
+					$feeds = array_values(
+						array_unique(
+							$finder->find()
+						)
+					);
+
+					$found = false;
+					if (count($feeds) > 0) :
+						foreach ($feeds as $feed) :
+							$pie = FeedWordPress::fetch($feed);
+							if (!is_wp_error($pie)) :
+								$found = true;
+								
+								$short_feed = esc_html(feedwordpress_display_url($feed));
+								$feed = esc_html($feed); 
+								$title = esc_html($pie->get_title());
+								$checked = ' checked="checked"';
+								$link = esc_html($pie->get_link());
+		
+								$this->display_multiadd_line(array(
+								'feed' => $feed,
+								'title' => $pie->get_title(),
+								'link' => $pie->get_link(),
+								'checked' => ' checked="checked"',
+								'i' => $i,
+								));
+								
+								$i++; // Increment field counter
+								
+								if (!$merge_all) : // Break out after first find
+									break;
+								endif;					
+							endif;
+						endforeach;
+					endif;
+					
+					if (!$found) :
+						$this->display_multiadd_line(array(
+							'feed' => $url,
+							'title' => feedwordpress_display_url($url),
+							'extra' => " [FeedWordPress couldn't detect any feeds for this URL.]",
+							'link' => NULL,
+							'checked' => '',
+							'i' => $i,
+						));
+						$i++; // Increment field counter
+					endif;
+				endif;
+			endforeach;
+			print "</ul>\n";
+			?>
+			<input type="submit" class="button-primary" value="<?php print _e('Subscribe to selected sources →'); ?>" />
+			<input type="hidden" name="multiadd" value="<?php print FWP_SYNDICATE_NEW; ?>" />
+			<input type="hidden" name="confirm" value="multiadd" />
+			</form>
+			<?php
+		endif;
+		
+		$this->_sources = NULL; // Force reload of sources list
+		return true; // Continue
+	}
+
 	function display () {
 		global $wpdb;
+		global $fwp_post;
 		
 		if (FeedWordPress::needs_upgrade()) :
 			fwp_upgrade_page();
@@ -120,6 +317,8 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		if (isset($_REQUEST['action']) and isset($dispatcher[$_REQUEST['action']])) :
 			$method = $dispatcher[$_REQUEST['action']];
 			$cont = call_user_func($method);
+		elseif (isset($fwp_post['multiadd']) and $fwp_post['multiadd']==FWP_SYNDICATE_NEW) :
+			$cont = $this->accept_multiadd($fwp_post);
 		endif;
 		
 		if ($cont):
@@ -204,7 +403,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 				/*page=*/ $this->meta_box_context(),
 				/*context =*/ $this->meta_box_context()
 			);
-					
+
 			do_action('feedwordpress_admin_page_syndication_meta_boxes', $this);
 		?>
 			<div class="metabox-holder">		
@@ -413,31 +612,86 @@ function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
 
 	$hrefPrefix = "admin.php?page=${fwp_path}/".basename(__FILE__);
 ?>
-	<form id="syndicated-links" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
 	<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
+	
+	<div class="tablenav">
+
+	<div id="add-multiple-uri" class="hide-if-js">
+	<form action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+	  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
+	  <h4>Add Multiple Sources</h4>
+	  <div>Enter one feed or website URL per line. If a URL links to a website which provides multiple feeds, FeedWordPress will use the first one listed.</div>
+	  <div><textarea name="multilookup" rows="8" cols="60"
+	  style="vertical-align: top"></textarea></div>
+	  <div style="border-top: 1px dotted black; padding-top: 10px">
+	  <div class="alignright"><input type="submit" class="button-primary" name="multiadd" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
+	  <div class="alignleft"><input type="button" class="button-secondary" name="action" value="<?php print FWP_CANCEL_BUTTON; ?>" id="turn-off-multiple-sources" /></div>
+	  </div>
+	</form>
+	</div> <!-- id="add-multiple-uri" -->
+
+	<div id="upload-opml" style="float: right" class="hide-if-js">
+	<h4>Import source list</h4>
+	<p>You can import a list of sources in OPML format, either by providing
+	a URL for the OPML document, or by uploading a copy from your
+	computer.</p>
+	
+	<form enctype="multipart/form-data" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+	  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?><input type="hidden" name="MAX_FILE_SIZE" value="100000" /></div>
+	<div style="clear: both"><label for="opml-lookup" style="float: left; width: 8.0em; margin-top: 5px;">From URL:</label> <input type="text" id="opml-lookup" name="opml_lookup" value="OPML document" /></div>
+	<div style="clear: both"><label for="opml-upload" style="float: left; width: 8.0em; margin-top: 5px;">From file:</label> <input type="file" id="opml-upload" name="opml_upload" /></div>
+
+	<div style="border-top: 1px dotted black; padding-top: 10px">
+	<div class="alignright"><input type="submit" class="button-primary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
+	<div class="alignleft"><input type="button" class="button-secondary" name="action" value="<?php print FWP_CANCEL_BUTTON; ?>" id="turn-off-opml-upload" /></div>
+	</div>
+	</form>
+	
+	</div> <!-- id="upload-opml" -->
+	
+	<div id="add-single-uri" class="alignright">
+	  <form id="syndicated-links" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+	  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
+	  <ul class="subsubsub">
+	  <li><label for="add-uri">New source:</label>
+	  <input type="text" name="lookup" id="add-uri" value="Website or feed URI" />
+
+	  <?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); FeedWordPressSettingsUI::magic_input_tip_js('opml-lookup'); ?>
+	
+	  <input type="hidden" name="action" value="feedfinder" />
+	  <input type="submit" class="button-secondary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
+	  <div style="text-align: right; margin-right: 2.0em"><a id="turn-on-multiple-sources" href="#add-multiple-uri"><img style="vertical-align: middle" src="<?php print WP_PLUGIN_URL.'/'.$fwp_path; ?>/down.png" alt="" /> add multiple</a>
+	  <span class="screen-reader-text"> or </span>
+	  <a id="turn-on-opml-upload" href="#upload-opml"><img src="<?php print WP_PLUGIN_URL.'/'.$fwp_path; ?>/plus.png" alt="" style="vertical-align: middle" /> import source list</a></div>
+	  </li>
+	  </ul>
+	  </form>
+	</div> <!-- class="alignright" -->
+
+	<div class="alignleft">
 	<?php
 	if (count($sources[$visibility]) > 0) :
 		fwp_syndication_manage_page_links_subsubsub($sources, $showInactive);
 	endif;
+	?>
+	</div> <!-- class="alignleft" -->
 
-	if ($showInactive) : ?>
-	<p style="clear: both; font-size: smaller; font-style: italic">FeedWordPress used to syndicate
+	</div> <!-- class="tablenav" -->
+
+	<form id="syndicated-links" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+	<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
+	
+	<?php if ($showInactive) : ?>
+	<div style="clear: right" class="alignright">
+	<p style="font-size: smaller; font-style: italic">FeedWordPress used to syndicate
 	posts from these sources, but you have unsubscribed from them.</p>
+	</div>
 	<?php
 	endif;
 	?>
-	
-	<div class="tablenav">
-	<div class="alignright">
-	<label for="add-uri">New source:</label>
-	<input type="text" name="lookup" id="add-uri" value="Website or feed URI" />
-	<?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
-
-	<input type="hidden" name="action" value="feedfinder" />
-	<input type="submit" class="button-secondary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
 
 <?php	if (count($sources[$visibility]) > 0) : ?>
-	<div class="alignleft">
+	<div style="clear: left" class="alignleft">
 	<?php if ($showInactive) : ?>
 	<input class="button-secondary" type="submit" name="action" value="<?php print FWP_RESUB_CHECKED; ?>" />
 	<input class="button-secondary" type="submit" name="action" value="<?php print FWP_DELETE_CHECKED; ?>" />
@@ -445,14 +699,12 @@ function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
 	<input class="button-secondary" type="submit" name="action" value="<?php print FWP_UPDATE_CHECKED; ?>" />
 	<input class="button-secondary delete" type="submit" name="action" value="<?php print FWP_UNSUB_CHECKED; ?>" />
 	<?php endif ; ?>
-	</div>
+	</div> <!-- class="alignleft" -->
 
 <?php	else : ?>
 	<?php fwp_syndication_manage_page_links_subsubsub($sources, $showInactive); ?>
 <?php 	endif; ?>
-
-	<br class="clear" />
-	</div>
+	
 	<br class="clear" />
 
 	<?php
@@ -463,13 +715,18 @@ function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
 } /* function fwp_syndication_manage_page_links_box() */
 
 function fwp_feedfinder_page () {
-	global $post_source;
-	
-	$post_source = 'feedwordpress_feeds';
-	
-	// With action=feedfinder, this goes directly to the feedfinder page
-	include_once(dirname(__FILE__) . '/feeds-page.php');
-	return false;
+	global $post_source, $fwp_post, $syndicationPage;
+
+	if (isset($fwp_post['opml_lookup']) or isset($_FILES['opml_upload'])) :
+		$syndicationPage->accept_multiadd();
+		return true;
+	else :
+		$post_source = 'feedwordpress_feeds';
+		
+		// With action=feedfinder, this goes directly to the feedfinder page
+		include_once(dirname(__FILE__) . '/feeds-page.php');
+		return false;
+	endif;
 } /* function fwp_feedfinder_page () */
 
 function fwp_switchfeed_page () {
@@ -636,10 +893,14 @@ I changed my mind.</label></li>
 
 function fwp_multidelete_page () {
 	global $wpdb;
-
+	global $fwp_post;
 	// If this is a POST, validate source and user credentials
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_feeds', /*capability=*/ 'manage_links');
 
+	if (isset($fwp_post['submit']) and $fwp_post['submit']==FWP_CANCEL_BUTTON) :
+		return true; // Continue without further ado.
+	endif;
+	
 	$link_ids = (isset($_REQUEST['link_ids']) ? $_REQUEST['link_ids'] : array());
 	if (isset($_REQUEST['link_id'])) : array_push($link_ids, $_REQUEST['link_id']); endif;
 
@@ -797,7 +1058,8 @@ my mind.</label></li>
 <?php	endforeach; ?>
 
 <div class="submit">
-<input class="delete" type="submit" name="submit" value="<?php _e('Unsubscribe from selected feeds &raquo;') ?>" />
+<input type="submit" name="submit" value="<?php _e(FWP_CANCEL_BUTTON); ?>" /> 
+<input class="delete" type="submit" name="submit" value="<?php _e(FWP_UNSUB_FULL) ?>" />
 </div>
 </div>
 <?php

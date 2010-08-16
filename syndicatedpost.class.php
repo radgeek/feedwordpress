@@ -271,7 +271,8 @@ class SyndicatedPost {
 			
 			// Now add categories from the post, if we have 'em
 			$cats = array();
-			foreach ($this->entry->get_categories() as $cat) :
+			$post_cats = $this->entry->get_categories();
+			if (is_array($post_cats)) : foreach ($post_cats as $cat) :
 				$cat_name = $cat->get_term();
 				if (!$cat_name) : $cat_name = $cat->get_label(); endif;
 				
@@ -289,7 +290,7 @@ class SyndicatedPost {
 				else :
 					$cats[] = $cat_name;
 				endif;
-			endforeach;
+			endforeach; endif;
 
 			$this->post['taxed']['category'] = apply_filters('syndicated_item_categories', $cats, $this);
 			

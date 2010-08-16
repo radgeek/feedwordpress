@@ -498,26 +498,37 @@ blank.</p></td>
 	function save_settings ($post) {
 		if (isset($post['match_categories'])) :
 			foreach ($post['match_categories'] as $what => $set) :
-				if ($this->for_feed_settings()) :
-					if (isset($post['match_default'])
-					and isset($post['match_default'][$what])
-					and $post['match_default'][$what]=='yes') :
-						unset($this->link->settings['match/'.$what]);
-					else :
-						$this->link->settings['match/'.$what] = $set;
-					endif;
-				else :
-					update_option('feedwordpress_match_'.$what, $set);
+				// Defaulting is controlled by a separate radio button
+				if ($this->for_feed_settings()
+				and isset($post['match_default'])
+				and isset($post['match_default'][$what])
+				and $post['match_default'][$what]=='yes') :
+					$set = NULL; // Defaulted!
 				endif;
+				
+				$this->update_setting("match/$what", $set, NULL);
 			endforeach;
 		endif;
 		$optionMap = $this->term_option_map();
 		$settingMap = $this->term_setting_map();
 
 		$saveTerms = array(); $separateSaveTerms = array('category' => array(), 'post_tag' => array());
+		
+		if (!isset($post['tax_input'])) : $post['tax_input'] = array(); endif;
+		
+		// Merge in data from older-notation category check boxes
+		if (isset($post['post_category'])) :
+			// Just merging in for processing below.
+			$post['tax_input']['category'] = array_merge(
+				(isset($post['tax_input']['category']) ? $post['tax_input']['category'] : array()),
+				$post['post_category']
+			);
+		endif;
+
+		// Process data from term tag boxes and check boxes
 		foreach ($post['tax_input'] as $tax => $terms) :
 			$saveTerms[$tax] = array();
-			if (is_array($terms)) : // From checklist
+			if (is_array($terms)) : // Numeric IDs from checklist
 				foreach ($terms as $term) :
 					if ($term) :
 						$saveTerms[$tax][] = '{'.$tax.'#'.$term.'}';
@@ -551,46 +562,35 @@ blank.</p></td>
 			endif;
 		endforeach;
 		
-		if ($this->for_feed_settings()) :
-			// Categories and Tags
-			foreach ($separateSaveTerms as $tax => $terms) :
-				if (!empty($terms)) :
-					$this->link->settings[$settingMap[$tax]] = $terms;
-				else :
-					unset($this->link->settings[$settingMap[$tax]]);
-				endif;
-			endforeach;
-			
-			// Other terms
-			$this->link->settings['terms'] = $saveTerms;
-
-			// Category splitting regex
-			if (isset($post['cat_split'])) :
-				if (strlen(trim($post['cat_split'])) > 0) :
-					$this->link->settings['cat_split'] = trim($post['cat_split']);
-				else :
-					unset($this->link->settings['cat_split']);
-				endif;
-			endif;
-			
-			if (isset($post['add_global'])) :
-				foreach ($post['add_global'] as $what => $value) :
-					$this->link->update_setting("add/$what", $value);
-				endforeach;
-			endif;
-
-		else :
-			// Categories and Tags
-			foreach ($separateSaveTerms as $tax => $terms) :
+		// Categories and Tags
+		foreach ($separateSaveTerms as $tax => $terms) :
+			if ($this->for_feed_settings()) :
+				$this->link->update_setting($settingMap[$tax], $terms, array());
+			else :
 				if (!empty($terms)) :
 					update_option($optionMap[$tax], implode(FEEDWORDPRESS_CAT_SEPARATOR, $terms));
 				else :
 					delete_option($optionMap[$tax]);
 				endif;
-			endforeach;
+			endif;
+		endforeach;
+		
+		// Other terms
+		$this->update_setting(array('feed'=>'terms', 'global'=>'syndication_terms'), $saveTerms, array());
+
+		if ($this->for_feed_settings()) :
+			// Category splitting regex
+			if (isset($post['cat_split'])) :
+				$this->link->update_setting('cat_split', trim($post['cat_split']), '');
+			endif;
 			
-			// Other terms
-			update_option('feedwordpress_syndication_terms', $saveTerms);		
+			// Treat global terms (cats, tags, etc.) as additional,
+			// or as defaults to be overridden and replaced?
+			if (isset($post['add_global'])) :
+				foreach ($post['add_global'] as $what => $value) :
+					$this->link->update_setting("add/$what", $value);
+				endforeach;
+			endif;
 		endif;
 		parent::save_settings($post);
 	} /* FeedWordPressCategoriesPage::save_settings() */
