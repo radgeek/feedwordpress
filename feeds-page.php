@@ -140,7 +140,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');
 			contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
 			contextual_appearance('use-default-update-window-no', 'update-scheduling-note', null, null, 'block', true);
-			jQuery('.use-default-update-window').click( function () {
+			jQuery('#use-default-update-window-yes, #use-default-update-window-no').click( function () {
 				contextual_appearance('use-default-update-window-no', 'update-scheduling-note', null, null, 'block', true);
 			} );
 
@@ -169,22 +169,14 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressFeedsPage::updated_posts_box() */
 
 	/*static*/ function global_feeds_box ($page, $box = NULL) {
-		global $wpdb;
+		$automatic_updates = get_option('feedwordpress_automatic_updates');
+		$update_time_limit = (int) get_option('feedwordpress_update_time_limit');
 
-		$defaultUpdateWindow = get_option('feedwordpress_update_window');
-		if (!is_numeric($defaultUpdateWindow)) :
-			$defaultUpdateWindow = DEFAULT_UPDATE_PERIOD;
-		else :
-			$defaultUpdateWindow = (int) $defaultUpdateWindow;
-		endif;
+		// Hey, ho, let's go...
 		?>
-		
+
 		<table class="edit-form">
-		<?php
-		if ($page->for_default_settings()) :
-			$automatic_updates = get_option('feedwordpress_automatic_updates');
-			$update_time_limit = (int) get_option('feedwordpress_update_time_limit');
-		?>
+		<?php if ($page->for_default_settings()) : ?>
 
 		<tr>
 		<th scope="row">Updates:</th>
@@ -205,36 +197,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		</td>
 		</tr>
 		
-		<tr>
-		<th scope="row"><?php print __('Update scheduling:') ?></th>
-		<td><p style="margin-top:0px">How long should FeedWordPress wait between updates before it considers a feed ready to be polled for updates again?</p>
-		<p style="font-style: italic; margin-left: 2.0em"><label>Wait <input type="text" name="update_window" value="<?php print $defaultUpdateWindow; ?>" size="4" /> minutes between polling.</label></p>
-		<div class="setting-description">
-		<p<?php if ($defaultUpdateWindow<50) : ?> style="color: white; background-color: #703030; padding: 1.0em;"<?php endif; ?>><strong>Recommendation.</strong> Unless you are positive that you have the webmaster's permission, you generally should not set FeedWordPress to poll feeds more frequently than once every 60 minutes. Many webmasters consider more frequent automated polling to be abusive, and may complain to your web host, or ban your IP address, as retaliation for hammering their servers too hard.</p>
-		<p><strong>Note.</strong> This is a default setting that FeedWordPress uses to schedule updates when the feed does not provide any scheduling requests. If a feed does provide update scheduling information (through elements such as <code>&lt;rss:ttl&gt;</code> or <code>&lt;sy:updateFrequency&gt;</code>), FeedWordPress will respect the feed's request.</p>
-		</div></td>
-		</tr>
-		
-		<tr>
-		<th scope="row"><?php print __('Time limit on updates'); ?>:</th>
-		<td><select id="time-limit" name="update_time_limit" size="1" onchange="contextual_appearance('time-limit', 'time-limit-box', null, 'yes');">
-		<option value="no"<?php echo ($update_time_limit>0)?'':' selected="selected"'; ?>>no time limit on updates</option>
-		<option value="yes"<?php echo ($update_time_limit>0)?' selected="selected"':''; ?>>limit updates to no more than...</option>
-		</select>
-		<span id="time-limit-box"><label><input type="text" name="time_limit_seconds" value="<?php print $update_time_limit; ?>" size="5" /> seconds</label></span>
-		</tr>
-
-		<?php else :
-			$useDefaultUpdateWindow = !(isset($page->link->settings['update/window']));
-
-			$updateWindow = (isset($page->link->settings['update/window']) ? $page->link->settings['update/window'] : null);
-			if (!is_numeric($updateWindow)) :
-				$updateWindow = 60;
-			else :
-				$updateWindow = (int) $updateWindow;
-			endif;
-
-		?>
+		<?php else : /* Feed-specific settings */ ?>
 
 		<tr>
 		<th scope="row"><?php _e('Last update') ?>:</th>
@@ -272,27 +235,69 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<option value="next"<?php echo ($holdem=='next')?' selected="selected"':''; ?>>update ASAP</option>
 		<option value="ping"<?php echo ($holdem=='ping')?' selected="selected"':''; ?>>update only when pinged</option>
 		</select></td></tr>
-
+		
+		<?php endif; ?>
+		
 		<tr>
 		<th scope="row"><?php print __('Update scheduling:') ?></th>
 		<td><p style="margin-top:0px">How long should FeedWordPress wait between updates before it considers this feed ready to be polled for updates again?</p>
-		<ul>
-		<li><label><input type="radio" name="use_default_update_window" class="use-default-update-window" value="Yes" <?php if ($useDefaultUpdateWindow) : ?>checked="checked"<?php endif; ?> /> Use site-wide setting (currently <?php print $defaultUpdateWindow; ?> minutes)</li>
-		<li><label><input type="radio" name="use_default_update_window" class="use-default-update-window" id="use-default-update-window-no" value="No" <?php if (!$useDefaultUpdateWindow) : ?>checked="checked"<?php endif; ?> /> Wait <input type="text" name="update_window" value="<?php print $updateWindow; ?>" size="4" /> minutes between polling.</label></li>
-		</ul>
+		<?php
+			
+			$this->setting_radio_control(
+				'update/window', 'update_window',
+				array(&$this, 'update_window_edit_box'),
+				array(
+					'global-setting-default' => DEFAULT_UPDATE_PERIOD,
+					'default-input-name' => 'use_default_update_window',
+					'default-input-id' => 'use-default-update-window-yes',
+					'default-input-id-no' => 'use-default-update-window-no',
+					'labels' => array(&$this, 'update_window_currently'),
+				)
+			);
+			?></td>
+		</tr>
+
+		<?php if ($this->for_default_settings()) : ?>
 		
+		<tr>
+		<th scope="row"><?php print __('Time limit on updates'); ?>:</th>
+		<td><select id="time-limit" name="update_time_limit" size="1" onchange="contextual_appearance('time-limit', 'time-limit-box', null, 'yes');">
+		<option value="no"<?php echo ($update_time_limit>0)?'':' selected="selected"'; ?>>no time limit on updates</option>
+		<option value="yes"<?php echo ($update_time_limit>0)?' selected="selected"':''; ?>>limit updates to no more than...</option>
+		</select>
+		<span id="time-limit-box"><label><input type="text" name="time_limit_seconds" value="<?php print $update_time_limit; ?>" size="5" /> seconds</label></span>
+		</tr>
+
+		<?php endif; ?>
+		
+		</table>
+		
+		<?php
+	} /* FeedWordPressFeedsPage::global_feeds_box() */
+
+	function update_window_edit_box ($updateWindow, $defaulted, $params) {
+			if (!is_numeric($updateWindow)) :
+				$updateWindow = DEFAULT_UPDATE_PERIOD;
+			endif;
+		?>
+		<p>Wait <input type="text" name="update_window" value="<?php print $updateWindow; ?>" size="4" /> minutes between polling.</p>
 		<div class="setting-description" id="update-scheduling-note">
 		<p<?php if ($updateWindow<50) : ?> style="color: white; background-color: #703030; padding: 1.0em;"<?php endif; ?>><strong>Recommendation.</strong> Unless you are positive that you have the webmaster's permission, you generally should not set FeedWordPress to poll feeds more frequently than once every 60 minutes. Many webmasters consider more frequent automated polling to be abusive, and may complain to your web host, or ban your IP address, as retaliation for hammering their servers too hard.</p>
 		<p><strong>Note.</strong> This is a default setting that FeedWordPress uses to schedule updates when the feed does not provide any scheduling requests. If this feed does provide update scheduling information (through elements such as <code>&lt;rss:ttl&gt;</code> or <code>&lt;sy:updateFrequency&gt;</code>), FeedWordPress will respect the feed's request.</p>
-		</div></td>
-		</tr>
-		<?php endif; ?>
-
-
-</table>
-<?php
-	} /* FeedWordPressFeedsPage::global_feeds_box() */
-
+		</div>
+		<?php
+	} /* FeedWordPressFeedsPage::update_window_edit_box () */
+	
+	function update_window_currently ($updateWindow, $defaulted, $params) {
+		$updateWindow = (int) $updateWindow;
+		if (1==$updateWindow) :
+			$caption = 'wait %d minute between polling';
+		else :
+			$caption = 'wait %d minutes between polling';
+		endif;
+		return sprintf(__($caption), $updateWindow);
+	} /* FeedWordPressFeedsPage::update_window_currently () */
+	
 	function feed_information_box ($page, $box = NULL) {
 		global $wpdb;
 		if ($page->for_feed_settings()) :

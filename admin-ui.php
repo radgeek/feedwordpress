@@ -493,6 +493,15 @@ class FeedWordPressAdminPage {
 		else : $inputName = $globalName;
 		endif;
 		
+		if (isset($params['default-input-id'])) : $defaultInputId = $params['default-input-id'];
+		else : $defaultInputId = NULL;
+		endif;
+
+		if (isset($params['default-input-id-no'])) : $defaultInputIdNo = $params['default-input-id-no'];
+		elseif (!is_null($defaultInputId)) : $defaultInputIdNo = $defaultInputId.'-no';
+		else : $defaultInputIdNo = NULL;
+		endif;
+		
 		// This allows us to either include the site-default setting as
 		// one of the options within the radio box, or else as a simple
 		// yes/no toggle that controls whether or not to check another
@@ -550,10 +559,15 @@ class FeedWordPressAdminPage {
 			<li><label><input type="radio"
 				name="<?php print $defaultInputName; ?>"
 				value="<?php print $defaultInputValue; ?>"
+				<?php if (!is_null($defaultInputId)) : ?>id="<?php print $defaultInputId; ?>" <?php endif; ?>
 				<?php print $defaulted['yes']; ?> />
-			Use the <a href="<?php print $href; ?>">site-wide setting</a>
+			Use the site-wide setting</label>
 			<span class="current-setting">Currently:
-			<strong><?php print $labels[$globalSetting]; ?></strong></span></label></li>
+			<strong><?php if (is_callable($labels)) :
+				print call_user_func($labels, $globalSetting, $defaulted, $params);
+			else :
+				print $labels[$globalSetting];
+			endif;  ?></strong> (<a href="<?php print $href; ?>">change</a>)</span></li>
 			</ul></td>
 			
 			<td class="equals second inactive">
@@ -562,6 +576,7 @@ class FeedWordPressAdminPage {
 				<li><label><input type="radio"
 					name="<?php print $defaultInputName; ?>"
 					value="no"
+					<?php if (!is_null($defaultInputIdNo)) : ?>id="<?php print $defaultInputIdNo; ?>" <?php endif; ?>
 					<?php print $defaulted['no']; ?> />
 				<?php _e('Do something different with this feed.'); ?></label>
 			<?php endif;
@@ -570,7 +585,7 @@ class FeedWordPressAdminPage {
 		// Let's spit out the controls here.
 		if (is_callable($options)) :
 			// Method call to print out options list
-			call_user_func($options, $defaulted, $params);
+			call_user_func($options, $setting, $defaulted, $params);
 		else :
 			?>
 			<ul class="options">
