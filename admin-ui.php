@@ -368,7 +368,156 @@ class FeedWordPressAdminPage {
 		</div> <!-- class="wrap" -->
 		
 		<?php
-	}
+	} /* FeedWordPressAdminPage::close_sheet () */
+	
+	function setting_radio_control ($localName, $globalName, $options, $params = array()) {
+		global $fwp_path;
+		
+		if (isset($params['filename'])) : $filename = $params['filename'];
+		else : $filename = basename($this->filename);
+		endif;
+		
+		if (isset($params['site-wide-url'])) : $href = $params['site-wide-url'];
+		else : 	$href = "admin.php?page=${fwp_path}/${filename}";
+		endif;
+		
+		if (isset($params['setting-default'])) : $settingDefault = $params['setting-default'];
+		else : $settingDefault = NULL;
+		endif;
+		
+		if (isset($params['global-setting-default'])) : $globalSettingDefault = $params['global-setting-default'];
+		else : $globalSettingDefault = $settingDefault;
+		endif;
+
+		$globalSetting = get_option('feedwordpress_'.$globalName, $globalSettingDefault); 
+		if ($this->for_feed_settings()) :
+			$setting = $this->link->setting($localName, NULL, $settingDefault);
+		else :
+			$setting = $globalSetting;
+		endif;
+		
+		if (isset($params['offer-site-wide'])) : $offerSiteWide = $params['offer-site-wide'];
+		else : $offerSiteWide = $this->for_feed_settings();
+		endif;
+		
+		// This allows us to provide an alternative set of human-readable
+		// labels for each potential value. For use in Currently: line.
+		if (isset($params['labels'])) : $labels = $params['labels'];
+		else : $labels = $options;
+		endif;
+		
+		if (isset($params['input-name'])) : $inputName = $params['input-name'];
+		else : $inputName = $globalName;
+		endif;
+		
+		// This allows us to either include the site-default setting as
+		// one of the options within the radio box, or else as a simple
+		// yes/no toggle that controls whether or not to check another
+		// set of inputs.
+		if (isset($params['default-input-name'])) : $defaultInputName = $params['default-input-name'];
+		else : $defaultInputName = $inputName;
+		endif;
+
+		if ($defaultInputName != $inputName) :
+			$defaultInputValue = 'yes';
+		else :
+			$defaultInputValue = (
+				isset($params['default-input-value'])
+				? $params['default-input-value']
+				: 'site-default'
+			);
+		endif;
+		
+		$settingDefaulted = (is_null($setting) or ($settingDefault === $setting));
+
+		if (!is_callable($options)) :
+			$checked = array();
+			if ($settingDefaulted) :
+				$checked[$defaultInputValue] = ' checked="checked"';
+			endif;
+			
+			foreach ($options as $value => $label) :
+				if ($setting == $value) :
+					$checked[$value] = ' checked="checked"';
+				else :
+					$checked[$value] = '';
+				endif;
+			endforeach;
+		endif;
+
+		$defaulted = array();
+		if ($defaultInputName != $inputName) :
+			$defaulted['yes'] = ($settingDefaulted ? ' checked="checked"' : '');
+			$defaulted['no'] = ($settingDefaulted ? '' : ' checked="checked"');
+		else :
+			$defaulted['yes'] = (isset($checked[$defaultInputValue]) ? $checked[$defaultInputValue] : '');
+		endif;
+		
+		if (isset($params['defaulted'])) :
+			$defaulted['yes'] = ($params['defaulted'] ? ' checked="checked"' : '');
+			$defaulted['no'] = ($params['defaulted'] ? '' : ' checked="checked"');
+		endif;
+
+		if ($offerSiteWide) :
+			?>
+			<table class="twofer">
+			<tbody>
+			<tr><td class="equals first inactive">
+			<ul class="options">
+			<li><label><input type="radio"
+				name="<?php print $defaultInputName; ?>"
+				value="<?php print $defaultInputValue; ?>"
+				<?php print $defaulted['yes']; ?> />
+			Use the <a href="<?php print $href; ?>">site-wide setting</a>
+			<span class="current-setting">Currently:
+			<strong><?php print $labels[$globalSetting]; ?></strong></span></label></li>
+			</ul></td>
+			
+			<td class="equals second inactive">
+			<?php if ($defaultInputName != $inputName) : ?>
+				<ul class="options">
+				<li><label><input type="radio"
+					name="<?php print $defaultInputName; ?>"
+					value="no"
+					<?php print $defaulted['no']; ?> />
+				<?php _e('Do something different with this feed.'); ?></label>
+			<?php endif;
+		endif;
+		
+		// Let's spit out the controls here.
+		if (is_callable($options)) :
+			// Method call to print out options list
+			call_user_func($options, $defaulted, $params);
+		else :
+			?>
+			<ul class="options">
+			<?php foreach ($options as $value => $label) : ?>
+			<li><label><input type="radio" name="<?php print $inputName; ?>"
+				value="<?php print $value; ?>"
+				<?php print $checked[$value]; ?> />
+			<?php print $label; ?></label></li>
+			<?php endforeach; ?>
+			</ul> <!-- class="options" -->
+			<?php
+		endif;
+		
+		if ($offerSiteWide) :
+			if ($defaultInputName != $inputName) :
+				// Close the <li> and <ul class="options"> we opened above
+			?>
+				</li>
+				</ul> <!-- class="options" -->
+			<?php
+			endif;
+			
+			// Close off the twofer table that we opened up above.
+			?>
+			</td></tr>
+			</tbody>
+			</table>
+			<?php
+		endif;
+	} /* FeedWordPressAdminPage::setting_radio_control () */
 	
 	function save_button ($caption = NULL) {
 		if (is_null($caption)) : $caption = __('Save Changes'); endif;
