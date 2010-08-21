@@ -34,11 +34,17 @@
 }
 
 /* Common settings page elements */
-#post-search {
-	float: right;
+#fwpfs-container {
 	margin:11px 12px 0;
 	min-width: 130px;
 	position:relative;
+}
+#fwpfs-container .subsubsub {
+	float: none !important;
+}
+.tablenav p.submit {
+	margin: 0px;
+	padding: 0px;
 }
 .fwpfs {
 	color: #dddddd !important; background-color: #333 !important;

@@ -175,25 +175,107 @@ class FeedWordPressAdminPage {
 <?php
 	} /* FeedWordPressAdminPage::ajax_interface_js () */
 
+	function display_feed_settings_page_links ($params = array()) {
+		global $fwp_path;
+
+		$params = wp_parse_args($params, array(
+			'before' => '',
+			'between' => ' | ',
+			'after' => '',
+			'long' => false,
+			'subscription' => $this->link,
+		));
+		$sub = $params['subscription'];
+		
+		$links = array(
+			"Feed" => array('page' => 'feeds-page.php', 'long' => 'Feeds & Updates'),
+			"Posts" => array('page' => 'posts-page.php', 'long' => 'Posts & Links'),
+			"Authors" => array('page' => 'authors-page.php', 'long' => 'Authors'),
+			'Categories' => array('page' => 'categories-page.php', 'long' => 'Categories'.FEEDWORDPRESS_AND_TAGS),
+		);
+		
+		$hrefPrefix = 'admin.php?';
+		
+		$link_id = NULL;
+		if (is_object($sub)) :
+			if (method_exists($sub, 'found')) :
+				if ($sub->found()) :
+					$link_id = $sub->link->link_id;
+				endif;
+			else :
+				$link_id = $sub->link_id;
+			endif;
+		endif;
+		
+		if (!is_null($link_id)) :
+			$urlParam = "link_id={$link_id}";
+			$hrefPrefix .= $urlParam."&";
+			$urlSuffix = "&".$urlParam;
+		else :
+			$urlParam = '';
+		endif;
+		$hrefPrefix .= "page=${fwp_path}/";
+		
+		print $params['before']; $first = true;
+		foreach ($links as $label => $link) :
+			if (!$first) :	print $params['between']; endif;
+			
+			if (isset($link['url'])) : $url = $link['url'].$urlSuffix;
+			else : $url = $hrefPrefix.$link['page'];
+			endif;
+			$url = esc_html($url);
+			
+			if ($link['page']==basename($this->filename)) :
+				print "<strong>";
+			else :
+				print "<a href=\"${url}\">";
+			endif;
+			
+			if ($params['long']) : print esc_html(__($link['long']));
+			else : print esc_html(__($label));
+			endif;
+			
+			if ($link['page']==basename($this->filename)) :
+				print "</strong>";
+			else :
+				print "</a>";
+			endif;
+			
+			$first = false;
+		endforeach;
+		print $params['after'];
+	} /* FeedWordPressAdminPage::display_feed_settings_page_links */
+	
 	function display_feed_select_dropdown() {
 		$links = FeedWordPress::syndicated_links();
+		
 		?>
-		<p id="post-search">
-		<select name="link_id" class="fwpfs" style="max-width: 20.0em;">
+		<div id="fwpfs-container"><ul class="subsubsub">
+		<li><select name="link_id" class="fwpfs" style="max-width: 20.0em;">
 		  <option value="*"<?php if ($this->for_default_settings()) : ?> selected="selected"<?php endif; ?>>- defaults for all feeds -</option>
 		<?php if ($links) : foreach ($links as $ddlink) : ?>
 		  <option value="<?php print (int) $ddlink->link_id; ?>"<?php if (!is_null($this->link) and ($this->link->id==$ddlink->link_id)) : ?> selected="selected"<?php endif; ?>><?php print esc_html($ddlink->link_name); ?></option>
 		<?php endforeach; endif; ?>
 		</select>
-		<input class="button" type="submit" name="go" value="<?php _e('Go') ?> &raquo;" />
-		</p>
+		<input class="button" type="submit" name="go" value="<?php _e('Go') ?> &raquo;" /></li>
+
+		<?php
+		$this->display_feed_settings_page_links(array(
+			'before' => '<li>',
+			'between' => "</li>\n<li>",
+			'after' => '</li>',
+			'subscription' => $this->link,
+		));
+		?>
+		</ul>
+		</div>
 		<?php
 	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
 
 	function display_sheet_header ($pagename = 'Syndication', $all = false) {
 		?>
 		<div class="icon32"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></div>
-		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name()); ?><?php endif; ?></h2>
+		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name(/*from feed=*/ false)); ?><?php endif; ?></h2>
 		<?php
 	}
 
@@ -336,23 +418,24 @@ class FeedWordPressAdminPage {
 		endif;
 
 		if ($this->has_link()) :
-			$this->display_feed_select_dropdown();
 			$this->display_settings_scope_message();
 		endif;
 
-		if (function_exists('do_meta_boxes')) :
-			?>
-			<div id="poststuff">
-			<?php
-		else :
-			?>
-			</div> <!-- class="wrap" -->
-			<?php
+		?><div class="tablenav"><?php
+		if (!is_null($this->dispatch)) :
+			?><div class="alignright"><?php
+			$this->save_button();
+			?></div><?php
 		endif;
 
-		if (!is_null($this->dispatch)) :
-			$this->save_button();
+		if ($this->has_link()) :
+			$this->display_feed_select_dropdown();
 		endif;
+		?>
+		</div>
+		
+		<div id="poststuff">
+		<?php
 	} /* FeedWordPressAdminPage::open_sheet () */
 	
 	function close_sheet () {
@@ -988,7 +1071,7 @@ function fwp_remove_meta_box($id, $page, $context) {
 	endif;
 } /* function fwp_remove_meta_box() */
 
-function fwp_syndication_manage_page_links_table_rows ($links, $visible = 'Y') {
+function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible = 'Y') {
 	global $fwp_path;
 	
 	$subscribed = ('Y' == strtoupper($visible));
@@ -1073,13 +1156,13 @@ function fwp_syndication_manage_page_links_table_rows ($links, $visible = 'Y') {
 				?>
 	<td>
 	<strong><a href="<?php print $hrefPrefix; ?>feeds-page.php"><?php print esc_html($link->link_name); ?></a></strong>
-	<div class="row-actions"><?php if ($subscribed) : ?>
-	<div><strong>Settings &gt;</strong>
-	<a href="<?php print $hrefPrefix; ?>feeds-page.php"><?php _e('Feed'); ?></a>
-	| <a href="<?php print $hrefPrefix; ?>posts-page.php"><?php _e('Posts'); ?></a>
-	| <a href="<?php print $hrefPrefix; ?>authors-page.php"><?php _e('Authors'); ?></a>
-	| <a href="<?php print $hrefPrefix; ?>categories-page.php"><?php print htmlspecialchars(__('Categories'.FEEDWORDPRESS_AND_TAGS)); ?></a></div>
-	<?php endif; ?>
+	<div class="row-actions"><?php if ($subscribed) :
+		$page->display_feed_settings_page_links(array(
+			'before' => '<div><strong>Settings &gt;</strong> ',
+			'after' => '</div>',
+			'subscription' => $link,
+		));
+	endif; ?>
 
 	<div><strong>Actions &gt;</strong>
 	<?php if ($subscribed) : ?>

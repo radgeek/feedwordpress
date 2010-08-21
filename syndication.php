@@ -399,7 +399,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			fwp_add_meta_box(
 				/*id=*/ 'feedwordpress_feeds_box',
 				/*title=*/ __('Syndicated sources'),
-				/*callback=*/ 'fwp_syndication_manage_page_links_box',
+				/*callback=*/ array(&$this, 'syndicated_sources_box'),
 				/*page=*/ $this->meta_box_context(),
 				/*context =*/ $this->meta_box_context()
 			);
@@ -422,6 +422,117 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressSyndicationPage::display () */
 
+	function syndicated_sources_box ($page, $box = NULL) {
+		global $fwp_path;
+
+		$links = FeedWordPress::syndicated_links(array("hide_invisible" => false));
+		$sources = $this->sources('*');
+
+		$visibility = $this->visibility_toggle();
+		$showInactive = $this->show_inactive();
+
+		$hrefPrefix = "admin.php?page=${fwp_path}/".basename(__FILE__);
+		?>
+		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
+		<div class="tablenav">
+
+		<div id="add-multiple-uri" class="hide-if-js">
+		<form action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+		  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
+		  <h4>Add Multiple Sources</h4>
+		  <div>Enter one feed or website URL per line. If a URL links to a website which provides multiple feeds, FeedWordPress will use the first one listed.</div>
+		  <div><textarea name="multilookup" rows="8" cols="60"
+		  style="vertical-align: top"></textarea></div>
+		  <div style="border-top: 1px dotted black; padding-top: 10px">
+		  <div class="alignright"><input type="submit" class="button-primary" name="multiadd" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
+		  <div class="alignleft"><input type="button" class="button-secondary" name="action" value="<?php print FWP_CANCEL_BUTTON; ?>" id="turn-off-multiple-sources" /></div>
+		  </div>
+		</form>
+		</div> <!-- id="add-multiple-uri" -->
+
+		<div id="upload-opml" style="float: right" class="hide-if-js">
+		<h4>Import source list</h4>
+		<p>You can import a list of sources in OPML format, either by providing
+		a URL for the OPML document, or by uploading a copy from your
+		computer.</p>
+		
+		<form enctype="multipart/form-data" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+		  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?><input type="hidden" name="MAX_FILE_SIZE" value="100000" /></div>
+		<div style="clear: both"><label for="opml-lookup" style="float: left; width: 8.0em; margin-top: 5px;">From URL:</label> <input type="text" id="opml-lookup" name="opml_lookup" value="OPML document" /></div>
+		<div style="clear: both"><label for="opml-upload" style="float: left; width: 8.0em; margin-top: 5px;">From file:</label> <input type="file" id="opml-upload" name="opml_upload" /></div>
+		
+		<div style="border-top: 1px dotted black; padding-top: 10px">
+		<div class="alignright"><input type="submit" class="button-primary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
+		<div class="alignleft"><input type="button" class="button-secondary" name="action" value="<?php print FWP_CANCEL_BUTTON; ?>" id="turn-off-opml-upload" /></div>
+		</div>
+		</form>
+		</div> <!-- id="upload-opml" -->
+	
+		<div id="add-single-uri" class="alignright">
+		  <form id="syndicated-links" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+		  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
+		  <ul class="subsubsub">
+		  <li><label for="add-uri">New source:</label>
+		  <input type="text" name="lookup" id="add-uri" value="Website or feed URI" />
+		
+		  <?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); FeedWordPressSettingsUI::magic_input_tip_js('opml-lookup'); ?>
+		
+		  <input type="hidden" name="action" value="feedfinder" />
+		  <input type="submit" class="button-secondary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
+		  <div style="text-align: right; margin-right: 2.0em"><a id="turn-on-multiple-sources" href="#add-multiple-uri"><img style="vertical-align: middle" src="<?php print WP_PLUGIN_URL.'/'.$fwp_path; ?>/down.png" alt="" /> add multiple</a>
+		  <span class="screen-reader-text"> or </span>
+		  <a id="turn-on-opml-upload" href="#upload-opml"><img src="<?php print WP_PLUGIN_URL.'/'.$fwp_path; ?>/plus.png" alt="" style="vertical-align: middle" /> import source list</a></div>
+		  </li>
+		  </ul>
+		  </form>
+		</div> <!-- class="alignright" -->
+
+		<div class="alignleft">
+		<?php
+		if (count($sources[$visibility]) > 0) :
+			fwp_syndication_manage_page_links_subsubsub($sources, $showInactive);
+		endif;
+		?>
+		</div> <!-- class="alignleft" -->
+
+		</div> <!-- class="tablenav" -->
+		
+		<form id="syndicated-links" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
+		
+		<?php if ($showInactive) : ?>
+		<div style="clear: right" class="alignright">
+		<p style="font-size: smaller; font-style: italic">FeedWordPress used to syndicate
+		posts from these sources, but you have unsubscribed from them.</p>
+		</div>
+		<?php
+		endif;
+		?>
+
+		<?php	if (count($sources[$visibility]) > 0) : ?>
+			<div style="clear: left" class="alignleft">
+			<?php if ($showInactive) : ?>
+			<input class="button-secondary" type="submit" name="action" value="<?php print FWP_RESUB_CHECKED; ?>" />
+			<input class="button-secondary" type="submit" name="action" value="<?php print FWP_DELETE_CHECKED; ?>" />
+			<?php else : ?>
+			<input class="button-secondary" type="submit" name="action" value="<?php print FWP_UPDATE_CHECKED; ?>" />
+			<input class="button-secondary delete" type="submit" name="action" value="<?php print FWP_UNSUB_CHECKED; ?>" />
+			<?php endif ; ?>
+			</div> <!-- class="alignleft" -->
+		
+		<?php	else : ?>
+			<?php fwp_syndication_manage_page_links_subsubsub($sources, $showInactive); ?>
+		<?php 	endif; ?>
+	
+		<br class="clear" />
+	
+		<?php
+		fwp_syndication_manage_page_links_table_rows($sources[$visibility], $this, $visibility);
+		?>
+		</form>
+		<?php
+	} /* FeedWordPressSyndicationPage::syndicated_sources_box() */
+	
 	function bleg_thanks ($page, $box = NULL) {
 		?>
 		<div class="donation-thanks">
@@ -600,119 +711,6 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	</form>
 <?php
 } /* function fwp_syndication_manage_page_update_box () */
-
-function fwp_syndication_manage_page_links_box ($object = NULL, $box = NULL) {
-	global $fwp_path;
-
-	$links = FeedWordPress::syndicated_links(array("hide_invisible" => false));
-	$sources = $object->sources('*');
-
-	$visibility = $object->visibility_toggle();
-	$showInactive = $object->show_inactive();
-
-	$hrefPrefix = "admin.php?page=${fwp_path}/".basename(__FILE__);
-?>
-	<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-	
-	<div class="tablenav">
-
-	<div id="add-multiple-uri" class="hide-if-js">
-	<form action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
-	  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-	  <h4>Add Multiple Sources</h4>
-	  <div>Enter one feed or website URL per line. If a URL links to a website which provides multiple feeds, FeedWordPress will use the first one listed.</div>
-	  <div><textarea name="multilookup" rows="8" cols="60"
-	  style="vertical-align: top"></textarea></div>
-	  <div style="border-top: 1px dotted black; padding-top: 10px">
-	  <div class="alignright"><input type="submit" class="button-primary" name="multiadd" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
-	  <div class="alignleft"><input type="button" class="button-secondary" name="action" value="<?php print FWP_CANCEL_BUTTON; ?>" id="turn-off-multiple-sources" /></div>
-	  </div>
-	</form>
-	</div> <!-- id="add-multiple-uri" -->
-
-	<div id="upload-opml" style="float: right" class="hide-if-js">
-	<h4>Import source list</h4>
-	<p>You can import a list of sources in OPML format, either by providing
-	a URL for the OPML document, or by uploading a copy from your
-	computer.</p>
-	
-	<form enctype="multipart/form-data" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
-	  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?><input type="hidden" name="MAX_FILE_SIZE" value="100000" /></div>
-	<div style="clear: both"><label for="opml-lookup" style="float: left; width: 8.0em; margin-top: 5px;">From URL:</label> <input type="text" id="opml-lookup" name="opml_lookup" value="OPML document" /></div>
-	<div style="clear: both"><label for="opml-upload" style="float: left; width: 8.0em; margin-top: 5px;">From file:</label> <input type="file" id="opml-upload" name="opml_upload" /></div>
-
-	<div style="border-top: 1px dotted black; padding-top: 10px">
-	<div class="alignright"><input type="submit" class="button-primary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
-	<div class="alignleft"><input type="button" class="button-secondary" name="action" value="<?php print FWP_CANCEL_BUTTON; ?>" id="turn-off-opml-upload" /></div>
-	</div>
-	</form>
-	
-	</div> <!-- id="upload-opml" -->
-	
-	<div id="add-single-uri" class="alignright">
-	  <form id="syndicated-links" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
-	  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-	  <ul class="subsubsub">
-	  <li><label for="add-uri">New source:</label>
-	  <input type="text" name="lookup" id="add-uri" value="Website or feed URI" />
-
-	  <?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); FeedWordPressSettingsUI::magic_input_tip_js('opml-lookup'); ?>
-	
-	  <input type="hidden" name="action" value="feedfinder" />
-	  <input type="submit" class="button-secondary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
-	  <div style="text-align: right; margin-right: 2.0em"><a id="turn-on-multiple-sources" href="#add-multiple-uri"><img style="vertical-align: middle" src="<?php print WP_PLUGIN_URL.'/'.$fwp_path; ?>/down.png" alt="" /> add multiple</a>
-	  <span class="screen-reader-text"> or </span>
-	  <a id="turn-on-opml-upload" href="#upload-opml"><img src="<?php print WP_PLUGIN_URL.'/'.$fwp_path; ?>/plus.png" alt="" style="vertical-align: middle" /> import source list</a></div>
-	  </li>
-	  </ul>
-	  </form>
-	</div> <!-- class="alignright" -->
-
-	<div class="alignleft">
-	<?php
-	if (count($sources[$visibility]) > 0) :
-		fwp_syndication_manage_page_links_subsubsub($sources, $showInactive);
-	endif;
-	?>
-	</div> <!-- class="alignleft" -->
-
-	</div> <!-- class="tablenav" -->
-
-	<form id="syndicated-links" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
-	<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-	
-	<?php if ($showInactive) : ?>
-	<div style="clear: right" class="alignright">
-	<p style="font-size: smaller; font-style: italic">FeedWordPress used to syndicate
-	posts from these sources, but you have unsubscribed from them.</p>
-	</div>
-	<?php
-	endif;
-	?>
-
-<?php	if (count($sources[$visibility]) > 0) : ?>
-	<div style="clear: left" class="alignleft">
-	<?php if ($showInactive) : ?>
-	<input class="button-secondary" type="submit" name="action" value="<?php print FWP_RESUB_CHECKED; ?>" />
-	<input class="button-secondary" type="submit" name="action" value="<?php print FWP_DELETE_CHECKED; ?>" />
-	<?php else : ?>
-	<input class="button-secondary" type="submit" name="action" value="<?php print FWP_UPDATE_CHECKED; ?>" />
-	<input class="button-secondary delete" type="submit" name="action" value="<?php print FWP_UNSUB_CHECKED; ?>" />
-	<?php endif ; ?>
-	</div> <!-- class="alignleft" -->
-
-<?php	else : ?>
-	<?php fwp_syndication_manage_page_links_subsubsub($sources, $showInactive); ?>
-<?php 	endif; ?>
-	
-	<br class="clear" />
-
-	<?php
-	fwp_syndication_manage_page_links_table_rows($sources[$visibility], $visibility);
-	?>
-	</form>
-<?php
-} /* function fwp_syndication_manage_page_links_box() */
 
 function fwp_feedfinder_page () {
 	global $post_source, $fwp_post, $syndicationPage;

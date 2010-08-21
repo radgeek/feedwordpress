@@ -448,7 +448,7 @@ jQuery(document).ready(function($){
 		'change',
 		function () { this.form.submit(); }
 	);
-	$('#post-search .button').css( 'display', 'none' );
+	$('#fwpfs-container .button').css( 'display', 'none' );
 	
 	$('table.twofer td.active input[type="radio"], table.twofer td.inactive input[type="radio"]').each( function () {
 		$(this).click( function () {

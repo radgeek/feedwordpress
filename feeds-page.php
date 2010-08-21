@@ -105,9 +105,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			'feed_information_box' => __('Feed Information'),
 			'global_feeds_box' => __('Update Scheduling'),
 			'updated_posts_box' => __('Updated Posts'),
-			'posts_box' => __('Syndicated Posts, Links, Comments & Pings'),
-			'authors_box' => __('Syndicated Authors'),
-			'categories_box' => __('Categories'.FEEDWORDPRESS_AND_TAGS),
 			'custom_settings_box' => __('Custom Feed Settings (for use in templates)'),
 		);
 		if ($this->for_default_settings()) :
