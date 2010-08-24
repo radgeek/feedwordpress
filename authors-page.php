@@ -353,7 +353,7 @@ function fwp_authors_page () {
 			$title = $row;
 		endif;
 
-		fwp_add_meta_box(
+		add_meta_box(
 			/*id=*/ $id,
 			/*title=*/ $title,
 			/*callback=*/ array('FeedWordPressAuthorsPage', $method),

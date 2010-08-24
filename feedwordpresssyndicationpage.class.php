@@ -159,7 +159,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			print "</div>\n";
 
 		elseif (is_array($in) or strlen($in) > 0) :
-			fwp_add_meta_box(
+			add_meta_box(
 				/*id=*/ 'feedwordpress_multiadd_box',
 				/*title=*/ __('Add Feeds'),
 				/*callback=*/ array($this, 'multiadd_box'),
@@ -422,7 +422,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			<?php
 			if ($potential_updates
 			or (count($this->updates_requested()) > 0)) :
-				fwp_add_meta_box(
+				add_meta_box(
 					/*id=*/ 'feedwordpress_update_box',
 					/*title=*/ __('Update feeds now'),
 					/*callback=*/ 'fwp_syndication_manage_page_update_box',
@@ -430,7 +430,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 					/*context =*/ $this->meta_box_context()
 				);
 			endif;
-			fwp_add_meta_box(
+			add_meta_box(
 				/*id=*/ 'feedwordpress_feeds_box',
 				/*title=*/ __('Syndicated sources'),
 				/*callback=*/ array(&$this, 'syndicated_sources_box'),
