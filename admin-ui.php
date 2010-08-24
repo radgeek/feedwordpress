@@ -313,9 +313,13 @@ class FeedWordPressAdminPage {
 	
 	/*static*/ function has_link () { return true; }
 
-	function form_action () {
+	function form_action ($filename = NULL) {
 		global $fwp_path;
-		return "admin.php?page=${fwp_path}/".basename($this->filename);
+		
+		if (is_null($filename)) :
+			$filename = basename($this->filename);
+		endif;
+		return "admin.php?page=${fwp_path}/".$filename;
 	} /* FeedWordPressAdminPage::form_action () */
 
 	function update_message () {
@@ -391,14 +395,12 @@ class FeedWordPressAdminPage {
 		</script>
 		
 		<?php
-		if (function_exists('add_meta_box')) :
-			add_action(
-				FeedWordPressCompatibility::bottom_script_hook($this->filename),
-				/*callback=*/ array($this, 'fix_toggles'),
-				/*priority=*/ 10000
-			);
-			FeedWordPressSettingsUI::ajax_nonce_fields();
-		endif;
+		add_action(
+			FeedWordPressCompatibility::bottom_script_hook($this->filename),
+			/*callback=*/ array($this, 'fix_toggles'),
+			/*priority=*/ 10000
+		);
+		FeedWordPressSettingsUI::ajax_nonce_fields();
 
 		?>
 		<div class="wrap" style="position:relative">

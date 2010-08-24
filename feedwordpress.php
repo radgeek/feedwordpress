@@ -103,6 +103,7 @@ require_once(ABSPATH . WPINC . '/class-simplepie.php');
 require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
 
 require_once(dirname(__FILE__) . '/admin-ui.php');
+require_once(dirname(__FILE__) . '/feedwordpresssyndicationpage.class.php');
 require_once(dirname(__FILE__) . '/compatability.php'); // LEGACY API: Replicate or mock up functions for legacy support purposes
 
 require_once(dirname(__FILE__) . '/syndicatedpost.class.php');
@@ -217,6 +218,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	endif;
 	add_action($autoUpdateHook, array(&$feedwordpress, 'auto_update'));
 	add_action('init', array(&$feedwordpress, 'init'));
+	add_action('wp_dashboard_setup', array(&$feedwordpress, 'dashboard_setup'));
 
 	# Default sanitizers
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'resolve_relative_uris'), 0, 2);
@@ -1028,6 +1030,63 @@ class FeedWordPress {
 		$this->update_magic_url();
 	} /* FeedWordPress::init() */
 	
+	function dashboard_setup () {
+		// Get the stylesheet
+		wp_enqueue_style('feedwordpress-elements');
+
+		$widget_id = 'feedwordpress_dashboard';
+		$widget_name = __('Syndicated Sources');
+		$column = 'side';
+		$priority = 'core';
+
+		// I would love to use wp_add_dashboard_widget() here and save
+		// myself some trouble. But WP 3 does not yet have any way to
+		// push a dashboard widget onto the side, or to give it a default
+		// location.
+		add_meta_box(
+			/*id=*/ $widget_id,
+			/*title=*/ $widget_name,
+			/*callback=*/ array(&$this, 'dashboard'),
+			/*page=*/ 'dashboard',
+			/*context=*/ $column,
+			/*priority=*/ $priority
+		);
+		/*control_callback= array(&$this, 'dashboard_control') */
+		
+		// This is kind of rude, I know, but the dashboard widget isn't
+		// worth much if users don't know that it exists, and I don't
+		// know of any better way to reorder the boxen.
+		//
+		// Gleefully ripped off of codex.wordpress.org/Dashboard_Widgets_API
+		
+		// Globalize the metaboxes array, this holds all the widgets for wp-admin
+		global $wp_meta_boxes;
+
+		// Get the regular dashboard widgets array 
+		// (which has our new widget already but at the end)
+
+		$normal_dashboard = $wp_meta_boxes['dashboard'][$column][$priority];
+	
+		// Backup and delete our new dashbaord widget from the end of the array
+		if (isset($normal_dashboard[$widget_id])) :
+			$backup = array();
+			$backup[$widget_id] = $normal_dashboard[$widget_id];
+			unset($normal_dashboard[$widget_id]);
+
+			// Merge the two arrays together so our widget is at the
+			// beginning
+			$sorted_dashboard = array_merge($backup, $normal_dashboard);
+
+			// Save the sorted array back into the original metaboxes 
+			$wp_meta_boxes['dashboard'][$column][$priority] = $sorted_dashboard;
+		endif;
+	} /* FeedWordPress::dashboard_setup () */
+	
+	function dashboard () {
+		$syndicationPage = new FeedWordPressSyndicationPage(dirname(__FILE__).'/syndication.php');
+		$syndicationPage->dashboard_box($syndicationPage);
+	} /* FeedWordPress::dashboard () */
+
 	function update_magic_url () {
 		global $wpdb;
 

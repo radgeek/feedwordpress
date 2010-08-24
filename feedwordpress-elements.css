@@ -208,3 +208,78 @@ table.twofer td.secondary { padding-left: 10px; width: 30%; }
 	margin-top: 0px;
 	border-bottom: 1px dotted black; 
 }
+
+#dashboard-widgets #feedwordpress_dashboard h4 {
+	color: #777777;
+	font-family: Georgia, "Times New Roman", "Bitstream Charter", Times, serif;
+	font-size: 13px;
+	font-style: italic;
+	font-weight: normal;
+
+	margin: 0px;
+
+	border-bottom: 1px solid #ececec;
+
+	padding-left: 15px;
+	padding-top: 10px;
+	padding-bottom: 5px;
+	padding-right: 0px;
+}
+
+#feedwordpress_dashboard .feedwordpress-stats {
+	width: 49%;
+}
+#feedwordpress_dashboard .feedwordpress-stats table {
+	margin-top: 5px;
+	margin-left: 15px;
+}
+#feedwordpress_dashboard .feedwordpress-actions ul.options {
+	margin-left: 15px !important;
+	margin-top: 5px !important;
+}
+
+#feedwordpress_dashboard .feedwordpress-actions {
+	width: 49%;
+	float: right;
+}
+#feedwordpress_dashboard td.b {
+	padding-right: 12px;
+}
+#feedwordpress_dashboard td.b a {
+	font-size: 18px;
+}
+
+#feedwordpress_dashboard td.t.active a:link,
+#feedwordpress_dashboard td.t.active a:visited {
+	color: green;
+}
+#feedwordpress_dashboard td.t.inactive a:link,
+#feedwordpress_dashboard td.t.inactive a:visited {
+	color: red;
+}
+
+#feedwordpress_dashboard #add-single-uri {
+	clear: both;
+	margin-top: 15px;
+}
+
+#feedwordpress_dashboard #add-single-uri #syndicated-links {
+	border-top: 1px solid #ececec;
+	width: 49%;
+}
+#feedwordpress_dashboard #add-single-uri #syndicated-links .container {
+	margin-top: 5px;
+	margin-left: 15px;
+}
+
+#feedwordpress_dashboard #add-single-uri #check-for-updates {
+	border-top: 1px solid #ececec;
+	float: right;
+	text-align: left;
+	width: 49%;
+}
+#feedwordpress_dashboard #add-single-uri #check-for-updates .container {
+	margin-top: 5px;
+	margin-left: 15px;
+}
+
