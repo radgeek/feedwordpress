@@ -22,6 +22,11 @@ class FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressAdminPage constructor */
 
+	function pageslug () {
+		$slug = preg_replace('/FeedWordPress(.*)Page/', '$1', get_class($this));
+		return strtolower($slug);
+	}
+	
 	function pagename ($context = NULL) {
 		if (is_null($context)) :
 			$context = 'default';
@@ -32,7 +37,7 @@ class FeedWordPressAdminPage {
 		elseif (isset($tis->pagenames['default'])) :
 			$name = $this->pagenames['default'];
 		else :
-			$name = preg_replace('/FeedWordPress(.*)Page/', '$1', get_class($this));
+			$name = $this->pageslug();
 		endif;
 		return __($name);
 	} /* FeedWordPressAdminPage::pagename () */
@@ -403,7 +408,7 @@ class FeedWordPressAdminPage {
 		FeedWordPressSettingsUI::ajax_nonce_fields();
 
 		?>
-		<div class="wrap" style="position:relative">
+		<div class="wrap feedwordpress-admin" id="feedwordpress-admin-<?php print $this->pageslug(); ?>">
 		<?php
 		if (!is_null($header)) :
 			$this->display_sheet_header($header);

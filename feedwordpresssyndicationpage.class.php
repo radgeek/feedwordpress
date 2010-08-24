@@ -356,63 +356,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		endif;
 		
 		if ($cont):
-		?>
-		<style type="text/css">
-			.heads-up {
-				background-color: #d0d0d0;
-				color: black;
-				padding: 1.0em;
-				margin: 0.5em 4.0em !important;
-			}
-			.update-form.with-donation {
-				margin-right: 50%;
-				min-height: 255px;
-			}
-			.donation-form, .donation-thanks {
-				background-color: #ffffcc;
-				text-align: left;
-				padding: 0.5em 0.5em;
-				border-left: thin dashed #777777;
-				font-size: 70%;
-				position: absolute;
-				top: 0; bottom: 0; right: 0; left: auto;
-				width: 50%;		
-			}
-			.donation-thanks {
-				background-color: #ccffcc;
-			}
-			.donation-thanks .signature {
-				text-align: right;
-				font-style: italic;
-			}
-			.donation-form h4, .donation-thanks h4 {
-				font-size: 10px;
-				text-align: center;
-				border-bottom: 1px solid #777777;
-				margin: 0px;
-			}
-			.donation-form .donate  {
-				text-align: center;
-			}
-			.donation-form .sod-off {
-				padding-top: 0.5em;
-				margin-top: 0.5em;
-				border-top: thin solid #777777;
-			}
-			.feed-missing {
-				background-color:#FFFFD0;
-			}
-			.unsubscribed tr {
-				background-color: #FFE0E0;
-			}
-			.unsubscribed tr.alternate {
-				background-color: #FFF0F0;
-			}
-			tr.feed-error {
-				background-color: #FFFFD0;
-			}
-		</style>
-		<?php
 			$links = $this->sources('Y');
 			$potential_updates = (!$this->show_inactive() and (count($this->sources('Y')) > 0));
 

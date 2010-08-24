@@ -48,7 +48,7 @@
 }
 .fwpfs {
 	color: #dddddd !important; background-color: #333 !important;
-	background:#797979 url(<?php bloginfo('url') ?>/wp-admin/images/fav.png) repeat-x scroll left center;
+	background: #797979 url(<?php bloginfo('url') ?>/wp-admin/images/fav.png) repeat-x scroll left center;
 	border-color:#777777 #777777 #666666 !important; -moz-border-radius-bottomleft:12px;
 	-moz-border-radius-bottomright:12px;
 	-moz-border-radius-topleft:12px;
@@ -314,5 +314,65 @@ table.twofer td.secondary { padding-left: 10px; width: 30%; }
 	bottom: 0px;
 	margin-top: 15px;
 	margin-left: 15px;
+}
+
+.feedwordpress-admin {
+	position: relative;
+}
+
+#feedwordpress-admin-syndication .heads-up {
+	background-color: #d0d0d0;
+	color: black;
+	padding: 1.0em;
+	margin: 0.5em 4.0em !important;
+}
+#feedwordpress-admin-syndication .update-form.with-donation {
+	margin-right: 50%;
+	min-height: 255px;
+}
+#feedwordpress-admin-syndication .donation-form,
+#feedwordpress-admin-syndication .donation-thanks {
+	background-color: #ffffcc;
+	text-align: left;
+	padding: 0.5em 0.5em;
+	border-left: thin dashed #777777;
+	font-size: 70%;
+	position: absolute;
+	top: 0; bottom: 0; right: 0; left: auto;
+	width: 50%;		
+}
+#feedwordpress-admin-syndication .donation-thanks {
+	background-color: #ccffcc;
+}
+#feedwordpress-admin-syndication .donation-thanks .signature {
+	text-align: right;
+	font-style: italic;
+}
+#feedwordpress-admin-syndication .donation-form h4,
+#feedwordpress-admin-syndication .donation-thanks h4 {
+	font-size: 10px;
+	text-align: center;
+	border-bottom: 1px solid #777777;
+	margin: 0px;
+}
+#feedwordpress-admin-syndication .donation-form .donate  {
+	text-align: center;
+}
+#feedwordpress-admin-syndication .donation-form .sod-off {
+	padding-top: 0.5em;
+	margin-top: 0.5em;
+	border-top: thin solid #777777;
+}
+#feedwordpress-admin-syndication .feed-missing {
+	background-color:#FFFFD0;
+}
+#feedwordpress-admin-syndication .unsubscribed tr {
+	background-color: #FFE0E0;
+}
+#feedwordpress-admin-syndication .unsubscribed tr.alternate {
+	background-color: #FFF0F0;
+}
+#feedwordpress-admin-syndication tr.feed-error {
+	background-color: #FFFFD0;
 }
 
