@@ -933,22 +933,7 @@ function fwp_do_meta_boxes($page, $context, $object) {
 } /* function fwp_do_meta_boxes() */
 
 function fwp_remove_meta_box($id, $page, $context) {
-	if (function_exists('remove_meta_box')) :
-		return remove_meta_box($id, $page, $context);
-	else :
-		/* Re-used as per terms of the GPL from remove_meta_box() in WordPress 2.8.1 wp-admin/includes/template.php */
-		global $wp_meta_boxes;
-	
-		if ( !isset($wp_meta_boxes) )
-			$wp_meta_boxes = array();
-		if ( !isset($wp_meta_boxes[$page]) )
-			$wp_meta_boxes[$page] = array();
-		if ( !isset($wp_meta_boxes[$page][$context]) )
-			$wp_meta_boxes[$page][$context] = array();
-	
-		foreach ( array('high', 'core', 'default', 'low') as $priority )
-			$wp_meta_boxes[$page][$context][$priority][$id] = false;
-	endif;
+	return remove_meta_box($id, $page, $context);
 } /* function fwp_remove_meta_box() */
 
 function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible = 'Y') {
