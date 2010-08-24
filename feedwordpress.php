@@ -133,7 +133,11 @@ endif;
 // If it is a display page or a non-FeedWordPress admin page, don't.
 wp_register_style('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.css');
 if (FeedWordPressSettingsUI::is_admin()) :
+	// For JavaScript that needs to be generated dynamically
 	add_action('admin_print_scripts', array('FeedWordPressSettingsUI', 'admin_scripts'));
+
+	// For CSS that needs to be generated dynamically.
+	add_action('admin_print_styles', array('FeedWordPressSettingsUI', 'admin_styles'));
 
 	wp_enqueue_style('dashboard');
 	wp_enqueue_style('feedwordpress-elements');

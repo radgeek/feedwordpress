@@ -844,6 +844,24 @@ class FeedWordPressSettingsUI {
 		wp_enqueue_script('feedwordpress-elements');
 	}
 
+	function admin_styles () {
+		?>
+		<style type="text/css">
+		.fwpfs {
+			background-image: url(<?php bloginfo('url') ?>/wp-admin/images/fav.png);
+			background-repeat: repeat-x;
+			background-position: left center;
+			background-attachment: scroll;
+		}
+		.fwpfs.slide-down {
+			background-image:url(<?php bloginfo('url') ?>/wp-admin/images/fav-top.png);
+			background-position:0 top;
+			background-repeat:repeat-x;
+		}
+		</style>
+		<?php
+	} /* FeedWordPressSettingsUI::admin_styles () */
+	
 	/*static*/ function ajax_nonce_fields () {
 		if (function_exists('wp_nonce_field')) :
 			echo "<form style='display: none' method='get' action=''>\n<p>\n";
