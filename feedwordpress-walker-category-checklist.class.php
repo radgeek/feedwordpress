@@ -7,7 +7,7 @@
  * This is the fucking stupidest thing ever.
  */
 
- require_once(ABSPATH.'/wp-admin/includes/template.php');
+require_once(ABSPATH.'/wp-admin/includes/template.php');
 // Fucking fuck.
 
 class FeedWordPress_Walker_Category_Checklist extends Walker_Category_Checklist {

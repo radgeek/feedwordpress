@@ -49,10 +49,11 @@
 .fwpfs {
 	color: #dddddd !important; background-color: #333 !important;
 	background-color: #797979;
-	border-color:#777777 #777777 #666666 !important; -moz-border-radius-bottomleft:12px;
-	-moz-border-radius-bottomright:12px;
-	-moz-border-radius-topleft:12px;
-	-moz-border-radius-topright:12px;
+	border-color:#777777 #777777 #666666 !important;
+	border-radius: 12px;
+	-moz-border-radius: 12px;
+	-webkit-border-radius: 12px;
+	-khtml-border-radius: 12px;
 	border-style:solid;
 	border-width:1px;
 	line-height:15px;
@@ -60,10 +61,14 @@
 }
 .fwpfs.slide-down {
 	border-bottom-color: #626262;
-	-moz-border-radius-bottomleft:0;
-	-moz-border-radius-bottomright:0;
-	-moz-border-radius-topleft:12px;
-	-moz-border-radius-topright:12px;
+	border-top-left-radius: 12px; border-top-right-radius: 12px;
+	border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+	-webkit-border-top-left-radius: 12px; -webkit-border-top-right-radius: 12px;
+	-webkit-border-bottom-left-radius: 0; -webkit-border-bottom-right-radius: 0;
+	-khtml-border-top-left-radius: 12px; -khtml-border-top-right-radius: 12px;
+	-khtml-border-bottom-left-radius: 0; -khtml-border-bottom-right-radius: 0;
+	-moz-border-radius-topleft:12px; -moz-border-radius-topright:12px;
+	-moz-border-radius-bottomleft:0; -moz-border-radius-bottomright:0;
 	border-bottom-style:solid;
 	border-bottom-width:1px;
 }

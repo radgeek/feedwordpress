@@ -631,7 +631,7 @@ support, and documentation.</p>
 <input type="hidden" name="cmd" value="_xclick"  />
 <input type="hidden" name="item_name" value="FeedWordPress donation"  />
 <input type="hidden" name="no_shipping" value="1"  />
-<input type="hidden" name="return" value="<?php bloginfo('url'); ?>/wp-admin/admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename($this->filename); ?>&amp;paid=yes"  />
+<input type="hidden" name="return" value="<?php print admin_url('admin.php'); ?>?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename($this->filename); ?>&amp;paid=yes"  />
 <input type="hidden" name="currency_code" value="USD" />
 <input type="hidden" name="notify_url" value="http://feedwordpress.radgeek.com/ipn/donation"  />
 <input type="hidden" name="custom" value="1"  />
@@ -645,8 +645,8 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 
 <div class="sod-off">
 <form style="text-align: center" action="<?php print $this->form_action(); ?>" method="POST"><div>
-<input class="button-primary" type="submit" name="maybe_later" value="Maybe Later" />
-<input class="button-secondary" type="submit" name="go_away" value="Dismiss" />
+<input class="button" type="submit" name="maybe_later" value="Maybe Later" />
+<input class="button" type="submit" name="go_away" value="Dismiss" />
 </div></form>
 </div>
 </div> <!-- class="donation-form" -->

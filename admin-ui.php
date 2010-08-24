@@ -848,13 +848,13 @@ class FeedWordPressSettingsUI {
 		?>
 		<style type="text/css">
 		.fwpfs {
-			background-image: url(<?php bloginfo('url') ?>/wp-admin/images/fav.png);
+			background-image: url(<?php print admin_url('images/fav.png'); ?>);
 			background-repeat: repeat-x;
 			background-position: left center;
 			background-attachment: scroll;
 		}
 		.fwpfs.slide-down {
-			background-image:url(<?php bloginfo('url') ?>/wp-admin/images/fav-top.png);
+			background-image:url(<?php print admin_url('images/fav-top.png'); ?>);
 			background-position:0 top;
 			background-repeat:repeat-x;
 		}
