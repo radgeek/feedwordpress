@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2010.0814
+Version: 2010.0824
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2010.0814
+ * @version 2010.0824
  */
 
 # This uses code derived from:
@@ -34,7 +34,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2010.0814');
+define ('FEEDWORDPRESS_VERSION', '2010.0824');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 // Defaults
@@ -1170,11 +1170,21 @@ class FeedWordPress {
 		// Comes in as an array of categories
 		$linkCats = array($cat_id);
 
+		// Check if this feed URL is already being syndicated.
+		$unslashed = untrailingslashit($rss);
+		$slashed = trailingslashit($rss);
+		$link_id = $wpdb->get_var($wpdb->prepare("
+		SELECT link_id FROM $wpdb->links WHERE link_rss IN ('%s', '%s')
+		LIMIT 1", $unslashed, $slashed
+		));
+		
 		$link_id = wp_insert_link(array(
+		"link_id" => $link_id, // insert if nothing was found; else update
+		"link_rss" => $rss,
 		"link_name" => $name,
 		"link_url" => $uri,
 		"link_category" => $linkCats,
-		"link_rss" => $rss
+		"link_visible" => 'Y', // reactivate if inactivated
 		));
 
 		return $link_id;
