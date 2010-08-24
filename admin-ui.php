@@ -838,61 +838,6 @@ class FeedWordPressSettingsUI {
 		wp_register_script('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.js');
 		wp_enqueue_script('feedwordpress-elements');
 	}
-	
-	function instead_of_posts_box ($link_id = null) {
-		if (!is_null($link_id)) :
-			$from_this_feed = 'from this feed';
-			$by_default = '';
-			$id_param = "&amp;link_id=".$link_id;
-		else :
-			$from_this_feed = 'from syndicated feeds';
-			$by_default = " by default";
-			$id_param = "";
-		endif;
-?>
-<p>Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php<?php print $id_param; ?>"><?php _e('Posts & Links'); ?></a>
-settings page to set up how new posts <?php print $from_this_feed; ?> will be published<?php $by_default; ?>, whether they will accept
-comments and pings, any custom fields that should be set on each post, etc.</p>
-<?php
-	} /* FeedWordPressSettingsUI::instead_of_posts_box () */
-	
-	function instead_of_authors_box ($link_id = null) {
-		if (!is_null($link_id)) :
-			$from_this_feed = 'from this feed';
-			$by_default = '';
-			$id_param = "&amp;link_id=".$link_id;
-		else :
-			$from_this_feed = 'from syndicated feeds';
-			$by_default = " by default";
-			$id_param = "";
-		endif;
-
-?>
-<p>Use the <a
-href="admin.php?page=<?php print $GLOBALS['fwp_path']
-?>/authors-page.php<?php print $id_param; ?>"><?php _e('Authors');
-?></a> settings page to set up how new posts
-<?php print $from_this_feed; ?> will be assigned to
-authors.</p>
-<?php 
-	} /* FeedWordPressSettingsUI::instead_of_authors_box () */
-	
-	function instead_of_categories_box ($link_id = null) {
-		if (!is_null($link_id)) :
-			$from_this_feed = 'from this feed';
-			$by_default = '';
-			$id_param = "&amp;link_id=".$link_id;
-		else :
-			$from_this_feed = 'from syndicated feeds';
-			$by_default = " by default";
-			$id_param = "";
-		endif;
-		
-?>
-<p>Use the <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/categories-page.php<?php print $id_param; ?>"><?php _e('Categories'.FEEDWORDPRESS_AND_TAGS); ?></a>
-settings page to set up how new posts <?php print $from_this_feed; ?> are assigned categories <?php if (FeedWordPressCompatibility::post_tags()) : ?>or tags<?php endif; ?><?php print $by_default; ?>.</p>
-<?php
-	} /* FeedWordPressSettingsUI::instead_of_categories_box () */
 
 	/*static*/ function ajax_nonce_fields () {
 		if (function_exists('wp_nonce_field')) :

@@ -435,21 +435,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressFeedsPage::feed_information_box() */
 
-	function posts_box ($page, $box = NULL) {
-		$id = (isset($page->link) ? $page->link->id : NULL); 
-		FeedWordPressSettingsUI::instead_of_posts_box($id);
-	} /* FeedWordPressFeedsPage::posts_box() */
-
-	function authors_box ($page, $box = NULL) {
-		$id = (isset($page->link) ? $page->link->id : NULL); 
-		FeedWordPressSettingsUI::instead_of_authors_box($id);
-	} /* FeedWordPressFeedsPage::authors_box() */
-	
-	function categories_box ($page, $box = NULL) {
-		$id = (isset($page->link) ? $page->link->id : NULL); 
-		FeedWordPressSettingsUI::instead_of_categories_box($id);
-	} /* FeedWordPressFeedsPage::categories_box() */
-
 	function custom_settings_box ($page, $box = NULL) {
 		?>
 	<p class="setting-description">These custom settings are special fields for the <strong>feed</strong> you are
