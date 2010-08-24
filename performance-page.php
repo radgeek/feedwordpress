@@ -43,7 +43,7 @@ class FeedWordPressPerformancePage extends FeedWordPressAdminPage {
 		);
 	
 		foreach ($boxes_by_methods as $method => $title) :
-			fwp_add_meta_box(
+			add_meta_box(
 				/*id=*/ 'feedwordpress_'.$method,
 				/*title=*/ $title,
 				/*callback=*/ array('FeedWordPressPerformancePage', $method),
