@@ -108,6 +108,10 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	function accept_multiadd () {
 		global $fwp_post;
 
+		if (isset($fwp_post['cancel']) and $fwp_post['cancel']==__(FWP_CANCEL_BUTTON)) :
+			return true; // Continue ....
+		endif;
+		
 		// If this is a POST, validate source and user credentials
 		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_feeds', /*capability=*/ 'manage_links');
 
@@ -220,11 +224,28 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 			$i = 0;
 			?>
-			<form action="<?php print $this->form_action(); ?>" method="post">
-			<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-			<p>Looking up feed information...</p>
+			<form id="multiadd-form" action="<?php print $this->form_action(); ?>" method="post">
+			<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
+			<input type="hidden" name="multiadd" value="<?php print FWP_SYNDICATE_NEW; ?>" />
+			<input type="hidden" name="confirm" value="multiadd" />
+
+			<input type="hidden" name="multiadd" value="<?php print FWP_SYNDICATE_NEW; ?>" />
+			<input type="hidden" name="confirm" value="multiadd" /></div>
+
+			<div id="multiadd-status">
+			<p><img src="<?php print esc_url ( admin_url( 'images/wpspin_light.gif' ) ); ?>" alt="" />
+			Looking up feed information...</p>
+			</div>
+
+			<div id="multiadd-buttons">
+			<input type="submit" class="button" name="cancel" value="<?php _e(FWP_CANCEL_BUTTON); ?>" />
+			<input type="submit" class="button-primary" value="<?php print _e('Subscribe to selected sources →'); ?>" />
+			</div>
+			
+			<p><?php _e('Here are the feeds that FeedWordPress has discovered from the addresses that you provided. To opt out of a subscription, unmark the checkbox next to the feed.'); ?></p>
+			
 			<?php
-			print "<ul>\n"; flush();
+			print "<ul id=\"multiadd-list\">\n"; flush();
 			foreach ($lines as $line) :
 				$url = trim($line);
 				if (strlen($url) > 0) :
@@ -287,10 +308,14 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			endforeach;
 			print "</ul>\n";
 			?>
-			<input type="submit" class="button-primary" value="<?php print _e('Subscribe to selected sources →'); ?>" />
-			<input type="hidden" name="multiadd" value="<?php print FWP_SYNDICATE_NEW; ?>" />
-			<input type="hidden" name="confirm" value="multiadd" />
 			</form>
+			
+			<script type="text/javascript">
+				jQuery(document).ready( function () {
+					// Hide it now that we're done.
+					jQuery('#multiadd-status').fadeOut(500 /*ms*/);
+				} );
+			</script>
 			<?php
 		endif;
 		

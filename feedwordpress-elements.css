@@ -282,4 +282,37 @@ table.twofer td.secondary { padding-left: 10px; width: 30%; }
 	margin-top: 5px;
 	margin-left: 15px;
 }
+#multiadd-status {
+	position: absolute;
+	padding: 10px;
+	background-color: #ecec70;
+	border-radius: 10px;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	-khtml-border-radius: 10px;
+	opacity: 0.85;
+	top: auto;
+	left: 45%;
+	right: auto;
+	bottom: -5px;
+}
+#multiadd-form {
+	position: relative;
+	padding-bottom: 3.0em;
+}
+#multiadd-status img {
+	vertical-align: middle;
+}
+#multiadd-list {
+	border-top: 1px dotted black;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	border-bottom: 1px dotted black;
+}
+#multiadd-buttons {
+	position: absolute;
+	bottom: 0px;
+	margin-top: 15px;
+	margin-left: 15px;
+}
 
