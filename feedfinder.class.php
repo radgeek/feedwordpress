@@ -5,7 +5,9 @@
  * @uses SimplePie_Misc
  */
 
-require_once(ABSPATH . WPINC . '/class-simplepie.php');
+if (!class_exists('SimplePie')) :
+	require_once(ABSPATH . WPINC . '/class-simplepie.php');
+endif;
 require_once(dirname(__FILE__).'/feedwordpresshtml.class.php');
 
 class FeedFinder {

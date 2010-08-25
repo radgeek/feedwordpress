@@ -96,9 +96,10 @@ add_filter('wp_feed_cache_transient_lifetime', array('FeedWordPress', 'cache_lif
 
 // Ensure that we have SimplePie loaded up and ready to go.
 // We no longer need a MagpieRSS upgrade module. Hallelujah!
-require_once(ABSPATH . WPINC . '/feed.php');
+if (!class_exists('SimplePie')) :
+	require_once(ABSPATH . WPINC . '/class-simplepie.php');
+endif;
 require_once(ABSPATH . WPINC . '/class-feed.php');
-require_once(ABSPATH . WPINC . '/class-simplepie.php');
 
 require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
 
@@ -118,7 +119,7 @@ endif;
 
 // Get the path relative to the plugins directory in which FWP is stored
 preg_match (
-	'|'.WP_CONTENT_DIR.'/plugins/(.+)$|',
+	'|'.WP_PLUGIN_DIR.'/(.+)$|',
 	dirname(__FILE__),
 	$ref
 );
