@@ -13,7 +13,7 @@ define('FWP_RESUB_CHECKED', 'Re-subscribe');
 define('FWP_SYNDICATE_NEW', 'Add →');
 define('FWP_UNSUB_FULL', 'Unsubscribe from selected feeds →');
 define('FWP_CANCEL_BUTTON', '× Cancel');
-define('FWP_CHECK_FOR_UPDATES', 'Check →');
+define('FWP_CHECK_FOR_UPDATES', 'Update');
 
 class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	function FeedWordPressSyndicationPage ($filename = NULL) {
@@ -425,12 +425,14 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		?>
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;">Managed by <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
 		<?php print FEEDWORDPRESS_VERSION; ?>.</p>
+		<?php if (FEEDWORDPRESS_BLEG) : ?>
 		<div style="float: left; background: white; margin-top: 5px; margin-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></a></div>
 		<p class="info" style="margin-top: 0px; font-style: italic; font-size: 75%; color: #666;">If you find this tool useful for your daily work, you can
 		contribute to ongoing support and development with
 		<a href="http://feedwordpress.radgeek.com/donate/">a modest donation</a>.</p>
 		<br style="clear: left;" />
-		
+		<?php endif; ?>
+
 		<div class="feedwordpress-actions">
 		<h4>Updates</h4>
 		<ul class="options">
@@ -1028,7 +1030,11 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	endif;
 ?>
 	<?php
-	$bleg_box_ready = (!$bleg_box_hidden or (is_numeric($bleg_box_hidden) and $bleg_box_hidden < time()));
+	$bleg_box_ready = (FEEDWORDPRESS_BLEG and (
+		!$bleg_box_hidden
+		or (is_numeric($bleg_box_hidden) and $bleg_box_hidden < time())
+	));
+	
 	if (isset($_REQUEST['paid']) and $_REQUEST['paid']) :
 		$object->bleg_thanks($subject, $box);
 	elseif ($bleg_box_ready) :
@@ -1064,7 +1070,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	<?php else : ?>
 	<input type="hidden" name="update_uri" value="*" />
 	<?php endif; ?>
-	<input class="button-primary" type="submit" name="update" value="Update" /></div>
+	<input class="button-primary" type="submit" name="update" value="<?php _e(FWP_CHECK_FOR_UPDATES); ?>" /></div>
 	
 	<br style="clear: both" />
 	</form>

@@ -37,6 +37,10 @@ License: GPL
 define ('FEEDWORDPRESS_VERSION', '2010.0824');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
+if (!defined('FEEDWORDPRESS_BLEG')) :
+	define ('FEEDWORDPRESS_BLEG', true);
+endif;
+
 // Defaults
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 define ('DEFAULT_UPDATE_PERIOD', 60); // value in minutes
