@@ -1540,6 +1540,11 @@ class SyndicatedPost {
 		$email = (isset($a['email']) ? $a['email'] : NULL);
 		$authorUrl = (isset($a['uri']) ? $a['uri'] : NULL);
 
+		$hostUrl = $this->link->homepage();
+		if (is_null($hostUrl) or (strlen($hostUrl) < 0)) :
+			$hostUrl = $this->link->uri();
+		endif;
+
 		$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
 		if ($match_author_by_email and !FeedWordPress::is_null_email($email)) :
 			$test_email = $email;
@@ -1549,6 +1554,26 @@ class SyndicatedPost {
 
 		// Never can be too careful...
 		$login = sanitize_user($author, /*strict=*/ true);
+
+		// Possible for, e.g., foreign script author names
+		if (strlen($login) < 1) :
+			// No usable characters in author name for a login.
+			// (Sometimes results from, e.g., foreign scripts.)
+			//
+			// We just need *something* in Western alphanumerics,
+			// so let's try the domain name.
+			//
+			// Uniqueness will be guaranteed below if necessary.
+
+			$url = parse_url($hostUrl);
+			
+			$login = sanitize_user($url['host'], /*strict=*/ true);
+			if (strlen($login) < 1) :
+				// This isn't working. Frak it.
+				$login = 'syndicated';
+			endif;
+		endif;
+
 		$login = apply_filters('pre_user_login', $login);
 
 		$nice_author = sanitize_title($author);
@@ -1581,14 +1606,11 @@ class SyndicatedPost {
 			// First try the user core data table.
 			$id = $wpdb->get_var(
 			"SELECT ID FROM $wpdb->users
-			WHERE
-				TRIM(LCASE(user_login)) = TRIM(LCASE('$login'))
-				OR (
-					LENGTH(TRIM(LCASE(user_email))) > 0
-					AND TRIM(LCASE(user_email)) = TRIM(LCASE('$test_email'))
-				)
-				OR TRIM(LCASE(user_nicename)) = TRIM(LCASE('$nice_author'))
-			");
+			WHERE TRIM(LCASE(display_name)) = TRIM(LCASE('$author'))
+			OR (
+				LENGTH(TRIM(LCASE(user_email))) > 0
+				AND TRIM(LCASE(user_email)) = TRIM(LCASE('$test_email'))
+			)");
 	
 			// If that fails, look for aliases in the user meta data table
 			if (is_null($id)) :
@@ -1617,10 +1639,6 @@ class SyndicatedPost {
 					// more than one user account with an empty e-mail address, so we
 					// need *something* here. Ugh.
 					if (strlen($email) == 0 or FeedWordPress::is_null_email($email)) :
-						$hostUrl = $this->link->homepage();
-						if (is_null($hostUrl) or (strlen($hostUrl) < 0)) :
-							$hostUrl = $this->link->uri();
-						endif;
 						$url = parse_url($hostUrl);
 						$email = $nice_author.'@'.$url['host'];
 					endif;
