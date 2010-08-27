@@ -564,7 +564,7 @@ class SyndicatedPost {
 			$content = $this->item['xhtml']['div'];
 		elseif (isset($this->item['content']['encoded']) and $this->item['content']['encoded']):
 			$content = $this->item['content']['encoded'];
-		else:
+		elseif (isset($this->item['description'])) :
 			$content = $this->item['description'];
 		endif;
 		return $content;
@@ -1397,8 +1397,14 @@ class SyndicatedPost {
 		endif;
 		if (strlen($out['post_title'])==0) :
 			$offset = (int) get_option('gmt_offset') * 60 * 60;
-			$out['post_title'] =
-				$this->post['meta']['syndication_source']
+			if (isset($this->post['meta']['syndication_source'])) :
+				$source_title = $this->post['meta']['syndication_source'];
+			else :
+				$feed_url = parse_url($this->post['meta']['syndication_feed']);
+				$source_title = $feed_url['host'];
+			endif;
+			
+			$out['post_title'] = $source_title
 				.' '.gmdate('Y-m-d H:i:s', $this->published() + $offset);
 			// FIXME: Option for what to fill a blank title with...
 		endif;
