@@ -336,6 +336,16 @@ class SyndicatedLink {
 			do_action("update_syndicated_feed_completed", $this->id, $this);
 		endif;
 		
+		// All done; let's clean up.
+		$this->magpie = NULL;
+		
+		// Avoid circular-reference memory leak in PHP < 5.3.
+		// Cf. <http://simplepie.org/wiki/faq/i_m_getting_memory_leaks>
+		if (method_exists($this->simplepie, '__destruct')) :
+			$this->simplepie->__destruct();
+		endif;
+		$this->simplepie = NULL;
+		
 		return $new_count;
 	} /* SyndicatedLink::poll() */
 
