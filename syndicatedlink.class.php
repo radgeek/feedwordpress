@@ -543,6 +543,32 @@ class SyndicatedLink {
 		return $this->property_cascade($fromFeed, 'link_name', 'feed/title', 'get_title');
 	} /* SyndicatedLink::name () */
 
+	function guid () {
+		$ret = $this->setting('feed/id', NULL, $this->uri());
+		
+		// If we can get it live from the feed, do so.
+		if (is_object($this->simplepie)) :
+			$search = array(
+				array(SIMPLEPIE_NAMESPACE_ATOM_10, 'id'),
+				array(SIMPLEPIE_NAMESPACE_ATOM_03, 'id'),
+				array(SIMPLEPIE_NAMESPACE_RSS_20, 'guid'),
+				array(SIMPLEPIE_NAMESPACE_DC_11, 'identifier'),
+				array(SIMPLEPIE_NAMESPACE_DC_10, 'identifier'),
+			);
+			
+			foreach ($search as $pair) :
+				if ($id_tags = $this->simplepie->get_feed_tags($pair[0], $pair[1])) :
+					$ret = $id_tags[0]['data'];
+					break;
+				elseif ($id_tags = $this->simplepie->get_channel_tags($pair[0], $pair[1])) :
+					$ret = $id_tags[0]['data'];
+					break;
+				endif;
+			endforeach;
+		endif;
+		return $ret;
+	}
+
 	function ttl () {
 		if (is_object($this->magpie)) :
 			$channel = $this->magpie->channel;

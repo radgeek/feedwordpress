@@ -84,14 +84,16 @@ class SyndicatedPost {
 		$fwp_channel = $this->feed; $fwp_feedmeta = $this->feedmeta;
 
 		// Trigger global syndicated_item filter.
-		$this->item = apply_filters('syndicated_item', $this->item, $this);
+		$changed = apply_filters('syndicated_item', $this->item, $this);
+		$this->item = $changed;
 		
 		// Allow for feed-specific syndicated_item filters.
-		$this->item = apply_filters(
+		$changed = apply_filters(
 			"syndicated_item_".$source->uri(),
 			$this->item,
 			$this
 		);
+		$this->item = $changed;
 
 		# Filters can halt further processing by returning NULL
 		if (is_null($this->item)) :
@@ -202,27 +204,49 @@ class SyndicatedPost {
 					apply_filters('syndicated_item_enclosure_type', $enclosure->get_type(), $this);
 			endforeach; endif;
 
-			// In case you want to point back to the blog this was syndicated from
-			if (isset($this->feed->channel['title'])) :
-				$this->post['meta']['syndication_source'] = apply_filters('syndicated_item_source_title', $this->feed->channel['title'], $this);
-			endif;
-
-			if (isset($this->feed->channel['link'])) :
-				$this->post['meta']['syndication_source_uri'] = apply_filters('syndicated_item_source_link', $this->feed->channel['link'], $this);
-			endif;
+			// In case you want to point back to the blog this was
+			// syndicated from.
+			
+			$sourcemeta['syndication_source'] = apply_filters(
+				'syndicated_item_source_title',
+				$this->link->name(),
+				$this
+			);
+			$sourcemeta['syndication_source_uri'] = apply_filters(
+				'syndicated_item_source_link',
+				$this->link->homepage(),
+				$this
+			);
+			$sourcemeta['syndication_source_id'] = apply_filters(
+				'syndicated_item_source_id',
+				$this->link->guid(),
+				$this
+			);
 			
 			// Make use of atom:source data, if present in an aggregated feed
-			if (isset($this->item['source_title'])) :
-				$this->post['meta']['syndication_source_original'] = $this->item['source_title'];
-			endif;
-
-			if (isset($this->item['source_link'])) :
-				$this->post['meta']['syndication_source_uri_original'] = $this->item['source_link'];
+			$entry_source = $this->source();
+			if (!is_null($entry_source)) :
+				foreach ($entry_source as $what => $value) :
+					if (!is_null($value)) :
+						if ($what=='title') : $key = 'syndication_source';
+						elseif ($what=='feed') : $key = 'syndication_feed';
+						else : $key = "syndication_source_${what}";
+						endif;
+						
+						$sourcemeta["${key}_original"] = apply_filters(
+							'syndicated_item_original_source_'.$what,
+							$value,
+							$this
+						);
+					endif;
+				endforeach;
 			endif;
 			
-			if (isset($this->item['source_id'])) :
-				$this->post['meta']['syndication_source_id_original'] = $this->item['source_id'];
-			endif;
+			foreach ($sourcemeta as $meta_key => $value) :
+				if (!is_null($value)) :
+					$this->post['meta'][$meta_key] = $value;
+				endif;
+			endforeach;
 
 			// Store information on human-readable and machine-readable comment URIs
 			
@@ -895,6 +919,34 @@ class SyndicatedPost {
 		return $enclosures;		
 	} /* SyndicatedPost::enclosures() */
 
+	function source ($what = NULL) {
+		$ret = NULL;
+		$source = $this->entry->get_source();
+		if ($source) :
+			$ret = array();
+			$ret['title'] = $source->get_title();
+			$ret['uri'] = $source->get_link();
+			$ret['feed'] = $source->get_link(0, 'self');
+			
+			if ($id_tags = $source->get_source_tags(SIMPLEPIE_NAMESPACE_ATOM_10, 'id')) :
+				$ret['id'] = $id_tags[0]['data'];
+			elseif ($id_tags = $source->get_source_tags(SIMPLEPIE_NAMESPACE_ATOM_03, 'id')) :
+				$ret['id'] = $id_tags[0]['data'];
+			elseif ($id_tags = $source->get_source_tags(SIMPLEPIE_NAMESPACE_RSS_20, 'guid')) :
+				$ret['id'] = $id_tags[0]['data'];
+			elseif ($id_tags = $source->get_source_tags(SIMPLEPIE_NAMESPACE_RSS_10, 'guid')) :
+				$ret['id'] = $id_tags[0]['data'];
+			elseif ($id_tags = $source->get_source_tags(SIMPLEPIE_NAMESPACE_RSS_090, 'guid')) :
+				$ret['id'] = $id_tags[0]['data'];
+			endif;
+		endif;
+		
+		if (!is_null($what) and is_scalar($what)) :
+			$ret = $ret[$what];
+		endif;
+		return $ret;
+	}
+	
 	function comment_link () {
 		$url = null;
 		

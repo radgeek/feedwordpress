@@ -290,26 +290,6 @@ function is_syndicated ($id = NULL) {
 	return (strlen(get_syndication_feed_id($id)) > 0);
 } /* function is_syndicated() */
 
-function get_syndication_source_link ($original = NULL, $id = NULL) {
-	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
-	endif;
-
-	if ($original) : $vals = get_post_custom_values('syndication_source_uri_original', $id);
-	else : $vals = array();
-	endif;
-	
-	if (count($vals) == 0) : $vals = get_post_custom_values('syndication_source_uri', $id);
-	endif;
-	
-	if (count($vals) > 0) : $ret = $vals[0]; else : $ret = NULL; endif;
-
-	return $ret;
-} /* function get_syndication_source_link() */
-
-function the_syndication_source_link ($original = NULL, $id = NULL) {
-	echo get_syndication_source_link($original, $id);
-}
-
 function feedwordpress_display_url ($url, $before = 60, $after = 0) {
 	$bits = parse_url($url);
 	
@@ -330,74 +310,56 @@ function feedwordpress_display_url ($url, $before = 60, $after = 0) {
 	endif;
 
 	return $url;
-}
+} /* feedwordpress_display_url () */
 
-function get_syndication_source ($original = NULL, $id = NULL) {
+function get_syndication_source_property ($original, $id, $local, $remote = NULL) {
+	$ret = NULL;
 	if (is_null($original)) :
 		$original = FeedWordPress::use_aggregator_source_data();
 	endif;
-
-	if ($original) :
-		$vals = get_post_custom_values('syndication_source_original', $id);
-	else :
-		$vals = array();
+	
+	if (is_null($remote)) :
+		$remote = $local . '_original';
 	endif;
 	
-	if (count($vals) == 0) :
-		$vals = get_post_custom_values('syndication_source', $id);
+	$vals = ($original ? get_post_custom_values($remote, $id) : array());
+	if (count($vals) < 1) :
+		$vals = get_post_custom_values($local, $id);
 	endif;
 	
 	if (count($vals) > 0) :
 		$ret = $vals[0];
-	else :
-		$ret = NULL;
 	endif;
+	return $ret;
+} /* function get_syndication_source_property () */
 
-	if (is_null($ret) or strlen(trim($ret)) == 0) :
-		// Fall back to URL of blog
+function the_syndication_source_link ($original = NULL, $id = NULL) { echo get_syndication_source_link($original, $id); }
+function get_syndication_source_link ($original = NULL, $id = NULL) {
+	return get_syndication_source_property($original, $id, 'syndication_source_uri');
+} /* function get_syndication_source_link() */
+
+function the_syndication_source ($original = NULL, $id = NULL) { echo get_syndication_source($original, $id); }
+function get_syndication_source ($original = NULL, $id = NULL) {
+	$ret = get_syndication_source_property($original, $id, 'syndication_source');
+	if (is_null($ret) or strlen(trim($ret)) == 0) : // Fall back to URL of blog
 		$ret = feedwordpress_display_url(get_syndication_source_link());
 	endif;
-
 	return $ret;
 } /* function get_syndication_source() */
 
-function the_syndication_source ($original = NULL, $id = NULL) { echo get_syndication_source($original, $id); }
-
+function the_syndication_feed ($original = NULL, $id = NULL) { echo get_syndication_feed($original, $id); }
 function get_syndication_feed ($original = NULL, $id = NULL) {
-	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
-	endif;
-
-	if ($original) : $vals = get_post_custom_values('syndication_feed_original', $id);
-	else : $vals = array();
-	endif;
-
-	if (count($vals) == 0) : $vals = get_post_custom_values('syndication_feed', $id);
-	endif;
-	
-	if (count($vals) > 0) : $ret = $vals[0]; else : $ret = NULL; endif;
-
-	return $ret;
+	return get_syndication_source_property($original, $id, 'syndication_feed');
 } /* function get_syndication_feed() */
 
-function the_syndication_feed ($original = NULL, $id = NULL) { echo get_syndication_feed($original, $id); }
-
+function the_syndication_feed_guid ($original = NULL, $id = NULL) { echo get_syndication_feed_guid($original, $id); }
 function get_syndication_feed_guid ($original = NULL, $id = NULL) {
-	if (is_null($original)) : $original = FeedWordPress::use_aggregator_source_data();
+	$ret = get_syndication_source_property($original, $id, 'syndication_source_id');
+	if (is_null($ret) or strlen(trim($ret))==0) : // Fall back to URL of feed
+		$ret = get_syndication_feed();
 	endif;
-
-	if ($original) : $vals = get_post_custom_values('syndication_source_id_original', $id);
-	else : $vals = array();
-	endif;
-	
-	if (count($vals) == 0) : $vals = array(get_feed_meta('feed/id', $id));
-	endif;
-	
-	if (count($vals) > 0) : $ret = $vals[0]; else : $ret = NULL; endif;
-
 	return $ret;
 } /* function get_syndication_feed_guid () */
-
-function the_syndication_feed_guid ($original = NULL, $id = NULL) { echo get_syndication_feed_guid($original, $id); }
 
 function get_syndication_feed_id ($id = NULL) { list($u) = get_post_custom_values('syndication_feed_id', $id); return $u; }
 function the_syndication_feed_id ($id = NULL) { echo get_syndication_feed_id($id); }
