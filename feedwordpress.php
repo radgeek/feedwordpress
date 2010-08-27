@@ -255,7 +255,7 @@ function debug_out_human_readable_bytes ($quantity) {
 	$quantity = (int) $quantity;
 	$magnitude = 'B';
 	$orders = array('KB', 'MB', 'GB', 'TB');
-	while (($quantity > 1024) and (count($orders) > 0)) :
+	while (($quantity > (1024*100)) and (count($orders) > 0)) :
 		$quantity = floor($quantity / 1024);
 		$magnitude = array_shift($orders);
 	endwhile;

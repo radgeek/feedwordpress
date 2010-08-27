@@ -798,6 +798,7 @@ function update_feeds_finish ($feed, $added, $dt) {
 	else :
 		echo " completed in $dt second".(($dt==1)?'':'s')."</li>\n";
 	endif;
+	flush();
 }
 
 function fwp_author_list () {
