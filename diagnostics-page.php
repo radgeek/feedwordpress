@@ -115,6 +115,8 @@ testing but absolutely inappropriate for a production server.</p>
 <li><input type="checkbox" name="diagnostics_output[]" value="error_log" <?php print (in_array('error_log', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Log in PHP error logs</label></li>
 <li><input type="checkbox" name="diagnostics_output[]" value="admin_footer" <?php print (in_array('admin_footer', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Display in WordPress admin footer</label></li>
 <li><input type="checkbox" name="diagnostics_output[]" value="echo" <?php print (in_array('echo', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Echo in web browser as they are issued</label></li>
+<li><input type="checkbox" name="diagnostics_output[]" value="echo_in_cronjob" <?php print (in_array('echo_in_cronjob', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Echo to output when they are issued during an update cron job</label></li>
+<li><input type="checkbox" name="diagnostics_output[]" value="email" <?php print (in_array('email', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Send a daily email digest to the site administrator</label></li>
 </ul></td>
 </tr>
 </table>
@@ -123,7 +125,8 @@ testing but absolutely inappropriate for a production server.</p>
 	
 	/*static*/ function updates_box ($page, $box = NULL) {
 		$checked = array(
-			'updated_feeds' => '',
+			'updated_feeds' => '', 'updated_feeds:errors' => '',
+			'updated_feeds:errors:persistent' => '',
 			"syndicated_posts" => '', 'syndicated_posts:meta_data' => '',
 			'feed_items' => '',
 			'memory_usage' => '',
@@ -142,6 +145,8 @@ testing but absolutely inappropriate for a production server.</p>
 <td><p>Show a diagnostic message...</p>
 <ul class="options">
 <li><label><input type="checkbox" name="diagnostics_show[]" value="updated_feeds" <?php print $checked['updated_feeds']; ?> /> as each feed checked for updates</label></li>
+<li><label><input type="checkbox" name="diagnostics_show[]" value="updated_feeds:errors:persistent" <?php print $checked['updated_feeds:errors:persistent'] ?> /> when FeedWordPress encounters repeated errors while checking a feed for updates</label></li>
+<li><label><input type="checkbox" name="diagnostics_show[]" value="updated_feeds:errors" <?php print $checked['updated_feeds:errors']; ?> /> any time FeedWordPress encounters any errors while checking a feed for updates</label></li>
 <li><label><input type="checkbox" name="diagnostics_show[]" value="syndicated_posts" <?php print $checked['syndicated_posts']; ?> /> as each syndicated post is added to the database</label></li>
 <li><label><input type="checkbox" name="diagnostics_show[]" value="feed_items" <?php print $checked['feed_items']; ?> /> as each syndicated item is considered on the feed</label></li>
 <li><label><input type="checkbox" name="diagnostics_show[]" value="memory_usage" <?php print $checked['memory_usage']; ?> /> indicating how much memory was used</label></li>

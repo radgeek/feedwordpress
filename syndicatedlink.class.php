@@ -163,7 +163,7 @@ class SyndicatedLink {
 	function poll ($crash_ts = NULL) {
 		global $wpdb;
 
-		FeedWordPress::diagnostic('updated_feeds', 'Polling feed <'.$this->link->link_rss.'>');
+		FeedWordPress::diagnostic('updated_feeds', 'Polling feed ['.$this->link->link_rss.']');
 
 		$this->simplepie = apply_filters(
 			'syndicated_feed',
@@ -215,6 +215,8 @@ class SyndicatedLink {
 
 				$this->settings['update/timed'] = 'automatically';
 			endif;
+			
+			do_action('syndicated_feed_error', $theError, $oldError, $this);
 			
 			$this->settings['update/error'] = serialize($theError);
 			$this->save_settings(/*reload=*/ true);

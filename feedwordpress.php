@@ -200,7 +200,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	
 	# Inbound XML-RPC update methods
 	add_filter('xmlrpc_methods', 'feedwordpress_xmlrpc_hook');
-	
+
 	# Outbound XML-RPC ping reform
 	remove_action('publish_post', 'generic_ping'); // WP 1.5.x
 	remove_action('do_pings', 'do_all_pings', 10, 1); // WP 2.1, 2.2
@@ -211,9 +211,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_action('feedwordpress_update', 'fwp_hold_pings');
 	add_action('feedwordpress_update_complete', 'fwp_release_pings');
 
-	if (FeedWordPress::update_requested()) :
-		add_action('feedwordpress_check_feed_complete', 'debug_out_feedwordpress_feed_error', 100, 3);
-	endif;
+	add_action('syndicated_feed_error', array('FeedWordPressDiagnostic', 'feed_error'), 100, 3);
 
 	add_action('wp_footer', 'debug_out_feedwordpress_footer', -100);
 	add_action('admin_footer', 'debug_out_feedwordpress_footer', -100);
@@ -227,6 +225,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	endif;
 	add_action($autoUpdateHook, array(&$feedwordpress, 'auto_update'));
 	add_action('init', array(&$feedwordpress, 'init'));
+	add_action('shutdown', array(&$feedwordpress, 'email_diagnostic_log'));
 	add_action('wp_dashboard_setup', array(&$feedwordpress, 'dashboard_setup'));
 
 	# Default sanitizers
@@ -242,14 +241,45 @@ endif; // if (!FeedWordPress::needs_upgrade())
 ## LOGGING FUNCTIONS: log status updates to error_log if you want it ###########
 ################################################################################
 
-function debug_out_feedwordpress_feed_error ($feed, $added, $dt) {
-	if (is_wp_error($added)) :
-		$mesgs = $added->get_error_messages();
+class FeedWordPressDiagnostic {
+	function feed_error ($error, $old, $link) {
+		$wpError = $error['object'];
+		$url = $link->uri();
+		
+		$mesgs = $wpError->get_error_messages();
 		foreach ($mesgs as $mesg) :
-			echo FeedWordPress::log_prefix()." Error updating [{$feed['link/uri']}]: $mesg\n";
-		endforeach;		
-	endif;
-}
+			$mesg = esc_html($mesg);
+			FeedWordPress::diagnostic(
+				'updated_feeds:errors',
+				"Feed Error: [${url}] update returned error: $mesg"
+			);
+			if ($error['ts'] > $error['since']) :
+				$since = date('r', $error['since']);
+				$mostRecent = date('r', $error['ts']);
+				FeedWordPress::diagnostic(
+					'updated_feeds:errors:persistent',
+					"Feed Update Error: [${url}] returning errors"
+					." since ${since}:<br/><code>$mesg</code>",
+					$url, $error['since'], $error['ts']
+				);
+			endif;
+		endforeach;
+	}
+
+	function admin_emails ($id = '') {
+		$users = get_users_of_blog($id);
+		$recipients = array();
+		foreach ($users as $user) :
+			$dude = new WP_User($user->user_id);
+			if ($dude->has_cap('administrator')) :
+				if ($dude->user_email) :
+					$recipients[] = $dude->user_email;
+				endif;
+			endif;
+		endforeach;
+		return $recipients;
+	}
+} /* class FeedWordPressDiagnostic */
 
 function debug_out_human_readable_bytes ($quantity) {
 	$quantity = (int) $quantity;
@@ -943,7 +973,7 @@ class FeedWordPress {
 				$timely = $feed->stale();
 			endif;
 
-			if ($pinged_that and is_null($delta)) :			// If at least one feed was hit for updating...
+			if ($pinged_that and is_null($delta)) :		// If at least one feed was hit for updating...
 				$delta = array('new' => 0, 'updated' => 0);	// ... don't return error condition 
 			endif;
 
@@ -1493,18 +1523,24 @@ class FeedWordPress {
 		return (in_array($level, $show));
 	} /* FeedWordPress::diagnostic_on () */
 
-	function diagnostic ($level, $out) {
+	function diagnostic ($level, $out, $persist = NULL, $since = NULL, $mostRecent = NULL) {
 		global $feedwordpress_admin_footer;
 
 		$output = get_option('feedwordpress_diagnostics_output', array());
-		
+		$dlog = get_option('feedwordpress_diagnostics_log', array());
+
 		$diagnostic_nesting = count(explode(":", $level));
 
 		if (FeedWordPress::diagnostic_on($level)) :
 			foreach ($output as $method) :
 				switch ($method) :
 				case 'echo' :
-					echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.esc_html($out)."</pre></div>";
+					echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.$out."</pre></div>";
+					break;
+				case 'echo_in_cronjob' :
+					if (FeedWordPress::update_requested()) :
+						echo FeedWordPress::log_prefix()." ".$out."\n";
+					endif;
 					break;
 				case 'admin_footer' :
 					$feedwordpress_admin_footer[] = $out;
@@ -1512,15 +1548,130 @@ class FeedWordPress {
 				case 'error_log' :
 					error_log(FeedWordPress::log_prefix().' '.$out);
 					break;
+				case 'email' :
+					if (is_null($persist)) :
+						$sect = 'occurrent';
+						$hook = (isset($dlog['mesg'][$sect]) ? count($dlog['mesg'][$sect]) : 0);
+						$line = array("Time" => time(), "Message" => $out);
+					else :
+						$sect = 'persistent';
+						$hook = md5($level."\n".$persist);
+						$line = array("Since" => $since, "Message" => $out, "Most Recent" => $mostRecent);
+					endif;
+					
+					if (!isset($dlog['mesg'])) : $dlog['mesg'] = array(); endif;
+					if (!isset($dlog['mesg'][$sect])) : $dlog['mesg'][$sect] = array(); endif;
+					
+					$dlog['mesg'][$sect][$hook] = $line;
 				endswitch;
 			endforeach;
 		endif;
+		
+		update_option('feedwordpress_diagnostics_log', $dlog);		
 	} /* FeedWordPress::diagnostic () */
 	
+	function email_diagnostic_log () {
+		$dlog = get_option('feedwordpress_diagnostics_log', array());
+
+		$recipients = get_option('feedwordpress_diagnostics_log_recipients', NULL);
+		if (is_null($recipients)) :
+			$recipients = FeedWordPressDiagnostic::admin_emails();
+		endif;
+		
+		if (isset($dlog['schedule']) and isset($dlog['schedule']['last'])) :
+			if (time() > ($dlog['schedule']['last'] + $dlog['schedule']['freq'])) :
+				// No news is good news; only send if
+				// there are some messages to send.
+				$body = NULL;
+				foreach ($dlog['mesg'] as $sect => $mesgs) :
+					if (count($mesgs) > 0) :
+						if (is_null($body)) : $body = ''; endif;
+						
+						$paradigm = reset($mesgs);
+						$body .= "<h2>".ucfirst($sect)." issues</h2>\n"
+							."<table>\n"
+							."<thead><tr>\n";
+						foreach ($paradigm as $col => $value) :
+							$body .= '<th scope="col">'.$col."</th>\n";
+						endforeach;
+						$body .= "</tr></thead>\n"
+							."<tbody>\n";
+						
+						foreach ($mesgs as $line) :
+							$body .= "<tr>\n";
+							foreach ($line as $col => $cell) :
+								if (is_numeric($cell)) :
+									$cell = date('j-M-y, h:i a', $cell);
+								endif;
+								$class = strtolower(preg_replace('/\s+/', '-', $col));
+								$body .= "<td class=\"$class\">${cell}</td>";
+							endforeach;
+							$body .= "</tr>\n";
+						endforeach;
+						
+						$body .= "</tbody>\n</table>\n\n";
+					endif;
+				endforeach;
+				
+				if (!is_null($body)) :
+					$home = feedwordpress_display_url(get_bloginfo('url'));
+					$subj = $home . " syndication issues for ".date('j-M-y', time());
+					$agent = 'FeedWordPress '.FEEDWORDPRESS_VERSION;
+					$body = <<<EOMAIL
+<html>
+<head>
+<title>$subj</title>
+<style type="text/css">
+	body { background-color: white; color: black; }
+	table { width: 100%; border: 1px solid black; }
+	table thead tr th { background-color: #ff7700; color: white; border-bottom: 1px solid black; }
+	table thead tr { border-bottom: 1px solid black; }
+	table tr { vertical-align: top; }
+	table .since { width: 20%; }
+	table .time { width: 20%; }
+	table .most-recently { width: 20%; }
+	table .message { width: auto; }
+</style>
+</head>
+<body>
+<h1>Syndication Issues encountered by $agent on $home</h1>
+$body
+</body>
+</html>
+
+EOMAIL;
+					foreach ($recipients as $email) :						
+						add_filter('wp_mail_content_type', array('FeedWordPress', 'allow_html_mail'));
+						wp_mail($email, $subj, $body);
+						remove_filter('wp_mail_content_type', array('FeedWordPress', 'allow_html_mail'));
+					endforeach;
+				endif;
+				
+				// Clear the logs
+				$dlog['mesg']['persistent'] = array();
+				$dlog['mesg']['occurrent'] = array();
+				
+				// Set schedule for next update
+				$dlog['schedule']['last'] = time();
+			endif;
+		else :
+			$dlog['schedule'] = array(
+				'freq' =>24 /*hr*/ * 60 /*min*/ * 60 /*s*/,
+				'last' => time(),
+			);
+		endif;
+		
+		update_option('feedwordpress_diagnostics_log', $dlog);
+	} /* FeedWordPress::email_diagnostic_log () */
+	
+	function allow_html_mail () {
+		return 'text/html';
+	} /* FeedWordPress::allow_html_mail () */
+
 	function admin_footer () {
 		global $feedwordpress_admin_footer;
 		foreach ($feedwordpress_admin_footer as $line) :
-			echo '<div><pre>'.esc_html($line).'</pre></div>';
+			echo '<div><pre>'.$line.'</pre></div>';
 		endforeach;
 	} /* FeedWordPress::admin_footer () */
 	
@@ -1756,6 +1907,7 @@ $feedwordpress_admin_footer = array();
 
 function feedwordpress_xmlrpc_hook ($args = array ()) {
 	$args['weblogUpdates.ping'] = 'feedwordpress_pong';
+	$args['feedwordpress.subscribe'] = 'feedwordpress_subscribe';
 	return $args;
 }
 
@@ -1771,6 +1923,46 @@ function feedwordpress_pong ($args) {
 
 		return array('flerror' => false, 'message' => "Thanks for the ping.".implode(' and', $mesg));
 	endif;
+}
+
+function feedwordpress_subscribe ($args) {
+	global $wp_xmlrpc_server;
+	
+	// First two params are username/password
+	$username = $wp_xmlrpc_server->escape(array_shift($args));
+	$password = $wp_xmlrpc_server->escape(array_shift($args));
+	if ( !$user = $wp_xmlrpc_server->login($username, $password) ) :
+		return $wp_xmlrpc_server->error;
+	elseif (!current_user_can('manage_links')) :
+		return new IXR_Error(401, 'Sorry, you cannot change the subscription list.');
+	endif;
+	
+	
+	// The remaining params are feed URLs
+	$ret = array();
+	foreach ($args as $arg) :
+		$finder = new FeedFinder($arg, /*verify=*/ false, /*fallbacks=*/ 1);
+		$feeds = array_values(array_unique($finder->find()));
+		
+		if (count($feeds) > 0) :
+			$link_id = FeedWordPress::syndicate_link(
+				/*title=*/ feedwordpress_display_url($feeds[0]),
+				/*homepage=*/ $feeds[0],
+				/*feed=*/ $feeds[0]
+			);
+			$ret[] = array(
+				'added',
+				$feeds[0],
+				$arg,
+			);
+		else :
+			$ret[] = array(
+				'error',
+				$arg
+			);
+		endif;
+	endforeach;
+	return $ret;
 }
 
 // take your best guess at the realname and e-mail, given a string
