@@ -376,6 +376,54 @@ class SyndicatedLink {
 		return $ret;
 	} /* SyndicatedLink::set_uri () */
 	
+	function deactivate () {
+		global $wpdb;
+		
+		$wpdb->query($wpdb->prepare("
+		UPDATE $wpdb->links SET link_visible = 'N' WHERE link_id = %d
+		", (int) $this->id));
+	} /* SyndicatedLink::deactivate () */
+	
+	function delete () {
+		global $wpdb;
+		
+		$wpdb->query($wpdb->prepare("
+		DELETE FROM $wpdb->postmeta WHERE meta_key='syndication_feed_id'
+		AND meta_value = '%s'
+		", $this->id));
+		
+		$wpdb->query($wpdb->prepare("
+		DELETE FROM $wpdb->links WHERE link_id = %d
+		", (int) $this->id));
+		
+		$this->id = NULL;
+	} /* SyndicatedLink::delete () */
+	
+	function nuke () {
+		global $wpdb;
+		
+		// Make a list of the items syndicated from this feed...
+		$post_ids = $wpdb->get_col($wpdb->prepare("
+		SELECT post_id FROM $wpdb->postmeta
+		WHERE meta_key = 'syndication_feed_id'
+		AND meta_value = '%s'
+		", $this->id));
+	
+		// ... and kill them all
+		if (count($post_ids) > 0) :
+			foreach ($post_ids as $post_id) :
+				// Force scrubbing of deleted post
+				// rather than sending to Trashcan
+				wp_delete_post(
+					/*postid=*/ $post_id,
+					/*force_delete=*/ true
+				);
+			endforeach;
+		endif;
+		
+		$this->delete();
+	} /* SyndicatedLink::nuke () */
+	
 	function map_name_to_new_user ($name, $newuser_name) {
 		global $wpdb;
 

@@ -199,7 +199,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_action('admin_footer', array('FeedWordPress', 'admin_footer'));
 	
 	# Inbound XML-RPC update methods
-	add_filter('xmlrpc_methods', 'feedwordpress_xmlrpc_hook');
+	$feedwordpressRPC = new FeedWordPressRPC;
 
 	# Outbound XML-RPC ping reform
 	remove_action('publish_post', 'generic_ping'); // WP 1.5.x
@@ -1159,37 +1159,38 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::auto_update () */
 
-	function syndicate_link ($name, $uri, $rss) {
+	function find_link ($uri, $field = 'link_rss') {
 		global $wpdb;
 
+		$unslashed = untrailingslashit($uri);
+		$slashed = trailingslashit($uri);
+		$link_id = $wpdb->get_var($wpdb->prepare("
+		SELECT link_id FROM $wpdb->links WHERE $field IN ('%s', '%s')
+		LIMIT 1", $unslashed, $slashed
+		));
+		
+		return $link_id;
+	} /* FeedWordPress::find_link () */
+
+	function syndicate_link ($name, $uri, $rss) {
 		// Get the category ID#
 		$cat_id = FeedWordPress::link_category_id();
 		
 		// WordPress gets cranky if there's no homepage URI
-		if (!isset($uri) or strlen($uri)<1) : $uri = $rss; endif;
+		if (!is_string($uri) or strlen($uri)<1) : $uri = $rss; endif;
 		
-		// Comes in as an array of categories
-		$linkCats = array($cat_id);
-
 		// Check if this feed URL is already being syndicated.
-		$unslashed = untrailingslashit($rss);
-		$slashed = trailingslashit($rss);
-		$link_id = $wpdb->get_var($wpdb->prepare("
-		SELECT link_id FROM $wpdb->links WHERE link_rss IN ('%s', '%s')
-		LIMIT 1", $unslashed, $slashed
-		));
-		
 		$link_id = wp_insert_link(array(
-		"link_id" => $link_id, // insert if nothing was found; else update
+		"link_id" => FeedWordPress::find_link($rss), // insert if nothing was found; else update
 		"link_rss" => $rss,
 		"link_name" => $name,
 		"link_url" => $uri,
-		"link_category" => $linkCats,
+		"link_category" => array($cat_id),
 		"link_visible" => 'Y', // reactivate if inactivated
 		));
 
 		return $link_id;
-	} // function FeedWordPress::syndicate_link()
+	} /* function FeedWordPress::syndicate_link() */
 
 	/*static*/ function syndicated_status ($what, $default) {
 		$ret = get_option("feedwordpress_syndicated_{$what}_status");
@@ -1905,65 +1906,118 @@ $feedwordpress_admin_footer = array();
 ## XML-RPC HOOKS: accept XML-RPC update pings from Contributors ################
 ################################################################################
 
-function feedwordpress_xmlrpc_hook ($args = array ()) {
-	$args['weblogUpdates.ping'] = 'feedwordpress_pong';
-	$args['feedwordpress.subscribe'] = 'feedwordpress_subscribe';
-	return $args;
-}
-
-function feedwordpress_pong ($args) {
-	global $feedwordpress;
-	$delta = @$feedwordpress->update($args[1]);
-	if (is_null($delta)):
-		return array('flerror' => true, 'message' => "Sorry. I don't syndicate <$args[1]>.");
-	else:
-		$mesg = array();
-		if (isset($delta['new'])) { $mesg[] = ' '.$delta['new'].' new posts were syndicated'; }
-		if (isset($delta['updated'])) { $mesg[] = ' '.$delta['updated'].' existing posts were updated'; }
-
-		return array('flerror' => false, 'message' => "Thanks for the ping.".implode(' and', $mesg));
-	endif;
-}
-
-function feedwordpress_subscribe ($args) {
-	global $wp_xmlrpc_server;
+class FeedWordPressRPC {
+	function FeedWordPressRPC () {
+		add_filter('xmlrpc_methods', array(&$this, 'xmlrpc_methods'));
+	}
 	
-	// First two params are username/password
-	$username = $wp_xmlrpc_server->escape(array_shift($args));
-	$password = $wp_xmlrpc_server->escape(array_shift($args));
-	if ( !$user = $wp_xmlrpc_server->login($username, $password) ) :
-		return $wp_xmlrpc_server->error;
-	elseif (!current_user_can('manage_links')) :
-		return new IXR_Error(401, 'Sorry, you cannot change the subscription list.');
-	endif;
+	function xmlrpc_methods ($args = array()) {
+		$args['weblogUpdates.ping'] = array(&$this, 'ping');
+		$args['feedwordpress.subscribe'] = array(&$this, 'subscribe');
+		$args['feedwordpress.deactivate'] = array(&$this, 'deactivate');
+		$args['feedwordpress.delete'] = array(&$this, 'delete');
+		$args['feedwordpress.nuke'] = array(&$this, 'nuke');
+		return $args;
+	}
 	
-	
-	// The remaining params are feed URLs
-	$ret = array();
-	foreach ($args as $arg) :
-		$finder = new FeedFinder($arg, /*verify=*/ false, /*fallbacks=*/ 1);
-		$feeds = array_values(array_unique($finder->find()));
+	function ping ($args) {
+		global $feedwordpress;
 		
-		if (count($feeds) > 0) :
-			$link_id = FeedWordPress::syndicate_link(
-				/*title=*/ feedwordpress_display_url($feeds[0]),
-				/*homepage=*/ $feeds[0],
-				/*feed=*/ $feeds[0]
-			);
-			$ret[] = array(
-				'added',
-				$feeds[0],
-				$arg,
-			);
-		else :
-			$ret[] = array(
-				'error',
-				$arg
-			);
+		$delta = @$feedwordpress->update($args[1]);
+		if (is_null($delta)):
+			return array('flerror' => true, 'message' => "Sorry. I don't syndicate <$args[1]>.");
+		else:
+			$mesg = array();
+			if (isset($delta['new'])) { $mesg[] = ' '.$delta['new'].' new posts were syndicated'; }
+			if (isset($delta['updated'])) { $mesg[] = ' '.$delta['updated'].' existing posts were updated'; }
+	
+			return array('flerror' => false, 'message' => "Thanks for the ping.".implode(' and', $mesg));
 		endif;
-	endforeach;
-	return $ret;
-}
+	}
+	
+	function validate (&$args) {
+		global $wp_xmlrpc_server;
+
+		// First two params are username/password
+		$username = $wp_xmlrpc_server->escape(array_shift($args));
+		$password = $wp_xmlrpc_server->escape(array_shift($args));
+
+		$ret = array();
+		if ( !$user = $wp_xmlrpc_server->login($username, $password) ) :
+			$ret = $wp_xmlrpc_server->error;
+		elseif (!current_user_can('manage_links')) :
+			$ret = new IXR_Error(401, 'Sorry, you cannot change the subscription list.');
+		endif;
+		return $ret;
+	}
+
+	function subscribe ($args) {
+		$ret = $this->validate($args);
+		if (is_array($ret)) : // Success
+			// The remaining params are feed URLs
+			foreach ($args as $arg) :
+				$finder = new FeedFinder($arg, /*verify=*/ false, /*fallbacks=*/ 1);
+				$feeds = array_values(array_unique($finder->find()));
+				
+				if (count($feeds) > 0) :
+					$link_id = FeedWordPress::syndicate_link(
+						/*title=*/ feedwordpress_display_url($feeds[0]),
+						/*homepage=*/ $feeds[0],
+						/*feed=*/ $feeds[0]
+					);
+					$ret[] = array(
+						'added',
+						$feeds[0],
+						$arg,
+					);
+				else :
+					$ret[] = array(
+						'error',
+						$arg
+					);
+				endif;
+			endforeach;
+		endif;
+		return $ret;
+	} /* FeedWordPressRPC::subscribe () */
+	
+	function unsubscribe ($method, $args) {
+		$ret = $this->validate($args);
+		if (is_array($ret)) : // Success
+			// The remaining params are feed URLs
+			foreach ($args as $arg) :
+				$link_id = FeedWordPress::find_link($arg);
+				if ($link_id) :
+					$link = new SyndicatedLink($link_id);
+					
+					$link->{$method}();
+					$ret[] = array(
+						'deactivated',
+						$arg,
+					);
+				else :
+					$ret[] = array(
+						'error',
+						$arg,
+					);
+				endif;
+			endforeach;
+		endif;
+		return $ret;
+	} /* FeedWordPress::unsubscribe () */
+	
+	function deactivate ($args) {
+		return $this->unsubscribe('deactivate', $args);
+	} /* FeedWordPressRPC::deactivate () */
+	
+	function delete ($args) {
+		return $this->unsubscribe('delete', $args);
+	} /* FeedWordPressRPC::delete () */
+	
+	function nuke ($args) {
+		return $this->unsubscribe('nuke', $args);
+	} /* FeedWordPressRPC::nuke () */
+} /* class FeedWordPressRPC */
 
 // take your best guess at the realname and e-mail, given a string
 define('FWP_REGEX_EMAIL_ADDY', '([^@"(<\s]+@[^"@(<\s]+\.[^"@(<\s]+)');
