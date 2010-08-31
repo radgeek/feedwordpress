@@ -1987,6 +1987,11 @@ class FeedWordPressRPC {
 			// The remaining params are feed URLs
 			foreach ($args as $arg) :
 				$link_id = FeedWordPress::find_link($arg);
+				
+				if (!$link_id) :
+					$link_id = FeedWordPress::find_link($arg, 'link_url');
+				endif;
+				
 				if ($link_id) :
 					$link = new SyndicatedLink($link_id);
 					
