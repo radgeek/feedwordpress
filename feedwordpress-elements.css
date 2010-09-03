@@ -321,6 +321,7 @@ table.twofer td.secondary { padding-left: 10px; width: 30%; }
 .feedwordpress-admin {
 	position: relative;
 }
+.feedwordpress-admin .submit { position: relative; z-index: 40; }
 
 #feedwordpress-admin-syndication .heads-up {
 	background-color: #d0d0d0;
