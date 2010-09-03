@@ -2,9 +2,9 @@
 Contributors: Charles Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
-Requires at least: 2.8
-Tested up to: 3.0
-Stable tag: 2010.0623
+Requires at least: 3.0
+Tested up to: 3.0.1
+Stable tag: 2010.0903
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -26,7 +26,7 @@ to use at [Feminist Blogs][].
 
 FeedWordPress is designed with flexibility, ease of use, and ease of
 configuration in mind. You'll need a working installation of WordPress or
-WordPress MU (version [2.8] or later), and also FTP or SFTP access to your web
+WordPress MU (version [3.0] or later), and also FTP or SFTP access to your web
 host. The ability to create cron jobs on your web host is helpful but not
 required. You *don't* need to tweak any plain-text configuration files and you
 *don't* need shell access to your web host to make it work. (Although, I should
@@ -34,14 +34,14 @@ point out, web hosts that *don't* offer shell access are *bad web hosts*.)
 
   [WordPress]: http://wordpress.org/
   [WordPress MU]: http://mu.wordpress.org/
-  [2.8]: http://codex.wordpress.org/Version_2.8
+  [3.0]: http://codex.wordpress.org/Version_3.0
 
 == Installation ==
 
 To use FeedWordPress, you will need:
 
 * 	an installed and configured copy of [WordPress][] or [WordPress MU][]
-	(version 2.8 or later).
+	(version 3.0 or later).
 
 *	FTP, SFTP or shell access to your web host
 
@@ -93,13 +93,77 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
+= 2010.0903 =
+
+*	WORDPRESS 3 REQUIRED: Please note that this release of FeedWordPress
+	*requires* WordPress 3.0 or later. If you are currently using a 2.x
+	branch of WordPress, you will need to upgrade to WordPress 3 before you
+	can successfully upgrade FeedWordPress.
+
+*	BUGFIX: NO MORE DISAPPEARING "SYNDICATED SOURCES" PANEL; INTERNET
+	EXPLORER UI GLITCH APPARENTLY FIXED: Several users independently
+	reported a problem with FWP 2010.0623 and various versions of IE. A
+	problem with the HTML markup caused IE (but not Firefox or
+	Chrome) to completely hide the Syndicated Sources administration panel
+	(the main list of currently-syndicated sources, and the main location
+	for adding new sources, under the Syndication menu item) when a user
+	added their first syndicated feed. Maddeningly, the glitch seemed to
+	affect some IE users and not others: I was never able to reproduce the
+	problem for myself on my own machines. However, the markup of Syndicated
+	Sources has undergone significant changes and corrections since
+	2010.0623, and two independent sources who had been having this problem
+	confirm that they no longer encounter it with the updated version. For
+	the time being, I am going to declare this bug squashed. 
+
+*	BUGFIX: MORE PROTECTION AGAINST FATAL ERRORS FROM PLUGGABLE VERSIONS OF
+	SimplePie: FeedWordPress now takes some precautions that should help to
+	better avoid conflicts for users who have installed pluggable versions
+	of SimplePie for another plugin or theme. (You may not know that you have
+	done this; but if you've been encountering fatal errors indicating that
+	you cannot redeclare class SimplePie, or something along those lines,
+	there is now a better chance that those fatal errors will be eliminated.
+
+*	PERFORMANCE: SIGNIFICANTLY REDUCED MEMORY CONSUMPTION FOR LARGE UPDATES:
+	FeedWordPress is still a memory-hungry little module, especially when
+	you are dealing with very large feeds. However, users should notice a
+	significant reduction in memory overloads, especially if they update a
+	large number of feeds at once.
+
+*	USER INTERFACE IMPROVEMENTS: Nothing is radically different, but there's
+	been a fair amount of extra spit and polish added, including a convenient
+	new Dashboard widget that may save you a trip to the Syndication menu,
+	a lot of effort to make the relationship between global and feed-by-feed
+	settings more obvious to the user and more easily controllable, to make
+	navigation between settings pages easier, to sand off a few rough edges,
+	and to make other improvements on the margins. I hope you'll like how
+	it looks.
+
+*	ADDING MULTIPLE FEEDS: FeedWordPress now provides a convenient mode for
+	adding multiple feeds at once, using either a copy-and-pasted list, or
+	else an OPML file. Go to Syndication --> Syndicated Sources and check
+	out the two new buttons underneath the New Source input box. When you
+	have to add a number of feeds at once, this can save you considerable 
+	time and trouble.
+
+*	IMPROVED HANDLING OF AUTHORS WITH DUPLICATE E-MAIL ADDRESS AND AUTHORS
+	WITH NAMES WRITTEN IN FOREIGN SCRIPTS: WordPress 3 is increasingly picky
+	about what it will accept for new author accounts, and some of the
+	conditions it imposes can cause error conditions that prevent posts from
+	being properly syndicated, or properly attributed, if authors happen to
+	have identical e-mail addresses, or if users are given usernames that are
+	written in non-Western scripts. FeedWordPress now handles these much
+	better, and systematically works to avoid clashes between syndicated
+	authors' account names or in their e-mail addresses, which should result
+	in significantly better results in mapping author names to WordPress
+	user accounts.
+	
 *	MAPPING CATEGORIES ON SYNDICATED POSTS TO TAGS NOW BETTER SUPPORTED:
 	In previous versions, the only way for the Categories provided by a
 	syndicated feed to be mapped into Post Tags was to instruct FWP to
 	create new tags, rather than new categories, for unfamiliar categories
 	from the feed. This works fine if you want tags to be the default; but
 	if you want only a *specific* set of tags, there was no way to get them
-	without getting most or all other categories imported as tags. You can
+	without getting most or all other categories imported as tags.  You can
 	now do this by creating a tag (under Posts ==> Post Tags) before
 	importing the post; when the syndicated category matches a pre-existing
 	tag, the incoming post will be tagged with that tag, without creating
@@ -109,7 +173,59 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 	contain inline tags, marked up using the Rel-Tag microformat
 	<http://microformats.org/wiki/rel-tag>, are now tagged with the tags
 	provided by Rel-Tag format links.
+	
+*	MUCH GREATER CONTROL OVER CATEGORY AND TAG MAPPING: This is partly the
+	result of building in support for a potentially endless set of custom
+	taxonomies (see below), but in general there has been a great deal of
+	effort towards giving you more control over how categories and tags
+	provided by the feed are mapped into terms on the local blog. In
+	particular, you can now force FeedWordPress to create only categories
+	from categories and tags provided by the feed; or to create only tags;
+	or to search both categories and tags for a match; or you can simply
+	force it to drop all of the categories provided by the feed and use
+	only categories or tags that you explicitly provide. In addition, you
+	can now also choose whether to override global categories settings with
+	a local, feed-specific setting; or whether to *add together* *both* the
+	global categories and the local feed-specific categories -- depending
+	on whatever your use-case may demand.
 
+*	CUSTOM POST TYPES AND TAXONOMY SUPPORTS: This is mainly for the
+	super-geeky, but if you use other plugins or themes that make
+	significant use of WordPress's support for custom post types and custom
+	taxonomies, you may be pleased to find that FeedWordPress now allows you
+	to feed incoming posts into any custom feed type that you wish, and to
+	map categories and tags from the feed to custom taxonomies as well as
+	to the standard Category and Tag taxonomies.
+	
+*	STORING NAMESPACED CUSTOM FEED ELEMENTS IN POST CUSTOM FIELDS: If you
+	would like to use FeedWordPress's support for storing custom meta-data
+	from feed elements in the custom fields for a post (for example, to
+	store geolocation data or iTunes media meta-data), you'll find that it's
+	now much easier for you to access these namespaced elements. You always
+	could access them, but in previous versions you might have to write
+	something ugly like $(/{http://www.w3.org/2003/01/geo/wgs84_pos#}lat)
+	just to get at the value of a `<geo:lat>` tag. Now, as long as you use
+	the same mnemonic codes that the feed producer used, you should always
+	be able to write a nice, simple expression like $(/geo:lat) to get the
+	value of a <geo:lat> tag.
+
+*	CUSTOM DIRECTORY STRUCTURE SUPPORT: if you poke at it enough, WordPress
+	is relatively flexible about where it should store admin interface code,
+	uploaded content, plugins, and a number of other things that occupy an
+	important place in the WordPress directory structure. Previous versions
+	of FeedWordPress encountered serious errors or broke entirely when used
+	with directory structures other than the default. This should now be
+	fixed: FWP now supports custom directory structures wherever	WordPress
+	allows them to be customized, rather than depending on the default
+	locations. Enjoy your freedom!
+
+*	MANY NEW FILTERS AND API UTILITY FUNCTIONS FOR ADD-ON PROGRAMMERS: There
+	have been too many improvements to list them all in this ChangeLog, but
+	it means that much more power and ease for folks who are customizing
+	FeedWordPress through PHP filters or add-on modules. Fuller
+	documentation will be put up at the Wiki at feedwordpress.radgeek.org
+	soon.
+	
 = 2010.0623 =
 
 *	WORDPRESS 3.0 COMPATIBILITY / AUTHOR MAPPING INTERFACE ISSUES: I
