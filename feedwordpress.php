@@ -123,7 +123,7 @@ endif;
 
 // Get the path relative to the plugins directory in which FWP is stored
 preg_match (
-	'|'.WP_PLUGIN_DIR.'/(.+)$|',
+	'|'.preg_quote(WP_PLUGIN_DIR).'/(.+)$|',
 	dirname(__FILE__),
 	$ref
 );
@@ -670,26 +670,21 @@ function syndication_comments_feed_link ($link) {
 ################################################################################
 
 function fwp_add_pages () {
-	global $fwp_capability;
 	global $fwp_path;
 
-	$menu = array('Syndicated Sites', 'Syndication', $fwp_capability['manage_links'], $fwp_path.'/syndication.php', NULL);
-	// add icon parameter
-	$menu[] = WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-tiny.png';
-
-	call_user_func_array('add_menu_page', $menu);
+	add_menu_page('Syndicated Sites', 'Syndication', 'manage_links', $fwp_path.'/syndication.php', NULL, WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-tiny.png');
 	do_action('feedwordpress_admin_menu_pre_feeds');
-	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Feeds & Updates', 'Feeds & Updates', $fwp_capability['manage_options'], $fwp_path.'/feeds-page.php');
+	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Feeds & Updates', 'Feeds & Updates', 'manage_options', $fwp_path.'/feeds-page.php');
 	do_action('feedwordpress_admin_menu_pre_posts');
-	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Posts & Links', 'Posts & Links', $fwp_capability['manage_options'], $fwp_path.'/posts-page.php');
+	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Posts & Links', 'Posts & Links', 'manage_options', $fwp_path.'/posts-page.php');
 	do_action('feedwordpress_admin_menu_pre_authors');
-	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Authors', 'Authors', $fwp_capability['manage_options'], $fwp_path.'/authors-page.php');
+	add_submenu_page($fwp_path.'/syndication.php', 'Syndicated Authors', 'Authors', 'manage_options', $fwp_path.'/authors-page.php');
 	do_action('feedwordpress_admin_menu_pre_categories');
-	add_submenu_page($fwp_path.'/syndication.php', 'Categories'.FEEDWORDPRESS_AND_TAGS, 'Categories'.FEEDWORDPRESS_AND_TAGS, $fwp_capability['manage_options'], $fwp_path.'/categories-page.php');
+	add_submenu_page($fwp_path.'/syndication.php', 'Categories'.FEEDWORDPRESS_AND_TAGS, 'Categories'.FEEDWORDPRESS_AND_TAGS, 'manage_options', $fwp_path.'/categories-page.php');
 	do_action('feedwordpress_admin_menu_pre_performance');
-	add_submenu_page($fwp_path.'/syndication.php', 'FeedWordPress Performance', 'Performance', $fwp_capability['manage_options'], $fwp_path.'/performance-page.php');
+	add_submenu_page($fwp_path.'/syndication.php', 'FeedWordPress Performance', 'Performance', 'manage_options', $fwp_path.'/performance-page.php');
 	do_action('feedwordpress_admin_menu_pre_diagnostics');
-	add_submenu_page($fwp_path.'/syndication.php', 'FeedWordPress Diagnostics', 'Diagnostics', $fwp_capability['manage_options'], $fwp_path.'/diagnostics-page.php');
+	add_submenu_page($fwp_path.'/syndication.php', 'FeedWordPress Diagnostics', 'Diagnostics', 'manage_options', $fwp_path.'/diagnostics-page.php');
 } /* function fwp_add_pages () */
 
 function fwp_check_debug () {
@@ -935,7 +930,7 @@ class FeedWordPress {
 			return NULL;
 		endif;
 		
-		if (!is_null($uri)) :
+		if (!is_null($uri) and $uri != '*') :
 			$uri = trim($uri);
 		else : // Update all
 			update_option('feedwordpress_last_update_all', time());
@@ -951,13 +946,13 @@ class FeedWordPress {
 				$crash_ts = NULL;
 			endif;
 		endif;
-		
+
 		// Randomize order for load balancing purposes
 		$feed_set = $this->feeds;
 		shuffle($feed_set);
 
 		$feed_set = apply_filters('feedwordpress_update_feeds', $feed_set, $uri);
-		
+
 		// Loop through and check for new posts
 		$delta = NULL;
 		foreach ($feed_set as $feed) :

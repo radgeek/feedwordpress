@@ -98,101 +98,11 @@ if (!function_exists('stripslashes_deep')) {
 	}
 }
 
-if (!function_exists('get_option')) {
-	function get_option ($option) {
-		return get_settings($option);
-	}
-}
-if (!function_exists('current_user_can')) {
-	$fwp_capability['manage_options'] = 6;
-	$fwp_capability['manage_links'] = 5;
-	function current_user_can ($task) {
-		global $user_level;
-
-		$can = false;
-
-		// This is **not** a full replacement for current_user_can. It
-		// is only for checking the capabilities we care about via the
-		// WordPress 1.5 user levels.
-		switch ($task) :
-		case 'manage_options':
-			$can = ($user_level >= 6);
-			break;
-		case 'manage_links':
-			$can = ($user_level >= 5);
-			break;
-		case 'edit_files':
-			$can = ($user_level >= 9);
-			break;
-		endswitch;
-		return $can;
-	}
-} else {
-	$fwp_capability['manage_options'] = 'manage_options';
-	$fwp_capability['manage_links'] = 'manage_links';
-}
 if (!function_exists('sanitize_user')) {
 	function sanitize_user ($text, $strict = false) {
 		return $text; // Don't munge it if it wasn't munged going in...
 	}
 }
-if (!function_exists('wp_insert_user')) {
-	function wp_insert_user ($userdata) {
-		global $wpdb;
-
-		#-- Help WordPress 1.5.x quack like a duck
-		$login = $userdata['user_login'];
-		$author = $userdata['display_name'];
-		$nice_author = $userdata['user_nicename'];
-		$email = $userdata['user_email'];
-		$url = $userdata['user_url'];
-
-		$wpdb->query (
-			"INSERT INTO $wpdb->users
-			 SET
-				ID='0',
-				user_login='$login',
-				user_firstname='$author',
-				user_nickname='$author',
-				user_nicename='$nice_author',
-				user_description='$author',
-				user_email='$email',
-				user_url='$url'");
-		$id = $wpdb->insert_id;
-		
-		return $id;
-	}
-} /* if (!function_exists('wp_insert_user')) */
-
-if (!function_exists('wp_die')) {
-	function wp_die ( $message, $title = '', $args = array() ) {
-		die($message);
-	} /* wp_die() */
-} /* if */
-
-if (!function_exists('add_post_meta')) {
-	function add_post_meta ($postId, $key, $value, $unique) {
-		global $wpdb;
-
-		$postId = (int) $postId;
-		$key = $wpdb->escape($key);
-		$value = $wpdb->escape($value);
-		
-		$result = $wpdb->query("
-		INSERT INTO $wpdb->postmeta
-		SET
-			post_id='$postId',
-			meta_key='$key',
-			meta_value='$value'
-		");
-		if (!$result) :
-			$err = mysql_error();
-			if (FEEDWORDPRESS_DEBUG) :
-				echo "[DEBUG:".date('Y-m-d H:i:S')."][feedwordpress]: post metadata insertion FAILED for field '$key' := '$value': [$err]";
-			endif;
-		endif;
-	} /* add_post_meta() */
-} /* if */
 
 if (!function_exists('disabled')) {
 	/**
@@ -218,6 +128,7 @@ if (!function_exists('term_exists')) {
 		return is_term($term, $taxonomy, $parent);
 	}
 } /* if */
+
 require_once(dirname(__FILE__).'/feedwordpress-walker-category-checklist.class.php');
 
 function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selected_cats = false, $params = array()) {
