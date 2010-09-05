@@ -4,7 +4,7 @@ Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
 Tested up to: 3.0.1
-Stable tag: 2010.0903
+Stable tag: 2010.0905
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -93,6 +93,22 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
+= 2010.0905 =
+
+*	BUGFIX: CATEGORIES AND TAGS CORRECTLY ASSIGNED IN AUTOMATIC UPDATES.
+	Version 2010.0903 switched over to a new way of assigning categories and
+	tags as part of its support for handling custom taxonomies.
+	Unfortunately, the method that it uses is subjected to some checks of
+	the current user's capabilities, which creates problems for posts that
+	are being inserted into the WordPress database when there *is* no
+	current user logged in (as, for example, when an update is being carried
+	out from a cron job or automatic update). The result was that posts
+	from cron jobs and automatic updates ended up with no Categories and no
+	Tags being assigned. This bug has now been fixed: in 2010.0905, Tags and
+	Categories should be correctly assigned to all posts, regardless of
+	whether they were added from manual updates, cron jobs, or automatic
+	updates.
+	
 = 2010.0903 =
 
 *	WORDPRESS 3 REQUIRED: Please note that this release of FeedWordPress
