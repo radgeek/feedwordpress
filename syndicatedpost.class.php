@@ -1363,8 +1363,8 @@ class SyndicatedPost {
 		return $ret;
 	} /* function SyndicatedPost::store () */
 	
-	function insert_new () {
-		global $wpdb, $wp_db_version;
+	function insert_post ($update = false) {
+		global $wpdb;
 
 		$dbpost = $this->normalize_post(/*new=*/ true);
 		if (!is_null($dbpost)) :
@@ -1378,41 +1378,33 @@ class SyndicatedPost {
 			// user who has `unfiltered_html` capability.
 			add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
 			
-			$this->_wp_id = wp_insert_post($dbpost);
-	
-			// Turn off ridiculous fucking kludges #1 and #2
-			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
-			remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
-	
-			$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
-		endif;
-	} /* SyndicatedPost::insert_new() */
-
-	function update_existing () {
-		global $wpdb;
-
-		// Why the fuck doesn't wp_insert_post already do this?
-		$dbpost = $this->normalize_post(/*new=*/ false);
-		if (!is_null($dbpost)) :
-			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
-	
-			// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
-			add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
-	
-			// Kludge to prevent kses filters from stripping the
-			// content of posts when updating without a logged in
-			// user who has `unfiltered_html` capability.
-			add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
-
-			// Don't munge status fields that the user may have reset manually
-			if (function_exists('get_post_field')) :
+			if ($update and function_exists('get_post_field')) :
+				// Don't munge status fields that the user may
+				// have reset manually
 				$doNotMunge = array('post_status', 'comment_status', 'ping_status');
+				
 				foreach ($doNotMunge as $field) :
 					$dbpost[$field] = get_post_field($field, $this->wp_id());
 				endforeach;
 			endif;
+			
+			// WP3's wp_insert_post scans current_user_can() for the
+			// tax_input, with no apparent way to override. Ugh.
+			add_action(
+			/*hook=*/ 'transition_post_status',
+			/*callback=*/ array(&$this, 'add_terms'),
+			/*priority=*/ -10001, /* very early */
+			/*arguments=*/ 3
+			);
 
 			$this->_wp_id = wp_insert_post($dbpost);
+
+			remove_action(
+			/*hook=*/ 'transition_post_status',
+			/*callback=*/ array(&$this, 'add_terms'),
+			/*priority=*/ -10001, /* very early */
+			/*arguments=*/ 3
+			);
 	
 			// Turn off ridiculous fucking kludges #1 and #2
 			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
@@ -1420,6 +1412,14 @@ class SyndicatedPost {
 	
 			$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
 		endif;
+	} /* function SyndicatedPost::insert_post () */
+	
+	function insert_new () {
+		$this->insert_post(/*update=*/ false);
+	} /* SyndicatedPost::insert_new() */
+
+	function update_existing () {
+		$this->insert_post(/*update=*/ true);
 	} /* SyndicatedPost::update_existing() */
 
 	/**
@@ -1543,15 +1543,50 @@ class SyndicatedPost {
 		 return $wpdb->escape($this->post['post_content']);
 	 }
 	 
-	// SyndicatedPost::add_rss_meta: adds interesting meta-data to each entry
-	// using the space for custom keys. The set of keys and values to add is
-	// specified by the keys and values of $post['meta']. This is used to
-	// store anything that the WordPress user might want to access from a
-	// template concerning the post's original source that isn't provided
-	// for by standard WP meta-data (i.e., any interesting data about the
-	// syndicated post other than author, title, timestamp, categories, and
-	// guid). It's also used to hook into WordPress's support for
-	// enclosures.
+	/**
+	 * SyndicatedPost::add_terms() -- if FeedWordPress is processing an
+	 * automatic update, that generally means that wp_insert_post() is being
+	 * called under the user credentials of whoever is viewing the blog at
+	 * the time -- which usually means no user at all. But wp_insert_post()
+	 * checks current_user_can() before assigning any of the terms in a
+	 * post's tax_input structure -- which is unfortunate, since
+	 * current_user_can() always returns FALSE when there is no current user
+	 * logged in. Meaning that automatic updates get no terms assigned.
+	 *
+	 * So, wp_insert_post() is not going to do the term assignments for us.
+	 * If you want something done right....
+	 *
+	 * @param string $new_status Unused action parameter.
+	 * @param string $old_status Unused action parameter.
+	 * @param object $post The database record for the post just inserted.
+	 */
+	function add_terms ($new_status, $old_status, $post) {
+		if ( is_array($this->post) and isset($this->post['tax_input']) and is_array($this->post['tax_input']) ) :
+			foreach ($this->post['tax_input'] as $taxonomy => $terms) :
+				if (is_array($terms)) :
+					$terms = array_filter($terms); // strip out empties
+				endif;
+				
+				wp_set_post_terms($post->ID, $terms, $taxonomy);
+			endforeach;
+		endif;
+	} /* SyndicatedPost::add_terms () */
+	
+	/**
+	 * SyndicatedPost::add_rss_meta: adds interesting meta-data to each entry
+	 * using the space for custom keys. The set of keys and values to add is
+	 * specified by the keys and values of $post['meta']. This is used to
+	 * store anything that the WordPress user might want to access from a
+	 * template concerning the post's original source that isn't provided
+	 * for by standard WP meta-data (i.e., any interesting data about the
+	 * syndicated post other than author, title, timestamp, categories, and
+	 * guid). It's also used to hook into WordPress's support for
+	 * enclosures.
+	 *
+	 * @param string $new_status Unused action parameter.
+	 * @param string $old_status Unused action parameter.
+	 * @param object $post The database record for the post just inserted.
+	 */
 	function add_rss_meta ($new_status, $old_status, $post) {
 		FeedWordPress::diagnostic('syndicated_posts:meta_data', 'Adding post meta-data: {'.implode(", ", array_keys($this->post['meta'])).'}');
 
