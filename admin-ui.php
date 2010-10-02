@@ -46,10 +46,12 @@ class FeedWordPressAdminPage {
 		if ($this->save_requested_in($post)) : // User mashed Save Changes
 			$this->save_settings($post);
 		endif;
-		do_action($this->dispatch.'_post', $post, $this);		
+		do_action($this->dispatch.'_post', &$post, &$this);		
 	}
 
 	function save_settings ($post) {
+		do_action($this->dispatch.'_save', &$post, &$this);
+
 		if ($this->for_feed_settings()) :
 			// Save settings
 			$this->link->save_settings(/*reload=*/ true);
@@ -62,11 +64,27 @@ class FeedWordPressAdminPage {
 		else :
 			$this->updated = true;
 		endif;
-		do_action($this->dispatch.'_save', $post, $this);
 	} /* FeedWordPressAdminPage::save_settings () */
 
 	function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
 	function for_default_settings () { return !$this->for_feed_settings(); }
+
+	function setting ($names, $fallback_value = NULL, $default = 'default') {
+		if (is_string($names)) :
+			$feed_name = $names;
+			$global_name = 'feedwordpress_'.preg_replace('![\s/]+!', '_', $names);
+		else :
+			$feed_name = $names['feed'];
+			$global_name = 'feedwordpress_'.$names['global'];
+		endif;
+
+		if ($this->for_feed_settings()) : // Check feed-specific setting first; fall back to global
+			$ret = $this->link->setting($feed_name, $global_name, $fallback_value);
+		else : // Check global setting
+			$ret = get_option($global_name, $fallback_value);
+		endif;
+		return $ret;
+	}
 
 	function update_setting ($names, $value, $default = 'default') {
 		if (is_string($names)) :

@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2010.0905
+Version: 2010.0929
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -1405,13 +1405,20 @@ class FeedWordPress {
 	}
 
 	/*static*/ function fetch ($url, $force_feed = true) {
-		$feed = new SimplePie();
+		$pie_class = apply_filters('feedwordpress_simplepie_class', 'SimplePie');
+		$cache_class = apply_filters('feedwordpress_cache_class', 'WP_Feed_Cache');
+		$file_class = apply_filters('feedwordpress_file_class', 'FeedWordPress_File');
+		$parser_class = apply_filters('feedwordpress_parser_class', 'FeedWordPress_Parser');
+
+		$sniffer_class = apply_filters('feedwordpress_sniffer_class', 'FeedWordPress_Content_Type_Sniffer');
+		
+		$feed = new $pie_class;
 		$feed->set_feed_url($url);
-		$feed->set_cache_class('WP_Feed_Cache');
-		$feed->set_file_class('WP_SimplePie_File');
-		$feed->set_content_type_sniffer_class('FeedWordPress_Content_Type_Sniffer');
-		$feed->set_file_class('FeedWordPress_File');
-		$feed->set_parser_class('FeedWordPress_Parser');
+		$feed->set_cache_class($cache_class);
+		//$feed->set_file_class('WP_SimplePie_File');
+		$feed->set_content_type_sniffer_class($sniffer_class);
+		$feed->set_file_class($file_class);
+		$feed->set_parser_class($parser_class);
 		$feed->force_feed($force_feed);
 		$feed->set_cache_duration(FeedWordPress::cache_duration());
 		$feed->init();
