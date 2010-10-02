@@ -175,7 +175,7 @@ class SyndicatedLink {
 		if (is_wp_error($this->simplepie)) :
 			$this->magpie = $this->simplepie;
 		else :
-			$this->magpie = new MagpieFromSimplePie($this->simplepie);
+			$this->magpie = new MagpieFromSimplePie($this->simplepie, NULL);
 		endif;
 
 		$new_count = NULL;
@@ -288,12 +288,22 @@ class SyndicatedLink {
 
 			$posts = apply_filters(
 				'syndicated_feed_items',
-				$this->magpie->originals,
-				$this
+				$this->simplepie->get_items(),
+				&$this
 			);
+
+			$flock = array();
+			foreach ($posts as $key => $original) :
+				$mp = new MagpieFromSimplePie($this->simplepie, $original);
+				$flock[$key] = $mp->get_item();
+				$mp = NULL; unset($mp);
+			endforeach;
+			$this->magpie->originals = $posts;
+			$this->magpie->items = $flock;
+
 			if (is_array($posts)) :
 				foreach ($posts as $key => $original) :
-					$item = $this->magpie->items[$key];
+					$item = $flock[$key];
 					$post = new SyndicatedPost(array(
 						'simplepie' => $original,
 						'magpie' => $item,
