@@ -2,6 +2,8 @@
 class FeedWordPressAdminPage {
 	var $context;
 	var $updated = false;
+	var $mesg = NULL;
+
 	var $link = NULL;
 	var $dispatch = NULL;
 	var $filename = NULL;
@@ -303,18 +305,22 @@ class FeedWordPressAdminPage {
 	}
 
 	function display_update_notice_if_updated ($pagename = 'Syndication', $mesg = NULL) {
+		if (!is_null($mesg)) :
+			$this->mesg = $mesg;
+		endif;
+
 		if ($this->updated) :
 			if ($this->updated === true) :
-				$mesg = $pagename . ' settings updated.';
+				$this->mesg = $pagename . ' settings updated.';
 			else :
-				$mesg = $this->updated;
+				$this->mesg = $this->updated;
 			endif;
 		endif;
 		
-		if (!is_null($mesg)) :
+		if (!is_null($this->mesg)) :
 			?>
 			<div class="updated">
-			<p><?php print esc_html($mesg); ?></p>
+			<p><?php print esc_html($this->mesg); ?></p>
 			</div>
 			<?php
 		endif;
@@ -346,7 +352,7 @@ class FeedWordPressAdminPage {
 	} /* FeedWordPressAdminPage::form_action () */
 
 	function update_message () {
-		return NULL;
+		return $this->mesg;
 	}
 
 	function display () {
