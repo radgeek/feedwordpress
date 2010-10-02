@@ -58,18 +58,35 @@ class MagpieFromSimplePie {
 	 * MagpieFromSimplePie constructor
 	 *
 	 * @param SimplePie $pie The feed to convert to MagpieRSS format.
+	 * @param mixed $item
 	 *
+	 * @uses SimplePie::get_items
+	 * @uses MagpieFromSimplePie::processFeedData
 	 * @uses MagpieFromSimplePie::processItemData
 	 * @uses MagpieFromSimplePie::normalize 
+	 * @uses MagpieFromSimplePie::is_atom
 	 */
-	function MagpieFromSimplePie ($pie) {
+	function MagpieFromSimplePie ($pie, $item = true) {
 		$this->pie = $pie;
-		$this->originals = $this->pie->get_items();
 
-		$this->channel = $this->processFeedData($this->pie->data);
-		foreach ($this->originals as $key => $item) :
-			$this->items[$key] = $this->processItemData($item->data);
-		endforeach;
+		// item in {NULL, true} = process channel data
+		if (!is_a($item, 'SimplePie_Item')) :
+			$this->originals = $this->pie->get_items();
+
+			$this->channel = $this->processFeedData($this->pie->data);
+		else :
+			$this->originals = array($item);
+			$this->channel = NULL;
+		endif;
+
+		// item in {true, SimplePie_Item} = process item data
+		if (!is_null($item)) :
+			foreach ($this->originals as $key => $item) :
+				$this->items[$key] = $this->processItemData($item->data);
+			endforeach;
+		else :
+			$this->items = NULL;
+		endif;
 
 		$this->normalize();
 
@@ -80,16 +97,31 @@ class MagpieFromSimplePie {
 	} /* MagpieFromSimplePie constructor */
 	
 	/**
-	 * MagpieFromSimplePie::get_item: returns a MagpieRSS format array
-	 * which is equivalent to the SimplePie_Item object from which this
+	 * MagpieFromSimplePie::get_items: returns an array of MagpieRSS format arrays
+	 * equivalent to the SimplePie_Item objects in the SimplePie object from which this
 	 * object was constructed.
 	 * 
-	 * @return array A MagpieRSS format array representing this feed item.
+	 * @return array An array of MagpieRSS-format arrays representing the items on this feed
 	 */
 	function get_items () {
 		return $this->items;
-	} /* MagpieFromSimplePie::get_item */
+	} /* MagpieFromSimplePie::get_items () */
 	
+	/**
+	 * MagpieFromSimplePie::get_item: returns a single MagpieRSS format array equivalent
+	 * to a SimplePie_Item object from which this object was constructed.
+	 *
+	 * @return array A MagpieRSS-format array representing an item on this feed
+	 */
+	function get_item () {
+		if (is_array($this->items)) :
+			$ret = reset($this->items);
+		else :
+			$ret = NULL;
+		endif;
+		return $ret;
+	} /* MagpieFromSimplePie::get_item () */
+
 	/**
 	* MagpieFromSimplePie::processFeedData
 	*
@@ -354,113 +386,117 @@ class MagpieFromSimplePie {
 	 * @uses FeedTime::timestamp
 	 */
 	function normalize () {
-		// Normalize channel data
-		if ( $this->is_atom() ) :
-			// Atom 1.0 elements <=> Atom 0.3 elements (Thanks, o brilliant wordsmiths of the Atom 1.0 standard!)
-			if ($this->feed_version() < 1.0) :
-				$this->normalize_element($this->channel, 'tagline', $this->channel, 'subtitle');
-				$this->normalize_element($this->channel, 'copyright', $this->channel, 'rights');
-				$this->normalize_element($this->channel, 'modified', $this->channel, 'updated');
-			else :
-				$this->normalize_element($this->channel, 'subtitle', $this->channel, 'tagline');
-				$this->normalize_element($this->channel, 'rights', $this->channel, 'copyright');
-				$this->normalize_element($this->channel, 'updated', $this->channel, 'modified');
-			endif;
-			$this->normalize_element($this->channel, 'author', $this->channel['dc'], 'creator', 'normalize_atom_person');
-			$this->normalize_element($this->channel, 'contributor', $this->channel['dc'], 'contributor', 'normalize_atom_person');
-	
-			// Atom elements to RSS elements
-			$this->normalize_element($this->channel, 'subtitle', $this->channel, 'description');
-		
-			if ( isset($this->channel['logo']) ) :
-				$this->normalize_element($this->channel, 'logo', $this->image, 'url');
-				$this->normalize_element($this->channel, 'link', $this->image, 'link');
-				$this->normalize_element($this->channel, 'title', $this->image, 'title');
-			endif;
-
-		elseif ( $this->is_rss() ) :
-			// Normalize image element from where stupid MagpieRSS puts it
-			//$this->normalize_element($this->channel, 'image_title', $this->image, 'title');
-			//$this->normalize_element($this->channel, 'image_link', $this->image, 'link');
-			//$this->normalize_element($this->channel, 'image_url', $this->image, 'url');
-
-			// ... and, gag, textInput
-			//$this->normalize_element($this->channel, 'textinput_title', $this->textinput, 'title');
-			//$this->normalize_element($this->channel, 'textinput_link', $this->textinput, 'link');
-			//$this->normalize_element($this->channel, 'textinput_name', $this->textinput, 'name');
-			//$this->normalize_element($this->channel, 'textinput_description', $this->textinput, 'description');
-			
-			// RSS elements to Atom elements
-			$this->normalize_element($this->channel, 'description', $this->channel, 'tagline'); // Atom 0.3
-			$this->normalize_element($this->channel, 'description', $this->channel, 'subtitle'); // Atom 1.0 (yay wordsmithing!)
-			$this->normalize_element($this->image, 'url', $this->channel, 'logo');
-		endif;
-		
-		// Now loop through and normalize item data
-		for ( $i = 0; $i < count($this->items); $i++) :
-			$item = $this->items[$i];
-			
-			// if atom populate rss fields and normalize 0.3 and 1.0 feeds
+		if (!is_null($this->channel)) :
+			// Normalize channel data
 			if ( $this->is_atom() ) :
-				// Atom 1.0 elements <=> Atom 0.3 elements
+				// Atom 1.0 elements <=> Atom 0.3 elements (Thanks, o brilliant wordsmiths of the Atom 1.0 standard!)
 				if ($this->feed_version() < 1.0) :
-					$this->normalize_element($item, 'modified', $item, 'updated');
-					$this->normalize_element($item, 'issued', $item, 'published');
+					$this->normalize_element($this->channel, 'tagline', $this->channel, 'subtitle');
+					$this->normalize_element($this->channel, 'copyright', $this->channel, 'rights');
+					$this->normalize_element($this->channel, 'modified', $this->channel, 'updated');
 				else :
-					$this->normalize_element($item, 'updated', $item, 'modified');
-					$this->normalize_element($item, 'published', $item, 'issued');
+					$this->normalize_element($this->channel, 'subtitle', $this->channel, 'tagline');
+					$this->normalize_element($this->channel, 'rights', $this->channel, 'copyright');
+					$this->normalize_element($this->channel, 'updated', $this->channel, 'modified');
 				endif;
-
-				$this->normalize_author_inheritance($item, $this->originals[$i]);
+				$this->normalize_element($this->channel, 'author', $this->channel['dc'], 'creator', 'normalize_atom_person');
+				$this->normalize_element($this->channel, 'contributor', $this->channel['dc'], 'contributor', 'normalize_atom_person');
 	
 				// Atom elements to RSS elements
-				$this->normalize_element($item, 'author', $item['dc'], 'creator', 'normalize_atom_person');
-				$this->normalize_element($item, 'contributor', $item['dc'], 'contributor', 'normalize_atom_person');
-				$this->normalize_element($item, 'summary', $item, 'description');
-				$this->normalize_element($item, 'atom_content', $item['content'], 'encoded');
-				$this->normalize_element($item, 'link_enclosure', $item, 'enclosure', 'normalize_enclosure');
-
-				// Categories
-				if ( isset($item['category#']) ) : // Atom 1.0 categories to dc:subject and RSS 2.0 categories
-					$this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
-				elseif ( isset($item['dc']['subject#']) ) : // dc:subject to Atom 1.0 and RSS 2.0 categories
-					$this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
+				$this->normalize_element($this->channel, 'subtitle', $this->channel, 'description');
+		
+				if ( isset($this->channel['logo']) ) :
+					$this->normalize_element($this->channel, 'logo', $this->image, 'url');
+					$this->normalize_element($this->channel, 'link', $this->image, 'link');
+					$this->normalize_element($this->channel, 'title', $this->image, 'title');
 				endif;
 
-				// Normalized item timestamp
-				$item_date = (isset($item['published']) ) ? $item['published'] : $item['updated'];
 			elseif ( $this->is_rss() ) :
+				// Normalize image element from where stupid MagpieRSS puts it
+				//$this->normalize_element($this->channel, 'image_title', $this->image, 'title');
+				//$this->normalize_element($this->channel, 'image_link', $this->image, 'link');
+				//$this->normalize_element($this->channel, 'image_url', $this->image, 'url');
+
+				// ... and, gag, textInput
+				//$this->normalize_element($this->channel, 'textinput_title', $this->textinput, 'title');
+				//$this->normalize_element($this->channel, 'textinput_link', $this->textinput, 'link');
+				//$this->normalize_element($this->channel, 'textinput_name', $this->textinput, 'name');
+				//$this->normalize_element($this->channel, 'textinput_description', $this->textinput, 'description');
+			
 				// RSS elements to Atom elements
-				$this->normalize_element($item, 'description', $item, 'summary');
-				$this->normalize_element($item, 'enclosure', $item, 'link_enclosure', 'normalize_enclosure');
+				$this->normalize_element($this->channel, 'description', $this->channel, 'tagline'); // Atom 0.3
+				$this->normalize_element($this->channel, 'description', $this->channel, 'subtitle'); // Atom 1.0 (yay wordsmithing!)
+				$this->normalize_element($this->image, 'url', $this->channel, 'logo');
+			endif;
+		endif;
+
+		if (!is_null($this->items)) :
+			// Now loop through and normalize item data
+			for ( $i = 0; $i < count($this->items); $i++) :
+				$item = $this->items[$i];
+			
+				// if atom populate rss fields and normalize 0.3 and 1.0 feeds
+				if ( $this->is_atom() ) :
+					// Atom 1.0 elements <=> Atom 0.3 elements
+					if ($this->feed_version() < 1.0) :
+						$this->normalize_element($item, 'modified', $item, 'updated');
+						$this->normalize_element($item, 'issued', $item, 'published');
+					else :
+						$this->normalize_element($item, 'updated', $item, 'modified');
+						$this->normalize_element($item, 'published', $item, 'issued');
+					endif;
+
+					$this->normalize_author_inheritance($item, $this->originals[$i]);
+	
+					// Atom elements to RSS elements
+					$this->normalize_element($item, 'author', $item['dc'], 'creator', 'normalize_atom_person');
+					$this->normalize_element($item, 'contributor', $item['dc'], 'contributor', 'normalize_atom_person');
+					$this->normalize_element($item, 'summary', $item, 'description');
+					$this->normalize_element($item, 'atom_content', $item['content'], 'encoded');
+					$this->normalize_element($item, 'link_enclosure', $item, 'enclosure', 'normalize_enclosure');
+
+					// Categories
+					if ( isset($item['category#']) ) : // Atom 1.0 categories to dc:subject and RSS 2.0 categories
+						$this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
+					elseif ( isset($item['dc']['subject#']) ) : // dc:subject to Atom 1.0 and RSS 2.0 categories
+						$this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
+					endif;
+
+					// Normalized item timestamp
+					$item_date = (isset($item['published']) ) ? $item['published'] : $item['updated'];
+				elseif ( $this->is_rss() ) :
+					// RSS elements to Atom elements
+					$this->normalize_element($item, 'description', $item, 'summary');
+					$this->normalize_element($item, 'enclosure', $item, 'link_enclosure', 'normalize_enclosure');
 				
-				// Categories
-				if ( isset($item['category#']) ) : // RSS 2.0 categories to dc:subject and Atom 1.0 categories
-					$this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
-				elseif ( isset($item['dc']['subject#']) ) : // dc:subject to Atom 1.0 and RSS 2.0 categories
-					$this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
-				endif;
+					// Categories
+					if ( isset($item['category#']) ) : // RSS 2.0 categories to dc:subject and Atom 1.0 categories
+						$this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
+					elseif ( isset($item['dc']['subject#']) ) : // dc:subject to Atom 1.0 and RSS 2.0 categories
+						$this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
+					endif;
 	
-				// Normalized item timestamp
-				if (isset($item['pubdate'])) :
-					$item_date = $item['pubdate'];
-				elseif (isset($item['dc']['date'])) :
-					$item_date = $item['dc']['date'];
-				else :
-					$item_date = null;
+					// Normalized item timestamp
+					if (isset($item['pubdate'])) :
+						$item_date = $item['pubdate'];
+					elseif (isset($item['dc']['date'])) :
+						$item_date = $item['dc']['date'];
+					else :
+						$item_date = null;
+					endif;
 				endif;
-			endif;
 
-			if ( $item_date ) :
-				$date_timestamp = new FeedTime($item_date);
+				if ( $item_date ) :
+					$date_timestamp = new FeedTime($item_date);
 	
-				if (!$date_timestamp->failed()) :
-					$item['date_timestamp'] = $date_timestamp->timestamp();
+					if (!$date_timestamp->failed()) :
+						$item['date_timestamp'] = $date_timestamp->timestamp();
+					endif;
 				endif;
-			endif;
 
-			$this->items[$i] = $item;
-		endfor;
+				$this->items[$i] = $item;
+			endfor;
+		endif;
 	} /* MagpieFromSimplePie::normalize() */
 
 	/**
