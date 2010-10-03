@@ -45,6 +45,15 @@ class SyndicatedPost {
 			$this->entry = $item['simplepie'];
 			$this->item = $item['magpie'];
 			$item = $item['magpie'];
+		elseif (is_a($item, 'SimplePie_Item')) :
+			$this->entry = $item;
+			
+			// convert to Magpie for compat purposes
+			$mp = new MagpieFromSimplePie($source->simplepie, $this->entry);
+			$this->item = $mp->get_item();
+			
+			// done with conversion object
+			$mp = NULL; unset($mp);
 		else :
 			$this->item = $item;
 		endif;

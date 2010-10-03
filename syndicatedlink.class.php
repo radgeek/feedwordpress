@@ -292,22 +292,11 @@ class SyndicatedLink {
 				&$this
 			);
 
-			$flock = array();
-			foreach ($posts as $key => $original) :
-				$mp = new MagpieFromSimplePie($this->simplepie, $original);
-				$flock[$key] = $mp->get_item();
-				$mp = NULL; unset($mp);
-			endforeach;
 			$this->magpie->originals = $posts;
-			$this->magpie->items = $flock;
 
 			if (is_array($posts)) :
-				foreach ($posts as $key => $original) :
-					$item = $flock[$key];
-					$post = new SyndicatedPost(array(
-						'simplepie' => $original,
-						'magpie' => $item,
-					), $this);
+				foreach ($posts as $key => $item) :
+					$post = new SyndicatedPost($item, $this);
 
 					if (!$resume or !in_array(trim($post->guid()), $processed)) :
 						$processed[] = $post->guid();
