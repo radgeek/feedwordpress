@@ -36,7 +36,7 @@ class SyndicatedPost {
 	 * @param array $item The item syndicated from the feed.
 	 * @param SyndicatedLink $source The feed it was syndicated from.
 	 */
-	function SyndicatedPost ($item, $source) {
+	function SyndicatedPost ($item, &$source) {
 		global $wpdb;
 
 		if (is_array($item)
@@ -49,7 +49,7 @@ class SyndicatedPost {
 			$this->item = $item;
 		endif;
 
-		$this->link = $source;
+		$this->link =& $source;
 		$this->feed = $source->magpie;
 		$this->feedmeta = $source->settings;
 
