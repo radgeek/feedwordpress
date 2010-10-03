@@ -1753,6 +1753,7 @@ class SyndicatedPost {
 					$userdata['user_email'] = $email;
 					$userdata['user_url'] = $authorUrl;
 					$userdata['display_name'] = $author;
+					$userdata['role'] = 'contributor';
 					
 					do { // Keep trying until you get it right. Or until PHP crashes, I guess.
 						$id = wp_insert_user($userdata);
@@ -1787,6 +1788,14 @@ class SyndicatedPost {
 
 		if ($id) :
 			$this->link->settings['map authors']['name'][strtolower(trim($author))] = $id;
+			
+			// Multisite: Check whether the author has been recorded
+			// on *this* blog before. If not, put her down as a
+			// Contributor for *this* blog.
+			$user = new WP_User((int) $id);
+			if (empty($user->roles)) :
+				$user->add_role('contributor');
+			endif;
 		endif;
 		return $id;	
 	} // function SyndicatedPost::author_id ()
