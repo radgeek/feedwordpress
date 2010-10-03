@@ -82,6 +82,24 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 			endif;
 			update_option('feedwordpress_diagnostics_show', $post['diagnostics_show']);
 
+			if ($post['diagnostics_show']
+			and in_array('updated_feeds:errors:persistent', $post['diagnostics_show'])) :
+				update_option('feedwordpress_diagnostics_persistent_errors_hours', (int) $post['diagnostics_persistent_error_hours']);
+			else :
+				delete_option('feedwordpress_diagnostics_persistent_errors_hours');
+			endif;
+			
+			if (in_array('email', $post['diagnostics_output'])) :
+				$ded = $post['diagnostics_email_destination'];
+				if ('mailto'==$ded) :
+					$ded .= ':'.$post['diagnostics_email_destination_address'];
+				endif;
+
+				update_option('feedwordpress_diagnostics_email_destination', $ded);
+			else :
+				delete_option('feedwordpress_diagnostics_email_destination');
+			endif;
+			
 			$this->updated = true; // Default update message
 		endif;
 	} /* FeedWordPressDiagnosticsPage::accept_POST () */
@@ -91,6 +109,16 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		$settings['debug'] = (get_option('feedwordpress_debug')=='yes');
 
 		$diagnostics_output = get_option('feedwordpress_diagnostics_output', array());
+		
+		$users = fwp_author_list();
+
+		$ded = get_option('feedwordpress_diagnostics_email_destination', 'admins');
+
+		if (preg_match('/^mailto:(.*)$/', $ded, $ref)) :
+			$ded_addy = $ref[1];
+		else :
+			$ded_addy = NULL;
+		endif;
 		
 		// Hey ho, let's go...
 		?>
@@ -116,10 +144,36 @@ testing but absolutely inappropriate for a production server.</p>
 <li><input type="checkbox" name="diagnostics_output[]" value="admin_footer" <?php print (in_array('admin_footer', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Display in WordPress admin footer</label></li>
 <li><input type="checkbox" name="diagnostics_output[]" value="echo" <?php print (in_array('echo', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Echo in web browser as they are issued</label></li>
 <li><input type="checkbox" name="diagnostics_output[]" value="echo_in_cronjob" <?php print (in_array('echo_in_cronjob', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Echo to output when they are issued during an update cron job</label></li>
-<li><input type="checkbox" name="diagnostics_output[]" value="email" <?php print (in_array('email', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Send a daily email digest to the site administrator</label></li>
+<li><input type="checkbox" name="diagnostics_output[]" value="email" <?php print (in_array('email', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Send a daily email digest to:</label> <select name="diagnostics_email_destination" id="diagnostics-email-destination" size="1">
+<option value="admins"<?php if ('admins'==$ded) : ?> selected="selected"<?php endif; ?>>the site administrators</option>
+<?php foreach ($users as $id => $name) : ?>
+<option value="user:<?php print (int) $id; ?>"<?php if (sprintf('user:%d', (int) $id)==$ded) : ?> selected="selected"<?php endif; ?>><?php print esc_html($name); ?></option>
+<?php endforeach; ?>
+<option value="mailto"<?php if (!is_null($ded_addy)) : ?> selected="selected"<?php endif; ?>>another e-mail address...</option>
+</select>
+<input type="email" id="diagnostics-email-destination-address" name="diagnostics_email_destination_address" value="<?php print $ded_addy; ?>" placeholder="email address" /></li>
 </ul></td>
 </tr>
 </table>
+
+<script type="text/javascript">
+	contextual_appearance(
+		'diagnostics-email-destination',
+		'diagnostics-email-destination-address',
+		'diagnostics-email-destination-default',
+		'mailto',
+		'inline'
+	);
+	jQuery('#diagnostics-email-destination').change ( function () {
+		contextual_appearance(
+			'diagnostics-email-destination',
+			'diagnostics-email-destination-address',
+			'diagnostics-email-destination-default',
+			'mailto',
+			'inline'
+		);
+	} );	
+</script>
 		<?php
 	} /* FeedWordPressDiagnosticsPage::diagnostics_box () */
 	
@@ -137,6 +191,8 @@ testing but absolutely inappropriate for a production server.</p>
 			$checked[$thingy] = ' checked="checked"';
 		endforeach; endif;
 
+		$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
+
 		// Hey ho, let's go...
 		?>
 <table class="edit-form">
@@ -145,7 +201,7 @@ testing but absolutely inappropriate for a production server.</p>
 <td><p>Show a diagnostic message...</p>
 <ul class="options">
 <li><label><input type="checkbox" name="diagnostics_show[]" value="updated_feeds" <?php print $checked['updated_feeds']; ?> /> as each feed checked for updates</label></li>
-<li><label><input type="checkbox" name="diagnostics_show[]" value="updated_feeds:errors:persistent" <?php print $checked['updated_feeds:errors:persistent'] ?> /> when FeedWordPress encounters repeated errors while checking a feed for updates</label></li>
+<li><label><input type="checkbox" name="diagnostics_show[]" value="updated_feeds:errors:persistent" <?php print $checked['updated_feeds:errors:persistent'] ?> /> when attempts to update a feed have resulted in errors</label> <label>for at least <input type="number" min="1" max="360" step="1" name="diagnostics_persistent_error_hours" value="<?php print $hours; ?>" /> hours</label></li>
 <li><label><input type="checkbox" name="diagnostics_show[]" value="updated_feeds:errors" <?php print $checked['updated_feeds:errors']; ?> /> any time FeedWordPress encounters any errors while checking a feed for updates</label></li>
 <li><label><input type="checkbox" name="diagnostics_show[]" value="syndicated_posts" <?php print $checked['syndicated_posts']; ?> /> as each syndicated post is added to the database</label></li>
 <li><label><input type="checkbox" name="diagnostics_show[]" value="feed_items" <?php print $checked['feed_items']; ?> /> as each syndicated item is considered on the feed</label></li>

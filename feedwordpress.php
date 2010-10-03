@@ -253,7 +253,11 @@ class FeedWordPressDiagnostic {
 				'updated_feeds:errors',
 				"Feed Error: [${url}] update returned error: $mesg"
 			);
-			if ($error['ts'] > $error['since']) :
+			
+			$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
+			$span = ($error['ts'] - $error['since']);
+
+			if ($span >= ($hours * 60 * 60)) :
 				$since = date('r', $error['since']);
 				$mostRecent = date('r', $error['ts']);
 				FeedWordPress::diagnostic(
@@ -1576,8 +1580,19 @@ class FeedWordPress {
 	function email_diagnostic_log () {
 		$dlog = get_option('feedwordpress_diagnostics_log', array());
 
-		$recipients = get_option('feedwordpress_diagnostics_log_recipients', NULL);
-		if (is_null($recipients)) :
+		$ded = get_option('feedwordpress_diagnostics_email_destination', 'admins');
+		
+		// e-mail address
+		if (preg_match('/^mailto:(.*)$/', $ded, $ref)) :
+			$recipients = array($ref[1]);
+			
+		// userid
+		elseif (preg_match('/^user:(.*)$/', $ded, $ref)) :
+			$userdata = get_userdata((int) $ref[1]);
+			$recipients = array($userdata->user_email);
+		
+		// admins
+		else :
 			$recipients = FeedWordPressDiagnostic::admin_emails();
 		endif;
 		
@@ -1659,7 +1674,7 @@ EOMAIL;
 			endif;
 		else :
 			$dlog['schedule'] = array(
-				'freq' =>24 /*hr*/ * 60 /*min*/ * 60 /*s*/,
+				'freq' => 24 /*hr*/ * 60 /*min*/ * 60 /*s*/,
 				'last' => time(),
 			);
 		endif;
