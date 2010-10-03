@@ -1,7 +1,7 @@
 <?php
 class UpdatedPostsControl {
 	var $page;
-	function UpdatedPostsControl ($page) {
+	function UpdatedPostsControl (&$page) {
 		$this->page =& $page;
 	} /* UpdatedPostsControl constructor */
 
