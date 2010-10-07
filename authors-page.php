@@ -44,31 +44,37 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 		// Hey ho, let's go...
 		?>
 <table class="form-table">
-<tbody>
-<tr>
-  <th>New authors</th>
-  <td><span>Authors who haven't been syndicated before</span>
-  <select style="max-width: 27.0em" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');">
-<?php if ($page->for_feed_settings()) : ?>
-    <option value="site-default"<?php print $unfamiliar['site-default']; ?>>are handled according to the default for all feeds</option>
-<?php endif; ?>
-    <option value="create"<?php print $unfamiliar['create']; ?>>will have a new author account created for them</option>
-    <?php foreach ($page->authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>"<?php print (isset($unfamiliar[$author_id]) ? $unfamiliar[$author_id] : ''); ?>>will have their posts attributed to <?php echo $author_name; ?></option>
-    <?php endforeach; ?>
-    <option value="newuser">will have their posts attributed to a user named ...</option>
-    <option value="filter"<?php print $unfamiliar['filter'] ?>>get filtered out</option>
-  </select>
-
-  <span id="unfamiliar-author-newuser"><input type="text" name="unfamiliar_author_newuser" value="" /></span></p>
-  </td>
-</tr>
-
 <?php
 if ($page->for_feed_settings()) :
+	$map = $this->link->setting('map authors', NULL, array());
 ?>
-<tr><th>Syndicated authors</th>
-<td>For attributing posts by specific authors. Blank out a name to delete the rule. Fill in a new name at the bottom to create a new rule.</p>
+<tr><th>Matching authors</th>
+<td><p>How should FeedWordPress attribute posts from this feed to WordPress
+authors?</p>
+<ul class="settings">
+<li><p><input type="radio" name="author_rules_name[all]" value="*"
+<?php if (isset($map['name']['*'])) : $author_action = $map['name']['*']; ?>
+	checked="checked"
+<?php else : $author_action = NULL; ?>
+<?php endif; ?>
+	/> All posts syndicated
+from this feed <select class="author-rules" id="author-rules-all"
+name="author_rules_action[all]" onchange="contextual_appearance('author-rules-all', 'author-rules-all-newuser', 'author-rules-all-default', 'newuser', 'inline');">
+    <?php foreach ($page->authorlist as $local_author_id => $local_author_name) : ?>
+    <option value="<?php echo $local_author_id; ?>"<?php if ($local_author_id==$author_action) : echo ' selected="selected"'; endif; ?>>are assigned to <?php echo $local_author_name; ?></option>
+    <?php endforeach; ?>
+    <option value="newuser">will be assigned to a new user...</option>
+    <option value="filter"<?php if ('filter'==$author_action) : echo ' selected="selected"'; endif; ?>>get filtered out</option>
+  </select>
+  <span class="author-rules-newuser" id="author-rules-all-newuser">named
+  <input type="text" name="author_rules_newuser[all]" value="" /></span></p></li>
+<li><p><input type="radio" name="author_rules_name[all]" value=""
+<?php if (!isset($map['name']['*'])) : ?>
+	checked="checked"
+<?php endif; ?>
+/> Attribute posts to authors based on automatic mapping rules. (Blank out a
+name to delete the rule. Fill in a new name at the bottom to create a new rule.)</p>
+
 <table style="width: 100%">
 <?php
 	if (isset($this->link->settings['map authors'])) :
@@ -77,7 +83,8 @@ if ($page->for_feed_settings()) :
 		$page->rule_count=0;
 		foreach ($this->link->settings['map authors'] as $author_rules) :
 			foreach ($author_rules as $author_name => $author_action) :
-				$page->rule_count++; 
+				if ($author_name != '*') :
+					$page->rule_count++; 
 ?>
 <tr>
 <th style="text-align: left; width: 15.0em">Posts by <input type="text" name="author_rules_name[]" value="<?php echo htmlspecialchars($author_name); ?>" size="11" /></th>
@@ -93,7 +100,9 @@ if ($page->for_feed_settings()) :
   <span class="author-rules-newuser" id="author-rules-<?php echo $page->rule_count; ?>-newuser">named <input type="text" name="author_rules_newuser[]" value="" /></span>
   </td>
 </tr>
-<?php 			endforeach;
+<?php
+				endif;
+			endforeach;
 		endforeach;
 	endif;
 ?>
@@ -112,7 +121,29 @@ if ($page->for_feed_settings()) :
    <span id="add-author-rule-newuser">named <input type="text" name="add_author_rule_newuser" value="" /></span>
    </td>
 </tr>
-</table>
+
+<tr>
+<th style="text-align: left; width: 15.0em">Unmatched authors</th>
+<td>
+<span>Authors who haven't been syndicated before</span>
+  <select style="max-width: 27.0em" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');">
+<?php if ($page->for_feed_settings()) : ?>
+    <option value="site-default"<?php print $unfamiliar['site-default']; ?>>are handled according to the default for all feeds</option>
+<?php endif; ?>
+    <option value="create"<?php print $unfamiliar['create']; ?>>will have a new author account created for them</option>
+    <?php foreach ($page->authorlist as $author_id => $author_name) : ?>
+      <option value="<?php echo $author_id; ?>"<?php print (isset($unfamiliar[$author_id]) ? $unfamiliar[$author_id] : ''); ?>>will have their posts attributed to <?php echo $author_name; ?></option>
+    <?php endforeach; ?>
+    <option value="newuser">will have their posts attributed to a user named ...</option>
+    <option value="filter"<?php print $unfamiliar['filter'] ?>>get filtered out</option>
+  </select>
+
+  <span id="unfamiliar-author-newuser"><input type="text" name="unfamiliar_author_newuser" value="" /></span></p>
+</td>
+</tr>
+</table></li>
+</ul>
+
 </td>
 </tr>
 <?php endif; ?>
@@ -284,6 +315,16 @@ if ($page->for_feed_settings()) :
 			// Handle author mapping rules
 			if (isset($post['author_rules_name'])
 			and isset($post['author_rules_action'])) :
+				if (isset($post['author_rules_name']['all'])) :
+					if (strlen($post['author_rules_name']['all']) > 0) :
+						$post['author_rules_name'] = array(
+							'all' => $post['author_rules_name']['all'],
+						);
+						
+						// Erase all the rest.
+					endif;
+				endif;
+				
 				unset($this->link->settings['map authors']);
 				foreach ($post['author_rules_name'] as $key => $name) :
 					// Normalize for case and whitespace

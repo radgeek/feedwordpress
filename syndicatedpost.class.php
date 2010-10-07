@@ -1632,16 +1632,46 @@ class SyndicatedPost {
 		endif;
 	} /* SyndicatedPost::add_rss_meta () */
 
-	// SyndicatedPost::author_id (): get the ID for an author name from
-	// the feed. Create the author if necessary.
+	/**
+	 * SyndicatedPost::author_id (): get the ID for an author name from
+	 * the feed. Create the author if necessary.
+	 *
+	 * @param string $unfamiliar_author
+	 *
+	 * @return NULL|int The numeric ID of the author to attribute the post to
+	 *	NULL if the post should be filtered out.
+	 */
 	function author_id ($unfamiliar_author = 'create') {
 		global $wpdb;
 
 		$a = $this->author();
-		$author = $a['name'];
+		
+		$source = $this->source();
+		$forbidden = apply_filters('feedwordpress_forbidden_author_names',
+			array('admin', 'administrator', 'www', 'root'));
+		
+		$candidates = array();
+		$candidates[] = $a['name'];
+		if (!is_null($source)) : $candidates[] = $source['title']; endif;
+		$candidates[] = $this->link->name(/*fromFeed=*/ true);
+		$candidates[] = $this->link->name(/*fromFeed=*/ false);
+		if (strlen($this->link->homepage()) > 0) : $candidates[] = feedwordpress_display_url($this->link->homepage()); endif;
+		$candidates[] = feedwordpress_display_url($this->link->uri());
+		$candidates[] = 'unknown author';
+		
+		$author = NULL;
+		while (is_null($author) and ($candidate = each($candidates))) :
+			if (!is_null($candidate['value'])
+			and (strlen(trim($candidate['value'])) > 0)
+			and !in_array(strtolower(trim($candidate['value'])), $forbidden)) :
+				$author = $candidate['value'];
+			endif;
+		endwhile;
+		
 		$email = (isset($a['email']) ? $a['email'] : NULL);
 		$authorUrl = (isset($a['uri']) ? $a['uri'] : NULL);
 
+		
 		$hostUrl = $this->link->homepage();
 		if (is_null($hostUrl) or (strlen($hostUrl) < 0)) :
 			$hostUrl = $this->link->uri();
@@ -1688,7 +1718,9 @@ class SyndicatedPost {
 		$authorUrl = $wpdb->escape($authorUrl);
 
 		// Check for an existing author rule....
-		if (isset($this->link->settings['map authors']['name'][strtolower(trim($author))])) :
+		if (isset($this->link->settings['map authors']['name']['*'])) :
+			$author_rule = $this->link->settings['map authors']['name']['*'];
+		elseif (isset($this->link->settings['map authors']['name'][strtolower(trim($author))])) :
 			$author_rule = $this->link->settings['map authors']['name'][strtolower(trim($author))];
 		else :
 			$author_rule = NULL;
