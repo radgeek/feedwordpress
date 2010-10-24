@@ -45,10 +45,37 @@ class FeedWordPressAdminPage {
 	} /* FeedWordPressAdminPage::pagename () */
 
 	function accept_POST ($post) {
-		if ($this->save_requested_in($post)) : // User mashed Save Changes
+		if ($this->for_feed_settings() and $this->update_requested_in($post)) :
+			$this->update_feed();
+		elseif ($this->save_requested_in($post)) : // User mashed Save Changes
 			$this->save_settings($post);
 		endif;
 		do_action($this->dispatch.'_post', &$post, &$this);		
+	}
+
+	function update_feed () {
+		global $feedwordpress;
+
+		add_action('feedwordpress_check_feed', 'update_feeds_mention');
+		add_action('feedwordpress_check_feed_complete', 'update_feeds_finish', 10, 3);
+		
+		print '<div class="updated">';
+		print "<ul>";
+		$delta = $feedwordpress->update($this->link->uri());
+		print "</ul>";
+
+		if (!is_null($delta)) :
+			$mesg = array();
+			if (isset($delta['new'])) : $mesg[] = ' '.$delta['new'].' new posts were syndicated'; endif;
+			if (isset($delta['updated'])) : $mesg[] = ' '.$delta['updated'].' existing posts were updated'; endif;
+			echo "<p><strong>Update complete.</strong>".implode(' and', $mesg)."</p>";
+			echo "\n"; flush();
+		else :
+			echo "<p><strong>Error:</strong> There was a problem updating <a href=\"$uri\">$uri</a></p>\n";
+		endif;
+		print "</div>\n";
+		remove_action('feedwordpress_check_feed', 'update_feeds_mention');
+		remove_action('feedwordpress_check_feed_complete', 'update_feeds_finish', 10, 3);
 	}
 
 	function save_settings ($post) {
@@ -107,7 +134,10 @@ class FeedWordPressAdminPage {
 	function save_requested_in ($post) {
 		return (isset($post['save']) or isset($post['submit']));
 	}
-
+	function update_requested_in ($post) {
+		return (isset($post['update']) and (strlen($post['update']) > 0));
+	}
+	
 	/*static*/ function submitted_link_id () {
 		global $fwp_post;
 
@@ -282,7 +312,7 @@ class FeedWordPressAdminPage {
 		  <option value="<?php print (int) $ddlink->link_id; ?>"<?php if (!is_null($this->link) and ($this->link->id==$ddlink->link_id)) : ?> selected="selected"<?php endif; ?>><?php print esc_html($ddlink->link_name); ?></option>
 		<?php endforeach; endif; ?>
 		</select>
-		<input class="button" type="submit" name="go" value="<?php _e('Go') ?> &raquo;" /></li>
+		<input id="fwpfs-button" class="button" type="submit" name="go" value="<?php _e('Go') ?> &raquo;" /></li>
 
 		<?php
 		$this->display_feed_settings_page_links(array(
@@ -291,8 +321,14 @@ class FeedWordPressAdminPage {
 			'after' => '</li>',
 			'subscription' => $this->link,
 		));
+		
+		if ($this->for_feed_settings()) :
 		?>
-		</ul>
+		<li><input class="button" type="submit" name="update" value="Update Now" /></li>
+		<?php
+		endif;
+		?>
+		</ul>		
 		</div>
 		<?php
 	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
@@ -1093,7 +1129,10 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 	<td class="feed-missing"><p><strong>no feed assigned</strong></p></td>
 				<?php endif; ?>
 
-	<td><?php print $lastUpdated; ?>
+	<td><div style="float: right; padding-left: 10px">
+	<input type="submit" class="button" name="update_uri[<?php print esc_html($link->link_rss); ?>]" value="<?php _e('Update Now'); ?>" />
+	</div>
+	<?php print $lastUpdated; ?>
 	<?php print $errorsSince; ?>
 	<?php print $nextUpdate; ?>
 	</td>

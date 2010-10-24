@@ -943,12 +943,7 @@ class FeedWordPress {
 		do_action('feedwordpress_update', $uri);
 
 		if (is_null($crash_ts)) :
-			$crash_dt = (int) get_option('feedwordpress_update_time_limit');
-			if ($crash_dt > 0) :
-				$crash_ts = time() + $crash_dt;
-			else :
-				$crash_ts = NULL;
-			endif;
+			$crash_ts = $this->crash_ts();
 		endif;
 
 		// Randomize order for load balancing purposes
@@ -994,6 +989,16 @@ class FeedWordPress {
 		return $delta;
 	}
 
+	function crash_ts ($default = NULL) {
+		$crash_dt = (int) get_option('feedwordpress_update_time_limit', 0);
+		if ($crash_dt > 0) :
+			$crash_ts = time() + $crash_dt;
+		else :
+			$crash_ts = $default;
+		endif;
+		return $crash_ts;
+	}
+	
 	function stale () {
 		if (get_option('feedwordpress_automatic_updates')) :
 			// Do our best to avoid possible simultaneous
@@ -1701,6 +1706,23 @@ EOMAIL;
 		endif;
 		return $prefix;
 	} /* FeedWordPress::log_prefix () */
+	
+	function param ($key, $type = 'REQUEST', $default = NULL) {
+		$where = '_'.strtoupper($type);
+		$ret = $default;
+		if (isset($GLOBALS[$where]) and is_array($GLOBALS[$where])) :
+			if (isset($GLOBALS[$where][$key])) :
+				$ret = $GLOBALS[$where][$key];
+				if (get_magic_quotes_gpc()) :
+					$ret = stripslashes($ret);
+				endif;
+			endif;
+		endif;
+		return $ret;
+	}
+	function post ($key, $default = NULL) {
+		return FeedWordPress::param($key, 'POST');
+	}
 } // class FeedWordPress
 
 class FeedWordPress_File extends WP_SimplePie_File {

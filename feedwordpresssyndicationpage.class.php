@@ -74,15 +74,16 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		global $wpdb;
 
 		if (isset($_POST['update']) or isset($_POST['action']) or isset($_POST['update_uri'])) :
-			 // Only do things with side-effects for HTTP POST or command line
-			 $fwp_update_invoke = 'post';
+			// Only do things with side-effects for HTTP POST or command line
+			$fwp_update_invoke = 'post';
 		else :
 			$fwp_update_invoke = 'get';
 		endif;
 
 		$update_set = array();
 		if ($fwp_update_invoke != 'get') :
-			if (isset($_POST['link_ids']) and is_array($_POST['link_ids']) and ($_POST['action']==FWP_UPDATE_CHECKED)) :
+			if (is_array(FeedWordPress::post('link_ids'))
+			and (FeedWordPress::post('action')==FWP_UPDATE_CHECKED)) :
 				$targets = $wpdb->get_results("
 				SELECT * FROM $wpdb->links
 				WHERE link_id IN (".implode(",",$_POST['link_ids']).")
@@ -94,10 +95,15 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 				else : // This should never happen
 					FeedWordPress::critical_bug('fwp_syndication_manage_page::targets', $targets, __LINE__);
 				endif;
-			elseif (isset($_POST['update_uri'])) :
-				$targets = $_POST['update_uri'];
+			elseif (!is_null(FeedWordPress::post('update_uri'))) :
+				$targets = FeedWordPress::post('update_uri');
 				if (!is_array($targets)) :
 					$targets = array($targets);
+				endif;
+				
+				$first = each($targets);
+				if (!is_numeric($first['key'])) : // URLs in keys
+					$targets = array_keys($targets);
 				endif;
 				$update_set = $targets;
 			endif;
@@ -577,29 +583,37 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		endif;
 		?>
 
-		<?php	if (count($sources[$visibility]) > 0) : ?>
-			<div style="clear: left" class="alignleft">
-			<?php if ($showInactive) : ?>
-			<input class="button-secondary" type="submit" name="action" value="<?php print FWP_RESUB_CHECKED; ?>" />
-			<input class="button-secondary" type="submit" name="action" value="<?php print FWP_DELETE_CHECKED; ?>" />
-			<?php else : ?>
-			<input class="button-secondary" type="submit" name="action" value="<?php print FWP_UPDATE_CHECKED; ?>" />
-			<input class="button-secondary delete" type="submit" name="action" value="<?php print FWP_UNSUB_CHECKED; ?>" />
-			<?php endif ; ?>
-			</div> <!-- class="alignleft" -->
-		
-		<?php	else : ?>
-			<?php fwp_syndication_manage_page_links_subsubsub($sources, $showInactive); ?>
-		<?php 	endif; ?>
-	
-		<br class="clear" />
-	
 		<?php
+		if (count($sources[$visibility]) > 0) :
+			$this->display_button_bar($showInactive);
+		else :
+		?>
+			<?php fwp_syndication_manage_page_links_subsubsub($sources, $showInactive); ?>
+		<?php
+		endif;
+		
 		fwp_syndication_manage_page_links_table_rows($sources[$visibility], $this, $visibility);
+		$this->display_button_bar($showInactive);
 		?>
 		</form>
 		<?php
 	} /* FeedWordPressSyndicationPage::syndicated_sources_box() */
+	
+	function display_button_bar ($showInactive) {
+		?>
+		<div style="clear: left" class="alignleft">
+		<?php if ($showInactive) : ?>
+		<input class="button-secondary" type="submit" name="action" value="<?php print FWP_RESUB_CHECKED; ?>" />
+		<input class="button-secondary" type="submit" name="action" value="<?php print FWP_DELETE_CHECKED; ?>" />
+		<?php else : ?>
+		<input class="button-secondary" type="submit" name="action" value="<?php print FWP_UPDATE_CHECKED; ?>" />
+		<input class="button-secondary delete" type="submit" name="action" value="<?php print FWP_UNSUB_CHECKED; ?>" />
+		<?php endif ; ?>
+		</div> <!-- class="alignleft" -->
+		
+		<br class="clear" />
+		<?php
+	}
 	
 	function bleg_thanks ($page, $box = NULL) {
 		?>
@@ -969,12 +983,7 @@ function fwp_dashboard_update_if_requested ($object) {
 		add_action('feedwordpress_check_feed', 'update_feeds_mention');
 		add_action('feedwordpress_check_feed_complete', 'update_feeds_finish', 10, 3);
 
-		$crash_dt = (int) get_option('feedwordpress_update_time_limit');
-		if ($crash_dt > 0) :
-			$crash_ts = time() + $crash_dt;
-		else :
-			$crash_ts = NULL;
-		endif;
+		$crash_ts = $feedwordpress->crash_ts();
 
 		echo "<div class=\"update-results\">\n";
 		echo "<ul>\n";
