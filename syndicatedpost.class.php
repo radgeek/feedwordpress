@@ -1644,7 +1644,7 @@ class SyndicatedPost {
 	function author_id ($unfamiliar_author = 'create') {
 		global $wpdb;
 
-		$a = $this->author();
+		$a = $this->post['named']['author'];
 		
 		$source = $this->source();
 		$forbidden = apply_filters('feedwordpress_forbidden_author_names',
