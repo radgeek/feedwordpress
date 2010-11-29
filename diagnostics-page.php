@@ -178,43 +178,50 @@ testing but absolutely inappropriate for a production server.</p>
 	} /* FeedWordPressDiagnosticsPage::diagnostics_box () */
 	
 	/*static*/ function updates_box ($page, $box = NULL) {
-		$checked = array(
-			'updated_feeds' => '', 'updated_feeds:errors' => '',
-			'updated_feeds:errors:persistent' => '',
-			"syndicated_posts" => '', 'syndicated_posts:meta_data' => '',
-			'feed_items' => '',
-			'memory_usage' => '',
-		);
+		$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
+		$fields = apply_filters('feedwordpress_diagnostics', array(
+			'Update Diagnostics' => array(
+				'updated_feeds' => 'as each feed checked for updates',
+				'updated_feeds:errors:persistent' => 'when attempts to update a feed have resulted in errors</label> <label>for at least <input type="number" min="1" max="360" step="1" name="diagnostics_persistent_error_hours" value="'.$hours.'" /> hours',
+				'updated_feeds:errors' => 'any time FeedWordPress encounters any errors while checking a feed for updates',
+				'syndicated_posts' => 'as each syndicated post is added to the database',
+				'feed_items' => 'as each syndicated item is considered on the feed',
+				'memory_usage' => 'indicating how much memory was used',
+			),
+			'Syndicated Post Details' => array(
+				'syndicated_posts:meta_data' => 'as syndication meta-data is added on the post',
+			),
+		), $page);
+		
+		foreach ($fields as $section => $items) :
+			foreach ($items as $key => $label) :
+				$checked[$key] = '';
+			endforeach;
+		endforeach;
 
 		$diagnostics_show = get_option('feedwordpress_diagnostics_show', array());
 		if (is_array($diagnostics_show)) : foreach ($diagnostics_show as $thingy) :
 			$checked[$thingy] = ' checked="checked"';
 		endforeach; endif;
 
-		$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
-
 		// Hey ho, let's go...
 		?>
 <table class="edit-form">
-<tr>
-<th scope="row">Update diagnostics:</th>
-<td><p>Show a diagnostic message...</p>
-<ul class="options">
-<li><label><input type="checkbox" name="diagnostics_show[]" value="updated_feeds" <?php print $checked['updated_feeds']; ?> /> as each feed checked for updates</label></li>
-<li><label><input type="checkbox" name="diagnostics_show[]" value="updated_feeds:errors:persistent" <?php print $checked['updated_feeds:errors:persistent'] ?> /> when attempts to update a feed have resulted in errors</label> <label>for at least <input type="number" min="1" max="360" step="1" name="diagnostics_persistent_error_hours" value="<?php print $hours; ?>" /> hours</label></li>
-<li><label><input type="checkbox" name="diagnostics_show[]" value="updated_feeds:errors" <?php print $checked['updated_feeds:errors']; ?> /> any time FeedWordPress encounters any errors while checking a feed for updates</label></li>
-<li><label><input type="checkbox" name="diagnostics_show[]" value="syndicated_posts" <?php print $checked['syndicated_posts']; ?> /> as each syndicated post is added to the database</label></li>
-<li><label><input type="checkbox" name="diagnostics_show[]" value="feed_items" <?php print $checked['feed_items']; ?> /> as each syndicated item is considered on the feed</label></li>
-<li><label><input type="checkbox" name="diagnostics_show[]" value="memory_usage" <?php print $checked['memory_usage']; ?> /> indicating how much memory was used</label></li>
-</ul></td>
-</tr>
-<tr>
-<th>Syndicated post details:</th>
-<td><p>Show a diagnostic message...</p>
-<ul class="options">
-<li><label><input type="checkbox" name="diagnostics_show[]" value="syndicated_posts:meta_data" <?php print $checked['syndicated_posts:meta_data']; ?> /> as syndication meta-data is added on the post</label></li>
-</ul></td>
-</tr>
+	<?php foreach ($fields as $section => $ul) : ?>
+	  <tr>
+	  <th scope="row"><?php print esc_html($section); ?>:</th>
+	  <td><p>Show a diagnostic message...</p>
+	  <ul class="options">
+	  <?php foreach ($ul as $key => $label) : ?>
+	    <li><label><input
+	    	type="checkbox" name="diagnostics_show[]"
+	    	value="<?php print esc_html($key); ?>"
+	    	<?php print $checked[$key]; ?> />
+	    <?php print $label; ?></label></li>
+	  <?php endforeach; ?>
+	  </ul></td>
+	  </tr>
+	<?php endforeach; ?>
 </table>
 		<?php
 	} /* FeedWordPressDiagnosticsPage::updates_box () */
