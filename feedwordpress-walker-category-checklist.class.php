@@ -12,8 +12,13 @@ require_once(ABSPATH.'/wp-admin/includes/template.php');
 
 class FeedWordPress_Walker_Category_Checklist extends Walker_Category_Checklist {
 	var $prefix = ''; var $taxonomy = 'category';
-	function FeedWordPress_Walker_Category_Checklist () {
+	var $checkbox_name = NULL;
+	function FeedWordPress_Walker_Category_Checklist ($params = array()) {
 		$this->set_taxonomy('category');
+		
+		if (isset($params['checkbox_name'])) :
+			$this->checkbox_name = $params['checkbox_name'];
+		endif;
 	}
 	
 	function set_prefix ($prefix) {
@@ -29,7 +34,9 @@ class FeedWordPress_Walker_Category_Checklist extends Walker_Category_Checklist 
 			$taxonomy = 'category';
 		endif; 
 
-		if ($taxonomy=='category') :
+		if (!is_null($this->checkbox_name)) :
+			$name = $this->checkbox_name;
+		elseif ($taxonomy=='category') :
 			$name = 'post_category';
 		else :
 			$name = 'tax_input['.$taxonomy.']';
