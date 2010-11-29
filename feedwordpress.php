@@ -105,7 +105,9 @@ if (!class_exists('SimplePie')) :
 endif;
 require_once(ABSPATH . WPINC . '/class-feed.php');
 
-require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
+if (!function_exists('wp_insert_user')) :
+	require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
+endif;
 
 require_once(dirname(__FILE__) . '/admin-ui.php');
 require_once(dirname(__FILE__) . '/feedwordpresssyndicationpage.class.php');
@@ -274,7 +276,8 @@ class FeedWordPressDiagnostic {
 		$users = get_users_of_blog($id);
 		$recipients = array();
 		foreach ($users as $user) :
-			$dude = new WP_User($user->user_id);
+			$user_id = (isset($user->user_id) ? $user->user_id : $user->ID);
+			$dude = new WP_User($user_id);
 			if ($dude->has_cap('administrator')) :
 				if ($dude->user_email) :
 					$recipients[] = $dude->user_email;
