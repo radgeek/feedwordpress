@@ -140,7 +140,7 @@ function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selec
 		$taxonomy = (isset($params['taxonomy']) ? $params['taxonomy'] : 'category');
 	endif;
 	
-	$walker = new FeedWordPress_Walker_Category_Checklist;
+	$walker = new FeedWordPress_Walker_Category_Checklist($params);
 	$walker->set_prefix($prefix);
 	$walker->set_taxonomy($taxonomy); 
 	wp_terms_checklist(/*post_id=*/ $post_id, array(
