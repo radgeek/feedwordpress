@@ -736,6 +736,11 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 	$tax_name = (isset($params['taxonomy']) ? $params['taxonomy'] : 'post_tag');
 	$desc = "<p style=\"font-size:smaller;font-style:bold;margin:0\">Tag $object as...</p>";
 
+	if (isset($params['textarea_name'])) :
+		$textAreaName = $params['textarea_name'];
+	else :
+		$textAreaName = "tax_input[$tax_name]";
+	endif;
 	print $desc;
 	$helps = __('Separate tags with commas.');
 	$box['title'] = __('Tags');
@@ -744,7 +749,7 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 	        <div class="jaxtag">
 	        <div class="nojs-tags hide-if-js">
 	        <p><?php _e('Add or remove tags'); ?></p>
-	        <textarea name="<?php echo "tax_input[$tax_name]"; ?>" class="the-tags" id="tax-input[<?php echo $tax_name; ?>]"><?php echo esc_attr(implode(",", $tags)); ?></textarea></div>
+	        <textarea name="<?php echo esc_html($textAreaName); ?>" class="the-tags" id="tax-input[<?php echo $tax_name; ?>]"><?php echo esc_attr(implode(",", $tags)); ?></textarea></div>
 	
 	        <div class="ajaxtag hide-if-no-js">
 	                <label class="screen-reader-text" for="new-tag-<?php echo $tax_name; ?>"><?php echo $box['title']; ?></label>
