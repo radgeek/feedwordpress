@@ -1164,6 +1164,7 @@ class SyndicatedPost {
 			");
 
 			if (!$result) :
+				$this->_wp_id = NULL;
 				$this->_freshness = 2; // New content
 			else:
 				$stored_update_hashes = get_post_custom_values('syndication_item_hash', $result->id);
@@ -1189,7 +1190,6 @@ class SyndicatedPost {
 					and ($updated_ts > $last_rev_ts)
 				);
 				
-			
 				// Or the hash...
 				$updated = ($updated or $update_hash_changed);
 				
@@ -1341,24 +1341,25 @@ class SyndicatedPost {
 			/*arguments=*/ 3
 		);
 
-		if (!$this->filtered() and $freshness == 2) :
-			// The item has not yet been added. So let's add it.
-			FeedWordPress::diagnostic('syndicated_posts', 'Inserting new post "'.$this->post['post_title'].'"');
+		$retval = array(1 => 'updated', 2 => 'new');
+		
+		$ret = false;
+		if (!$this->filtered() and isset($retval[$freshness])) :			
+			$diag = array(
+				1 => 'Updating existing post # '.$this->wp_id().', "'.$this->post['post_title'].'"',
+				2 => 'Inserting new post "'.$this->post['post_title'].'"',
+			);
+			FeedWordPress::diagnostic('syndicated_posts', $diag[$freshness]);
 
-			$this->insert_new();
-			do_action('post_syndicated_item', $this->wp_id(), $this);
+			if (!is_null($this->wp_id())) :
+				$this->post['ID'] = $this->wp_id();
+			endif;
+			$this->insert_post(/*update=*/ ($freshness == 1));
+			
+			$hook = array(	1 => 'update_syndicated_item', 2 => 'post_syndicated_item' );
+			do_action($hook[$freshness], $this->wp_id(), $this);
 
-			$ret = 'new';
-		elseif (!$this->filtered() and $freshness == 1) :
-			FeedWordPress::diagnostic('syndicated_posts', 'Updating existing post # '.$this->wp_id().', "'.$this->post['post_title'].'"');
-
-			$this->post['ID'] = $this->wp_id();
-			$this->update_existing();
-			do_action('update_syndicated_item', $this->wp_id(), $this);
-
-			$ret = 'updated';			
-		else :
-			$ret = false;
+			$ret = $retval[$freshness];
 		endif;
 
 		// Remove add_rss_meta hook
