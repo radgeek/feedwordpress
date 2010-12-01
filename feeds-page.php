@@ -106,9 +106,12 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			'global_feeds_box' => __('Update Scheduling'),
 			'updated_posts_box' => __('Updated Posts'),
 			'custom_settings_box' => __('Custom Feed Settings (for use in templates)'),
+			'fetch_settings_box' => __('Settings for Fetching Feeds (Advanced)'),
 		);
 		if ($this->for_default_settings()) :
 			unset($this->boxes_by_methods['custom_settings_box']);
+		else :
+			unset($this->boxes_by_methods['fetch_settings_box']);
 		endif;	
 			
 		// Allow overriding of normal source for FeedFinder, which may
@@ -297,6 +300,23 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		endif;
 		return sprintf(__($caption), $updateWindow);
 	} /* FeedWordPressFeedsPage::update_window_currently () */
+	
+	function fetch_settings_box ($page, $box = NULL) {
+			$timeout = intval($page->setting('fetch timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT));
+		?>
+		<table class="edit-form narrow">
+		<tr>
+		<th scope="row">Feed timeout:</th>
+		<td><p>Wait no more than
+		than <input name="fetch_timeout" type="number" min="0" size="3" value="<?php print $timeout; ?>" />
+		second(s) when trying to fetch a feed to check for updates.</p>
+		<p>If a source's web server does not respond before time runs
+		out, FeedWordPress will skip that source and try again during
+		the next update cycle.</p></td>
+		</tr>
+		</table>
+		<?php
+	} /* FeedWordPressFeedsPage::fetch_settings_box () */
 	
 	function feed_information_box ($page, $box = NULL) {
 		global $wpdb;
@@ -803,6 +823,10 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				$hardcode = (isset($post["hardcode_{$what}"]) ? $post["hardcode_{$what}"] : 'yes');
 				update_option("feedwordpress_hardcode_{$what}", $hardcode);
 			endforeach;
+			
+			if (isset($post['fetch_timeout'])) :
+				update_option('feedwordpress_fetch_timeout', (int) $post['fetch_timeout']);
+			endif;
 		endif;
 		
 		$this->updatedPosts->accept_POST($post);

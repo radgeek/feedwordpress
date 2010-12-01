@@ -44,6 +44,7 @@ endif;
 // Defaults
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 define ('DEFAULT_UPDATE_PERIOD', 60); // value in minutes
+define ('FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT', 20);
 
 if (isset($_REQUEST['feedwordpress_debug'])) :
 	$feedwordpress_debug = $_REQUEST['feedwordpress_debug'];
@@ -1423,10 +1424,14 @@ class FeedWordPress {
 		$parser_class = apply_filters('feedwordpress_parser_class', 'FeedWordPress_Parser');
 
 		$sniffer_class = apply_filters('feedwordpress_sniffer_class', 'FeedWordPress_Content_Type_Sniffer');
-		
+
+		$timeout = apply_filters('feedwordpress_fetch_timeout', get_option('feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT));
+			
 		$feed = new $pie_class;
 		$feed->set_feed_url($url);
 		$feed->set_cache_class($cache_class);
+		$feed->set_timeout($timeout);
+		
 		//$feed->set_file_class('WP_SimplePie_File');
 		$feed->set_content_type_sniffer_class($sniffer_class);
 		$feed->set_file_class($file_class);
