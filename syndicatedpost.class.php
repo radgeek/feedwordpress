@@ -1167,38 +1167,37 @@ class SyndicatedPost {
 				$this->_wp_id = NULL;
 				$this->_freshness = 2; // New content
 			else:
-				$stored_update_hashes = get_post_custom_values('syndication_item_hash', $result->id);
-				if (count($stored_update_hashes) > 0) :
-					$stored_update_hash = $stored_update_hashes[0];
-					$update_hash_changed = ($stored_update_hash != $this->update_hash());
-				else :
-					$update_hash_changed = true; // Can't find syndication meta-data
-				endif;
-
 				preg_match('/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+)/', $result->post_modified_gmt, $backref);
 
 				$last_rev_ts = gmmktime($backref[4], $backref[5], $backref[6], $backref[2], $backref[3], $backref[1]);
 				$updated_ts = $this->updated(/*fallback=*/ true, /*default=*/ NULL);
 				
-				$frozen_values = get_post_custom_values('_syndication_freeze_updates', $result->id);
-				$frozen_post = (count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
-				$frozen_feed = ('yes' == $this->link->setting('freeze updates', 'freeze_updates', NULL));
-
 				// Check timestamps...
 				$updated = (
 					!is_null($updated_ts)
 					and ($updated_ts > $last_rev_ts)
 				);
 				
-				// Or the hash...
-				$updated = ($updated or $update_hash_changed);
+				if (!$updated) :
+					// Or the hash...
+					$stored_update_hashes = get_post_custom_values('syndication_item_hash', $result->id);
+					if (count($stored_update_hashes) > 0) :
+						$stored_update_hash = $stored_update_hashes[0];
+						$updated = ($stored_update_hash != $this->update_hash());
+					else :
+						$updated = true; // Can't find syndication meta-data
+					endif;
+				endif;
 				
-				// But only if the post is not frozen.
-				$updated = (
-					$updated
-					and !$frozen_post
-					and !$frozen_feed
-				); 
+				$frozen = false;
+				if ($updated) : // Ignore if the post is frozen
+					$frozen = ('yes' == $this->link->setting('freeze updates', 'freeze_updates', NULL));
+					if (!$frozen) :
+						$frozen_values = get_post_custom_values('_syndication_freeze_updates', $result->id);
+						$frozen = (count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
+					endif;
+				endif;
+				$updated = ($updated and !$frozen);
 
 				if ($updated) :
 					$this->_freshness = 1; // Updated content
