@@ -27,7 +27,6 @@ class SyndicatedPost {
 	var $named = array ();
 	var $preset_terms = array ();
 	var $feed_terms = array ();
-	var $ts = array ();
 	
 	var $_freshness = null;
 	var $_wp_id = null;
@@ -140,17 +139,16 @@ class SyndicatedPost {
 			if (!empty($excerpt)):
 				$this->post['post_excerpt'] = $excerpt;
 			endif;
-			
-			$this->ts['issued'] = apply_filters('syndicated_item_published', $this->published(), $this);
-			$this->ts['created'] = apply_filters('syndicated_item_created', $this->created(), $this);
-			$this->ts['modified'] = apply_filters('syndicated_item_updated', $this->updated(), $this);
 
 			// Dealing with timestamps in WordPress is so fucking fucked.
 			$offset = (int) get_option('gmt_offset') * 60 * 60;
-			$this->post['post_date'] = gmdate('Y-m-d H:i:s', apply_filters('syndicated_item_published', $this->published(/*fallback=*/ true, /*default=*/ -1), $this) + $offset);
-			$this->post['post_modified'] = gmdate('Y-m-d H:i:s', apply_filters('syndicated_item_updated', $this->updated(/*fallback=*/ true, /*default=*/ -1), $this) + $offset);
-			$this->post['post_date_gmt'] = gmdate('Y-m-d H:i:s', apply_filters('syndicated_item_published', $this->published(/*fallback=*/ true, /*default=*/ -1), $this));
-			$this->post['post_modified_gmt'] = gmdate('Y-m-d H:i:s', apply_filters('syndicated_item_updated', $this->updated(/*fallback=*/ true, /*default=*/ -1), $this));
+			$post_date_gmt = $this->published(array('default' => -1));
+			$post_modified_gmt = $this->updated(array('default' => -1));
+
+			$this->post['post_date_gmt'] = gmdate('Y-m-d H:i:s', $post_date_gmt);
+			$this->post['post_date'] = gmdate('Y-m-d H:i:s', $post_date_gmt + $offset);
+			$this->post['post_modified_gmt'] = gmdate('Y-m-d H:i:s', $post_modified_gmt);
+			$this->post['post_modified'] = gmdate('Y-m-d H:i:s', $post_modified_gmt + $offset);
 
 			// Use feed-level preferences or the global default.
 			$this->post['post_status'] = $this->link->syndicated_status('post', 'publish');
@@ -641,7 +639,10 @@ class SyndicatedPost {
 		return $permalink;
 	}
 
-	function created () {
+	function created ($params = array()) {
+		$unfiltered = false; $default = NULL;
+		extract($params);
+		
 		$date = '';
 		if (isset($this->item['dc']['created'])) :
 			$date = $this->item['dc']['created'];
@@ -652,10 +653,21 @@ class SyndicatedPost {
 		endif;
 
 		$time = new FeedTime($date);
-		return $time->timestamp();
+		$ts = $time->timestamp();
+		if (!$unfiltered) :
+			apply_filters('syndicated_item_created', $ts, $this);
+		endif;
+		return $ts;
 	} /* SyndicatedPost::created() */
 
-	function published ($fallback = true, $default = NULL) {
+	function published ($params = array(), $default = NULL) {
+		$fallback = true; $unfiltered = false;
+		if (!is_array($params)) : // Old style
+			$fallback = $params;
+		else : // New style
+			extract($params);
+		endif;
+		
 		$date = '';
 		$ts = null;
 
@@ -691,10 +703,20 @@ class SyndicatedPost {
 			endif;
 		endif;
 		
+		if (!$unfiltered) :
+			$ts = apply_filters('syndicated_item_published', $ts, $this);
+		endif;
 		return $ts;
 	} /* SyndicatedPost::published() */
 
-	function updated ($fallback = true, $default = -1) {
+	function updated ($params = array(), $default = -1) {
+		$fallback = true; $unfiltered = false;
+		if (!is_array($params)) : // Old style
+			$fallback = $params;
+		else : // New style
+			extract($params);
+		endif;
+
 		$date = '';
 		$ts = null;
 
@@ -707,7 +729,7 @@ class SyndicatedPost {
 			$date = $this->item['dcterms']['modified'];
 		elseif (isset($this->item['modified'])):			// Atom 0.3
 			$date = $this->item['modified'];
-		elseif (isset($this->item['updated'])):				// Atom 1.0
+		elseif (isset($this->item['updated'])):			// Atom 1.0
 			$date = $this->item['updated'];
 		endif;
 		
@@ -727,6 +749,9 @@ class SyndicatedPost {
 			endif;
 		endif;
 
+		if (!$unfiltered) :
+			apply_filters('syndicated_item_updated', $ts, $this);
+		endif;
 		return $ts;
 	} /* SyndicatedPost::updated() */
 
@@ -1326,7 +1351,6 @@ class SyndicatedPost {
 		endif;
 		
 		if (!$this->filtered() and $freshness > 0) :
-			/*DBG*/ echo "<pre>".esc_html(FeedWordPress::val($this->post))."</pre>";
 			$this->post = apply_filters('syndicated_post', $this->post, $this);
 
 			// Allow for feed-specific syndicated_post filters.
