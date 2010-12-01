@@ -24,6 +24,11 @@ class SyndicatedPost {
 
 	var $post = array ();
 
+	var $named = array ();
+	var $preset_terms = array ();
+	var $feed_terms = array ();
+	var $ts = array ();
+	
 	var $_freshness = null;
 	var $_wp_id = null;
 
@@ -118,7 +123,7 @@ class SyndicatedPost {
 				$this->entry->get_title(), $this
 			);
 
-			$this->post['named']['author'] = apply_filters(
+			$this->named['author'] = apply_filters(
 				'syndicated_item_author',
 				$this->author(), $this
 			);
@@ -136,9 +141,9 @@ class SyndicatedPost {
 				$this->post['post_excerpt'] = $excerpt;
 			endif;
 			
-			$this->post['epoch']['issued'] = apply_filters('syndicated_item_published', $this->published(), $this);
-			$this->post['epoch']['created'] = apply_filters('syndicated_item_created', $this->created(), $this);
-			$this->post['epoch']['modified'] = apply_filters('syndicated_item_updated', $this->updated(), $this);
+			$this->ts['issued'] = apply_filters('syndicated_item_published', $this->published(), $this);
+			$this->ts['created'] = apply_filters('syndicated_item_created', $this->created(), $this);
+			$this->ts['modified'] = apply_filters('syndicated_item_updated', $this->updated(), $this);
 
 			// Dealing with timestamps in WordPress is so fucking fucked.
 			$offset = (int) get_option('gmt_offset') * 60 * 60;
@@ -300,7 +305,7 @@ class SyndicatedPost {
 			if (is_array($fc)) :
 				$cats = array_merge($cats, $fc);
 			endif;
-			$this->post['pretax']['category'] = $cats;
+			$this->preset_terms['category'] = $cats;
 			
 			// Now add categories from the post, if we have 'em
 			$cats = array();
@@ -325,7 +330,7 @@ class SyndicatedPost {
 				endif;
 			endforeach; endif;
 
-			$this->post['taxed']['category'] = apply_filters('syndicated_item_categories', $cats, $this);
+			$this->feed_terms['category'] = apply_filters('syndicated_item_categories', $cats, $this);
 			
 			// Tags: start with default tags, if any
 			$tags = array();
@@ -338,11 +343,11 @@ class SyndicatedPost {
 			if (is_array($ft)) :
 				$tags = array_merge($tags, $ft);
 			endif;
-			$this->post['pretax']['post_tag'] = $tags;
+			$this->preset_terms['post_tag'] = $tags;
 			
 			// Scan post for /a[@rel='tag'] and use as tags if present
 			$tags = $this->inline_tags();
-			$this->post['taxed']['post_tag'] = apply_filters('syndicated_item_tags', $tags, $this);
+			$this->feed_terms['post_tag'] = apply_filters('syndicated_item_tags', $tags, $this);
 			
 			$taxonomies = $this->link->taxonomies();
 			$feedTerms = $this->link->setting('terms', NULL, array());
@@ -366,7 +371,7 @@ class SyndicatedPost {
 					endif;
 
 					// That's all, folks.
-					$this->post['pretax'][$tax] = $terms;
+					$this->preset_terms[$tax] = $terms;
 				endif;
 			endforeach;
 
@@ -646,13 +651,13 @@ class SyndicatedPost {
 			$date = $this->item['created'];
 		endif;
 
-		$epoch = new FeedTime($date);
-		return $epoch->timestamp();
+		$time = new FeedTime($date);
+		return $time->timestamp();
 	} /* SyndicatedPost::created() */
 
 	function published ($fallback = true, $default = NULL) {
 		$date = '';
-		$epoch = null;
+		$ts = null;
 
 		# RSS is a fucking mess. Figure out whether we have a date in
 		# <dc:date>, <issued>, <pubDate>, etc., and get it into Unix
@@ -672,26 +677,26 @@ class SyndicatedPost {
 		
 		if (strlen($date) > 0) :
 			$time = new FeedTime($date);
-			$epoch = $time->timestamp();
+			$ts = $time->timestamp();
 		elseif ($fallback) :						// Fall back to <updated> / <modified> if present
-			$epoch = $this->updated(/*fallback=*/ false, /*default=*/ $default);
+			$ts = $this->updated(/*fallback=*/ false, /*default=*/ $default);
 		endif;
 		
 		# If everything failed, then default to the current time.
-		if (is_null($epoch)) :
+		if (is_null($ts)) :
 			if (-1 == $default) :
-				$epoch = time();
+				$ts = time();
 			else :
-				$epoch = $default;
+				$ts = $default;
 			endif;
 		endif;
 		
-		return $epoch;
+		return $ts;
 	} /* SyndicatedPost::published() */
 
 	function updated ($fallback = true, $default = -1) {
 		$date = '';
-		$epoch = null;
+		$ts = null;
 
 		# As far as I know, only dcterms and Atom have reliable ways to
 		# specify when something was *modified* last. If neither is
@@ -708,21 +713,21 @@ class SyndicatedPost {
 		
 		if (strlen($date) > 0) :
 			$time = new FeedTime($date);
-			$epoch = $time->timestamp();
+			$ts = $time->timestamp();
 		elseif ($fallback) :						// Fall back to issued / dc:date
-			$epoch = $this->published(/*fallback=*/ false, /*default=*/ $default);
+			$ts = $this->published(/*fallback=*/ false, /*default=*/ $default);
 		endif;
 		
 		# If everything failed, then default to the current time.
-		if (is_null($epoch)) :
+		if (is_null($ts)) :
 			if (-1 == $default) :
-				$epoch = time();
+				$ts = time();
 			else :
-				$epoch = $default;
+				$ts = $default;
 			endif;
 		endif;
 
-		return $epoch;
+		return $ts;
 	} /* SyndicatedPost::updated() */
 
 	function update_hash () {
@@ -1261,7 +1266,7 @@ class SyndicatedPost {
 					$taxonomies = array_filter($taxonomies, 'remove_dummy_zero');
 	
 					$terms = $this->category_ids (
-						$this->post['taxed'][$what],
+						$this->feed_terms[$what],
 						$this->link->setting("unfamiliar {$what}", "unfamiliar_{$what}", 'create:'.$what),
 						/*taxonomies=*/ $taxonomies,
 						array(
@@ -1301,7 +1306,7 @@ class SyndicatedPost {
 				endforeach;
 
 				// Now let's add on the feed and global presets
-				foreach ($this->post['pretax'] as $tax => $term_ids) :
+				foreach ($this->preset_terms as $tax => $term_ids) :
 					if (!isset($this->post['tax_input'][$tax])) :
 						$this->post['tax_input'][$tax] = array();
 					endif;
@@ -1321,7 +1326,7 @@ class SyndicatedPost {
 		endif;
 		
 		if (!$this->filtered() and $freshness > 0) :
-			unset($this->post['named']);
+			/*DBG*/ echo "<pre>".esc_html(FeedWordPress::val($this->post))."</pre>";
 			$this->post = apply_filters('syndicated_post', $this->post, $this);
 
 			// Allow for feed-specific syndicated_post filters.
@@ -1684,7 +1689,7 @@ class SyndicatedPost {
 	function author_id ($unfamiliar_author = 'create') {
 		global $wpdb;
 
-		$a = $this->post['named']['author'];
+		$a = $this->named['author'];
 		
 		$source = $this->source();
 		$forbidden = apply_filters('feedwordpress_forbidden_author_names',
