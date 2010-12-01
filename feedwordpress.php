@@ -1425,6 +1425,7 @@ class FeedWordPress {
 
 		$sniffer_class = apply_filters('feedwordpress_sniffer_class', 'FeedWordPress_Content_Type_Sniffer');
 
+		// Allow user to change default feed-fetch timeout with a global setting. Props Erigami Scholey-Fuller <http://www.piepalace.ca/blog/2010/11/feedwordpress-broke-my-heart.html>
 		$timeout = apply_filters('feedwordpress_fetch_timeout', get_option('feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT));
 			
 		$feed = new $pie_class;
