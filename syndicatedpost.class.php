@@ -1351,8 +1351,16 @@ class SyndicatedPost {
 		endif;
 		
 		if (!$this->filtered() and $freshness > 0) :
+			// Filter some individual fields
+			
+			// Allow filters to set post slug. Props niska.
+			$post_name = apply_filters('syndicated_post_slug', NULL, $this);
+			if (!empty($post_name)) :
+				$this->post['post_name'] = $post_name;
+			endif;
+			
 			$this->post = apply_filters('syndicated_post', $this->post, $this);
-
+			
 			// Allow for feed-specific syndicated_post filters.
 			$this->post = apply_filters(
 				"syndicated_post_".$this->link->uri(),
