@@ -1350,9 +1350,6 @@ class SyndicatedPost {
 			);
 			FeedWordPress::diagnostic('syndicated_posts', $diag[$freshness]);
 
-			if (!is_null($this->wp_id())) :
-				$this->post['ID'] = $this->wp_id();
-			endif;
 			$this->insert_post(/*update=*/ ($freshness == 1));
 			
 			$hook = array(	1 => 'update_syndicated_item', 2 => 'post_syndicated_item' );
@@ -1405,7 +1402,20 @@ class SyndicatedPost {
 			/*priority=*/ -10001, /* very early */
 			/*arguments=*/ 3
 			);
+			
+			// WP3 appears to override whatever you give it for
+			// post_modified. Ugh.
+			add_action(
+			/*hook=*/ 'transition_post_status',
+			/*callback=*/ array(&$this, 'fix_post_modified_ts'),
+			/*priority=*/ -10000, /* very early */
+			/*arguments=*/ 3
+			);
 
+			if ($update) :
+				$this->post['ID'] = $this->wp_id();
+				$dbpost['ID'] = $this->post['ID'];
+			endif;
 			$this->_wp_id = wp_insert_post($dbpost);
 
 			remove_action(
@@ -1414,7 +1424,14 @@ class SyndicatedPost {
 			/*priority=*/ -10001, /* very early */
 			/*arguments=*/ 3
 			);
-	
+
+			remove_action(
+			/*hook=*/ 'transition_post_status',
+			/*callback=*/ array(&$this, 'fix_post_modified_ts'),
+			/*priority=*/ -10000, /* very early */
+			/*arguments=*/ 3
+			);
+
 			// Turn off ridiculous fucking kludges #1 and #2
 			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
 			remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
@@ -1580,6 +1597,29 @@ class SyndicatedPost {
 			endforeach;
 		endif;
 	} /* SyndicatedPost::add_terms () */
+	
+	/**
+	 * SyndicatedPost::fix_post_modified_ts() -- We would like to set
+	 * post_modified and post_modified_gmt to reflect the value of
+	 * <atom:updated> or equivalent elements on the feed. Unfortunately,
+	 * wp_insert_post() refuses to acknowledge explicitly-set post_modified
+	 * fields and overwrites them, either with the post_date (if new) or the
+	 * current timestamp (if updated).
+	 *
+	 * So, wp_insert_post() is not going to do the last-modified assignments
+	 * for us. If you want something done right....
+	 *
+	 * @param string $new_status Unused action parameter.
+	 * @param string $old_status Unused action parameter.
+	 * @param object $post The database record for the post just inserted.
+	 */
+	function fix_post_modified_ts ($new_status, $old_status, $post) {
+		global $wpdb;
+		$wpdb->update( $wpdb->posts, /*data=*/ array(
+		'post_modified' => $this->post['post_modified'],
+		'post_modified_gmt' => $this->post['post_modified_gmt'],
+		), /*where=*/ array('ID' => $post->ID) );
+	} /* SyndicatedPost::fix_post_modified_ts () */
 	
 	/**
 	 * SyndicatedPost::add_rss_meta: adds interesting meta-data to each entry
