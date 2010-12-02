@@ -165,9 +165,11 @@ class SyndicatedLink {
 
 		FeedWordPress::diagnostic('updated_feeds', 'Polling feed ['.$this->link->link_rss.']');
 
+		$timeout = $this->setting('fetch timeout', 'feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT);
+
 		$this->simplepie = apply_filters(
 			'syndicated_feed',
-			FeedWordPress::fetch($this->link->link_rss),
+			FeedWordPress::fetch($this->link->link_rss, array('timeout' => $timeout)),
 			$this
 		);
 		
@@ -543,6 +545,9 @@ class SyndicatedLink {
 		);
 
 		if ($no_value and !is_null($fallback_global)) :
+			// Avoid duplication of this correction
+			$fallback_global = preg_replace('/^feedwordpress_/', '', $fallback_global);
+			
 			$ret = get_option('feedwordpress_'.$fallback_global, /*default=*/ NULL);
 		endif;
 
