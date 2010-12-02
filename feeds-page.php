@@ -72,6 +72,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	var $special_settings = array ( /* Regular expression syntax is OK here */
 		'cats',
 		'cat_split',
+		'fetch timeout',
 		'freeze updates',
 		'hardcode name',
 		'hardcode url',
@@ -110,8 +111,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		);
 		if ($this->for_default_settings()) :
 			unset($this->boxes_by_methods['custom_settings_box']);
-		else :
-			unset($this->boxes_by_methods['fetch_settings_box']);
 		endif;	
 			
 		// Allow overriding of normal source for FeedFinder, which may
@@ -301,21 +300,38 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		return sprintf(__($caption), $updateWindow);
 	} /* FeedWordPressFeedsPage::update_window_currently () */
 	
-	function fetch_settings_box ($page, $box = NULL) {
-			$timeout = intval($page->setting('fetch timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT));
+	function fetch_timeout_setting ($setting, $defaulted, $params) {
+		$timeout = intval($this->setting('fetch timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT));
+
+		if ($this->for_feed_settings()) :
+			$article = 'this';
+		else :
+			$article = 'a';
+		endif;
 		?>
-		<table class="edit-form narrow">
-		<tr>
-		<th scope="row">Feed timeout:</th>
-		<td><p>Wait no more than
+		<p>Wait no more than
 		than <input name="fetch_timeout" type="number" min="0" size="3" value="<?php print $timeout; ?>" />
-		second(s) when trying to fetch a feed to check for updates.</p>
-		<p>If a source's web server does not respond before time runs
-		out, FeedWordPress will skip that source and try again during
-		the next update cycle.</p></td>
-		</tr>
-		</table>
+		second(s) when trying to fetch <?php print $article; ?> feed to check for updates.</p>
+		<p>If <?php print $article; ?> source's web server does not respond before time runs
+		out, FeedWordPress will skip over the source and try again during
+		the next update cycle.</p>
 		<?php
+	}
+	function fetch_timeout_setting_value ($setting, $defaulted, $params) {
+		print number_format(intval($setting)) . " " . (($setting==1) ? "second" : "seconds");
+	}
+	
+	function fetch_settings_box ($page, $box = NULL) {
+		$this->setting_radio_control(
+			'fetch timeout', 'fetch_timeout',
+			array(&$this, 'fetch_timeout_setting'),
+			array(
+				'global-setting-default' => FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT,
+				'input-name' => 'fetch_timeout',
+				'default-input-name' => 'fetch_timeout_default',
+				'labels' => array(&$this, 'fetch_timeout_setting_value'),
+			)
+		);
 	} /* FeedWordPressFeedsPage::fetch_settings_box () */
 	
 	function feed_information_box ($page, $box = NULL) {
@@ -824,9 +840,19 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				update_option("feedwordpress_hardcode_{$what}", $hardcode);
 			endforeach;
 			
-			if (isset($post['fetch_timeout'])) :
-				update_option('feedwordpress_fetch_timeout', (int) $post['fetch_timeout']);
+		endif;
+		
+		if (isset($post['fetch_timeout'])) :
+			if (isset($post['fetch_timeout_default']) and $post['fetch_timeout_default']=='yes') :
+				$timeout = NULL;
+			else :
+				$timeout = $post['fetch_timeout'];
 			endif;
+
+			if (is_int($timeout)) :
+				$timeout = intval($timeout);
+			endif;
+			$this->update_setting('fetch timeout', $timeout);
 		endif;
 		
 		$this->updatedPosts->accept_POST($post);

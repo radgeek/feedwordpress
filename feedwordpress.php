@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2010.1007
+Version: 2010.1202
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2010.1007
+ * @version 2010.1202
  */
 
 # This uses code derived from:
@@ -1417,7 +1417,24 @@ class FeedWordPress {
 		");
 	}
 
-	/*static*/ function fetch ($url, $force_feed = true) {
+	/*static*/ function fetch ($url, $params = array()) {
+		$force_feed = true; // Default
+
+		// Allow user to change default feed-fetch timeout with a global setting. Props Erigami Scholey-Fuller <http://www.piepalace.ca/blog/2010/11/feedwordpress-broke-my-heart.html>			'timeout' => 
+		$timeout = apply_filters('feedwordpress_fetch_timeout', intval(get_option('feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT)));
+ 		
+		if (!is_array($params)) :
+			$force_feed = $params;
+		else : // Parameter array
+			$args = shortcode_atts(array(
+			'force_feed' => $force_feed,
+			'timeout' => $timeout
+			), $params);
+			
+			extract($args);
+		endif;
+		$timeout = intval($timeout);
+		
 		$pie_class = apply_filters('feedwordpress_simplepie_class', 'SimplePie');
 		$cache_class = apply_filters('feedwordpress_cache_class', 'WP_Feed_Cache');
 		$file_class = apply_filters('feedwordpress_file_class', 'FeedWordPress_File');
@@ -1425,9 +1442,6 @@ class FeedWordPress {
 
 		$sniffer_class = apply_filters('feedwordpress_sniffer_class', 'FeedWordPress_Content_Type_Sniffer');
 
-		// Allow user to change default feed-fetch timeout with a global setting. Props Erigami Scholey-Fuller <http://www.piepalace.ca/blog/2010/11/feedwordpress-broke-my-heart.html>
-		$timeout = apply_filters('feedwordpress_fetch_timeout', get_option('feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT));
-			
 		$feed = new $pie_class;
 		$feed->set_feed_url($url);
 		$feed->set_cache_class($cache_class);

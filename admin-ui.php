@@ -553,6 +553,7 @@ class FeedWordPressAdminPage {
 		// This allows us to provide an alternative set of human-readable
 		// labels for each potential value. For use in Currently: line.
 		if (isset($params['labels'])) : $labels = $params['labels'];
+		elseif (is_callable($options)) : $labels = NULL;
 		else : $labels = $options;
 		endif;
 		
@@ -632,6 +633,8 @@ class FeedWordPressAdminPage {
 			<span class="current-setting">Currently:
 			<strong><?php if (is_callable($labels)) :
 				print call_user_func($labels, $globalSetting, $defaulted, $params);
+			elseif (is_null($labels)) :
+				print $globalSetting;
 			else :
 				print $labels[$globalSetting];
 			endif;  ?></strong> (<a href="<?php print $href; ?>">change</a>)</span></li>
