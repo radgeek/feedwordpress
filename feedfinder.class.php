@@ -165,7 +165,7 @@ class FeedFinder {
 			// Use WordPress API function
 			$client = wp_remote_request($this->uri, array(
 				'headers' => $headers,
-				'timeout' => FEEDWORDPRESS_FETCH_TIME_OUT,
+				'timeout' => FeedWordPress::fetch_timeout(),
 			));
 
 			$this->_response = $client;

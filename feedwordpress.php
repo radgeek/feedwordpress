@@ -44,7 +44,6 @@ endif;
 // Defaults
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 define ('DEFAULT_UPDATE_PERIOD', 60); // value in minutes
-define ('FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT', 20);
 
 if (isset($_REQUEST['feedwordpress_debug'])) :
 	$feedwordpress_debug = $_REQUEST['feedwordpress_debug'];
@@ -87,13 +86,13 @@ if (FEEDWORDPRESS_DEBUG) :
 	 // used for more than testing purposes!
 	define('FEEDWORDPRESS_CACHE_AGE', 1);
 	define('FEEDWORDPRESS_CACHE_LIFETIME', 1);
-	define('FEEDWORDPRESS_FETCH_TIME_OUT', 60);
+	define('FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT', 60);
 else :
 	// Hold onto data all day for conditional GET purposes,
 	// but consider it stale after 1 min (requiring a conditional GET)
 	define('FEEDWORDPRESS_CACHE_LIFETIME', 24*60*60);
 	define('FEEDWORDPRESS_CACHE_AGE', 1*60);
-	define('FEEDWORDPRESS_FETCH_TIME_OUT', 10);
+	define('FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT', 20);
 endif;
 
 // Use our the cache settings that we want.
@@ -1417,11 +1416,18 @@ class FeedWordPress {
 		");
 	}
 
+	/*static*/ function fetch_timeout () {
+		return apply_filters(
+			'feedwordpress_fetch_timeout',
+			intval(get_option('feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT))
+		);
+	}
+	
 	/*static*/ function fetch ($url, $params = array()) {
 		$force_feed = true; // Default
 
 		// Allow user to change default feed-fetch timeout with a global setting. Props Erigami Scholey-Fuller <http://www.piepalace.ca/blog/2010/11/feedwordpress-broke-my-heart.html>			'timeout' => 
-		$timeout = apply_filters('feedwordpress_fetch_timeout', intval(get_option('feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT)));
+		$timeout = FeedWordPress::fetch_timeout();
  		
 		if (!is_array($params)) :
 			$force_feed = $params;
