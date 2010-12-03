@@ -763,26 +763,43 @@ class SyndicatedPost {
 		$guid = null;
 		if (isset($this->item['id'])): 			// Atom 0.3 / 1.0
 			$guid = $this->item['id'];
-		elseif (isset($this->item['atom']['id'])) :	// Namespaced Atom
+		elseif (isset($this->item['atom']['id'])) :		// Namespaced Atom
 			$guid = $this->item['atom']['id'];
-		elseif (isset($this->item['guid'])) :		// RSS 2.0
+		elseif (isset($this->item['guid'])) :			// RSS 2.0
 			$guid = $this->item['guid'];
-		elseif (isset($this->item['dc']['identifier'])) :// yeah, right
+		elseif (isset($this->item['dc']['identifier'])) :	// yeah, right
 			$guid = $this->item['dc']['identifier'];
-		else :
+		endif;
+		
+		// Un-set or too long to use as-is. Generate a tag: URI.
+		if (is_null($guid) or strlen($guid) > 250) :
+			// In case we need to check this again
+			$original_guid = $guid;
+			
 			// The feed does not seem to have provided us with a
-			// unique identifier, so we'll have to cobble together
-			// a tag: URI that might work for us. The base of the
-			// URI will be the host name of the feed source ...
+			// usable unique identifier, so we'll have to cobble
+			// together a tag: URI that might work for us. The base
+			// of the URI will be the host name of the feed source ...
 			$bits = parse_url($this->link->uri());
 			$guid = 'tag:'.$bits['host'];
 
+			// Some ill-mannered feeds (for example, certain feeds
+			// coming from Google Calendar) have extraordinarily long
+			// guids -- so long that they exceed the 255 character
+			// width of the WordPress guid field. But if the string
+			// gets clipped by MySQL, uniqueness tests will fail
+			// forever after and the post will be endlessly
+			// reduplicated. So, instead, Guids Of A Certain Length
+			// are hashed down into a nice, manageable tag: URI.
+			if (!is_null($guid)) :
+				$guid .= ',2010-12-03:id.'.md5($original_guid);
+			
 			// If we have a date of creation, then we can use that
 			// to uniquely identify the item. (On the other hand, if
 			// the feed producer was consicentious enough to
 			// generate dates of creation, she probably also was
 			// conscientious enough to generate unique identifiers.)
-			if (!is_null($this->created())) :
+			elseif (!is_null($this->created())) :
 				$guid .= '://post.'.date('YmdHis', $this->created());
 			
 			// Otherwise, use both the URI of the item, *and* the
