@@ -398,9 +398,9 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<input type="submit" name="feedfinder" value="switch &rarr;" style="font-size:smaller" />
 		
 		<style type="text/css">
-		.add-remove { font-size: 0.80em; text-transform: uppercase; text-decoration: none; vertical-align: middle; }
+		.add-remove { padding-left: 1.5em; font-size: 0.80em; text-transform: uppercase; text-decoration: none; vertical-align: middle; }
 		.link-rss-params-row { vertical-align: middle; }
-		.link-rss-params-remove { padding-left: 1.5em; }
+		.link-rss-params-remove {  }
 		</style>
 			
 		<table id="link-rss-params">
