@@ -1613,22 +1613,6 @@ class FeedWordPress {
 	
 	function email_diagnostic_log () {
 		$dlog = get_option('feedwordpress_diagnostics_log', array());
-
-		$ded = get_option('feedwordpress_diagnostics_email_destination', 'admins');
-		
-		// e-mail address
-		if (preg_match('/^mailto:(.*)$/', $ded, $ref)) :
-			$recipients = array($ref[1]);
-			
-		// userid
-		elseif (preg_match('/^user:(.*)$/', $ded, $ref)) :
-			$userdata = get_userdata((int) $ref[1]);
-			$recipients = array($userdata->user_email);
-		
-		// admins
-		else :
-			$recipients = FeedWordPressDiagnostic::admin_emails();
-		endif;
 		
 		if (isset($dlog['schedule']) and isset($dlog['schedule']['last'])) :
 			if (time() > ($dlog['schedule']['last'] + $dlog['schedule']['freq'])) :
@@ -1692,6 +1676,23 @@ $body
 </html>
 
 EOMAIL;
+
+					$ded = get_option('feedwordpress_diagnostics_email_destination', 'admins');
+
+					// e-mail address
+					if (preg_match('/^mailto:(.*)$/', $ded, $ref)) :
+						$recipients = array($ref[1]);
+						
+					// userid
+					elseif (preg_match('/^user:(.*)$/', $ded, $ref)) :
+						$userdata = get_userdata((int) $ref[1]);
+						$recipients = array($userdata->user_email);
+					
+					// admins
+					else :
+						$recipients = FeedWordPressDiagnostic::admin_emails();
+					endif;
+
 					foreach ($recipients as $email) :						
 						add_filter('wp_mail_content_type', array('FeedWordPress', 'allow_html_mail'));
 						wp_mail($email, $subj, $body);
