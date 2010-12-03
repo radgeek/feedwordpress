@@ -112,14 +112,34 @@ class SyndicatedLink {
 			endforeach;
 
 			if (isset($this->settings['terms'])) :
-				$this->settings['terms'] = explode(FEEDWORDPRESS_CAT_SEPARATOR.FEEDWORDPRESS_CAT_SEPARATOR, $this->settings['terms']);
-				$terms = array();
-				foreach ($this->settings['terms'] as $line) :
-					$line = explode(FEEDWORDPRESS_CAT_SEPARATOR, $line);
-					$tax = array_shift($line);
-					$terms[$tax] = $line;
-				endforeach;
-				$this->settings['terms'] = $terms;
+				// Look for new format
+				$this->settings['terms'] = maybe_unserialize($this->settings['terms']);
+				
+				if (!is_array($this->settings['terms'])) :
+					// Deal with old format instead. Ugh.
+
+					// Split on two *or more* consecutive breaks
+					// because in the old format, a taxonomy
+					// without any associated terms would
+					// produce tax_name#1\n\n\ntax_name#2\nterm,
+					// and the naive split on the first \n\n
+					// would screw up the tax_name#2 list.
+					//
+					// Props to David Morris for pointing this
+					// out.
+
+					$this->settings['terms'] = preg_split(
+						"/".FEEDWORDPRESS_CAT_SEPARATOR."{2,}/",
+						$this->settings['terms']
+					);
+					$terms = array();
+					foreach ($this->settings['terms'] as $line) :
+						$line = explode(FEEDWORDPRESS_CAT_SEPARATOR, $line);
+						$tax = array_shift($line);
+						$terms[$tax] = $line;
+					endforeach;
+					$this->settings['terms'] = $terms;
+				endif;
 			endif;
 			
 			if (isset($this->settings['map authors'])) :
@@ -471,11 +491,8 @@ class SyndicatedLink {
 		endforeach;
 		
 		if (isset($to_notes['terms']) and is_array($to_notes['terms'])) :
-			$tt = array();
-			foreach ($to_notes['terms'] as $tax => $terms) :
-				$tt[] = $tax.FEEDWORDPRESS_CAT_SEPARATOR.implode(FEEDWORDPRESS_CAT_SEPARATOR, $terms);
-			endforeach;
-			$to_notes['terms'] = implode(FEEDWORDPRESS_CAT_SEPARATOR.FEEDWORDPRESS_CAT_SEPARATOR, $tt);
+			// Serialize it.
+			$to_notes['terms'] = serialize($to_notes['terms']);
 		endif;
 		
 		// Collapse the author mapping rule structure back into a flat string
