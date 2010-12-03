@@ -85,6 +85,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		'ping status',
 		'post status',
 		'postmeta',
+		'query parameters',
 		'resolve relative',
 		'syndicated post type',
 		'tags',
@@ -336,6 +337,11 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	
 	function feed_information_box ($page, $box = NULL) {
 		global $wpdb;
+		$link_rss_params = maybe_unserialize($page->setting('query parameters', ''));
+		if (!is_array($link_rss_params)) :
+			$link_rss_params = array();
+		endif;
+		
 		if ($page->for_feed_settings()) :
 			$info['name'] = esc_html($page->link->link->link_name);
 			$info['description'] = esc_html($page->link->link->link_description);
@@ -389,7 +395,78 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<td><a href="<?php echo esc_html($rss_url); ?>"><?php echo esc_html($rss_url); ?></a>
 		(<a href="<?php echo FEEDVALIDATOR_URI; ?>?url=<?php echo urlencode($rss_url); ?>"
 		title="Check feed &lt;<?php echo esc_html($rss_url); ?>&gt; for validity">validate</a>)
-		<input type="submit" name="feedfinder" value="switch &rarr;" style="font-size:smaller" /></td>
+		<input type="submit" name="feedfinder" value="switch &rarr;" style="font-size:smaller" />
+		
+		<style type="text/css">
+		.add-remove { font-size: 0.80em; text-transform: uppercase; text-decoration: none; vertical-align: middle; }
+		.link-rss-params-row { vertical-align: middle; }
+		.link-rss-params-remove { padding-left: 1.5em; }
+		</style>
+			
+		<table id="link-rss-params">
+		<tbody>
+		<?php
+		$link_rss_params['new'] = array('', '');
+		$i = 0;
+		foreach ($link_rss_params as $index => $pair) :
+		?>
+		<tr class="link-rss-params-row" id="link-rss-params-<?php print $index; ?>">
+		<td style="width: 5em"><input type="text" class="link_params_key"
+		name="link_rss_params_key[<?php print $index; ?>]" value="<?php print esc_html($pair[0]); ?>"
+		size="5" placeholder="parameter name" /></td>
+		<td>= <input type="text" class="link_params_value"
+		name="link_rss_params_value[<?php print $index; ?>]" value="<?php print esc_html($pair[1]); ?>"
+		size="8" placeholder="value" /></td>
+		</tr>
+		<?php
+			$i++;
+		endforeach;
+		?>
+		</tbody>
+		</table>
+		
+		<div><input type="hidden" id="link-rss-params-num" name="link_rss_params_num" value="<?php print $i; ?>" /></div>
+		
+		<script type="text/javascript">
+		function linkParamsRowRemove (element) {
+			console.log(element);
+			jQuery(element).closest('tr').hide('slow', function () {
+				jQuery(this).remove();
+			} );
+		}
+
+		jQuery('#link-rss-params tr').each( function () {
+			jQuery('<a class="link-rss-params-remove add-remove" href="#">(X Remove)</a>').insertAfter('.link_params_value');
+		} );
+
+		jQuery('#link-rss-params-new').hide();
+		jQuery('<a  class="add-remove" id="link-rss-params-add" href="#">+ Add a query parameter</a>').insertAfter('#link-rss-params');
+		jQuery('#link-rss-params-add').click( function () {
+			var next = jQuery('#link-rss-params-num').val();
+			var newRow = jQuery('#link-rss-params-new').clone().attr('id', 'link-rss-params-'+next);
+			newRow.find('.link_params_key').attr('name', 'link_rss_params_key['+next+']');
+			newRow.find('.link_params_value').attr('name', 'link_rss_params_value['+next+']');
+			
+			newRow.find('.link-rss-params-remove').click( function () {
+				linkParamsRowRemove(this);
+				return false;
+			} );
+
+			newRow.appendTo('#link-rss-params');
+			newRow.show();
+			
+			// Update counter for next row.
+			next++;
+			jQuery('#link-rss-params-num').val(next);
+
+			return false;
+		} );
+		jQuery('.link-rss-params-remove').click( function () {
+			linkParamsRowRemove(this);
+			return false;
+		} );
+		</script>
+		</td>
 		</tr>
 
 		<?php
@@ -771,6 +848,20 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	
 	function save_settings ($post) {
 		if ($this->for_feed_settings()) :
+			if (isset($post['link_rss_params_key'])) :
+				$qp = array();
+				foreach ($post['link_rss_params_key'] as $index => $key) :
+					if (strlen($key) > 0) :
+						if (isset($post['link_rss_params_value'][$index])
+						and strlen($post['link_rss_params_value'][$index])) :
+							$value = $post['link_rss_params_value'][$index];
+							$qp[] = array($key, $value);
+						endif;
+					endif;
+				endforeach;
+				$this->update_setting('query parameters', serialize($qp));
+			endif;
+			
 			// custom feed settings first
 			foreach ($post['notes'] as $mn) :
 				$mn['key0'] = (isset($mn['key0']) ? trim($mn['key0']) : NULL);

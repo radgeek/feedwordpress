@@ -183,13 +183,14 @@ class SyndicatedLink {
 	function poll ($crash_ts = NULL) {
 		global $wpdb;
 
-		FeedWordPress::diagnostic('updated_feeds', 'Polling feed ['.$this->link->link_rss.']');
+		$url = $this->uri(array('add_params' => true));
+		FeedWordPress::diagnostic('updated_feeds', 'Polling feed ['.$url.']');
 
 		$timeout = $this->setting('fetch timeout', 'feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT);
 
 		$this->simplepie = apply_filters(
 			'syndicated_feed',
-			FeedWordPress::fetch($this->link->link_rss, array('timeout' => $timeout)),
+			FeedWordPress::fetch($url, array('timeout' => $timeout)),
 			$this
 		);
 		
@@ -587,8 +588,28 @@ class SyndicatedLink {
 		endif;
 	} /* SyndicatedLink::update_setting () */
 	
-	function uri () {
-		return (is_object($this->link) ? $this->link->link_rss : NULL);
+	function uri ($params = array()) {
+		$params = shortcode_atts(array(
+		'add_params' => false,
+		), $params);
+		
+		$uri = (is_object($this->link) ? $this->link->link_rss : NULL);
+		if (!is_null($uri) and strlen($uri) > 0 and $params['add_params']) :
+			$qp = maybe_unserialize($this->setting('query parameters', array()));
+			$q = array();
+			if (is_array($qp) and count($qp) > 0) :
+				foreach ($qp as $pair) :
+					$q[] = urlencode($pair[0]).'='.urlencode($pair[1]);
+				endforeach;
+				
+				// Are we appending to a URI that already has params?
+				$sep = ((strpos('?', $uri)===false) ? '?' : '&');
+				
+				// Tack it on
+				$uri .= $sep . implode("&", $q);
+			endif;
+		endif;
+		return $uri;
 	} /* SyndicatedLink::uri () */
 
 	function property_cascade ($fromFeed, $link_field, $setting, $simplepie_method) {

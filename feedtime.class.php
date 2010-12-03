@@ -103,13 +103,17 @@ class FeedTime {
 			if ( isset($match[15]) and $match[15] == 'Z' ) :
 				# zulu time, aka GMT
 			else :
-				$tz_mod = $match[12];
-				$tz_hour = $match[13];
-				$tz_min = $match[14];
+				$tz_mod = (isset($match[12]) ? $match[12] : NULL);
+				$tz_hour = (isset($match[13]) ? $match[13] : NULL);
+				$tz_min = (isset($match[14]) ? $match[14] : NULL);
 
 				# zero out the variables
-				if ( ! $tz_hour ) { $tz_hour = 0; }
-				if ( ! $tz_min ) { $tz_min = 0; }
+				if ( is_null($tz_hour) ) :
+					$offset = (int) get_option('gmt_offset');
+					$tz_hour = abs($offset);
+					$tz_mod = ((abs($offset) != $offset) ? '-' : '+');
+				endif;
+				if ( is_null($tz_min) ) : $tz_min = 0; endif;
 		
 				$offset_secs = (($tz_hour*60)+$tz_min)*60;
 		    
