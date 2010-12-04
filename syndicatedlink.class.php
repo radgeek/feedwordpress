@@ -596,6 +596,10 @@ class SyndicatedLink {
 		$uri = (is_object($this->link) ? $this->link->link_rss : NULL);
 		if (!is_null($uri) and strlen($uri) > 0 and $params['add_params']) :
 			$qp = maybe_unserialize($this->setting('query parameters', array()));
+			
+			// For high-tech HTTP feed request kung fu
+			$qp = apply_filters('syndicated_feed_parameters', $qp, $uri, $this);
+			
 			$q = array();
 			if (is_array($qp) and count($qp) > 0) :
 				foreach ($qp as $pair) :
@@ -609,6 +613,7 @@ class SyndicatedLink {
 				$uri .= $sep . implode("&", $q);
 			endif;
 		endif;
+		
 		return $uri;
 	} /* SyndicatedLink::uri () */
 
