@@ -397,12 +397,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		title="Check feed &lt;<?php echo esc_html($rss_url); ?>&gt; for validity">validate</a>)
 		<input type="submit" name="feedfinder" value="switch &rarr;" style="font-size:smaller" />
 		
-		<style type="text/css">
-		.add-remove { padding-left: 1.5em; font-size: 0.80em; text-transform: uppercase; text-decoration: none; vertical-align: middle; }
-		.link-rss-params-row { vertical-align: middle; }
-		.link-rss-params-remove {  }
-		</style>
-			
 		<table id="link-rss-params">
 		<tbody>
 		<?php
@@ -411,12 +405,12 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		foreach ($link_rss_params as $index => $pair) :
 		?>
 		<tr class="link-rss-params-row" id="link-rss-params-<?php print $index; ?>">
-		<td style="width: 5em"><input type="text" class="link_params_key"
+		<td><label>Parameter: <input type="text" class="link_params_key"
 		name="link_rss_params_key[<?php print $index; ?>]" value="<?php print esc_html($pair[0]); ?>"
-		size="5" placeholder="parameter name" /></td>
-		<td>= <input type="text" class="link_params_value"
+		size="5" style="width: 5em" placeholder="name" /></label></td>
+		<td class="link-rss-params-value-cell"><label class="link_params_value_label">= <input type="text" class="link_params_value"
 		name="link_rss_params_value[<?php print $index; ?>]" value="<?php print esc_html($pair[1]); ?>"
-		size="8" placeholder="value" /></td>
+		size="8" placeholder="value" /></label></td>
 		</tr>
 		<?php
 			$i++;
@@ -429,15 +423,12 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		
 		<script type="text/javascript">
 		function linkParamsRowRemove (element) {
-			console.log(element);
-			jQuery(element).closest('tr').hide('slow', function () {
+			jQuery(element).closest('tr').fadeOut('slow', function () {
 				jQuery(this).remove();
 			} );
 		}
 
-		jQuery('#link-rss-params tr').each( function () {
-			jQuery('<a class="link-rss-params-remove add-remove" href="#">(X Remove)</a>').insertAfter('.link_params_value');
-		} );
+		jQuery('<td><a href="#" class="add-remove link-rss-params-remove"><span class="x">(X)</span> Remove</a></td>').insertAfter('.link-rss-params-value-cell');
 
 		jQuery('#link-rss-params-new').hide();
 		jQuery('<a  class="add-remove" id="link-rss-params-add" href="#">+ Add a query parameter</a>').insertAfter('#link-rss-params');

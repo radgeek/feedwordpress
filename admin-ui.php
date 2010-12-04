@@ -916,6 +916,14 @@ class FeedWordPressSettingsUI {
 	function admin_styles () {
 		?>
 		<style type="text/css">
+		#feedwordpress-admin-feeds .link-rss-params-remove .x {
+			background: url(<?php print admin_url('images/xit.gif') ?>) no-repeat scroll 0 0 transparent;
+		}
+
+		#feedwordpress-admin-feeds .link-rss-params-remove:hover .x {
+			background: url(<?php print admin_url('images/xit.gif') ?>) no-repeat scroll -10px 0 transparent;
+		}
+
 		.fwpfs {
 			background-image: url(<?php print admin_url('images/fav.png'); ?>);
 			background-repeat: repeat-x;

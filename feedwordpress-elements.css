@@ -379,3 +379,36 @@ table.twofer td.secondary { padding-left: 10px; width: 30%; }
 	background-color: #FFFFD0;
 }
 
+#feedwordpress-admin-feeds .add-remove {
+	padding-left: 1.5em;
+	font-size: 0.80em;
+	text-transform: uppercase;
+	text-decoration: none !important;
+	vertical-align: middle;
+}
+
+#feedwordpress-admin-feeds .link-rss-params-row { vertical-align: middle; }
+#feedwordpress-admin-feeds .link-rss-params-remove {
+	display: block;
+	padding-left: 0em !important;
+	margin-top: 7px;
+	color: #777;
+}
+
+#feedwordpress-admin-feeds .link-rss-params-remove:hover {
+	color: #aa3030;
+}
+
+#feedwordpress-admin-feeds .link-rss-params-remove .x {
+	cursor: pointer;
+	display: block;
+	float: left;
+	width: 10px; height: 10px;
+	margin-right: 2px;
+	overflow: hidden;
+	text-indent: -9999px;
+}
+
+
+#feedwordpress-admin-feeds #link-rss-params td { width: auto !important; }
+
