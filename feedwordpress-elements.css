@@ -379,7 +379,7 @@ table.twofer td.secondary { padding-left: 10px; width: 30%; }
 	background-color: #FFFFD0;
 }
 
-#feedwordpress-admin-feeds .add-remove {
+#feedwordpress-admin-feeds .add-remove, .feedwordpress-admin .remove-it {
 	padding-left: 1.5em;
 	font-size: 0.80em;
 	text-transform: uppercase;
@@ -388,18 +388,18 @@ table.twofer td.secondary { padding-left: 10px; width: 30%; }
 }
 
 #feedwordpress-admin-feeds .link-rss-params-row { vertical-align: middle; }
-#feedwordpress-admin-feeds .link-rss-params-remove {
+#feedwordpress-admin-feeds .link-rss-params-remove, .feedwordpress-admin .remove-it {
 	display: block;
 	padding-left: 0em !important;
 	margin-top: 7px;
 	color: #777;
 }
 
-#feedwordpress-admin-feeds .link-rss-params-remove:hover {
+#feedwordpress-admin-feeds .link-rss-params-remove:hover, .feedwordpress-admin .remove-it:hover {
 	color: #aa3030;
 }
 
-#feedwordpress-admin-feeds .link-rss-params-remove .x {
+#feedwordpress-admin-feeds .link-rss-params-remove .x, .feedwordpress-admin .remove-it .x {
 	cursor: pointer;
 	display: block;
 	float: left;

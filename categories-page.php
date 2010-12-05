@@ -457,17 +457,15 @@ blank.</p></td>
 			<td class="secondary">
 			<h4>Site-wide <?php print $taxonomy->labels->name; ?></h4>
 			<?php if (count($globalCats) > 0) : ?>
-			<ul class="current-setting">
-			<?php
-			foreach ($globalDogs as $dog) :
-			?>
-			<li><?php $cat = get_term($dog, $tax); print $cat->name; ?></li>
-			<?php endforeach; ?>
-			</ul>
-			</div>
-			<p>
+			  <ul class="current-setting">
+			  <?php foreach ($globalDogs as $dog) : ?>
+			    <li><?php $cat = get_term($dog, $tax); print $cat->name; ?></li>
+			  <?php endforeach; ?>
+			  </ul>
+			  </div>
+			  <p>
 			<?php else : ?>
-			<p>Site-wide settings may also assign categories to syndicated
+			  <p>Site-wide settings may also assign categories to syndicated
 			posts.
 			<?php endif; ?>
 			Should <?php print $page->these_posts_phrase(); ?> be assigned
@@ -476,7 +474,7 @@ blank.</p></td>
 			
 			<ul class="settings">
 			<li><p><label><input type="radio" name="add_global[<?php print $tax; ?>]" value="yes" <?php print $checked['yes']; ?> /> Yes. Place <?php print $page->these_posts_phrase(); ?> under all these categories.</label></p></li>
-			<li><p><label><input type="radio" name="add_global[<?php print $tax; ?>]" value="no" <?php print $checked['no']; ?> /> No. Only use the categories I set up on the left. Do not ise the global defaults for <?php print $page->these_posts_phrase(); ?></label></p></li>
+			<li><p><label><input type="radio" name="add_global[<?php print $tax; ?>]" value="no" <?php print $checked['no']; ?> /> No. Only use the categories I set up on the left. Do not use the global defaults for <?php print $page->these_posts_phrase(); ?></label></p></li>
 			</ul>
 			</td>
 			</tr>

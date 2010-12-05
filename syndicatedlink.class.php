@@ -551,7 +551,7 @@ class SyndicatedLink {
 	 * @param mixed $fallback_value If the link setting and the global setting are nonexistent or marked as a use-default value, fall back to this constant value.
 	 * @return bool TRUE on success, FALSE on failure.
 	 */
-	function setting ($name, $fallback_global = NULL, $fallback_value = NULL) {
+	function setting ($name, $fallback_global = NULL, $fallback_value = NULL, $default = 'default') {
 		$ret = NULL;
 		if (isset($this->settings[$name])) :
 			$ret = $this->settings[$name];
@@ -559,7 +559,7 @@ class SyndicatedLink {
 		
 		$no_value = (
 			is_null($ret)
-			or (is_string($ret) and strtolower($ret)=='default')
+			or (is_string($ret) and strtolower($ret)==$default)
 		);
 
 		if ($no_value and !is_null($fallback_global)) :
@@ -571,7 +571,7 @@ class SyndicatedLink {
 
 		$no_value = (
 			is_null($ret)
-			or (is_string($ret) and strtolower($ret)=='default')
+			or (is_string($ret) and strtolower($ret)==$default)
 		);
 
 		if ($no_value and !is_null($fallback_value)) :

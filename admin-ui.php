@@ -98,7 +98,15 @@ class FeedWordPressAdminPage {
 	function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
 	function for_default_settings () { return !$this->for_feed_settings(); }
 
-	function setting ($names, $fallback_value = NULL, $default = 'default') {
+	function setting ($names, $fallback_value = NULL, $params = array()) {
+		if (!is_array($params)) :
+			$params = array('default' => $params);
+		endif;
+		$params = shortcode_atts(array(
+		'default' => 'default',
+		'fallback' => true,
+		), $params);
+
 		if (is_string($names)) :
 			$feed_name = $names;
 			$global_name = 'feedwordpress_'.preg_replace('![\s/]+!', '_', $names);
@@ -108,7 +116,8 @@ class FeedWordPressAdminPage {
 		endif;
 
 		if ($this->for_feed_settings()) : // Check feed-specific setting first; fall back to global
-			$ret = $this->link->setting($feed_name, $global_name, $fallback_value);
+			if (!$params['fallback']) : $global_name = NULL; endif; 
+			$ret = $this->link->setting($feed_name, $global_name, $fallback_value, $params['default']);
 		else : // Check global setting
 			$ret = get_option($global_name, $fallback_value);
 		endif;
@@ -916,11 +925,11 @@ class FeedWordPressSettingsUI {
 	function admin_styles () {
 		?>
 		<style type="text/css">
-		#feedwordpress-admin-feeds .link-rss-params-remove .x {
+		#feedwordpress-admin-feeds .link-rss-params-remove .x, .feedwordpress-admin .remove-it .x {
 			background: url(<?php print admin_url('images/xit.gif') ?>) no-repeat scroll 0 0 transparent;
 		}
 
-		#feedwordpress-admin-feeds .link-rss-params-remove:hover .x {
+		#feedwordpress-admin-feeds .link-rss-params-remove:hover .x, .feedwordpress-admin .remove-it:hover .x {
 			background: url(<?php print admin_url('images/xit.gif') ?>) no-repeat scroll -10px 0 transparent;
 		}
 
