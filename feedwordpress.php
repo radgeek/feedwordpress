@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2010.1202
+Version: 2010.1205
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2010.1202
+ * @version 2010.1205
  */
 
 # This uses code derived from:
@@ -120,7 +120,10 @@ require_once(dirname(__FILE__) . '/feedwordpress-content-type-sniffer.class.php'
 
 // Magic quotes are just about the stupidest thing ever.
 if (is_array($_POST)) :
-	$fwp_post = stripslashes_deep($_POST);
+	$fwp_post = $_POST;
+	if (get_magic_quotes_gpc()) :
+		$fwp_post = stripslashes_deep($fwp_post);
+	endif;
 endif;
 
 // Get the path relative to the plugins directory in which FWP is stored
