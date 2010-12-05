@@ -47,28 +47,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	);
 	var $updatedPosts = NULL;
 
-	/**
-	 * Constructs the Feeds page object
-	 *
-	 * @param mixed $link An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings
-	 */
-	function FeedWordPressFeedsPage ($link = -1) {
-		if (is_numeric($link) and -1 == $link) :
-			$link = FeedWordPressAdminPage::submitted_link();
-		endif;
-
-		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressfeeds', $link);
-
-		$this->dispatch = 'feedwordpress_admin_page_feeds';
-		$this->pagenames = array(
-			'default' => 'Feeds',
-			'settings-update' => 'Syndicated feed',
-			'open-sheet' => 'Feed and Update',
-		);
-		$this->filename = __FILE__;
-		$this->updatedPosts = new UpdatedPostsControl($this);
-	} /* FeedWordPressFeedsPage constructor */
-
 	var $special_settings = array ( /* Regular expression syntax is OK here */
 		'cats',
 		'cat_split',
@@ -93,11 +71,36 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		'unfamliar categories', /* Deprecated */
 		'unfamiliar category',
 		'unfamiliar post_tag',
+		'add/.*',
 		'update/.*',
 		'feed/.*',
 		'link/.*',
 		'match/.*',
 	);
+
+	/**
+	 * Constructs the Feeds page object
+	 *
+	 * @param mixed $link An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings
+	 */
+	function FeedWordPressFeedsPage ($link = -1) {
+		if (is_numeric($link) and -1 == $link) :
+			$link = FeedWordPressAdminPage::submitted_link();
+		endif;
+
+		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressfeeds', $link);
+
+		$this->dispatch = 'feedwordpress_admin_page_feeds';
+		$this->pagenames = array(
+			'default' => 'Feeds',
+			'settings-update' => 'Syndicated feed',
+			'open-sheet' => 'Feed and Update',
+		);
+		$this->filename = __FILE__;
+		$this->updatedPosts = new UpdatedPostsControl($this);
+		
+		$this->special_settings = apply_filters('syndicated_feed_special_settings', $this->special_settings, $this);
+	} /* FeedWordPressFeedsPage constructor */
 
 	function display () {
 		global $fwp_post;
