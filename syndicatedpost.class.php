@@ -107,7 +107,7 @@ class SyndicatedPost {
 			$this
 		);
 		$this->item = $changed;
-
+		
 		# Filters can halt further processing by returning NULL
 		if (is_null($this->item)) :
 			$this->post = NULL;
@@ -791,7 +791,7 @@ class SyndicatedPost {
 			// forever after and the post will be endlessly
 			// reduplicated. So, instead, Guids Of A Certain Length
 			// are hashed down into a nice, manageable tag: URI.
-			if (!is_null($guid)) :
+			if (!is_null($original_guid)) :
 				$guid .= ',2010-12-03:id.'.md5($original_guid);
 			
 			// If we have a date of creation, then we can use that
