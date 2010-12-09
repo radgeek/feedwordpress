@@ -1004,7 +1004,9 @@ function fwp_dashboard_update_if_requested ($object) {
 					$tdelta['updated'] += $delta['updated'];
 				endif;
 			else :
-				echo "<li><p><strong>Error:</strong> There was a problem updating <a href=\"$uri\">$uri</a></p></li>\n";
+				$display_uri = esc_html(feedwordpress_display_url($uri));
+				$uri = esc_html($uri);
+				echo "<li><p><strong>Error:</strong> There was a problem updating <code><a href=\"$uri\">${display_uri}</a></code></p></li>\n";
 			endif;
 		endforeach;
 		echo "</ul>\n";

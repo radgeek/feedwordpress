@@ -61,7 +61,8 @@ class FeedWordPressAdminPage {
 		
 		print '<div class="updated">';
 		print "<ul>";
-		$delta = $feedwordpress->update($this->link->uri());
+		$uri = $this->link->uri();
+		$delta = $feedwordpress->update($uri);
 		print "</ul>";
 
 		if (!is_null($delta)) :
@@ -71,6 +72,7 @@ class FeedWordPressAdminPage {
 			echo "<p><strong>Update complete.</strong>".implode(' and', $mesg)."</p>";
 			echo "\n"; flush();
 		else :
+			$uri = esc_html($uri);
 			echo "<p><strong>Error:</strong> There was a problem updating <a href=\"$uri\">$uri</a></p>\n";
 		endif;
 		print "</div>\n";
