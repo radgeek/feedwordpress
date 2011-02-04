@@ -977,10 +977,13 @@ class FeedWordPressSettingsUI {
 	} /* FeedWordPressSettingsUI::fix_toggles_js () */
 	
 	function magic_input_tip_js ($id) {
+			if (!preg_match('/^[.#]/', $id)) :
+				$id = '#'.$id;
+			endif;
 		?>
 			<script type="text/javascript">
 			jQuery(document).ready( function () {
-				var inputBox = jQuery("#<?php print $id; ?>");
+				var inputBox = jQuery("<?php print $id; ?>");
 				var boxEl = inputBox.get(0);
 				if (boxEl.value==boxEl.defaultValue) { inputBox.addClass('form-input-tip'); }
 				inputBox.focus(function() {
