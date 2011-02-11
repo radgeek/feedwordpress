@@ -39,7 +39,8 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		<div id="post-body">
 		<?php
 		$boxes_by_methods = array(
-			'diagnostics_box' => __('Diagnostics'),
+			'info_box' => __('Diagnostic Information'),
+			'diagnostics_box' => __('Display Diagnostics'),
 			'updates_box' => __('Updates'),
 		);
 	
@@ -104,7 +105,53 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressDiagnosticsPage::accept_POST () */
 
-	/*static*/ function diagnostics_box ($page, $box = NULL) {
+	function info_box ($page, $box = NULL) {
+			$link_category_id = FeedWordPress::link_category_id();
+		?>
+		<table class="edit-form narrow">
+		<thead style="display: none">
+		<th scope="col">Topic</th>
+		<th scope="col">Information</th>
+		</thead>
+
+		<tbody>
+		<tr>
+		<th scope="row">Version:</th>
+		<td>You are using FeedWordPress version <strong><?php print FEEDWORDPRESS_VERSION; ?></strong>.</td>
+		</tr>
+
+		<tr>
+		<th scope="row">Link Category:</th>
+		<td><?php if (!is_wp_error($link_category_id)) :
+			$term = get_term($link_category_id, 'link_category');
+		?><p>Syndicated feeds are
+		kept in link category #<?php print $term->term_id; ?>, <strong><?php print $term->name; ?></strong>.</p>
+		<?php else : ?>
+		<p><strong>FeedWordPress has been unable to set up a valid Link Category
+		for syndicated feeds.</strong> Attempting to set one up returned an
+		<code><?php $link_category_id->get_error_code(); ?></code> error with this
+		additional data:</p>
+		<table>
+		<tbody>
+		<tr>
+		<th scope="row">Message:</th>
+		<td><?php print $link_category_id->get_error_message(); ?></td>
+		</tr>
+		<?php $data = $link_category_id->get_error_data(); if (!empty($data)) : ?>
+		<tr>
+		<th scope="row">Auxiliary Data:</th>
+		<td><pre><?php print esc_html(FeedWordPress::val($link_category_id->get_error_data())); ?></pre></td>
+		</tr>
+		<?php endif; ?>
+		</table>
+		<?php endif; ?></td>
+		</tr>
+		</table>
+
+		<?php
+	} /* FeedWordPressDiagnosticsPage::info_box () */
+	
+	function diagnostics_box ($page, $box = NULL) {
 		$settings = array();
 		$settings['debug'] = (get_option('feedwordpress_debug')=='yes');
 
