@@ -1221,7 +1221,12 @@ class FeedWordPress {
 	function syndicate_link ($name, $uri, $rss) {
 		// Get the category ID#
 		$cat_id = FeedWordPress::link_category_id();
-		
+		if (!is_wp_error($cat_id)) :
+			$link_category = array($cat_id);
+		else :
+			$link_category = array();
+		endif;
+
 		// WordPress gets cranky if there's no homepage URI
 		if (!is_string($uri) or strlen($uri)<1) : $uri = $rss; endif;
 		
@@ -1231,7 +1236,7 @@ class FeedWordPress {
 		"link_rss" => $rss,
 		"link_name" => $name,
 		"link_url" => $uri,
-		"link_category" => array($cat_id),
+		"link_category" => $link_category,
 		"link_visible" => 'Y', // reactivate if inactivated
 		));
 
@@ -1294,10 +1299,14 @@ class FeedWordPress {
 
 	function syndicated_links ($args = array()) {
 		$contributors = FeedWordPress::link_category_id();
-		$links = get_bookmarks(array_merge(
-			array("category" => $contributors),
-			$args
-		));
+		if (!is_wp_error($contributors)) :
+			$links = get_bookmarks(array_merge(
+				array("category" => $contributors),
+				$args
+			));
+		else :
+			$links = array();
+		endif;
 		return $links;
 	} // function FeedWordPress::syndicated_links()
 
@@ -1324,9 +1333,10 @@ class FeedWordPress {
 		// make a new one for ourselves.
 		if (!$cat_id) :
 			$cat_id = FeedWordPressCompatibility::insert_link_category(DEFAULT_SYNDICATION_CATEGORY);
-
-			// Stamp it
-			update_option('feedwordpress_cat_id', $cat_id);
+			if (!is_wp_error($cat_id)) :
+				// Stamp it
+				update_option('feedwordpress_cat_id', $cat_id);
+			endif;
 		endif;
 
 		return $cat_id;
