@@ -1625,7 +1625,9 @@ class FeedWordPress {
 			foreach ($output as $method) :
 				switch ($method) :
 				case 'echo' :
-					echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.$out."</pre></div>";
+					if (!FeedWordPress::update_requested()) :
+						echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.$out."</pre></div>";
+					endif;
 					break;
 				case 'echo_in_cronjob' :
 					if (FeedWordPress::update_requested()) :

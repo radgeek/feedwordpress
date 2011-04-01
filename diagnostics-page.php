@@ -228,7 +228,7 @@ testing but absolutely inappropriate for a production server.</p>
 		$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
 		$fields = apply_filters('feedwordpress_diagnostics', array(
 			'Update Diagnostics' => array(
-				'updated_feeds' => 'as each feed checked for updates',
+				'updated_feeds' => 'as each feed is checked for updates',
 				'updated_feeds:errors:persistent' => 'when attempts to update a feed have resulted in errors</label> <label>for at least <input type="number" min="1" max="360" step="1" name="diagnostics_persistent_error_hours" value="'.$hours.'" /> hours',
 				'updated_feeds:errors' => 'any time FeedWordPress encounters any errors while checking a feed for updates',
 				'syndicated_posts' => 'as each syndicated post is added to the database',
@@ -236,6 +236,8 @@ testing but absolutely inappropriate for a production server.</p>
 				'memory_usage' => 'indicating how much memory was used',
 			),
 			'Syndicated Post Details' => array(
+				'feed_items:freshness' => 'as FeedWordPress decides whether to treat an item as a new post, an update, or a duplicate of an existing post',
+				'feed_items:rejected' => 'when FeedWordPress rejects a post without syndicating it',
 				'syndicated_posts:meta_data' => 'as syndication meta-data is added on the post',
 			),
 		), $page);

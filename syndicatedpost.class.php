@@ -1211,6 +1211,7 @@ class SyndicatedPost {
 			");
 
 			if (!$result) :
+				FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is a NEW POST.');
 				$this->_wp_id = NULL;
 				$this->_freshness = 2; // New content
 			else:
@@ -1247,9 +1248,11 @@ class SyndicatedPost {
 				$updated = ($updated and !$frozen);
 
 				if ($updated) :
+					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is an update of an existing post.');
 					$this->_freshness = 1; // Updated content
 					$this->_wp_id = $result->id;
 				else :
+					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is a duplicate of an existing post.');
 					$this->_freshness = 0; // Same old, same old
 					$this->_wp_id = $result->id;
 				endif;
@@ -1288,6 +1291,7 @@ class SyndicatedPost {
 			);
 
 			if (is_null($this->post['post_author'])) :
+				FeedWordPress::diagnostic('feed_items:rejected', 'Filtered out item ['.$this->guid().'] without syndication: no author available');
 				$this->post = NULL;
 			endif;
 		endif;
@@ -1646,7 +1650,6 @@ class SyndicatedPost {
 				if (is_array($terms)) :
 					$terms = array_filter($terms); // strip out empties
 				endif;
-				
 				wp_set_post_terms($post->ID, $terms, $taxonomy);
 			endforeach;
 		endif;
