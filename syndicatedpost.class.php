@@ -1747,6 +1747,12 @@ class SyndicatedPost {
 		$forbidden = apply_filters('feedwordpress_forbidden_author_names',
 			array('admin', 'administrator', 'www', 'root'));
 		
+		// Prepare the list of candidates to try for author name: name from
+		// feed, original source title (if any), immediate source title live
+		// from feed, subscription title, prettied version of feed homepage URL,
+		// prettied version of feed URL, or, failing all, use "unknown author"
+		// as last resort
+
 		$candidates = array();
 		$candidates[] = $a['name'];
 		if (!is_null($source)) : $candidates[] = $source['title']; endif;
@@ -1755,6 +1761,9 @@ class SyndicatedPost {
 		if (strlen($this->link->homepage()) > 0) : $candidates[] = feedwordpress_display_url($this->link->homepage()); endif;
 		$candidates[] = feedwordpress_display_url($this->link->uri());
 		$candidates[] = 'unknown author';
+		
+		// Pick the first one that works from the list, screening against empty
+		// or forbidden names.
 		
 		$author = NULL;
 		while (is_null($author) and ($candidate = each($candidates))) :
@@ -1838,6 +1847,7 @@ class SyndicatedPost {
 			$id = $wpdb->get_var(
 			"SELECT ID FROM $wpdb->users
 			WHERE TRIM(LCASE(display_name)) = TRIM(LCASE('$author'))
+			OR TRIM(LCASE(user_login)) = TRIM(LCASE('$author'))
 			OR (
 				LENGTH(TRIM(LCASE(user_email))) > 0
 				AND TRIM(LCASE(user_email)) = TRIM(LCASE('$test_email'))
@@ -1881,6 +1891,10 @@ class SyndicatedPost {
 					$userdata['user_pass'] = substr(md5(uniqid(microtime())), 0, 6); // just something random to lock it up
 					$userdata['user_email'] = $email;
 					$userdata['user_url'] = $authorUrl;
+					$userdata['nickname'] = $author;
+					$parts = preg_split('/\s+/', trim($author), 2);
+					if (isset($parts[0])) : $userdata['first_name'] = $parts[0]; endif;
+					if (isset($parts[1])) : $userdata['last_name'] = $parts[1]; endif;
 					$userdata['display_name'] = $author;
 					$userdata['role'] = 'contributor';
 					
@@ -1927,7 +1941,7 @@ class SyndicatedPost {
 			endif;
 		endif;
 		return $id;	
-	} // function SyndicatedPost::author_id ()
+	} /* function SyndicatedPost::author_id () */
 
 	/**
 	 * category_ids: look up (and create) category ids from a list of categories
