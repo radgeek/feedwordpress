@@ -45,6 +45,26 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 		?>
 <table class="form-table">
 <?php
+if ($page->for_default_settings()) :
+?>
+<tr><th>Unmatched authors</th>
+<td><span>Authors who haven&#8217;t been syndicated before</span>
+  <select style="max-width: 27.0em" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');">
+    <option value="create"<?php print $unfamiliar['create']; ?>>will have a new author account created for them</option>
+    <?php foreach ($page->authorlist as $author_id => $author_name) : ?>
+      <option value="<?php echo $author_id; ?>"<?php print (isset($unfamiliar[$author_id]) ? $unfamiliar[$author_id] : ''); ?>>will have their posts attributed to <?php echo $author_name; ?></option>
+    <?php endforeach; ?>
+    <option value="newuser">will have their posts attributed to a new user...</option>
+    <option value="filter"<?php print $unfamiliar['filter'] ?>>get filtered out</option>
+  </select>
+
+  <span id="unfamiliar-author-newuser">named <input type="text" name="unfamiliar_author_newuser" value="" /></span></p>
+  </td>
+</tr>
+
+<?php
+endif;
+
 if ($page->for_feed_settings()) :
 	$map = $this->link->setting('map authors', NULL, array());
 ?>
@@ -55,8 +75,10 @@ authors?</p>
 <li><p><input type="radio" name="author_rules_name[all]" value="*"
 <?php if (isset($map['name']['*'])) : $author_action = $map['name']['*']; ?>
 	checked="checked"
-<?php else : $author_action = NULL; ?>
-<?php endif; ?>
+<?php
+	else :
+		$author_action = NULL;
+	endif; ?>
 	/> All posts syndicated
 from this feed <select class="author-rules" id="author-rules-all"
 name="author_rules_action[all]" onchange="contextual_appearance('author-rules-all', 'author-rules-all-newuser', 'author-rules-all-default', 'newuser', 'inline');">
