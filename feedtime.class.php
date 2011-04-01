@@ -11,7 +11,7 @@ class FeedTime {
 		$this->set($time);
 	} /* FeedTime constructor */
 	
-	function set ($time) {
+	function set ($time, $recurse = false) {
 		$this->rep = $time;
 		$this->ts = NULL;
 		if (is_numeric($time)) : // Presumably a Unix-epoch timestamp
@@ -23,7 +23,7 @@ class FeedTime {
 			if ($this->failed()) :
 				// In some versions of PHP, strtotime() does not support
 				// the UT timezone. Since UT is by definition within 1
-				// second of UTC, we'll just convert it here to avoid
+				// second of UTC, we'll just convert it preemptively to avoid
 				// problems.
 				$time = preg_replace(
 					'/(\s)UT$/',
@@ -31,6 +31,12 @@ class FeedTime {
 					$time
 				);
 				$this->ts = strtotime($time);
+				
+				if ($this->failed()
+				and preg_match('/^(.*)([+\-][0-9]+|\s+[A-Za-z]{1,3})$/', $time, $matches)) :
+					// Try dropping the time zone and recurse
+					$this->set($matches[1], /*recurse=*/ true);
+				endif;
 			endif;
 		endif;
 	} /* FeedTime::set() */
