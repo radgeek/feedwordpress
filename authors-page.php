@@ -24,6 +24,9 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 	
 	function refresh_author_list () {
 		$this->authorlist = fwp_author_list();
+
+		// Case-insensitive "natural" alphanumeric sort. Preserves key/value associations.
+		if (function_exists('natcasesort')) : natcasesort($this->authorlist); endif;
 	}
 	
 	/*static*/ function syndicated_authors_box ($page, $box = NULL) {
