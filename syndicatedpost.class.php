@@ -859,8 +859,12 @@ class SyndicatedPost {
 			$author['email'] = $this->feed->channel['author_email'];
 		endif;
 		
-		if (isset($this->item['author_url'])):
+		if (isset($this->item['author_uri'])):
+			$author['uri'] = $this->item['author_uri'];
+		elseif (isset($this->item['author_url'])):
 			$author['uri'] = $this->item['author_url'];
+		elseif (isset($this->feed->channel['author_uri'])) :
+			$author['uri'] = $this->item['author_uri'];
 		elseif (isset($this->feed->channel['author_url'])) :
 			$author['uri'] = $this->item['author_url'];
 		elseif (isset($this->feed->channel['link'])) :
@@ -1742,7 +1746,7 @@ class SyndicatedPost {
 		global $wpdb;
 
 		$a = $this->named['author'];
-		
+
 		$source = $this->source();
 		$forbidden = apply_filters('feedwordpress_forbidden_author_names',
 			array('admin', 'administrator', 'www', 'root'));
