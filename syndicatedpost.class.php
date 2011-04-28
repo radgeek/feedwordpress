@@ -1203,7 +1203,7 @@ class SyndicatedPost {
 		global $wpdb;
 
 		if ($this->filtered()) : // This should never happen.
-			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__);
+			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
 		endif;
 		
 		if (is_null($this->_freshness)) :
@@ -1271,7 +1271,7 @@ class SyndicatedPost {
 
 	function wp_id () {
 		if ($this->filtered()) : // This should never happen.
-			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__);
+			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
 		endif;
 		
 		if (is_null($this->_wp_id) and is_null($this->_freshness)) :
@@ -1284,7 +1284,7 @@ class SyndicatedPost {
 		global $wpdb;
 
 		if ($this->filtered()) : // This should never happen.
-			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__);
+			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
 		endif;
 		
 		$freshness = $this->freshness();
@@ -1478,7 +1478,7 @@ class SyndicatedPost {
 				$this->post['ID'] = $this->wp_id();
 				$dbpost['ID'] = $this->post['ID'];
 			endif;
-			$this->_wp_id = wp_insert_post($dbpost);
+			$this->_wp_id = wp_insert_post($dbpost, /*return wp_error=*/ true);
 
 			remove_action(
 			/*hook=*/ 'transition_post_status',
@@ -1497,8 +1497,8 @@ class SyndicatedPost {
 			// Turn off ridiculous fucking kludges #1 and #2
 			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
 			remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
-	
-			$this->validate_post_id($dbpost, array(__CLASS__, __FUNCTION__));
+
+			$this->validate_post_id($dbpost, $update, array(__CLASS__, __FUNCTION__));
 		endif;
 	} /* function SyndicatedPost::insert_post () */
 	
@@ -1558,20 +1558,41 @@ class SyndicatedPost {
 	 * @param array $dbpost An array representing the post we attempted to insert or update
 	 * @param mixed $ns A string or array representing the namespace (class, method) whence this method was called.
 	 */
-	function validate_post_id ($dbpost, $ns) {
+	function validate_post_id ($dbpost, $is_update, $ns) {
 		if (is_array($ns)) : $ns = implode('::', $ns);
 		else : $ns = (string) $ns; endif;
-		
+
 		// This should never happen.
 		if (!is_numeric($this->_wp_id) or ($this->_wp_id == 0)) :
-			FeedWordPress::critical_bug(
-				/*name=*/ $ns.'::_wp_id',
+			$verb = ($is_update ? 'update existing' : 'insert new');
+			$guid = $this->guid();
+			$url = $this->permalink();
+			$feed = $this->link->uri(array('add_params' => true));
+
+			// wp_insert_post failed. Diagnostics, or barf up a critical bug
+			// notice if we are in debug mode.
+			$mesg = "Failed to $verb item [$guid]. WordPress API returned no valid post ID.\n"
+				."\t\tID = ".serialize($this->_wp_id)."\n"
+				."\t\tURL = ".FeedWordPress::val($url)
+				."\t\tFeed = ".FeedWordPress::val($feed); 
+			FeedWordPress::diagnostic('updated_feeds:errors', "WordPress API error: $mesg");
+			FeedWordPress::diagnostic('feed_items:rejected', $mesg);
+
+			$mesg = <<<EOM
+The WordPress API returned an invalid post ID
+			   when FeedWordPress tried to $verb item $guid
+			   [URL: $url]
+			   from the feed at $feed 
+
+$ns::_wp_id 
+EOM;
+			FeedWordPress::noncritical_bug(
+				/*message=*/ $mesg,
 				/*var =*/ array(
 					"\$this->_wp_id" => $this->_wp_id,
 					"\$dbpost" => $dbpost,
-					"\$this" => $this
 				),
-				/*line # =*/ __LINE__
+				/*line # =*/ __LINE__, /*filename=*/ __FILE__
 			);
 		endif;
 	} /* SyndicatedPost::validate_post_id() */
@@ -2028,7 +2049,7 @@ class SyndicatedPost {
 						endif;
 						$term = wp_insert_term($cat_name, $tax);
 						if (is_wp_error($term)) :
-							FeedWordPress::noncritical_bug('term insertion problem', array('cat_name' => $cat_name, 'term' => $term, 'this' => $this), __LINE__);
+							FeedWordPress::noncritical_bug('term insertion problem', array('cat_name' => $cat_name, 'term' => $term, 'this' => $this), __LINE__, __FILE__);
 						else :
 							if (!isset($terms[$tax])) :
 								$terms[$tax] = array();

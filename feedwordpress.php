@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2011.0426
+Version: 2011.0428
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2011.0401
+ * @version 2011.0428
  */
 
 # This uses code derived from:
@@ -34,7 +34,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2011.0401');
+define ('FEEDWORDPRESS_VERSION', '2011.0428');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -1059,7 +1059,7 @@ class FeedWordPress {
 
 			 // This should never happen.
 			else :
-				FeedWordPress::critical_bug('FeedWordPress::stale::last', $last, __LINE__);
+				FeedWordPress::critical_bug('FeedWordPress::stale::last', $last, __LINE__, __FILE__);
 			endif;
 
 		else :
@@ -1577,23 +1577,29 @@ class FeedWordPress {
 	}
 
 	# Internal debugging functions
-	function critical_bug ($varname, $var, $line) {
+	function critical_bug ($varname, $var, $line, $file = NULL) {
 		global $wp_version;
-
-		echo '<p>There may be a bug in FeedWordPress. Please <a href="'.FEEDWORDPRESS_AUTHOR_CONTACT.'">contact the author</a> and paste the following information into your e-mail:</p>';
-		echo "\n<plaintext>";
-		echo "Triggered at line # ".$line."\n";
-		echo "FeedWordPress version: ".FEEDWORDPRESS_VERSION."\n";
-		echo "WordPress version: {$wp_version}\n";
-		echo "PHP version: ".phpversion()."\n";
-		echo "\n";
-		echo $varname.": "; var_dump($var); echo "\n";
+		
+		if (!is_null($file)) :
+			$location = "line # ${line} of ".basename($file);
+		else :
+			$location = "line # ${line}";
+		endif;
+		
+		print '<p><strong>Critical error:</strong> There may be a bug in FeedWordPress. Please <a href="'.FEEDWORDPRESS_AUTHOR_CONTACT.'">contact the author</a> and paste the following information into your e-mail:</p>';
+		print "\n<plaintext>";
+		print "Triggered at ${location}\n";
+		print "FeedWordPress: ".FEEDWORDPRESS_VERSION."\n";
+		print "WordPress:     {$wp_version}\n";
+		print "PHP:           ".phpversion()."\n";
+		print "Error data:    ";
+		print  $varname.": "; var_dump($var); echo "\n";
 		die;
 	}
 	
-	function noncritical_bug ($varname, $var, $line) {
+	function noncritical_bug ($varname, $var, $line, $file = NULL) {
 		if (FEEDWORDPRESS_DEBUG) : // halt only when we are doing debugging
-			FeedWordPress::critical_bug($varname, $var, $line);
+			FeedWordPress::critical_bug($varname, $var, $line, $file);
 		endif;
 	}
 	
