@@ -755,6 +755,20 @@ class SyndicatedPost {
 		return $ts;
 	} /* SyndicatedPost::updated() */
 
+	var $_hashes = array();
+	function stored_hashes ($id = NULL) {
+		if (is_null($id)) :
+			$id = $this->wp_id();
+		endif;
+
+		if (!isset($this->_hashes[$id])) :
+			$this->_hashes[$id] = get_post_custom_values(
+				'syndication_item_hash', $id
+			);
+		endif;
+		return $this->_hashes[$id];
+	}
+
 	function update_hash () {
 		return md5(serialize($this->item));
 	} /* SyndicatedPost::update_hash() */
@@ -1206,7 +1220,7 @@ class SyndicatedPost {
 			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
 		endif;
 		
-		if (is_null($this->_freshness)) :
+		if (is_null($this->_freshness)) : // Not yet checked and cached.
 			$guid = $wpdb->escape($this->guid());
 
 			$result = $wpdb->get_row("
@@ -1214,11 +1228,11 @@ class SyndicatedPost {
 			FROM $wpdb->posts WHERE guid='$guid'
 			");
 
-			if (!$result) :
+			if (!$result) : // No post with this guid
 				FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is a NEW POST.');
 				$this->_wp_id = NULL;
 				$this->_freshness = 2; // New content
-			else:
+			else :
 				preg_match('/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+)/', $result->post_modified_gmt, $backref);
 
 				$last_rev_ts = gmmktime($backref[4], $backref[5], $backref[6], $backref[2], $backref[3], $backref[1]);
@@ -1230,12 +1244,13 @@ class SyndicatedPost {
 					and ($updated_ts > $last_rev_ts)
 				);
 				
+				
 				if (!$updated) :
 					// Or the hash...
-					$stored_update_hashes = get_post_custom_values('syndication_item_hash', $result->id);
-					if (count($stored_update_hashes) > 0) :
-						$stored_update_hash = $stored_update_hashes[0];
-						$updated = ($stored_update_hash != $this->update_hash());
+					$hash = $this->update_hash();
+					$seen = $this->stored_hashes($result->id);
+					if (count($seen) > 0) :
+						$updated = !in_array($hash, $seen); // Not seen yet?
 					else :
 						$updated = true; // Can't find syndication meta-data
 					endif;
@@ -1255,6 +1270,14 @@ class SyndicatedPost {
 					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is an update of an existing post.');
 					$this->_freshness = 1; // Updated content
 					$this->_wp_id = $result->id;
+					
+					// We want this to keep a running list of all the
+					// processed update hashes.
+					$this->post['meta']['syndication_item_hash'] = array_merge(
+						$this->stored_hashes(),
+						array($this->update_hash())
+					);
+
 				else :
 					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is a duplicate of an existing post.');
 					$this->_freshness = 0; // Same old, same old
