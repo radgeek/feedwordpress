@@ -1467,7 +1467,14 @@ class SyndicatedPost {
 			// Kludge to prevent kses filters from stripping the
 			// content of posts when updating without a logged in
 			// user who has `unfiltered_html` capability.
-			add_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
+			$mungers = array('wp_filter_kses', 'wp_filter_post_kses');
+			$removed = array();
+			foreach ($mungers as $munger) :
+				if (has_filter('content_save_pre', $munger)) :
+					remove_filter('content_save_pre', $munger);
+					$removed[] = $munger;
+				endif;
+			endforeach;
 			
 			if ($update and function_exists('get_post_field')) :
 				// Don't munge status fields that the user may
@@ -1519,8 +1526,10 @@ class SyndicatedPost {
 
 			// Turn off ridiculous fucking kludges #1 and #2
 			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
-			remove_filter('content_save_pre', array($this, 'avoid_kses_munge'), 11);
-
+			foreach ($removed as $filter) :
+				add_filter('content_save_pre', $removed);
+			endforeach;
+			
 			$this->validate_post_id($dbpost, $update, array(__CLASS__, __FUNCTION__));
 		endif;
 	} /* function SyndicatedPost::insert_post () */
@@ -1649,31 +1658,6 @@ EOM;
 		WHERE post_type = 'revision' AND ID='$revision_id'
 		");
 	} /* SyndicatedPost::fix_revision_meta () */
-
-	/**
-	 * SyndicatedPost::avoid_kses_munge() -- If FeedWordPress is processing
-	 * an automatic update, that generally means that wp_insert_post() is
-	 * being called under the user credentials of whoever is viewing the
-	 * blog at the time -- usually meaning no user at all. But if WordPress
-	 * gets a wp_insert_post() when current_user_can('unfiltered_html') is
-	 * false, it will run the content of the post through a kses function
-	 * that strips out lots of HTML tags -- notably <object> and some others.
-	 * This causes problems for syndicating (for example) feeds that contain
-	 * YouTube videos. It also produces an unexpected asymmetry between
-	 * automatically-initiated updates and updates initiated manually from
-	 * the WordPress Dashboard (which are usually initiated under the
-	 * credentials of a logged-in admin, and so don't get run through the
-	 * kses function). So, to avoid the whole mess, what we do here is
-	 * just forcibly disable the kses munging for a single syndicated post,
-	 * by restoring the contents of the `post_content` field.
-	 *
-	 * @param string $content The content of the post, after other filters have gotten to it
-	 * @return string The original content of the post, before other filters had a chance to munge it.
-	 */
-	 function avoid_kses_munge ($content) {
-		 global $wpdb;
-		 return $wpdb->escape($this->post['post_content']);
-	 }
 	 
 	/**
 	 * SyndicatedPost::add_terms() -- if FeedWordPress is processing an
@@ -1693,13 +1677,15 @@ EOM;
 	 * @param object $post The database record for the post just inserted.
 	 */
 	function add_terms ($new_status, $old_status, $post) {
-		if ( is_array($this->post) and isset($this->post['tax_input']) and is_array($this->post['tax_input']) ) :
-			foreach ($this->post['tax_input'] as $taxonomy => $terms) :
-				if (is_array($terms)) :
-					$terms = array_filter($terms); // strip out empties
-				endif;
-				wp_set_post_terms($post->ID, $terms, $taxonomy);
-			endforeach;
+		if ($new_status!='inherit') : // Bail if we are creating a revision.
+			if ( is_array($this->post) and isset($this->post['tax_input']) and is_array($this->post['tax_input']) ) :
+				foreach ($this->post['tax_input'] as $taxonomy => $terms) :
+					if (is_array($terms)) :
+						$terms = array_filter($terms); // strip out empties
+					endif;
+					wp_set_post_terms($post->ID, $terms, $taxonomy);
+				endforeach;
+			endif;
 		endif;
 	} /* SyndicatedPost::add_terms () */
 	
@@ -1720,10 +1706,12 @@ EOM;
 	 */
 	function fix_post_modified_ts ($new_status, $old_status, $post) {
 		global $wpdb;
-		$wpdb->update( $wpdb->posts, /*data=*/ array(
-		'post_modified' => $this->post['post_modified'],
-		'post_modified_gmt' => $this->post['post_modified_gmt'],
-		), /*where=*/ array('ID' => $post->ID) );
+		if ($new_status!='inherit') : // Bail if we are creating a revision.
+			$wpdb->update( $wpdb->posts, /*data=*/ array(
+			'post_modified' => $this->post['post_modified'],
+			'post_modified_gmt' => $this->post['post_modified_gmt'],
+			), /*where=*/ array('ID' => $post->ID) );
+		endif;
 	} /* SyndicatedPost::fix_post_modified_ts () */
 	
 	/**
@@ -1742,38 +1730,40 @@ EOM;
 	 * @param object $post The database record for the post just inserted.
 	 */
 	function add_rss_meta ($new_status, $old_status, $post) {
-		FeedWordPress::diagnostic('syndicated_posts:meta_data', 'Adding post meta-data: {'.implode(", ", array_keys($this->post['meta'])).'}');
-
 		global $wpdb;
-		if ( is_array($this->post) and isset($this->post['meta']) and is_array($this->post['meta']) ) :
-			$postId = $post->ID;
-			
-			// Aggregated posts should NOT send out pingbacks.
-			// WordPress 2.1-2.2 claim you can tell them not to
-			// using $post_pingback, but they don't listen, so we
-			// make sure here.
-			$result = $wpdb->query("
-			DELETE FROM $wpdb->postmeta
-			WHERE post_id='$postId' AND meta_key='_pingme'
-			");
+		if ($new_status!='inherit') : // Bail if we are creating a revision.
+			FeedWordPress::diagnostic('syndicated_posts:meta_data', 'Adding post meta-data: {'.implode(", ", array_keys($this->post['meta'])).'}');
 
-			foreach ( $this->post['meta'] as $key => $values ) :
-				$eKey = $wpdb->escape($key);
-
-				// If this is an update, clear out the old
-				// values to avoid duplication.
+			if ( is_array($this->post) and isset($this->post['meta']) and is_array($this->post['meta']) ) :
+				$postId = $post->ID;
+				
+				// Aggregated posts should NOT send out pingbacks.
+				// WordPress 2.1-2.2 claim you can tell them not to
+				// using $post_pingback, but they don't listen, so we
+				// make sure here.
 				$result = $wpdb->query("
 				DELETE FROM $wpdb->postmeta
-				WHERE post_id='$postId' AND meta_key='$eKey'
+				WHERE post_id='$postId' AND meta_key='_pingme'
 				");
-
-				// Allow for either a single value or an array
-				if (!is_array($values)) $values = array($values);
-				foreach ( $values as $value ) :
-				FeedWordPress::diagnostic('syndicated_posts:meta_data', "Adding post meta-datum to post [$postId]: [$key] = ".FeedWordPress::val($value, /*no newlines=*/ true));
-					add_post_meta($postId, $key, $value, /*unique=*/ false);
+	
+				foreach ( $this->post['meta'] as $key => $values ) :
+					$eKey = $wpdb->escape($key);
+	
+					// If this is an update, clear out the old
+					// values to avoid duplication.
+					$result = $wpdb->query("
+					DELETE FROM $wpdb->postmeta
+					WHERE post_id='$postId' AND meta_key='$eKey'
+					");
+					
+					// Allow for either a single value or an array
+					if (!is_array($values)) $values = array($values);
+					foreach ( $values as $value ) :
+					FeedWordPress::diagnostic('syndicated_posts:meta_data', "Adding post meta-datum to post [$postId]: [$key] = ".FeedWordPress::val($value, /*no newlines=*/ true));
+						add_post_meta($postId, $key, $value, /*unique=*/ false);
+					endforeach;
 				endforeach;
-			endforeach;
+			endif;
 		endif;
 	} /* SyndicatedPost::add_rss_meta () */
 
