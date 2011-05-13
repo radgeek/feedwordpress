@@ -145,6 +145,9 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 	in some best-guess values for nickname, firstname and lastname. Also
 	properly picks up Atom 1.0 author/uri data from feed.
 	
+*	COMPATIBILITY: FeedWordPress has been successfully tested for
+	compatibility with recent releases of WordPress, up to version 3.1.2.
+	
 = 2011.0211 =
 
 *	BUGFIX: DUPLICATE POSTS WHEN GUIDS ARE TOO LONG: When feeds included
