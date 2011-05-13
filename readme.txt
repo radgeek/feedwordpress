@@ -3,8 +3,8 @@ Contributors: Charles Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
-Tested up to: 3.0.5
-Stable tag: 2011.0211.2
+Tested up to: 3.1.2
+Stable tag: 2011.0512
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -92,6 +92,105 @@ outs, see the documentation at the [FeedWordPress project homepage][].
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
 == Changelog ==
+
+= 2011.0512 =
+
+*	DIAGNOSTICS IMPROVEMENTS; "THERE MAY BE A BUG IN FEEDWORDPRESS" CRITICAL
+	ERROR NOTICES ELIMINATED: This version includes some major improvements
+	to the Syndication --> Diagnostics section, which should aid in
+	troubleshooting difficulties with items failing to be imported, posts
+	failing to be properly inserted into the database, or updates failing to
+	be recorded. If you have been encountering critical error / bug notices
+	with a white screen and the message "THERE MAY BE A BUG IN
+	FEEDWORDPRESS," followed by an extraordinarily long dump of mostly
+	incomprehensible diagnostic information, you'll be happy to know that
+	the condition causing these notices has been eliminated. In the few
+	cases where errors may still crop up with database insertions,
+	FeedWordPress will now produce a significantly more manageable and more
+	useful diagnostic message.
+
+*	BUGFIX: NEW POSTS FAILING TO APPEAR IN A CLEANLY-INSTALLED FEEDWORDPRESS
+	SYSTEM. If you encountered a recurring problem with FeedWordPress
+	failing to import new posts, after a clean install of FeedWordPress
+	(i.e., not an upgrade from a previous version), this problem may have
+	been the result of a bug with author-handling which has now been fixed
+	in the 2011.0512 release. (If the problem does *not* go away with the
+	upgrade, this version also includes significant improvements to the
+	Diagnostics system, which will help track down what *is* causing it
+	in your particular case.)
+
+*	PERFORMANCE: New handling of update hashes allows FeedWordPress to avoid
+	a certain kind of infinite loop, caused when two more more different
+	syndicated feeds each carried a version of the same item (for example,
+	because it appeared on two different aggregator feeds that you're
+	syndicating). In previous versions, when this kind of loop cropped up,
+	syndicated posts could pile up an indefinitely large number of revisions
+	-- each revision alternating between the version from each of the two
+	feeds where it appeared -- which would, over time, dramatically inflate
+	the size of the database, and kill the performance of queries on the
+	post table. This issue has been resolved: revisions of the post that
+	have been syndicated once will not be re-syndicated over and over again.
+
+*	AUTHOR LISTS: Lists of authors presented on the Author settings pages
+	should now be easier to scan through, with author names arranged in
+	alphabetical order.
+	
+*	FEED ITEM DATE PARSING: More tweaks to make date-time handling more
+	resilient when feeds provide broken or weird values for the timestamps
+	on syndicated items. FWP will now attempt to work around unparseable
+	timezone values.
+
+*	AUTHOR MATCHING: Now attempts to match author names against the WP login
+	name in addition to display_name; when creating user record, also fills
+	in some best-guess values for nickname, firstname and lastname. Also
+	properly picks up Atom 1.0 author/uri data from feed.
+	
+= 2011.0211 =
+
+*	BUGFIX: DUPLICATE POSTS WHEN GUIDS ARE TOO LONG: When feeds included
+	exceptionally long GUIDs, FeedWordPress could occasionally get into
+	a situation where posts with the long GUIDs would be duplicated over
+	and over again with each update (because FWP failed to store the full
+	GUID, due to length constraints in the relevant database tables).
+	Without the full GUID, FWP would not know that the post had already
+	been syndicated once. This bug has been fixed, and should no longer
+	produce duplicate posts.
+
+*	HTTP TIMEOUT SETTING: If you are frequently running into timeout
+	problems with one or more of the feeds you syndicate, FWP now allows you
+	to adjust the timeout for HTTP requests using a global or feed-by-feed
+	setting.
+
+*	HTTP GET PARAMETERS: You can now temporarily or permanently add HTTP
+	GET parameters to a subscription using an interface in Syndication -->
+	Feeds & Updates. This is especially helpful for making quick, short-term
+	changes to a subscription (for example, to pull in all the previous
+	items from a web service, before settling down to pulling in only newly
+	updated items).
+	
+*	DIAGNOSTICS SYSTEM: Added several new diagnostics which are useful in
+	troubleshooting, and established a framework for add-on modules to hook
+	in with their own diagnostic messages.
+
+*	UI: Adjusted some internal coding, which should allow for settings
+	pages and add-ons to properly display multiple category pickers on a
+	single settings page.
+	
+*	PHP4 COMPATIBILITY TWEAKS: This version makes some tweaks to the handling
+	of object references which should improve compatibility with older
+	versions of PHP. (Although, I should note, web hosts that still force
+	you to run under PHP 4 -- in 2011! -- are *bad web hosts*.)
+
+*	IMPROVED PERFORMANCE: This version eliminates a *major* performance drag
+	that shows up on sites with large numbers of users (due to some poor 
+	decisions about where to place a user query, which caused the user table
+	to be scanned frequently when it did not need to be). If you experienced
+	serious problems with CPU load or slow database performance under
+	2010.0905, which kicked in immediately when FWP was loaded and tended
+	to disappear immediately if FWP was de-activated, it is likely that
+	upgrading away from 2010.0905 to the most recent version will resolve
+	your problem.
+
 
 = 2010.0905 =
 
