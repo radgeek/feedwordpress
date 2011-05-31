@@ -95,14 +95,14 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 = 2011.0531 =
 
-*	WORDPRSS 3.1.3 COMPATIBILITY: DUPLICATE POSTS ISSUE FIXED. Due to internal
-	changes in the way that WordPress handles post guids in the most recent
-	release (3.1.3), many users experienced problems with many duplicate posts
-	appearing in rapid succession. (Specifically, this would happen with any
-	posts using tag: URL guids -- such as all the posts coming from Blogger
-	feeds or feeds from other Google services.) This compatibility release of
-	FeedWordPress eliminates the issue by working around the new restrictions
-	on tag: URLs.
+*	WORDPRESS 3.1.3 COMPATIBILITY: DUPLICATE POSTS ISSUE FIXED. Due to
+	internal changes in the way that WordPress handles post guids in the
+	most recent release (3.1.3), many users experienced problems with many
+	duplicate posts appearing in rapid succession. (Specifically, this would
+	happen with any posts using tag: URL guids -- such as all the posts
+	coming from Blogger feeds or feeds from other Google services.) This
+	compatibility release of FeedWordPress eliminates the issue by working
+	around the new restrictions on tag: URLs.
 
 *	NEW AND IMPROVED DIAGNOSTICS: Syndication --> Diagnostics now contains some
 	new diagnostics settings useful for debugging problems with duplicate posts

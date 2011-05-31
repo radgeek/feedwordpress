@@ -778,12 +778,14 @@ class SyndicatedPost {
 	}
 	
 	/*static*/ function normalize_guid ($guid) {
+		$guid = trim($guid);
 		if (preg_match('/^[0-9a-z]{32}$/i', $guid)) : // MD5
-			$guid = SyndicatedPost::normalize_Guid_prefix().strtolower($guid);
+			$guid = SyndicatedPost::normalize_guid_prefix().strtolower($guid);
 		elseif (strlen(esc_url($guid)) == 0) :
 			$guid = SyndicatedPost::normalize_guid_prefix().md5($guid);
 		endif;
-		
+		$guid = trim($guid);
+
 		return $guid;
 	} /* SyndicatedPost::normalize_guid() */
 	
