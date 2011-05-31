@@ -239,6 +239,7 @@ testing but absolutely inappropriate for a production server.</p>
 				'feed_items:freshness' => 'as FeedWordPress decides whether to treat an item as a new post, an update, or a duplicate of an existing post',
 				'feed_items:rejected' => 'when FeedWordPress rejects a post without syndicating it',
 				'syndicated_posts:meta_data' => 'as syndication meta-data is added on the post',
+				'syndicated_posts:static_meta_data' => 'providing meta-data about syndicated posts in the Edit Posts interface',
 			),
 		), $page);
 		

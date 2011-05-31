@@ -775,11 +775,11 @@ class SyndicatedPost {
 
 	function guid () {
 		$guid = null;
-		if (isset($this->item['id'])): 			// Atom 0.3 / 1.0
+		if (isset($this->item['id'])):						// Atom 0.3 / 1.0
 			$guid = $this->item['id'];
 		elseif (isset($this->item['atom']['id'])) :		// Namespaced Atom
 			$guid = $this->item['atom']['id'];
-		elseif (isset($this->item['guid'])) :			// RSS 2.0
+		elseif (isset($this->item['guid'])) :				// RSS 2.0
 			$guid = $this->item['guid'];
 		elseif (isset($this->item['dc']['identifier'])) :	// yeah, right
 			$guid = $this->item['dc']['identifier'];

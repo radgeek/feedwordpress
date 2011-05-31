@@ -109,14 +109,15 @@ if (!function_exists('wp_insert_user')) :
 	require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
 endif;
 
-require_once(dirname(__FILE__) . '/admin-ui.php');
-require_once(dirname(__FILE__) . '/feedwordpresssyndicationpage.class.php');
-require_once(dirname(__FILE__) . '/compatability.php'); // LEGACY API: Replicate or mock up functions for legacy support purposes
-
-require_once(dirname(__FILE__) . '/syndicatedpost.class.php');
-require_once(dirname(__FILE__) . '/syndicatedlink.class.php');
-require_once(dirname(__FILE__) . '/feedwordpresshtml.class.php');
-require_once(dirname(__FILE__) . '/feedwordpress-content-type-sniffer.class.php');
+$dir = dirname(__FILE__); 
+require_once("${dir}/admin-ui.php");
+require_once("${dir}/feedwordpresssyndicationpage.class.php");
+require_once("${dir}/compatability.php"); // Legacy API             
+require_once("${dir}/syndicatedpost.class.php");
+require_once("${dir}/syndicatedlink.class.php");
+require_once("${dir}/feedwordpresshtml.class.php");
+require_once("${dir}/feedwordpress-content-type-sniffer.class.php");
+require_once("${dir}/inspectpostmeta.class.php");
 
 // Magic quotes are just about the stupidest thing ever.
 if (is_array($_POST)) :
@@ -810,6 +811,9 @@ function fwp_publish_post_hook ($post_id) {
 
 	function feedwordpress_add_post_edit_controls () {
 		add_meta_box('feedwordpress-post-controls', __('Syndication'), 'feedwordpress_post_edit_controls', 'post', 'side', 'high');
+		if (FeedWordPress::diagnostic_on('syndicated_posts:static_meta_data')) :
+			$GLOBALS['inspectPostMeta'] = new InspectPostMeta;
+		endif;
 	} // function FeedWordPress::postEditControls
 	
 	function feedwordpress_post_edit_controls () {
