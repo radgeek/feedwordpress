@@ -118,6 +118,7 @@ require_once("${dir}/syndicatedlink.class.php");
 require_once("${dir}/feedwordpresshtml.class.php");
 require_once("${dir}/feedwordpress-content-type-sniffer.class.php");
 require_once("${dir}/inspectpostmeta.class.php");
+require_once("${dir}/syndicationdataqueries.class.php");
 
 // Magic quotes are just about the stupidest thing ever.
 if (is_array($_POST)) :

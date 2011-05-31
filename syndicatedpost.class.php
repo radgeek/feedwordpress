@@ -618,7 +618,7 @@ class SyndicatedPost {
 		
 		// Ignore whitespace, case, and tag cruft.
 		$theExcerpt = preg_replace('/\s+/', '', strtolower(strip_tags($excerpt)));
-		$theContent = preg_replace('/\s+/', '', strtolower(strip_Tags($content)));
+		$theContent = preg_replace('/\s+/', '', strtolower(strip_tags($content)));
 
 		if ( empty($excerpt) or $theExcerpt == $theContent ) :
 			# If content is available, generate an excerpt.
@@ -773,6 +773,20 @@ class SyndicatedPost {
 		return md5(serialize($this->item));
 	} /* SyndicatedPost::update_hash() */
 
+	/*static*/ function normalize_guid_prefix () {
+		return trailingslashit(get_bloginfo('url')).'?guid=';
+	}
+	
+	/*static*/ function normalize_guid ($guid) {
+		if (preg_match('/^[0-9a-z]{32}$/i', $guid)) : // MD5
+			$guid = SyndicatedPost::normalize_Guid_prefix().strtolower($guid);
+		elseif (strlen(esc_url($guid)) == 0) :
+			$guid = SyndicatedPost::normalize_guid_prefix().md5($guid);
+		endif;
+		
+		return $guid;
+	} /* SyndicatedPost::normalize_guid() */
+	
 	function guid () {
 		$guid = null;
 		if (isset($this->item['id'])):						// Atom 0.3 / 1.0
@@ -1223,17 +1237,24 @@ class SyndicatedPost {
 		if (is_null($this->_freshness)) : // Not yet checked and cached.
 			$guid = $wpdb->escape($this->guid());
 
-			$result = $wpdb->get_row("
-			SELECT id, guid, post_modified_gmt
-			FROM $wpdb->posts WHERE guid='$guid'
-			");
+			$q = new WP_Query(array(
+				'fields' => '_synfresh', // id, guid, post_modified_gmt
+				'guid' => $this->guid(),
+			));
 
-			if (!$result) : // No post with this guid
+			$old_post = NULL;
+			if ($q->have_posts()) :
+				while ($q->have_posts()) : $q->the_post();
+					$old_post = $q->post;
+				endwhile;
+			endif;
+			
+			if (is_null($old_post)) : // No post with this guid
 				FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is a NEW POST.');
 				$this->_wp_id = NULL;
 				$this->_freshness = 2; // New content
 			else :
-				preg_match('/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+)/', $result->post_modified_gmt, $backref);
+				preg_match('/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+)/', $old_post->post_modified_gmt, $backref);
 
 				$last_rev_ts = gmmktime($backref[4], $backref[5], $backref[6], $backref[2], $backref[3], $backref[1]);
 				$updated_ts = $this->updated(/*fallback=*/ true, /*default=*/ NULL);
@@ -1248,7 +1269,7 @@ class SyndicatedPost {
 				if (!$updated) :
 					// Or the hash...
 					$hash = $this->update_hash();
-					$seen = $this->stored_hashes($result->id);
+					$seen = $this->stored_hashes($old_post->ID);
 					if (count($seen) > 0) :
 						$updated = !in_array($hash, $seen); // Not seen yet?
 					else :
@@ -1260,7 +1281,7 @@ class SyndicatedPost {
 				if ($updated) : // Ignore if the post is frozen
 					$frozen = ('yes' == $this->link->setting('freeze updates', 'freeze_updates', NULL));
 					if (!$frozen) :
-						$frozen_values = get_post_custom_values('_syndication_freeze_updates', $result->id);
+						$frozen_values = get_post_custom_values('_syndication_freeze_updates', $old_post->ID);
 						$frozen = (count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
 					endif;
 				endif;
@@ -1269,7 +1290,7 @@ class SyndicatedPost {
 				if ($updated) :
 					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is an update of an existing post.');
 					$this->_freshness = 1; // Updated content
-					$this->_wp_id = $result->id;
+					$this->_wp_id = $old_post->id;
 					
 					// We want this to keep a running list of all the
 					// processed update hashes.
@@ -1281,7 +1302,7 @@ class SyndicatedPost {
 				else :
 					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is a duplicate of an existing post.');
 					$this->_freshness = 0; // Same old, same old
-					$this->_wp_id = $result->id;
+					$this->_wp_id = $old_post->id;
 				endif;
 			endif;
 		endif;
@@ -1581,6 +1602,8 @@ class SyndicatedPost {
 			// FIXME: Option for what to fill a blank title with...
 		endif;
 
+		// Normalize the guid if necessary.
+		$out['guid'] = SyndicatedPost::normalize_guid($out['guid']);
 		return $out;
 	}
 
