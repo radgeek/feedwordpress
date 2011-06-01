@@ -93,7 +93,7 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
-= Trunk =
+= Development Version =
 
 *	BUGFIX: WHITESPACE IN GUIDS NO LONGER PRODUCES DUPLICATE POSTS. The
 	work-around for handling filtered URIs in guid elements has now been
@@ -101,9 +101,10 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 	trailing whitespace, in addition to URIs that were filtered because of
 	unapproved schemes.
 	
-The fix to guid
-	handling under WordPress 3.1.3 
-
+*	BUGFIX: RELATIVE URLS IN GUIDS NO LONGER PRODUCE DUPLICATE POSTS. The
+	work-around for handling filtered URIs in guid elements has now been
+	extended to handle URIs that were altered without being filtered out
+	entirely (most commonly because a scheme was added to a relative URL).
 
 = 2011.0531 =
 
