@@ -2,7 +2,7 @@
 class SyndicationDataQueries {
 	function SyndicationDataQueries () {
 		add_action('init', array(&$this, 'init'));
-		add_filter('request', array(&$this, 'request'), 10, 1);
+		add_filter('pre_get_posts', array(&$this, 'pre_get_posts'), 10, 1);
 		add_filter('posts_search', array(&$this, 'posts_search'), 10, 2);
 		add_filter('posts_fields', array(&$this, 'posts_fields'), 10, 2);
 		add_filter('posts_request', array(&$this, 'posts_request'), 10, 2);
@@ -13,11 +13,11 @@ class SyndicationDataQueries {
 		$wp->add_query_var('guid');
 	}
 
-	function request ($qv) {
-		if (isset($qv['guid']) and strlen(trim($guid)) > 0) :
-			$qv['post_type'] = 'any';
+	function pre_get_posts (&$q) {
+		if ($q->get('guid')) :
+			$q->query_vars['post_type'] = get_post_types();
+			$q->query_vars['post_status'] = implode(",", get_post_stati());
 		endif;
-		return $qv;
 	}
 	
 	function posts_request ($sql, &$query) {
