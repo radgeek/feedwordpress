@@ -10,7 +10,7 @@ require_once(dirname(__FILE__).'/feedtime.class.php');
  * different feed formats, which may be useful to FeedWordPress users
  * who make use of feed data in PHP add-ons and filters.
  *
- * @version 2010.0905
+ * @version 2011.0601
  */
 class SyndicatedPost {
 	var $item = null;	// MagpieRSS representation
@@ -781,7 +781,7 @@ class SyndicatedPost {
 		$guid = trim($guid);
 		if (preg_match('/^[0-9a-z]{32}$/i', $guid)) : // MD5
 			$guid = SyndicatedPost::normalize_guid_prefix().strtolower($guid);
-		elseif (strlen(esc_url($guid)) == 0) :
+		elseif ((strlen(esc_url($guid)) == 0) or (esc_url($guid) != $guid)) :
 			$guid = SyndicatedPost::normalize_guid_prefix().md5($guid);
 		endif;
 		$guid = trim($guid);
