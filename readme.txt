@@ -95,15 +95,15 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 = Development Version =
 
-*	BUGFIX: WHITESPACE IN GUIDS NO LONGER PRODUCES DUPLICATE POSTS. The
-	work-around for handling filtered URIs in guid elements has now been
-	extended to handle URIs that were filtered because of leading or
+*	WP 3.1.3 COMPAT / BUGFIX: WHITESPACE IN GUIDS NO LONGER PRODUCES DUPLICATE
+	POSTS. The work-around for handling filtered URIs in guid elements has now
+	been extended to handle URIs that were filtered because of leading or
 	trailing whitespace, in addition to URIs that were filtered because of
 	unapproved schemes.
 	
-*	BUGFIX: RELATIVE URLS IN GUIDS NO LONGER PRODUCE DUPLICATE POSTS. The
-	work-around for handling filtered URIs in guid elements has now been
-	extended to handle URIs that were altered without being filtered out
+*	WP 3.1.3 COMPAT / BUGFIX: RELATIVE URLS IN GUIDS NO LONGER PRODUCE DUPLICATE
+	POSTS. The work-around for handling filtered URIs in guid elements has now
+	been extended to handle URIs that were altered without being filtered out
 	entirely (most commonly because a scheme was added to a relative URL).
 
 *	BUGFIX: UPDATES TO POST NO LONGER CAUSE DUPLICATE DRAFT VERSION TO APPEAR.
