@@ -18,6 +18,10 @@ class SyndicationDataQueries {
 			$q->query_vars['post_type'] = get_post_types();
 			$q->query_vars['post_status'] = implode(",", get_post_stati());
 		endif;
+		
+		if ($q->get('fields') == '_synfresh') :
+			$q->query_vars['cache_results'] = false; // Not suitable for caching.
+		endif;
 	}
 	
 	function posts_request ($sql, &$query) {

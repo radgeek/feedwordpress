@@ -106,6 +106,12 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 	extended to handle URIs that were altered without being filtered out
 	entirely (most commonly because a scheme was added to a relative URL).
 
+*	BUGFIX: UPDATES TO POST NO LONGER CAUSE DUPLICATE DRAFT VERSION TO APPEAR.
+	Under certain conditions in 2011.0531, an update to an existing post would
+	not be properly applied to the post itself, but rather would appear as a
+	duplicate post with Draft status. This bug has been eliminated, and updates
+	will now be properly inserted as revisions to the existing post.
+
 = 2011.0531 =
 
 *	WORDPRESS 3.1.3 COMPATIBILITY: DUPLICATE POSTS ISSUE FIXED. Due to

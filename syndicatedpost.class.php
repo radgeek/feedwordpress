@@ -765,6 +765,9 @@ class SyndicatedPost {
 			$this->_hashes[$id] = get_post_custom_values(
 				'syndication_item_hash', $id
 			);
+			if (is_null($this->_hashes[$id])) :
+				$this->_hashes[$id] = array();
+			endif;
 		endif;
 		return $this->_hashes[$id];
 	}
@@ -1300,7 +1303,6 @@ class SyndicatedPost {
 						$this->stored_hashes(),
 						array($this->update_hash())
 					);
-
 				else :
 					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is a duplicate of an existing post.');
 					$this->_freshness = 0; // Same old, same old
@@ -1506,7 +1508,7 @@ class SyndicatedPost {
 				
 				foreach ($doNotMunge as $field) :
 					$dbpost[$field] = get_post_field($field, $this->wp_id());
-				endforeach;
+				endforeach;				
 			endif;
 			
 			// WP3's wp_insert_post scans current_user_can() for the
@@ -1531,6 +1533,7 @@ class SyndicatedPost {
 				$this->post['ID'] = $this->wp_id();
 				$dbpost['ID'] = $this->post['ID'];
 			endif;
+			
 			$this->_wp_id = wp_insert_post($dbpost, /*return wp_error=*/ true);
 
 			remove_action(
