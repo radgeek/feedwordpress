@@ -4,7 +4,7 @@ Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
 Tested up to: 3.1.3
-Stable tag: 2011.0531
+Stable tag: 2011.0602
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
