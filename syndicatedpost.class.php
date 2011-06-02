@@ -1292,7 +1292,7 @@ class SyndicatedPost {
 				if ($updated) :
 					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is an update of an existing post.');
 					$this->_freshness = 1; // Updated content
-					$this->_wp_id = $old_post->id;
+					$this->_wp_id = $old_post->ID;
 					
 					// We want this to keep a running list of all the
 					// processed update hashes.
@@ -1304,7 +1304,7 @@ class SyndicatedPost {
 				else :
 					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is a duplicate of an existing post.');
 					$this->_freshness = 0; // Same old, same old
-					$this->_wp_id = $old_post->id;
+					$this->_wp_id = $old_post->ID;
 				endif;
 			endif;
 		endif;
