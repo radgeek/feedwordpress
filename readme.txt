@@ -93,7 +93,7 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
-= Development Version =
+= 2011.0602 =
 
 *	WP 3.1.3 COMPAT / BUGFIX: WHITESPACE IN GUIDS NO LONGER PRODUCES DUPLICATE
 	POSTS. The work-around for handling filtered URIs in guid elements has now
