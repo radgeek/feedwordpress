@@ -1244,6 +1244,7 @@ class SyndicatedPost {
 
 			$q = new WP_Query(array(
 				'fields' => '_synfresh', // id, guid, post_modified_gmt
+				'ignore_sticky_posts' => true,
 				'guid' => $this->guid(),
 			));
 
