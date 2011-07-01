@@ -226,11 +226,11 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	$feedwordpress = new FeedWordPress;
 
 	# Cron-less auto-update. Hooray!
-	$autoUpdateHook = get_option('feedwordpress_automatic_updates');
-	if ($autoUpdateHook != 'init') :
-		$autoUpdateHook = 'shutdown';
+	$autoUpdateHook = $feedwordpress->automatic_update_hook();
+	if (!is_null($autoUpdateHook)) :
+		add_action($autoUpdateHook, array(&$feedwordpress, 'auto_update'));
 	endif;
-	add_action($autoUpdateHook, array(&$feedwordpress, 'auto_update'));
+	
 	add_action('init', array(&$feedwordpress, 'init'));
 	add_action('shutdown', array(&$feedwordpress, 'email_diagnostic_log'));
 	add_action('wp_dashboard_setup', array(&$feedwordpress, 'dashboard_setup'));
@@ -1042,12 +1042,33 @@ class FeedWordPress {
 		return $crash_ts;
 	}
 	
+	function automatic_update_hook () {
+		$hook = get_option('feedwordpress_automatic_updates', NULL);
+		if (isset($_REQUEST['automatic_update'])) : // For forced behavior in testing.
+			$hook = $_REQUEST['automatic_update'];
+		endif;
+		
+		if (!is_null($hook)) :
+			if ($hook != 'init') : // Constrain values.
+				$hook = 'shutdown';
+			endif;
+		endif;
+		return $hook; 
+	}
+	function last_update_all () {
+		$last = get_option('feedwordpress_last_update_all');
+		if (isset($_REQUEST['automatic_update']) and ((strlen($_REQUEST['automatic_update']) > 0))) :
+			$last = 1; // A long, long time ago.
+		endif;
+		return $last;
+	}
+	
 	function stale () {
-		if (get_option('feedwordpress_automatic_updates')) :
+		if (!is_null($this->automatic_update_hook())) :
 			// Do our best to avoid possible simultaneous
 			// updates by getting up-to-the-minute settings.
 			
-			$last = get_option('feedwordpress_last_update_all');
+			$last = $this->last_update_all();
 		
 			// If we haven't updated all yet, give it a time window
 			if (false === $last) :
@@ -1060,9 +1081,9 @@ class FeedWordPress {
 				if (false === $freshness) : // Use default
 					$freshness = FEEDWORDPRESS_FRESHNESS_INTERVAL;
 				endif;
-				$ret = ( (time() - $last) > $freshness);
-
-			 // This should never happen.
+				$ret = ( (time() - $last) > $freshness );
+			
+			// This should never happen.
 			else :
 				FeedWordPress::critical_bug('FeedWordPress::stale::last', $last, __LINE__, __FILE__);
 			endif;
