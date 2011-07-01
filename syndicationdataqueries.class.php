@@ -52,9 +52,9 @@ class SyndicationDataQueries {
 				
 				// Assemble
 				$guidMatch = "(guid = '".implode("') OR (guid = '", $seek)."')";
-				if (count($md5Seek) > 0) :
-					$guidMatch .= " OR (MD5(guid) = '".implode("') OR (MD5(guid) = '", $md5Seek)."')";
-				endif;
+				#if (count($md5Seek) > 0) :
+				#	$guidMatch .= " OR (MD5(guid) = '".implode("') OR (MD5(guid) = '", $md5Seek)."')";
+				#endif;
 				
 				$search .= $wpdb->prepare(" AND ($guidMatch)");
 			endif;
