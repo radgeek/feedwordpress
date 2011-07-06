@@ -946,6 +946,12 @@ class FeedWordPressSettingsUI {
 			background-position:0 top;
 			background-repeat:repeat-x;
 		}
+		
+		.update-results {
+			max-width: 100%;
+			overflow: auto;
+		}
+
 		</style>
 		<?php
 	} /* FeedWordPressSettingsUI::admin_styles () */
