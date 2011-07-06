@@ -1065,6 +1065,9 @@ class FeedWordPress {
 		endif;
 		return $last;
 	}
+	function force_update_all () {
+		return (isset($_REQUEST['force_update_feeds']) and !!$_REQUEST['force_update_feeds']);
+	}
 	
 	function stale () {
 		if (!is_null($this->automatic_update_hook())) :

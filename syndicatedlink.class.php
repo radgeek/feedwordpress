@@ -172,6 +172,8 @@ class SyndicatedLink {
 			$stale = true; // update on the next timed update
 		elseif (!isset($this->settings['update/ttl']) or !isset($this->settings['update/last'])) :
 			$stale = true; // initial update
+		elseif (FeedWordPress::force_update_all()) :
+			$stale = true; // forced general updating
 		else :
 			$after = ((int) $this->settings['update/last'])
 				+((int) $this->settings['update/ttl'] * 60);
