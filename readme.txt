@@ -15,11 +15,12 @@ FeedWordPress syndicates content from feeds you choose into your WordPress weblo
 * License: GPL 2. See License below for copyright jots and tittles.
 
 FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content
-from feeds that you choose into your WordPress weblog; if you syndicate several
-feeds then you can use WordPress's posts database and templating engine as the
-back-end of an aggregation ("planet") website. It was developed, originally,
-because I needed a more flexible replacement for [Planet][]
-to use at [Feminist Blogs][].
+from feeds that you choose into your WordPress weblog; the content it syndicates
+appears as a series of special posts in your WordPress posts database. If you
+syndicate several feeds then you can use WordPress's posts database and
+templating engine as the back-end of an aggregation ("planet") website. It was
+developed, originally, because I needed a more flexible replacement for
+[Planet][] to use at [Feminist Blogs][].
 
 [Planet]: http://www.planetplanet.org/
 [Feminist Blogs]: http://feministblogs.org/
