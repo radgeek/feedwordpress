@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2011.0701
+Version: 2011.0705
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2011.0701
+ * @version 2011.0705
  */
 
 # This uses code derived from:
@@ -34,7 +34,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2011.0701');
+define ('FEEDWORDPRESS_VERSION', '2011.0705');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -1528,7 +1528,6 @@ class FeedWordPress {
 		$feed->set_cache_class($cache_class);
 		$feed->set_timeout($timeout);
 		
-		//$feed->set_file_class('WP_SimplePie_File');
 		$feed->set_content_type_sniffer_class($sniffer_class);
 		$feed->set_file_class($file_class);
 		$feed->set_parser_class($parser_class);
@@ -1859,8 +1858,16 @@ EOMAIL;
 
 class FeedWordPress_File extends WP_SimplePie_File {
 	function FeedWordPress_File ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
-		WP_SimplePie_File::WP_SimplePie_File($url, $timeout, $redirects, $headers, $useragent, $force_fsockopen);
-
+		self::__construct($url, $timeout, $redirects, $headers, $useragent, $force_fsockopen);
+	}
+	
+	function __construct ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
+		if (is_callable(array('WP_SimplePie_File', 'WP_SimplePie_File'))) : // PHP 4 idiom
+			WP_SimplePie_File::WP_SimplePie_File($url, $timeout, $redirects, $headers, $useragent, $force_fsockopen);
+		else : // PHP 5+
+			parent::__construct($url, $timeout, $redirects, $headers, $useragent, $force_fsockopen);
+		endif;
+		
 		// SimplePie makes a strongly typed check against integers with
 		// this, but WordPress puts a string in. Which causes caching
 		// to break and fall on its ass when SimplePie is getting a 304,

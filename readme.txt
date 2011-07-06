@@ -93,6 +93,19 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
+= Trunk =
+
+*	WP 3.2 COMPATIBILITY: ELIMINATES FATAL ERROR "Call to undefined method
+    WP_SimplePie_File::WP_SimplePie_File() in
+    [...]/wp-content/plugins/feedwordpress/feedwordpress.php on line 1841." The
+    latest release of WordPress, version 3.2, has shifted the minimum
+    requirements up to PHP 5.2, and in line with the shift to PHP5 they have
+    rewritten a number of code segments that made use of now-obsolete PHP4
+    idioms. Unfortunately, this caused a fatal error whenever FeedWordPress
+    attempted to make use of the cache, since FWP's caching plugin was written
+    to match the older idiom. FeedWordPress has been updated to follow the new,
+    PHP5 idiom when possible, thus eliminating the fatal error.
+
 = 2011.0602 =
 
 *	WP 3.1.3 COMPAT / BUGFIX: WHITESPACE IN GUIDS NO LONGER PRODUCES DUPLICATE
