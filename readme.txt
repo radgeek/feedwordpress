@@ -3,8 +3,8 @@ Contributors: Charles Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
-Tested up to: 3.1.3
-Stable tag: 2011.0602
+Tested up to: 3.2
+Stable tag: 2011.0706
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -93,7 +93,7 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
-= Trunk =
+= 2011.0706 =
 
 *	WP 3.2 COMPATIBILITY: ELIMINATES FATAL ERROR "Call to undefined method
     WP_SimplePie_File::WP_SimplePie_File() in
@@ -105,6 +105,26 @@ outs, see the documentation at the [FeedWordPress project homepage][].
     attempted to make use of the cache, since FWP's caching plugin was written
     to match the older idiom. FeedWordPress has been updated to follow the new,
     PHP5 idiom when possible, thus eliminating the fatal error.
+
+*	PERFORMANCE: The handling of queries to determine whether posts had been
+	previously syndicated produced some very slow queries (usually, but not
+	always, involving a scan over the MD5(post_guid) column of the table). The
+	code that prepares MySQL queries for previously-syndicated checks has been
+	revised to eliminate the MD5(post_guid) scan entirely, and to significantly
+	improve performance by eliminating other unnecessary clauses. 	
+
+*	BUGFIX: NO LONGER DESTROYS STICKY POSTS. Previous versions could destroy
+	(or, more precisely, replace the content of) sticky posts due to some
+	queries mashed together in unexpected ways by WordPress. Version 2011.0706
+	accounts for and eliminates the problem; your sticky posts should be safe
+	once again.
+
+*	BUGFIX: GUIDS CONTAINING MYSQL-ESCAPED CHARACTERS NO LONGER CAUSE DUPLICATE
+	POSTS TO APPEAR. One remaining source of duplicate post issues in 2011.0602
+	was guids that contained characters that needed to be escaped for MySQL,
+	such as single quotes and double quotes. The work-around for handling
+	filtered URIs has now been corrected to ensure that these do not cause
+	duplicate posts.
 
 = 2011.0602 =
 
