@@ -1712,11 +1712,31 @@ class FeedWordPress {
 		update_option('feedwordpress_diagnostics_log', $dlog);		
 	} /* FeedWordPress::diagnostic () */
 	
+	function email_diagnostics_override () {
+		return ($this->has_secret() and isset($_REQUEST['feedwordpress_email_diagnostics']) and !!$_REQUEST['feedwordpress_email_diagnostics']);
+	}
+	function has_emailed_diagnostics ($dlog) {
+		$ret = false;
+		if ($this->email_diagnostics_override()
+		or (isset($dlog['schedule']) and isset($dlog['schedule']['last']))) :
+			$ret = true;
+		endif;
+		return $ret;
+	}
+	function ready_to_email_diagnostics ($dlog) {
+		$ret = false;
+		if ($this->email_diagnostics_override()
+		or (time() > ($dlog['schedule']['last'] + $dlog['schedule']['freq']))) :
+			$ret = true;
+		endif;
+		return $ret;
+	}
+	
 	function email_diagnostic_log () {
 		$dlog = get_option('feedwordpress_diagnostics_log', array());
 		
-		if (isset($dlog['schedule']) and isset($dlog['schedule']['last'])) :
-			if (time() > ($dlog['schedule']['last'] + $dlog['schedule']['freq'])) :
+		if ($this->has_emailed_diagnostics($dlog)) :
+			if ($this->ready_to_email_diagnostics($dlog)) :
 				// No news is good news; only send if
 				// there are some messages to send.
 				$body = NULL;
@@ -1750,9 +1770,10 @@ class FeedWordPress {
 					endif;
 				endforeach;
 				
+				$body = apply_filters('feedwordpress_diagnostic_email_body', $body, $dlog);
 				if (!is_null($body)) :
 					$home = feedwordpress_display_url(get_bloginfo('url'));
-					$subj = $home . " syndication issues for ".date('j-M-y', time());
+					$subj = apply_filters('feedwordpress_diagnostic_email_subject', $home . " syndication issues", $dlog);
 					$agent = 'FeedWordPress '.FEEDWORDPRESS_VERSION;
 					$body = <<<EOMAIL
 <html>
