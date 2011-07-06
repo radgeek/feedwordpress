@@ -1045,9 +1045,22 @@ class FeedWordPress {
 		return $crash_ts;
 	}
 	
+	function secret_key () {
+		$secret = get_option('feedwordpress_secret_key', false);
+		if (!$secret) : // Generate random key.
+			$secret = substr(md5(uniqid(microtime())), 0, 6);
+			update_option('feedwordpress_secret_key', $secret);
+		endif;
+		return $secret;
+	}
+	
+	function has_secret () {
+		return (isset($_REQUEST['feedwordpress_key']) and ($_REQUEST['feedwordpress_key']==$this->secret_key()));
+	}
+
 	function automatic_update_hook () {
 		$hook = get_option('feedwordpress_automatic_updates', NULL);
-		if (isset($_REQUEST['automatic_update'])) : // For forced behavior in testing.
+		if ($this->has_secret() and isset($_REQUEST['automatic_update'])) : // For forced behavior in testing.
 			$hook = $_REQUEST['automatic_update'];
 		endif;
 		
@@ -1060,13 +1073,13 @@ class FeedWordPress {
 	}
 	function last_update_all () {
 		$last = get_option('feedwordpress_last_update_all');
-		if (isset($_REQUEST['automatic_update']) and ((strlen($_REQUEST['automatic_update']) > 0))) :
+		if ($this->has_secret() and isset($_REQUEST['automatic_update']) and ((strlen($_REQUEST['automatic_update']) > 0))) :
 			$last = 1; // A long, long time ago.
 		endif;
 		return $last;
 	}
 	function force_update_all () {
-		return (isset($_REQUEST['force_update_feeds']) and !!$_REQUEST['force_update_feeds']);
+		return ($this->has_secret() and isset($_REQUEST['force_update_feeds']) and !!$_REQUEST['force_update_feeds']);
 	}
 	
 	function stale () {

@@ -165,6 +165,8 @@ class SyndicatedLink {
 	} /* SyndicatedLink::found () */
 
 	function stale () {
+		global $feedwordpress;
+		
 		$stale = true;
 		if (isset($this->settings['update/hold']) and ($this->settings['update/hold']=='ping')) :
 			$stale = false; // don't update on any timed updates; pings only
@@ -172,7 +174,7 @@ class SyndicatedLink {
 			$stale = true; // update on the next timed update
 		elseif (!isset($this->settings['update/ttl']) or !isset($this->settings['update/last'])) :
 			$stale = true; // initial update
-		elseif (FeedWordPress::force_update_all()) :
+		elseif ($feedwordpress->force_update_all()) :
 			$stale = true; // forced general updating
 		else :
 			$after = ((int) $this->settings['update/last'])

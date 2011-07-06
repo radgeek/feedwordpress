@@ -70,6 +70,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		if (isset($post['submit'])
 		or isset($post['save'])) :
 			update_option('feedwordpress_debug', $post['feedwordpress_debug']);
+			update_option('feedwordpress_secret_key', $post['feedwordpress_secret_key']);
 			
 			if (!isset($post['diagnostics_output'])
 			or !is_array($post['diagnostics_output'])) :
@@ -106,8 +107,9 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressDiagnosticsPage::accept_POST () */
 
 	function info_box ($page, $box = NULL) {
-			$link_category_id = FeedWordPress::link_category_id();
-		?>
+		global $feedwordpress;
+		$link_category_id = FeedWordPress::link_category_id();
+	?>
 		<table class="edit-form narrow">
 		<thead style="display: none">
 		<th scope="col">Topic</th>
@@ -145,6 +147,14 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		<?php endif; ?>
 		</table>
 		<?php endif; ?></td>
+		</tr>
+		
+		<tr>
+		<th scope="row"><?php _e('Secret Key:'); ?></th>
+		<td><input type="text" name="feedwordpress_secret_key" value="<?php print esc_attr($feedwordpress->secret_key()); ?>" />
+		<p class="setting-description">This is used to control access to some diagnostic testing functions. You can change it to any string you want,
+		but only tell it to people you trust to help you troubleshoot your
+		FeedWordPress installation. Keep it secret&#8212;keep it safe.</p></td>
 		</tr>
 		</table>
 
