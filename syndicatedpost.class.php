@@ -788,7 +788,6 @@ class SyndicatedPost {
 			$guid = SyndicatedPost::normalize_guid_prefix().md5($guid);
 		endif;
 		$guid = trim($guid);
-
 		return $guid;
 	} /* SyndicatedPost::normalize_guid() */
 	
@@ -1247,7 +1246,7 @@ class SyndicatedPost {
 				'ignore_sticky_posts' => true,
 				'guid' => $this->guid(),
 			));
-
+			
 			$old_post = NULL;
 			if ($q->have_posts()) :
 				while ($q->have_posts()) : $q->the_post();
@@ -1578,16 +1577,7 @@ class SyndicatedPost {
 	function normalize_post ($new = true) {
 		global $wpdb;
 
-		$out = array();
-
-		// Why the fuck doesn't wp_insert_post already do this?
-		foreach ($this->post as $key => $value) :
-			if (is_string($value)) :
-				$out[$key] = $wpdb->escape($value);
-			else :
-				$out[$key] = $value;
-			endif;
-		endforeach;
+		$out = $this->post;
 
 		$fullPost = $out['post_title'].$out['post_content'];
 		$fullPost .= (isset($out['post_excerpt']) ? $out['post_excerpt'] : '');
@@ -1610,6 +1600,16 @@ class SyndicatedPost {
 
 		// Normalize the guid if necessary.
 		$out['guid'] = SyndicatedPost::normalize_guid($out['guid']);
+
+		// Why the fuck doesn't wp_insert_post already do this?
+		foreach ($out as $key => $value) :
+			if (is_string($value)) :
+				$out[$key] = $wpdb->escape($value);
+			else :
+				$out[$key] = $value;
+			endif;
+		endforeach;
+
 		return $out;
 	}
 
