@@ -1082,7 +1082,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 				// Prep: Get last updated timestamp
 				$sLink = new SyndicatedLink($link->link_id);
 				if (!is_null($sLink->setting('update/last'))) :
-					$lastUpdated = fwp_time_elapsed($sLink->setting('update/last'));
+					$lastUpdated = 'Last checked '. fwp_time_elapsed($sLink->setting('update/last'));
 				else :
 					$lastUpdated = __('None yet');
 				endif;
@@ -1107,19 +1107,30 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 						."</div>\n";
 				endif;
 
-				$nextUpdate = "<div style='font-style:italic;size:0.9em'>Ready for next update ";
-				if (isset($sLink->settings['update/ttl']) and is_numeric($sLink->settings['update/ttl'])) :
-					if (isset($sLink->settings['update/timed']) and $sLink->settings['update/timed']=='automatically') :
-						$next = $sLink->settings['update/last'] + ((int) $sLink->settings['update/ttl'] * 60);
+				$nextUpdate = "<div style='max-width: 30.0em; font-size: 0.9em;'><div style='font-style:italic;'>";
+				
+				$ttl = $sLink->setting('update/ttl');
+				if (is_numeric($ttl)) :
+					if ('automatically'==$sLink->setting('update/timed')) :
+						$next = $sLink->setting('update/last') + ((int) $ttl * 60);
+						if ($next < time()) :
+							$nextUpdate .= 'Ready and waiting to be updated since ';
+						else :
+							$nextUpdate .= 'Scheduled for next update ';
+						endif;
 						$nextUpdate .= fwp_time_elapsed($next);
 						if (FEEDWORDPRESS_DEBUG) : $nextUpdate .= " [".(($next-time())/60)." minutes]"; endif;
 					else :
-						$nextUpdate .= "every ".$sLink->settings['update/ttl']." minute".(($sLink->settings['update/ttl']!=1)?"s":"");
+					$nextUpdate .= "Scheduled to be checked for updates every ".$ttl." minute".(($ttl!=1)?"s":"")."</div><div style='size:0.9em; margin-top: 0.5em'>	This update schedule was requested by the feed provider";
+					if ($sLink->setting('update/xml')) :
+					$nextUpdate .= " using a standard <code style=\"font-size: inherit; padding: 0; background: transparent\">&lt;".$sLink->setting('update/xml')."&gt;</code> element";
+					endif;
+					$nextUpdate .= ".";
 					endif;
 				else:
-					$nextUpdate .= "as soon as possible";
+					$nextUpdate .= "Scheduled for update as soon as possible";
 				endif;
-				$nextUpdate .= "</div>";
+				$nextUpdate .= "</div></div>";
 
 				unset($sLink);
 				

@@ -282,9 +282,11 @@ class SyndicatedLink {
 	
 			$this->settings = array_merge($this->settings, $this->flatten_array($channel));
 
-			$this->settings['update/last'] = time(); $ttl = $this->ttl();
+			$this->settings['update/last'] = time();
+			list($ttl, $xml) = $this->ttl(/*return element=*/ true);
 			if (!is_null($ttl)) :
 				$this->settings['update/ttl'] = $ttl;
+				$this->settings['update/xml'] = $xml;
 				$this->settings['update/timed'] = 'feed';
 			else :
 				$this->settings['update/ttl'] = $this->automatic_ttl();
@@ -670,7 +672,7 @@ class SyndicatedLink {
 		return $ret;
 	}
 
-	function ttl () {
+	function ttl ($return_element = false) {
 		if (is_object($this->magpie)) :
 			$channel = $this->magpie->channel;
 		else :
@@ -682,6 +684,7 @@ class SyndicatedLink {
 			// minutes that indicates how long a channel can be
 			// cached before refreshing from the source."
 			// <http://blogs.law.harvard.edu/tech/rss#ltttlgtSubelementOfLtchannelgt>	
+			$xml = 'rss:ttl';
 			$ret = $channel['ttl'];
 		elseif (isset($channel['sy']['updatefrequency']) or isset($channel['sy']['updateperiod'])) :
 			$period_minutes = array (
@@ -709,11 +712,13 @@ class SyndicatedLink {
 			else : $freq = 1;
 			endif;
 			
+			$xml = 'sy:updateFrequency';
 			$ret = (int) ($period_minutes[$period] / $freq);
 		else :
+			$xml = NULL;
 			$ret = NULL;
 		endif;
-		return $ret;
+		return ($return_element ? array($ret, $xml) : $ret);
 	} /* SyndicatedLink::ttl() */
 
 	function automatic_ttl () {
