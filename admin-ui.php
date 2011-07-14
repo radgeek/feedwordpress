@@ -1111,8 +1111,8 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 				
 				$ttl = $sLink->setting('update/ttl');
 				if (is_numeric($ttl)) :
+					$next = $sLink->setting('update/last') + $sLink->setting('update/fudge') + ((int) $ttl * 60);
 					if ('automatically'==$sLink->setting('update/timed')) :
-						$next = $sLink->setting('update/last') + ((int) $ttl * 60);
 						if ($next < time()) :
 							$nextUpdate .= 'Ready and waiting to be updated since ';
 						else :
@@ -1121,11 +1121,22 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 						$nextUpdate .= fwp_time_elapsed($next);
 						if (FEEDWORDPRESS_DEBUG) : $nextUpdate .= " [".(($next-time())/60)." minutes]"; endif;
 					else :
-					$nextUpdate .= "Scheduled to be checked for updates every ".$ttl." minute".(($ttl!=1)?"s":"")."</div><div style='size:0.9em; margin-top: 0.5em'>	This update schedule was requested by the feed provider";
-					if ($sLink->setting('update/xml')) :
-					$nextUpdate .= " using a standard <code style=\"font-size: inherit; padding: 0; background: transparent\">&lt;".$sLink->setting('update/xml')."&gt;</code> element";
-					endif;
-					$nextUpdate .= ".";
+						$lastUpdated .= " &middot; Next ";
+						if ($next < time()) :
+							$lastUpdated .= 'ASAP';
+						elseif ($next - time() < 60) :
+							$lastUpdated .= fwp_time_elapsed($next);
+						elseif ($next - time() < 60*60*24) :
+							$lastUpdated .= gmdate('g:ia', $next + (get_option('gmt_offset') * 3600));
+						else :
+							$lastUpdated .= gmdate('F j', $next + (get_option('gmt_offset') * 3600));
+						endif;
+						
+						$nextUpdate .= "Scheduled to be checked for updates every ".$ttl." minute".(($ttl!=1)?"s":"")."</div><div style='size:0.9em; margin-top: 0.5em'>	This update schedule was requested by the feed provider";
+						if ($sLink->setting('update/xml')) :
+							$nextUpdate .= " using a standard <code style=\"font-size: inherit; padding: 0; background: transparent\">&lt;".$sLink->setting('update/xml')."&gt;</code> element";
+						endif;
+						$nextUpdate .= ".";
 					endif;
 				else:
 					$nextUpdate .= "Scheduled for update as soon as possible";

@@ -263,6 +263,30 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			?></td>
 		</tr>
 
+		<tr>
+		<th scope="row"><?php print __('Minimum Interval:'); ?></th>
+		<td><p style="margin-top:0px">Some feeds include standard elements that
+		request a specific update schedule. If the interval requested by the
+		feed provider is <em>longer</em> than FeedWordPress's normal scheduling,
+		FeedWordPress will always respect their request to slow down. But what
+		should it do if the update interval is <em>shorter</em> than the schedule set above?</p>
+		<?php
+			$this->setting_radio_control(
+				'update/minimum', 'update_minimum',
+				/*options=*/ array(
+					'no' => 'Speed up and accept the interval from the feed provider',
+					'yes' => 'Keep pace and use the longer scheduling from FeedWordPress',
+				),
+				/*params=*/ array(
+					'setting-default' => NULL,
+					'global-setting-default' => 'no',
+					'default-input-value' => 'default',
+				)
+			);
+		?>
+		</td>
+		</tr>
+		
 		<?php if ($this->for_default_settings()) : ?>
 		
 		<tr>
@@ -938,6 +962,11 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				$timeout = intval($timeout);
 			endif;
 			$this->update_setting('fetch timeout', $timeout);
+		endif;
+
+		if (isset($post['update_minimum'])) :
+			/*DBG*/ var_dump($post['update_minimum']);
+			$this->update_setting('update/minimum', $post['update_minimum']);
 		endif;
 		
 		$this->updatedPosts->accept_POST($post);

@@ -168,17 +168,20 @@ class SyndicatedLink {
 		global $feedwordpress;
 		
 		$stale = true;
-		if (isset($this->settings['update/hold']) and ($this->settings['update/hold']=='ping')) :
+		if ($this->setting('update/hold')=='ping') :
 			$stale = false; // don't update on any timed updates; pings only
-		elseif (isset($this->settings['update/hold']) and ($this->settings['update/hold']=='next')) :
+		elseif ($this->setting('update/hold')=='next') :
 			$stale = true; // update on the next timed update
-		elseif (!isset($this->settings['update/ttl']) or !isset($this->settings['update/last'])) :
+		elseif ( !$this->setting('update/last') ) :
 			$stale = true; // initial update
 		elseif ($feedwordpress->force_update_all()) :
 			$stale = true; // forced general updating
 		else :
-			$after = ((int) $this->settings['update/last'])
-				+((int) $this->settings['update/ttl'] * 60);
+			$after = (
+				(int) $this->setting('update/last')
+				+ (int) $this->setting('update/fudge')
+				+ ((int) $this->setting('update/ttl') * 60)
+			);
 			$stale = (time() >= $after);
 		endif;
 		return $stale;
@@ -284,17 +287,21 @@ class SyndicatedLink {
 
 			$this->settings['update/last'] = time();
 			list($ttl, $xml) = $this->ttl(/*return element=*/ true);
+			
 			if (!is_null($ttl)) :
 				$this->settings['update/ttl'] = $ttl;
 				$this->settings['update/xml'] = $xml;
 				$this->settings['update/timed'] = 'feed';
 			else :
-				$this->settings['update/ttl'] = $this->automatic_ttl();
+				$ttl = $this->automatic_ttl();
+				$this->settings['update/ttl'] = $ttl;
+				$this->settings['update/xml'] = NULL;
 				$this->settings['update/timed'] = 'automatically';
 			endif;
-			$this->settings['update/ttl'] = apply_filters('syndicated_feed_ttl', $this->settings['update/ttl'], $this);
+			$this->settings['update/fudge'] = rand(0, ($ttl/3))*60;
+			$this->settings['update/ttl'] = apply_filters('syndicated_feed_ttl', $this->setting('update/ttl'), $this);
 
-			if (!isset($this->settings['update/hold']) or $this->settings['update/hold']!='ping') :
+			if (!$this->setting('update/hold') != 'ping') :
 				$this->settings['update/hold'] = 'scheduled';
 			endif;
 
@@ -718,6 +725,14 @@ class SyndicatedLink {
 			$xml = NULL;
 			$ret = NULL;
 		endif;
+		
+		if ('yes'==$this->setting('update/minimum', 'update_minimum', 'no')) :
+			$min = (int) $this->setting('update/window', 'update_window', DEFAULT_UPDATE_PERIOD);
+			
+			if ($min > $ret) :
+				$ret = NULL;
+			endif;
+		endif;
 		return ($return_element ? array($ret, $xml) : $ret);
 	} /* SyndicatedLink::ttl() */
 
@@ -728,7 +743,9 @@ class SyndicatedLink {
 			$updateWindow = DEFAULT_UPDATE_PERIOD;
 		endif;
 
-		$fudgedInterval = $updateWindow+rand(0, 2*($updateWindow/3));
+		// We get a fudge of 1/3 of window from elsewhere. We'll do some more
+		// fudging here.
+		$fudgedInterval = $updateWindow+rand(-($updateWindow/6), 5*($updateWindow/12));
 		return apply_filters('syndicated_feed_automatic_ttl', $fudgedInterval, $this);
 	} /* SyndicatedLink::automatic_ttl () */
 
