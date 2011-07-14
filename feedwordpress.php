@@ -992,6 +992,8 @@ class FeedWordPress {
 			$crash_ts = $this->crash_ts();
 		endif;
 
+		$max_polls = apply_filters('feedwordpress_polls_per_update', get_option('feedwordpress_polls_per_update', 10), $uri);
+		
 		// Randomize order for load balancing purposes
 		$feed_set = $this->feeds;
 		shuffle($feed_set);
@@ -999,12 +1001,20 @@ class FeedWordPress {
 		$feed_set = apply_filters('feedwordpress_update_feeds', $feed_set, $uri);
 
 		// Loop through and check for new posts
-		$delta = NULL;
+		$delta = NULL; $remaining = $max_polls;
 		foreach ($feed_set as $feed) :
-			if (!is_null($crash_ts) and (time() > $crash_ts)) : // Check whether we've exceeded the time limit
+
+			// Has this process overstayed its welcome?
+			if (
+				// Over time limit?
+				(!is_null($crash_ts) and (time() > $crash_ts))
+				
+				// Over feed count?
+				or ($remaining == 0) 
+			) :
 				break;
 			endif;
-
+			
 			$pinged_that = (is_null($uri) or ($uri=='*') or in_array($uri, array($feed->uri(), $feed->homepage())));
 
 			if (!is_null($uri)) : // A site-specific ping always updates
@@ -1018,6 +1028,8 @@ class FeedWordPress {
 			endif;
 
 			if ($pinged_that and $timely) :
+				$remaining = $remaining - 1;
+
 				do_action('feedwordpress_check_feed', $feed->settings);
 				$start_ts = time();
 				$added = $feed->poll($crash_ts);
