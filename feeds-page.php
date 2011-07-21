@@ -175,7 +175,8 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressFeedsPage::updated_posts_box() */
 
 	/*static*/ function global_feeds_box ($page, $box = NULL) {
-		$automatic_updates = get_option('feedwordpress_automatic_updates');
+		global $feedwordpress;
+		$automatic_updates = $feedwordpress->automatic_update_hook(array('setting only' => true));
 		$update_time_limit = (int) get_option('feedwordpress_update_time_limit');
 
 		// Hey, ho, let's go...
@@ -929,7 +930,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			update_option('feedwordpress_cat_id', $post['syndication_category']);
 			
 			if (!isset($post['automatic_updates']) or !in_array($post['automatic_updates'], array('init', 'shutdown'))) :
-				$automatic_updates = false;
+				$automatic_updates = NULL;
 			else :
 				$automatic_updates = $post['automatic_updates'];
 			endif;
@@ -965,7 +966,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		endif;
 
 		if (isset($post['update_minimum'])) :
-			/*DBG*/ var_dump($post['update_minimum']);
 			$this->update_setting('update/minimum', $post['update_minimum']);
 		endif;
 		

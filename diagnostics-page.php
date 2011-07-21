@@ -238,6 +238,7 @@ testing but absolutely inappropriate for a production server.</p>
 		$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
 		$fields = apply_filters('feedwordpress_diagnostics', array(
 			'Update Diagnostics' => array(
+				'update_schedule:check' => 'whenever a FeedWordPress checks in on the update schedule', 
 				'updated_feeds' => 'as each feed is checked for updates',
 				'updated_feeds:errors:persistent' => 'when attempts to update a feed have resulted in errors</label> <label>for at least <input type="number" min="1" max="360" step="1" name="diagnostics_persistent_error_hours" value="'.$hours.'" /> hours',
 				'updated_feeds:errors' => 'any time FeedWordPress encounters any errors while checking a feed for updates',
