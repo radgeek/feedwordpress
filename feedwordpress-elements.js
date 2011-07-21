@@ -62,7 +62,7 @@ fwpList = {
 
 		if ( !s ) { return false; }
 
-		if ( !e.is("[class^=add:" + list.id + ":]") ) { return !fwpList.add.call( list, e, s ); }
+		if ( !e.is('[class^="add:' + list.id + ':"]') ) { return !fwpList.add.call( list, e, s ); }
 
 		if ( !s.element ) { return true; }
 
@@ -91,6 +91,7 @@ fwpList = {
 			if ( true === res ) { return true; }
 
 			jQuery.each( res.responses, function() {
+					// FIXME: Causes ownerDocument is undefined breakage in WP3.2
 				fwpList.add.call( list, this.data, $.extend( {}, s, { // this.firstChild.nodevalue
 					pos: this.position || 0,
 					id: this.id || 0,
@@ -321,11 +322,11 @@ fwpList = {
 	process: function(el) {
 		var list = this;
 
-		$("[class^=add:" + list.id + ":]", el || null)
+		$('[class^="add:' + list.id + ':"]', el || null)
 			.filter('form').submit( function() { return list.fwpList.add(this); } ).end()
 			.not('form').click( function() { return list.fwpList.add(this); } );
-		$("[class^=delete:" + list.id + ":]", el || null).click( function() { return list.fwpList.del(this); } );
-		$("[class^=dim:" + list.id + ":]", el || null).click( function() { return list.fwpList.dim(this); } );
+		$('[class^="delete:' + list.id + ':"]', el || null).click( function() { return list.fwpList.del(this); } );
+		$('[class^="dim:' + list.id + ':"]', el || null).click( function() { return list.fwpList.dim(this); } );
 	},
 
 	recolor: function() {

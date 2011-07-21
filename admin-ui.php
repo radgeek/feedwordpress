@@ -746,38 +746,68 @@ function fwp_option_box_closer () {
 }
 
 function fwp_tags_box ($tags, $object, $params = array()) {
+	$params = wp_parse_args($params, array( // Default values
+	'taxonomy' => 'post_tag',
+	'textarea_name' => NULL,
+	'textarea_id' => NULL,
+	'input_id' => NULL,
+	'input_name' => NULL,
+	'id' => NULL,
+	'box_title' => __('Post Tags'),
+	));
+	
 	if (!is_array($tags)) : $tags = array(); endif;
-	$tax_name = (isset($params['taxonomy']) ? $params['taxonomy'] : 'post_tag');
+	
+	$tax_name = $params['taxonomy'];
+	$taxonomy = get_taxonomy($params['taxonomy']);
+	$disabled = (!current_user_can($taxonomy->cap->assign_terms) ? 'disabled="disabled"' : '');
+	
 	$desc = "<p style=\"font-size:smaller;font-style:bold;margin:0\">Tag $object as...</p>";
 
-	if (isset($params['textarea_name'])) :
-		$textAreaName = $params['textarea_name'];
-	else :
-		$textAreaName = "tax_input[$tax_name]";
+	if (is_null($params['textarea_name'])) :
+		$params['textarea_name'] = "tax_input[$tax_name]";
 	endif;
+	if (is_null($params['textarea_id'])) :
+		$params['textarea_id'] = "tax-input-${tax_name}";
+	endif;
+	if (is_null($params['input_id'])) :
+		$params['input_id'] = "new-tag-${tax_name}";
+	endif;
+	if (is_null($params['input_name'])) :
+		$params['input_name'] = "newtag[$tax_name]";
+	endif;
+	
+	if (is_null($params['id'])) :
+		$params['id'] = $tax_name;
+	endif;
+	
 	print $desc;
 	$helps = __('Separate tags with commas.');
 	$box['title'] = __('Tags');
 	?>
-		<div class="tagsdiv" id="<?php echo $tax_name; ?>">
-	        <div class="jaxtag">
-	        <div class="nojs-tags hide-if-js">
-	        <p><?php _e('Add or remove tags'); ?></p>
-	        <textarea name="<?php echo esc_html($textAreaName); ?>" class="the-tags" id="tax-input[<?php echo $tax_name; ?>]"><?php echo esc_attr(implode(",", $tags)); ?></textarea></div>
+<div class="tagsdiv" id="<?php echo $params['id']; ?>">
+	<div class="jaxtag">
+	<div class="nojs-tags hide-if-js">
+    <p><?php echo $taxonomy->labels->add_or_remove_items; ?></p>
+	<textarea name="<?php echo $params['textarea_name']; ?>" class="the-tags" id="<?php echo $params['textarea_id']; ?>"><?php echo esc_attr(implode(",", $tags)); ?></textarea></div>
 	
-	        <div class="ajaxtag hide-if-no-js">
-	                <label class="screen-reader-text" for="new-tag-<?php echo $tax_name; ?>"><?php echo $box['title']; ?></label>
-	                <div class="taghint"><?php _e('Add new tag'); ?></div>
-	                <p>
-	                <input type="text" id="new-tag-<?php echo $tax_name; ?>" name="newtag[<?php echo $tax_name; ?>]" class="newtag form-input-tip" size="16" autocomplete="off" value="" />
-	                <input type="button" class="button tagadd" value="<?php esc_attr_e('Add'); ?>" tabindex="3" />
-	                </p>
-	        </div></div>
-	        <p class="howto"><?php echo $helps; ?></p>
-	        <div class="tagchecklist"></div>
-	        </div>
-	        <p class="hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-<?php echo $tax_name; ?>"><?php printf( __('Choose from the most used tags in %s'), $box['title'] ); ?></a></p>
-        <?php
+	<?php if ( current_user_can($taxonomy->cap->assign_terms) ) :?>
+	<div class="ajaxtag hide-if-no-js">
+		<label class="screen-reader-text" for="<?php echo $params['input_id']; ?>"><?php echo $params['box_title']; ?></label>
+		<div class="taghint"><?php echo $taxonomy->labels->add_new_item; ?></div>
+		<p><input type="text" id="<?php print $params['input_id']; ?>" name="<?php print $params['input_name']; ?>" class="newtag form-input-tip" size="16" autocomplete="off" value="" />
+		<input type="button" class="button tagadd" value="<?php esc_attr_e('Add'); ?>" tabindex="3" /></p>
+	</div>
+	<p class="howto"><?php echo esc_attr( $taxonomy->labels->separate_items_with_commas ); ?></p>
+	<?php endif; ?>
+	</div>
+	
+	<div class="tagchecklist"></div>
+</div>
+<?php if ( current_user_can($taxonomy->cap->assign_terms) ) : ?>
+<p class="hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-<?php echo $tax_name; ?>"><?php echo $taxonomy->labels->choose_from_most_used; ?></a></p>
+<?php endif;
+
 }
 
 function fwp_category_box ($checked, $object, $tags = array(), $params = array()) {

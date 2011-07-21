@@ -4,7 +4,7 @@ Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
 Tested up to: 3.2
-Stable tag: 2011.0706
+Stable tag: 2011.0721
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -94,6 +94,55 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
+= 2011.0721 =
+
+*	BUGFIX: SERIOUS BUG CAUSING RARE UNEXPECTED DELETION OF PAGES AND OTHER
+	CONTENT. A bug in the guid-checking code for some rare kinds of guids could
+	cause content in the wp_posts table to seemingly disappear at random after
+	FeedWordPress updates.This most frequently but not exclusively affected
+	static pages. What actually happened is that in these rare cases the
+	existing static page was mistaken for an older version of the new incoming
+	syndicated post, which was then stored as a new revision of the original
+	page. The bug that caused these mistaken identities has been fixed.
+	
+*	BUGFIX: UNWANTED AUTOMATIC PAGE-LOAD-BASED UPDATES NO LONGER A NUISANCE.
+	Some users encountered a bug in which FeedWordPress would adopt an automatic
+	page-load-based update method, even if they had requested that it not do
+	so, and that it use a manual or cron job update method instead. The bug
+	causing this has been fixed, and page-load-based updates should no longer
+	trigger unless explicitly turned on.
+
+*	WP 3.2 USER INTERFACE COMPATIBILITY: POST TAGS BOX NOW WORKS AGAIN. The
+	release of WordPress 3.2 caused a breakage in the tags box which prevented
+	you from adding or removing tags under Syndication --> Categories & Tags.
+	(The breakage was the result of an incompatibility introduced by the new
+	release of jQuery.) This breakage has now been fixed, and the tags box
+	should work correctly again.
+
+*	FEED UPDATE SCHEDULING IMPROVEMENTS: UI. The Syndicated Sources table now
+	provides considerably more data to understand update scheduling, when
+	specific scheduling decisions are made because of, e.g., requests from the
+	feed producer.
+	
+* 	FEED UPDATE SCHEDULING IMPROVEMENTS: ENFORCEABLE "MINIMUM INTERVAL" SETTIN
+	TO SPACE OUT UPDATES. Some feeds request specific update schedules, using
+	standard elements such as sy:updateFrequency and rss:ttl. Normally,
+	FeedWordPress respects any scheduling requests that a feed makes -- if it
+	requests a longer gap between polls than what FWP would normally adopt, then
+	FWP slows down to meet the request. If it indicates a shorter gap than what
+	FWP would normally adopt, FWP speeds up and checks that feed for updates
+	more often than it normally would. Now, there should not be any way for user
+	settings to override an explicit slow-down request from the feed producer --
+	if producers indicate a particular update schedule, then polling the feed
+	more frequently than they request is considered abusive behavior. But
+	there's no reason why users should not be able -- if they so desire -- to
+	override speed-up requests, and poll a feed *less* frequently than the
+	indicated update schedule, if the FWP user wants to space update checkins
+	over a longer interval of time. Before, they could not do this: FWP always
+	sped up to meet the indicated update schedule. Now, they can do this, by
+	using the new "Minimum Interval" setting in Syndication --> Feeds &
+	Updates..
+	
 = 2011.0706 =
 
 *	WP 3.2 COMPATIBILITY: ELIMINATES FATAL ERROR "Call to undefined method
