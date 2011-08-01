@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2011.0721
+Version: 2011.0731
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2011.0721
+ * @version 2011.0731
  */
 
 # This uses code derived from:
@@ -122,6 +122,7 @@ require_once("${dir}/syndicationdataqueries.class.php");
 require_once("${dir}/feedwordpress_file.class.php");
 require_once("${dir}/feedwordpress_parser.class.php");
 require_once("${dir}/feedwordpressrpc.class.php");
+require_once("${dir}/feedwordpresshttpauthenticator.class.php");
 
 // Magic quotes are just about the stupidest thing ever.
 if (is_array($_POST)) :
@@ -915,6 +916,7 @@ class FeedWordPress {
 
 	var $feeds = NULL;
 
+	var $httpauth = NULL;
 	# function FeedWordPress (): Contructor; retrieve a list of feeds 
 	function FeedWordPress () {
 		$this->feeds = array ();
@@ -922,6 +924,8 @@ class FeedWordPress {
 		if ($links): foreach ($links as $link):
 			$this->feeds[] = new SyndicatedLink($link);
 		endforeach; endif;
+		
+		$this->httpauth = new FeedWordPressHTTPAuthenticator;
 	} // FeedWordPress::FeedWordPress ()
 
 	# function update (): polls for updates on one or more Contributor feeds
@@ -1574,7 +1578,7 @@ class FeedWordPress {
 		if (!is_array($params)) :
 			$force_feed = $params;
 		else : // Parameter array
-			$args = shortcode_atts(array(
+			$args = wp_parse_args(array(
 			'force_feed' => $force_feed,
 			'timeout' => $timeout
 			), $params);

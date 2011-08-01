@@ -630,6 +630,22 @@ class SyndicatedLink {
 		return $uri;
 	} /* SyndicatedLink::uri () */
 
+	function username () {
+		return $this->setting('http username', 'http_username', NULL);
+	} /* SyndicatedLink::username () */
+	
+	function password () {
+		return $this->setting('http password', 'http_password', NULL);
+	} /* SyndicatedLink::password () */
+	
+	function authentication_method () {
+		$auth = $this->setting('http auth method', NULL);
+		if (('-' == $auth) or (strlen($auth)==0)) :
+			$auth = NULL;
+		endif;
+		return $auth;
+	} /* SyndicatedLink::authentication_method () */
+	
 	function property_cascade ($fromFeed, $link_field, $setting, $simplepie_method) {
 		$value = NULL;
 		if ($fromFeed) :

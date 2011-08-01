@@ -5,12 +5,52 @@ class FeedWordPress_File extends WP_SimplePie_File {
 	}
 	
 	function __construct ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
-		if (is_callable(array('WP_SimplePie_File', 'WP_SimplePie_File'))) : // PHP 4 idiom
-			WP_SimplePie_File::WP_SimplePie_File($url, $timeout, $redirects, $headers, $useragent, $force_fsockopen);
-		else : // PHP 5+
-			parent::__construct($url, $timeout, $redirects, $headers, $useragent, $force_fsockopen);
-		endif;
+		$this->url = $url;
+		$this->timeout = $timeout;
+		$this->redirects = $redirects;
+		$this->headers = $headers;
+		$this->useragent = $useragent;
 		
+		$this->method = SIMPLEPIE_FILE_SOURCE_REMOTE;
+		
+		global $wpdb;
+		
+		if ( preg_match('/^http(s)?:\/\//i', $url) ) {
+			$args = array( 'timeout' => $this->timeout, 'redirection' => $this->redirects);
+	
+			if ( !empty($this->headers) )
+				$args['headers'] = $this->headers;
+
+			if ( SIMPLEPIE_USERAGENT != $this->useragent ) //Use default WP user agent unless custom has been specified
+				$args['user-agent'] = $this->useragent;
+
+			$links = $wpdb->get_results(
+				$wpdb->prepare("SELECT * FROM {$wpdb->links} WHERE link_rss = '%s'", $url)
+			);
+			if ($links) :
+				$source = new SyndicatedLink($links[0]);
+				$args['authentication'] = $source->authentication_method();
+				$args['username'] = $source->username();
+				$args['password'] = $source->password();
+			endif;
+			
+			$res = wp_remote_request($url, $args);
+
+			if ( is_wp_error($res) ) {
+				$this->error = 'WP HTTP Error: ' . $res->get_error_message();
+				$this->success = false;
+			} else {
+				$this->headers = wp_remote_retrieve_headers( $res );
+				$this->body = wp_remote_retrieve_body( $res );
+				$this->status_code = wp_remote_retrieve_response_code( $res );
+			}
+		} else {
+			if ( ! $this->body = file_get_contents($url) ) {
+				$this->error = 'file_get_contents could not read the file';
+				$this->success = false;
+			}
+		}
+
 		// SimplePie makes a strongly typed check against integers with
 		// this, but WordPress puts a string in. Which causes caching
 		// to break and fall on its ass when SimplePie is getting a 304,

@@ -412,6 +412,32 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$hardcode['url'] = get_option('feedwordpress_hardcode_url');
 		endif;
 
+		$hideAuth = false;
+
+		$username = $this->setting('http username', NULL);
+
+		if (is_null($username)) :
+			$username = '';
+			$hideAuth = true;
+		endif;
+		
+		$password = $this->setting('http password', NULL);
+		if (is_null($password)) :
+			$password = '';
+		endif;
+		
+		$auth = $this->setting('http auth method', NULL);
+
+		$authMethods = apply_filters('feedwordpress_http_auth_methods', array(
+			'basic' => 'Basic',
+			'digest' => 'Digest',
+			'-' => 'None',
+		));
+		if (is_null($auth)) :
+			$auth = '-';
+			$hideAuth = true;
+		endif;
+
 		// Hey ho, let's go
 		?>
 		<table class="edit-form">
@@ -424,6 +450,26 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		(<a href="<?php echo FEEDVALIDATOR_URI; ?>?url=<?php echo urlencode($rss_url); ?>"
 		title="Check feed &lt;<?php echo esc_html($rss_url); ?>&gt; for validity">validate</a>)
 		<input type="submit" name="feedfinder" value="switch &rarr;" style="font-size:smaller" />
+		
+		<table id="link-rss-authentication">
+		<tbody>
+		<tr id="link-rss-authentication-credentials">
+		<td><label>user: <input type="text" name="link_rss_username"
+			value="<?php print esc_attr($username); ?>" size="16"
+			placeholder="username to access this feed" /></label></td>
+		<td><label>pass: <input type="text" name="link_rss_password"
+			value="<?php print esc_attr($password); ?>" size="16"
+			placeholder="password to access this feed" /></label></td>
+		<td id="link-rss-authentication-method"><label>method: <select id="link-rss-auth-method" name="link_rss_auth_method" size="1">
+<?php foreach ($authMethods as $value => $label) : ?>
+		  <option value="<?php print esc_attr($value); ?>"<?php
+		  if ($value == $auth) : ?> selected="selected"<?php
+		  endif; ?>><?php print esc_html($label); ?></option>
+<?php endforeach; ?>
+		</select></label></td>
+		</tr>
+		</tbody>
+		</table>
 		
 		<table id="link-rss-params">
 		<tbody>
@@ -450,6 +496,35 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<div><input type="hidden" id="link-rss-params-num" name="link_rss_params_num" value="<?php print $i; ?>" /></div>
 		
 		<script type="text/javascript">
+		function linkUserPassFlip (init) {
+			var speed = 'slow';
+			if (typeof(init)=='boolean' && init) {
+				speed = 0;
+			}
+			
+			if (jQuery('#link-rss-auth-method').val()=='-') {
+				jQuery('<a style="display: none" class="add-remove" id="link-rss-userpass-use" href="#">+ Uses username/password</a>')
+					.insertAfter('#link-rss-authentication')
+					.click( function () {
+							jQuery('#link-rss-auth-method').val('basic');
+							linkUserPassFlip();
+							return false;
+					} )
+					.show(speed);
+				jQuery('#link-rss-authentication').hide(speed);
+			} else {
+				jQuery('#link-rss-userpass-use').hide(speed, function () { jQuery(this).remove(); } );
+				jQuery('#link-rss-authentication').show(speed);
+			}
+		}
+		jQuery('<td><a class="add-remove remove-it" id="link-rss-userpass-remove" href="#"><span class="x">(X)</span> Remove</a></td>')
+			.appendTo('#link-rss-authentication-credentials').click(function () {
+			jQuery('#link-rss-auth-method').val('-');
+			linkUserPassFlip();
+		} );
+		jQuery('#link-rss-auth-method').change( linkUserPassFlip );
+		linkUserPassFlip(/*init=*/ true);
+		
 		function linkParamsRowRemove (element) {
 			jQuery(element).closest('tr').fadeOut('slow', function () {
 				jQuery(this).remove();
@@ -459,7 +534,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		jQuery('<td><a href="#" class="add-remove link-rss-params-remove"><span class="x">(X)</span> Remove</a></td>').insertAfter('.link-rss-params-value-cell');
 
 		jQuery('#link-rss-params-new').hide();
-		jQuery('<a  class="add-remove" id="link-rss-params-add" href="#">+ Add a query parameter</a>').insertAfter('#link-rss-params');
+		jQuery('<a class="add-remove" id="link-rss-params-add" href="#">+ Add a query parameter</a>').insertAfter('#link-rss-params');
 		jQuery('#link-rss-params-add').click( function () {
 			var next = jQuery('#link-rss-params-num').val();
 			var newRow = jQuery('#link-rss-params-new').clone().attr('id', 'link-rss-params-'+next);
@@ -867,6 +942,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	
 	function save_settings ($post) {
 		if ($this->for_feed_settings()) :
+			
 			if (isset($post['link_rss_params_key'])) :
 				$qp = array();
 				foreach ($post['link_rss_params_key'] as $index => $key) :
@@ -968,8 +1044,37 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		if (isset($post['update_minimum'])) :
 			$this->update_setting('update/minimum', $post['update_minimum']);
 		endif;
+
+		if (
+			isset($post['link_rss_auth_method'])
+			and $post['link_rss_auth_method']
+			and ('-' != $post['link_rss_auth_method'])
+		) :
+			$this->update_setting('http auth method', $post['link_rss_auth_method']);
+		else :
+			$this->update_setting('http auth method', NULL);				
+		endif;
+		
+		if (
+			isset($post['link_rss_username'])
+			and (strlen($post['link_rss_username']) > 0)
+		) :
+			$this->update_setting('http username', $post['link_rss_username']);
+		else :
+			$this->update_setting('http username', NULL);				
+		endif;
+
+		if (
+			isset($post['link_rss_password'])
+			and (strlen($post['link_rss_password']) > 0)
+		) :
+			$this->update_setting('http password', $post['link_rss_password']);
+		else :
+			$this->update_setting('http password', NULL);				
+		endif;
 		
 		$this->updatedPosts->accept_POST($post);
+
 		parent::save_settings($post);
 	} /* FeedWordPressFeedsPage::save_settings() */
 
