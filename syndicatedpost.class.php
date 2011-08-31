@@ -10,7 +10,7 @@ require_once(dirname(__FILE__).'/feedtime.class.php');
  * different feed formats, which may be useful to FeedWordPress users
  * who make use of feed data in PHP add-ons and filters.
  *
- * @version 2011.0601
+ * @version 2011.0831
  */
 class SyndicatedPost {
 	var $item = null;	// MagpieRSS representation
@@ -1239,12 +1239,13 @@ class SyndicatedPost {
 		endif;
 		
 		if (is_null($this->_freshness)) : // Not yet checked and cached.
-			$guid = $wpdb->escape($this->guid());
+			$guid = $this->post['guid'];
+			$eguid = $wpdb->escape($this->post['guid']);
 
 			$q = new WP_Query(array(
 				'fields' => '_synfresh', // id, guid, post_modified_gmt
 				'ignore_sticky_posts' => true,
-				'guid' => $this->guid(),
+				'guid' => $guid,
 			));
 			
 			$old_post = NULL;
@@ -1255,7 +1256,7 @@ class SyndicatedPost {
 			endif;
 			
 			if (is_null($old_post)) : // No post with this guid
-				FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is a NEW POST.');
+				FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$guid.'] "'.$this->entry->get_title().'" is a NEW POST.');
 				$this->_wp_id = NULL;
 				$this->_freshness = 2; // New content
 			else :
@@ -1293,7 +1294,7 @@ class SyndicatedPost {
 				$updated = ($updated and !$frozen);
 
 				if ($updated) :
-					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is an update of an existing post.');
+					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$guid.'] "'.$this->entry->get_title().'" is an update of an existing post.');
 					$this->_freshness = 1; // Updated content
 					$this->_wp_id = $old_post->ID;
 					
@@ -1304,7 +1305,7 @@ class SyndicatedPost {
 						array($this->update_hash())
 					);
 				else :
-					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$this->guid().'] "'.$this->entry->get_title().'" is a duplicate of an existing post.');
+					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$guid.'] "'.$this->entry->get_title().'" is a duplicate of an existing post.');
 					$this->_freshness = 0; // Same old, same old
 					$this->_wp_id = $old_post->ID;
 				endif;
