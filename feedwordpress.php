@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2011.0831
+Version: 2011.0920
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2011.0831
+ * @version 2011.0920
  */
 
 # This uses code derived from:
@@ -34,7 +34,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2011.0831');
+define ('FEEDWORDPRESS_VERSION', '2011.0920');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -1008,16 +1008,15 @@ class FeedWordPress {
 		shuffle($feed_set);
 
 		$updateWindow = (int) get_option('feedwordpress_update_window', DEFAULT_UPDATE_PERIOD) * 60 /* sec/min */;
-		$interval = (int) get_option('feedwordpress_freshness', FEEDWORDPRSS_FRESHNESS_INTERVAL);
+		$interval = (int) get_option('feedwordpress_freshness', FEEDWORDPRESS_FRESHNESS_INTERVAL);
 		$portion = max(
-			ceil(count($feed_set) / ($updateWindow / $interval)),
+			(int) ceil(count($feed_set) / ($updateWindow / $interval)),
 			10
 		);
-		
+
 		$max_polls = apply_filters('feedwordpress_polls_per_update', get_option(
 			'feedwordpress_polls_per_update',	$portion
 		), $uri);
-		
 
 		$feed_set = apply_filters('feedwordpress_update_feeds', $feed_set, $uri);
 

@@ -207,6 +207,8 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		if (isset($_FILES['opml_upload']['name']) and
 		(strlen($_FILES['opml_upload']['name']) > 0)) :
 			$in = 'tag:localhost';
+			
+			/*FIXME: check whether $_FILES['opml_upload']['error'] === UPLOAD_ERR_OK or not...*/ 
 			$localData = file_get_contents($_FILES['opml_upload']['tmp_name']);
 			$merge_all = true;
 		elseif (isset($fwp_post['multilookup'])) :
