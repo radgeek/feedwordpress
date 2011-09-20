@@ -1002,12 +1002,22 @@ class FeedWordPress {
 		if (is_null($crash_ts)) :
 			$crash_ts = $this->crash_ts();
 		endif;
-
-		$max_polls = apply_filters('feedwordpress_polls_per_update', get_option('feedwordpress_polls_per_update', 10), $uri);
 		
 		// Randomize order for load balancing purposes
 		$feed_set = $this->feeds;
 		shuffle($feed_set);
+
+		$updateWindow = (int) get_option('feedwordpress_update_window', DEFAULT_UPDATE_PERIOD) * 60 /* sec/min */;
+		$interval = (int) get_option('feedwordpress_freshness', FEEDWORDPRSS_FRESHNESS_INTERVAL);
+		$portion = max(
+			ceil(count($feed_set) / ($updateWindow / $interval)),
+			10
+		);
+		
+		$max_polls = apply_filters('feedwordpress_polls_per_update', get_option(
+			'feedwordpress_polls_per_update',	$portion
+		), $uri);
+		
 
 		$feed_set = apply_filters('feedwordpress_update_feeds', $feed_set, $uri);
 
