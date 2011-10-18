@@ -3,8 +3,8 @@ Contributors: Charles Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
-Tested up to: 3.2
-Stable tag: 2011.0721
+Tested up to: 3.2.1
+Stable tag: 2011.1018
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -94,6 +94,49 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
+= 2011.1018 =
+
+*	HTTP BASIC AND DIGEST AUTHENTICATION SUPPORT: FeedWordPress now offers
+	improved support for syndicating feeds that make use of HTTP Basic or HTTP
+	Digest authentication methods. In order to set up authentication on one of
+	your feeds, just go to its Settings > Feed page, and click on the "Uses
+	Username/Password" link underneath the Feed URL. Enter the username and
+	password for accessing the feed, then select the authentication method. (If
+	you're not sure which method your feed provider uses, try Basic first.)
+	Save Changes, and syndicate away.
+	
+	NOTE: HTTP Digest support requires the curl module for PHP. If you are not
+	sure whether this module has been installed, contact your web hosting
+	provider to check.
+
+*	WP 3.3 (BETA) COMPATIBILITY: This version fixes an init-sequence bug that
+	could cause intrusive warning messages or fatal errors in WP 3.3 beta
+	versions.
+
+*	BUGFIX: FIXES LONG DELAYS IN UPDATES SCHEDULES IN LARGE INSTALLATIONS. A
+	performance feature introduced in version 2011.0721 had some flaws in its
+	implementation, which tended to create serious delays (on the order of
+	several hours) in FeedWordPress's attempts to schedule updates for feeds,
+	when users had a very large number of feeds (several dozen or more) in their
+	FeedWordPress installation. This feature has been reconfigured to adjust
+	dynamically to the number of feeds in Syndicated Sources and the frequency
+	with which they are updated. If you've seen a lot of ready-to-update feeds
+	piling up, several hours after they were supposed to get updated, then this
+	upgrade should better ensure that your feeds get updated in a timely fashion.
+
+*	BUGFIX: syndicated_item_guid FILTERS FIXED. Previous versions of
+	FeedWordPress theoretically allowed for filters on the syndicated_item_guid
+	hook, which was intended to filter the globally-unique identifier element
+	(rss:guid or atom:id) -- useful if you need to convince FeedWordPress to use
+	different guids, or to recognize two or more incoming posts as versions of
+	the same post rather than as distinct items. However, while the hook
+	affected the guid stored in the WordPress database, it did not affect the
+	guid used to check whether an incoming feed item had already been syndicated
+	or was a new item -- which greatly limited the practical usefulness of the
+	filter. This bug has been fixed: syndicated_item_guid filters should now
+	properly control not only the final database record, but also the initial
+	uniqueness test applied to posts.
+
 = 2011.0721 =
 
 *	BUGFIX: SERIOUS BUG CAUSING RARE UNEXPECTED DELETION OF PAGES AND OTHER
@@ -124,7 +167,7 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 	specific scheduling decisions are made because of, e.g., requests from the
 	feed producer.
 	
-* 	FEED UPDATE SCHEDULING IMPROVEMENTS: ENFORCEABLE "MINIMUM INTERVAL" SETTIN
+* 	FEED UPDATE SCHEDULING IMPROVEMENTS: ENFORCEABLE "MINIMUM INTERVAL" SETTING
 	TO SPACE OUT UPDATES. Some feeds request specific update schedules, using
 	standard elements such as sy:updateFrequency and rss:ttl. Normally,
 	FeedWordPress respects any scheduling requests that a feed makes -- if it

@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2011.0920
+Version: 2011.1018
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2011.0920
+ * @version 2011.1018
  */
 
 # This uses code derived from:
@@ -34,7 +34,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2011.0920');
+define ('FEEDWORDPRESS_VERSION', '2011.1018');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -143,24 +143,6 @@ if (isset($ref[1])) :
 	$fwp_path = $ref[1];
 else : // Something went wrong. Let's just guess.
 	$fwp_path = 'feedwordpress';
-endif;
-
-// If this is a FeedWordPress admin page, queue up scripts for AJAX functions that FWP uses
-// If it is a display page or a non-FeedWordPress admin page, don't.
-wp_register_style('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.css');
-if (FeedWordPressSettingsUI::is_admin()) :
-	// For JavaScript that needs to be generated dynamically
-	add_action('admin_print_scripts', array('FeedWordPressSettingsUI', 'admin_scripts'));
-
-	// For CSS that needs to be generated dynamically.
-	add_action('admin_print_styles', array('FeedWordPressSettingsUI', 'admin_styles'));
-
-	wp_enqueue_style('dashboard');
-	wp_enqueue_style('feedwordpress-elements');
-
-	if (function_exists('wp_admin_css')) :
-		wp_admin_css('css/dashboard');
-	endif;
 endif;
 
 if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
@@ -1176,6 +1158,27 @@ class FeedWordPress {
 	} // FeedWordPress::stale()
 
 	function init () {
+		global $fwp_path;
+		
+		// If this is a FeedWordPress admin page, queue up scripts for AJAX
+		// functions that FWP uses. If it is a display page or a non-FWP admin
+		// page, don't.
+		wp_register_style('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.css');
+		if (FeedWordPressSettingsUI::is_admin()) :
+			// For JavaScript that needs to be generated dynamically
+			add_action('admin_print_scripts', array('FeedWordPressSettingsUI', 'admin_scripts'));
+		
+			// For CSS that needs to be generated dynamically.
+			add_action('admin_print_styles', array('FeedWordPressSettingsUI', 'admin_styles'));
+		
+			wp_enqueue_style('dashboard');
+			wp_enqueue_style('feedwordpress-elements');
+		
+			if (function_exists('wp_admin_css')) :
+				wp_admin_css('css/dashboard');
+			endif;
+		endif;
+
 		$this->clear_cache_magic_url();
 		$this->update_magic_url();
 	} /* FeedWordPress::init() */
