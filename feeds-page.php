@@ -193,11 +193,24 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<option value="no"<?php echo (!$automatic_updates)?' selected="selected"':''; ?>>cron job or manual updates</option>
 		</select>
 		<div id="cron-job-explanation" class="setting-description">
-		<p>If you want to use a cron job,
+		<p><?php
+		$path = `which curl`; $opts = '--silent %s';
+		if (is_null($path) or strlen(trim($path))==0) :
+			$path = `which wget`; $opts = '-q -O - %s';
+			if (is_null($path) or strlen(trim($path))==0) :
+				$path = '/usr/bin/curl'; $opts = '--silent %s';
+			endif;
+		endif;
+		$path = preg_replace('/\n+$/', '', $path);
+		$crontab = `crontab -l`;
+		
+		$cmdline = $path . ' ' . sprintf($opts, get_bloginfo('url').'?update_feedwordpress=1');
+		
+		?>If you want to use a cron job,
 		you can perform scheduled updates by sending regularly-scheduled
-		requests to <a href="<?php bloginfo('home'); ?>?update_feedwordpress=1"><code><?php bloginfo('url') ?>?update_feedwordpress=1</code></a>
+		requests to <a href="<?php bloginfo('url'); ?>?update_feedwordpress=1"><code><?php bloginfo('url') ?>?update_feedwordpress=1</code></a>
 		For example, inserting the following line in your crontab:</p>
-		<pre style="font-size: 0.80em"><code>*/10 * * * * /usr/bin/curl --silent <?php bloginfo('url'); ?>?update_feedwordpress=1</code></pre>
+		<pre style="font-size: 0.80em"><code>*/10 * * * * <?php print esc_html($cmdline); ?></code></pre>
 		<p class="setting-description">will check in every 10 minutes
 		and check for updates on any feeds that are ready to be polled for updates.</p>
 		</div>
