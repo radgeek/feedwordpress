@@ -4,7 +4,7 @@ Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
 Tested up to: 3.2.1
-Stable tag: 2011.1018
+Stable tag: 2011.1019
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -93,6 +93,21 @@ outs, see the documentation at the [FeedWordPress project homepage][].
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
 == Changelog ==
+
+= 2011.1019 =
+
+*	BUGFIX: "THERE ARE NO HTTP TRANSPORTS AVAILABLE" ERROR FIXED: The initial
+	support for HTTP Basic and Digest authentication in version 2011.1018
+	contained a bug that could cause HTTP requests for feeds or for other
+	WordPress resources to break down if you do not have the PHP curl module
+	installed. This bug has been fixed, and these errors should no longer
+	appear.
+
+*	IMPROVED HTTP AUTHENTICATION SUPPORT: In addition, the HTTP Authentication
+	support in FeedWordPress has been extended, to ensure that Basic
+	authentication is available in many web host configurations, and to allow
+	you to add a username and password for a feed immediately when you
+	subscribe to it.
 
 = 2011.1018 =
 
