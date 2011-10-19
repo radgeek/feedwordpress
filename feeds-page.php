@@ -441,17 +441,20 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		
 		$auth = $this->setting('http auth method', NULL);
 
-		$authMethods = apply_filters('feedwordpress_http_auth_methods', array(
-			'basic' => 'Basic',
-			'digest' => 'Digest',
-			'-' => 'None',
-		));
+		global $feedwordpress;
+
+		$authMethods = apply_filters(
+			'feedwordpress_http_auth_methods',
+			$feedwordpress->httpauth->methods_available()
+		);
+
 		if (is_null($auth)) :
 			$auth = '-';
 			$hideAuth = true;
 		endif;
 
 		// Hey ho, let's go
+		
 		?>
 		<table class="edit-form">
 
@@ -464,6 +467,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		title="Check feed &lt;<?php echo esc_html($rss_url); ?>&gt; for validity">validate</a>)
 		<input type="submit" name="feedfinder" value="switch &rarr;" style="font-size:smaller" />
 		
+		<?php if (count($authMethods) > 1) : /* More than '-' */ ?>
 		<table id="link-rss-authentication">
 		<tbody>
 		<tr id="link-rss-authentication-credentials">
@@ -483,6 +487,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		</tr>
 		</tbody>
 		</table>
+		<?php endif; ?>
 		
 		<table id="link-rss-params">
 		<tbody>
@@ -509,34 +514,11 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<div><input type="hidden" id="link-rss-params-num" name="link_rss_params_num" value="<?php print $i; ?>" /></div>
 		
 		<script type="text/javascript">
-		function linkUserPassFlip (init) {
-			var speed = 'slow';
-			if (typeof(init)=='boolean' && init) {
-				speed = 0;
-			}
-			
-			if (jQuery('#link-rss-auth-method').val()=='-') {
-				jQuery('<a style="display: none" class="add-remove" id="link-rss-userpass-use" href="#">+ Uses username/password</a>')
-					.insertAfter('#link-rss-authentication')
-					.click( function () {
-							jQuery('#link-rss-auth-method').val('basic');
-							linkUserPassFlip();
-							return false;
-					} )
-					.show(speed);
-				jQuery('#link-rss-authentication').hide(speed);
-			} else {
-				jQuery('#link-rss-userpass-use').hide(speed, function () { jQuery(this).remove(); } );
-				jQuery('#link-rss-authentication').show(speed);
-			}
-		}
 		jQuery('<td><a class="add-remove remove-it" id="link-rss-userpass-remove" href="#"><span class="x">(X)</span> Remove</a></td>')
-			.appendTo('#link-rss-authentication-credentials').click(function () {
-			jQuery('#link-rss-auth-method').val('-');
-			linkUserPassFlip();
-		} );
-		jQuery('#link-rss-auth-method').change( linkUserPassFlip );
-		linkUserPassFlip(/*init=*/ true);
+			.appendTo('#link-rss-authentication-credentials')
+			.click( feedAuthenticationMethodUnPress );
+		jQuery('#link-rss-auth-method').change( feedAuthenticationMethod );
+		feedAuthenticationMethod({ init: true });
 		
 		function linkParamsRowRemove (element) {
 			jQuery(element).closest('tr').fadeOut('slow', function () {
@@ -898,12 +880,26 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				// Do some more diagnostics if the API for it is available.
 				if (function_exists('_wp_http_get_object')) :
 					$httpObject = _wp_http_get_object();
-					$transports = $httpObject->_getTransport();
-	
-					print "<h4>".__('HTTP Transports available').":</h4>\n";
-					print "<ol>\n";
-					print "<li>".implode("</li>\n<li>", array_map('get_class', $transports))."</li>\n";
-					print "</ol>\n";
+					
+					if (is_callable(array($httpObject, '_getTransport'))) :
+						$transports = $httpObject->_getTransport();
+		
+						print "<h4>".__('HTTP Transports available').":</h4>\n";
+						print "<ol>\n";
+						print "<li>".implode("</li>\n<li>", array_map('get_class', $transports))."</li>\n";
+						print "</ol>\n";
+					elseif (is_callable(array($httpObject, '_get_first_available_transport'))) :
+						$transport = $httpObject->_get_first_available_transport(
+							array(),
+							$url
+						);
+						
+						print "<h4>".__("HTTP Transport").":</h4>\n";
+						print "<ol>\n";
+						print "<li>".FeedWordPress::val($transport)."</li>\n";
+						print "</ol>\n";
+					endif;
+					
 					print "</div>\n";
 				endif;
 			endforeach;
@@ -1071,6 +1067,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		if (
 			isset($post['link_rss_username'])
 			and (strlen($post['link_rss_username']) > 0)
+			and ('-' != $post['link_rss_auth_method'])
 		) :
 			$this->update_setting('http username', $post['link_rss_username']);
 		else :
@@ -1080,6 +1077,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		if (
 			isset($post['link_rss_password'])
 			and (strlen($post['link_rss_password']) > 0)
+			and ('-' != $post['link_rss_auth_method'])
 		) :
 			$this->update_setting('http password', $post['link_rss_password']);
 		else :

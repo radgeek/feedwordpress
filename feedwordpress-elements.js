@@ -368,6 +368,48 @@ $.fn.fwpList = function( settings ) {
 
 })(jQuery);
 
+/**
+ * Admin interface: Uses Username/Parameter UI for Feed Settings.
+ *
+ */
+function feedAuthenticationMethodPress (params) {
+	feedAuthenticationMethod({value: 'basic'});
+	return false;
+}
+function feedAuthenticationMethodUnPress (params) {
+	feedAuthenticationMethod({value: '-'});
+	return false;
+}
+function feedAuthenticationMethod (params) {
+	var s = jQuery.extend({}, {init: false, value: null}, params);
+	
+	var speed = (s.init ? 0 : 'slow');
+	
+	// Set.
+	if (s.value != null) {
+		jQuery('#link-rss-auth-method').val(s.value);
+	}
+	
+	if (jQuery('#link-rss-auth-method').val()=='-') {
+		jQuery('#link-rss-authentication').hide(speed, function () {
+			// Just in case. Make sure that we don't duplicate.
+			jQuery('#link-rss-userpass-use').remove();
+			
+			jQuery('<a style="display: none" class="add-remove" id="link-rss-userpass-use" href="#">+ Uses username/password</a>')
+				.insertAfter('#link-rss-authentication')
+				.click( feedAuthenticationMethodPress )
+				.show(speed);
+		});
+	} else {
+		jQuery('#link-rss-userpass-use').hide(speed, function () { jQuery(this).remove(); } );
+		jQuery('#link-rss-authentication').show(speed);
+	} /* if */
+} /* function feedAuthenticationMethod () */
+ 
+/**
+ * Admin interface: Live category and tag boxes 
+ */
+ 
 jQuery(document).ready( function($) {
 	// Category boxes
 	$('.feedwordpress-category-div').each( function () {
