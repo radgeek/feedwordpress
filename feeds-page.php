@@ -376,6 +376,65 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		);
 	} /* FeedWordPressFeedsPage::fetch_settings_box () */
 	
+	function display_authentication_credentials_box ($params = array()) {
+		static $count = 0;
+		
+		$params = wp_parse_args($params, array(
+		'username' => NULL,
+		'password' => NULL,
+		'method' => '-',
+		));
+		
+		// Equivalents
+		if (is_null($params['method'])) : $params['method'] = '-'; endif;
+		
+		$count++;
+		$slug = ($count > 1 ? '-'.$count : '');
+		
+		global $feedwordpress;
+		$authMethods = apply_filters(
+			'feedwordpress_http_auth_methods',
+			$feedwordpress->httpauth->methods_available()
+		);
+
+		if (count($authMethods) > 1) : /* More than '-' */
+		?>
+		<div class="link-rss-authentication" id="link-rss-authentication<?php print $slug; ?>">
+		<table>
+		<tbody>
+		<tr class="link-rss-authentication-credentials" id="link-rss-authentication-credentials<?php print $slug; ?>">
+		<td><label>user: <input type="text" name="link_rss_username"
+			value="<?php print esc_attr($params['username']); ?>" size="16"
+			placeholder="username to access this feed" /></label></td>
+		<td><label>pass: <input type="text" name="link_rss_password"
+			value="<?php print esc_attr($params['password']); ?>" size="16"
+			placeholder="password to access this feed" /></label></td>
+		<td class="link-rss-authentication-method" id="link-rss-authentication-method<?php print $slug; ?>"><label>method: <select class="link-rss-auth-method" id="link-rss-auth-method" name="link_rss_auth_method" size="1">
+<?php foreach ($authMethods as $value => $label) : ?>
+		  <option value="<?php print esc_attr($value); ?>"<?php
+		  if ($value == $params['method']) : ?> selected="selected"<?php
+		  endif; ?>><?php print esc_html($label); ?></option>
+<?php endforeach; ?>
+		</select></label></td>
+		</tr>
+		</tbody>
+		</table>
+		</div>
+		
+		<script type="text/javascript">
+		jQuery('<td><a class="add-remove remove-it" id="link-rss-userpass-remove<?php print $slug; ?>" href="#"><span class="x">(X)</span> Remove</a></td>')
+			.appendTo('#link-rss-authentication-credentials<?php print $slug; ?>')
+			.click( feedAuthenticationMethodUnPress );
+		jQuery('#link-rss-auth-method<?php print $slug; ?>').change( feedAuthenticationMethod );
+		feedAuthenticationMethod({
+		init: true,
+		node: jQuery('#link-rss-authentication<?php print $slug; ?>') });
+		</script>
+		
+		<?php
+		endif;
+	}
+	
 	function feed_information_box ($page, $box = NULL) {
 		global $wpdb;
 		$link_rss_params = maybe_unserialize($page->setting('query parameters', ''));
@@ -443,11 +502,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 		global $feedwordpress;
 
-		$authMethods = apply_filters(
-			'feedwordpress_http_auth_methods',
-			$feedwordpress->httpauth->methods_available()
-		);
-
 		if (is_null($auth)) :
 			$auth = '-';
 			$hideAuth = true;
@@ -467,27 +521,11 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		title="Check feed &lt;<?php echo esc_html($rss_url); ?>&gt; for validity">validate</a>)
 		<input type="submit" name="feedfinder" value="switch &rarr;" style="font-size:smaller" />
 		
-		<?php if (count($authMethods) > 1) : /* More than '-' */ ?>
-		<table id="link-rss-authentication">
-		<tbody>
-		<tr id="link-rss-authentication-credentials">
-		<td><label>user: <input type="text" name="link_rss_username"
-			value="<?php print esc_attr($username); ?>" size="16"
-			placeholder="username to access this feed" /></label></td>
-		<td><label>pass: <input type="text" name="link_rss_password"
-			value="<?php print esc_attr($password); ?>" size="16"
-			placeholder="password to access this feed" /></label></td>
-		<td id="link-rss-authentication-method"><label>method: <select id="link-rss-auth-method" name="link_rss_auth_method" size="1">
-<?php foreach ($authMethods as $value => $label) : ?>
-		  <option value="<?php print esc_attr($value); ?>"<?php
-		  if ($value == $auth) : ?> selected="selected"<?php
-		  endif; ?>><?php print esc_html($label); ?></option>
-<?php endforeach; ?>
-		</select></label></td>
-		</tr>
-		</tbody>
-		</table>
-		<?php endif; ?>
+		<?php $this->display_authentication_credentials_box(array(
+		'username' => $username,
+		'password' => $password,
+		'method' => $auth,
+		)); ?>
 		
 		<table id="link-rss-params">
 		<tbody>
@@ -514,12 +552,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<div><input type="hidden" id="link-rss-params-num" name="link_rss_params_num" value="<?php print $i; ?>" /></div>
 		
 		<script type="text/javascript">
-		jQuery('<td><a class="add-remove remove-it" id="link-rss-userpass-remove" href="#"><span class="x">(X)</span> Remove</a></td>')
-			.appendTo('#link-rss-authentication-credentials')
-			.click( feedAuthenticationMethodUnPress );
-		jQuery('#link-rss-auth-method').change( feedAuthenticationMethod );
-		feedAuthenticationMethod({ init: true });
-		
 		function linkParamsRowRemove (element) {
 			jQuery(element).closest('tr').fadeOut('slow', function () {
 				jQuery(this).remove();
@@ -681,10 +713,35 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php
 	}
 
+	function url_for_401 ($err) {
+		$ret = NULL;
+		if (is_wp_error($err)) :
+			if ($err->get_error_code()=='http_request_failed') :
+				$data = $err->get_error_data('http_request_failed');
+				
+				if (is_array($data) and isset($data['status'])) :
+					if (401==$data['status']) :
+						$ret = $data['uri'];
+					endif;
+				endif;
+			endif;
+		endif;
+		return $ret;
+	}
+	
 	function display_feedfinder () {
 		global $wpdb;
 	
 		$lookup = (isset($_REQUEST['lookup']) ? $_REQUEST['lookup'] : NULL);
+		
+		$auth = FeedWordPress::param('link_rss_auth_method');
+		$username = FeedWordPress::param('link_rss_username');
+		$password = FeedWordPress::param('link_rss_password');
+		$credentials = array(
+				"authentication" => $auth,
+				"username" => $username,
+				"password" => $password,
+		);
 
 		$feeds = array(); $feedSwitch = false; $current = null;
 		if ($this->for_feed_settings()) : // Existing feed?
@@ -693,7 +750,11 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				// Switch Feed without a specific feed yet suggested
 				// Go to the human-readable homepage to look for
 				// auto-detection links
+
 				$lookup = $this->link->link->link_url;
+				$auth = $this->link->setting('http auth method');
+				$username = $this->link->setting('http username');
+				$password = $this->link->setting('http password');
 				
 				// Guarantee that you at least have the option to
 				// stick with what works.
@@ -720,13 +781,13 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		$finder[$lookup] = new FeedFinder($lookup);
 		
 		foreach ($finder as $url => $ff) :
-			$feeds = array_merge($feeds, $ff->find());
+			$feeds = array_merge($feeds, $ff->find(
+			/*url=*/ NULL,
+			/*params=*/ $credentials));
 		endforeach;
 		
 		$feeds = array_values( // Renumber from 0..(N-1)
-				array_unique( // Eliminate duplicates
-					$feeds
-				)
+			$feeds
 		);
 
 		if (count($feeds) > 0):
@@ -749,10 +810,26 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				$form_class = '';
 			endif;
 
+			global $fwp_credentials;
+			
 			foreach ($feeds as $key => $f):
+				$ofc = $fwp_credentials;
+				$fwp_credentials = $credentials; // Set
 				$pie = FeedWordPress::fetch($f);
+				$fwp_credentials = $ofc; // Re-Set
+				
 				$rss = (is_wp_error($pie) ? $pie : new MagpieFromSimplePie($pie));
 
+				if ($this->url_for_401($pie)) :
+					$this->display_alt_feed_box($lookup, array(
+						"err" => $pie,
+						"auth" => $auth,
+						"username" => $username,
+						"password" => $password
+					));
+					continue;
+				endif;
+				
 				if ($rss and !is_wp_error($rss)):
 					$feed_link = (isset($rss->channel['link'])?$rss->channel['link']:'');
 					$feed_title = (isset($rss->channel['title'])?$rss->channel['title']:$feed_link);
@@ -847,6 +924,11 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 					<li><strong>Encoding:</strong> <?php echo isset($rss->encoding)?esc_html($rss->encoding):"<em>Unknown</em>"; ?></li>
 					<li><strong>Description:</strong> <?php echo isset($rss->channel['description'])?esc_html($rss->channel['description']):"<em>Unknown</em>"; ?></li>
 					</ul>
+					<?php $this->display_authentication_credentials_box(array(
+					'username' => $username,
+					'password' => $password,
+					'method' => $auth,
+					)); ?>
 					<?php do_action('feedwordpress_feedfinder_form', $f, $post, $link, $this->for_feed_settings()); ?>
 					<div class="submit"><input type="submit" class="button-primary" name="Use" value="&laquo; Use this feed" />
 					<input type="submit" class="button" name="Cancel" value="× Cancel" /></div>
@@ -914,8 +996,22 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		return false; // Don't continue
 	} /* FeedWordPressFeedsPage::display_feedfinder() */
 
-	function display_alt_feed_box ($lookup, $alt = false) {
+	function display_alt_feed_box ($lookup, $params = false) {
 		global $fwp_post;
+		
+		if (is_bool($params)) :
+			$params = array("alt" => $params);
+		endif;
+		
+		$params = wp_parse_args($params, array( // Defaults
+		"alt" => false,
+		"err" => NULL,
+		"auth" => NULL,
+		"password" => NULL,
+		"username" => NULL,
+		));
+		$alt = $params['alt'];
+		
 		?>
 		<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
 		<div class="inside"><?php
@@ -925,6 +1021,14 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php if (!$alt): ?>style="margin: 1.0em 3.0em; font-size: smaller;"<?php endif; ?>>
 		<legend><?php if ($alt) : ?>Alternative feeds<?php else: ?>Find feeds<?php endif; ?></legend>
 		<?php if ($alt) : ?><h3>Use a different feed</h3><?php endif; ?>
+		<?php if (is_wp_error($params['err'])) :
+		?>
+		<p><em><strong>401 Not Authorized.</strong> This URL may require
+		a username and password to access it.</em> You may want to add login
+		credentials below and check it again.</p>
+		<?php
+			endif;
+		?>
 		<div><label>Address:
 		<input type="text" name="lookup" id="use-another-feed"
 		placeholder="URL"
@@ -937,9 +1041,17 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php if (is_null($lookup)) : ?>
 		<?php FeedWordPressSettingsUI::magic_input_tip_js('use-another-feed'); ?>
 		<?php endif; ?>
+
 		<?php $this->stamp_link_id('link_id'); ?>
 		<input type="hidden" name="action" value="feedfinder" />
 		<input type="submit" class="button<?php if ($alt): ?>-primary<?php endif; ?>" value="Check &raquo;" /></div>
+
+		<?php $this->display_authentication_credentials_box(array(
+		'username' => $params['username'],
+		'password' => $params['password'],
+		'method' => $params['auth'],
+		)); ?>
+
 		<p>This can be the address of a feed, or of a website. FeedWordPress
 		will try to automatically detect any feeds associated with a
 		website.</p>

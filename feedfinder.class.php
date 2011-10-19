@@ -12,6 +12,7 @@ require_once(dirname(__FILE__).'/feedwordpresshtml.class.php');
 
 class FeedFinder {
 	var $uri = NULL;
+	var $credentials = NULL;
 	var $_cache_uri = NULL;
 	
 	var $verify = FALSE;
@@ -36,12 +37,51 @@ class FeedFinder {
 	var $_obvious_feed_url = array('[./]rss', '[./]rdf', '[./]atom', '[./]feed', '\.xml');
 	var $_maybe_feed_url = array ('rss', 'rdf', 'atom', 'feed', 'xml');
 
-	function FeedFinder ($uri = NULL, $verify = TRUE, $fallbacks = 3) {
+	function FeedFinder ($uri = NULL, $params = array(), $fallbacks = 3) {
+		if (is_bool($params)) :
+			$params = array("verify" => $params);
+		endif;
+		
+		$params = wp_parse_args($params, array(
+			"verify" => true,
+			"authentication" => NULL,
+			"username" => NULL,
+			"password" => NULL,
+		));
+		$verify = $params['verify'];
+		$this->credentials = array(
+		"authentication" => $params['authentication'],
+		"username" => $params['username'],
+		"password" => $params['password'],
+		);
+		
 		$this->uri = $uri; $this->verify = $verify;
 		$this->fallbacks = $fallbacks;
 	} /* FeedFinder::FeedFinder () */
 
-	function find ($uri = NULL) {
+	function find ($uri = NULL, $params = array()) {
+		$params = wp_parse_args($params, array( // Defaults
+		"authentication" => -1,
+		"username" => NULL,
+		"password" => NULL,
+		));
+		
+		// Equivalents
+		if ($params['authentication']=='-') :
+			$params['authentication'] = NULL;
+			$params['username'] = NULL;
+			$params['password'] = NULL;
+		endif;
+		
+		// Set/reset
+		if ($params['authentication'] != -1) :
+			$this->credentials = array(
+			"authentication" => $params['authentication'],
+			"username" => $params['username'],
+			"password" => $params['password'],
+			);
+		endif;
+		
 		$ret = array ();
 		if (!is_null($this->data($uri))) :
 			if ($this->is_opml($uri)) :
@@ -50,8 +90,8 @@ class FeedFinder {
 				if ($this->is_feed($uri)) :
 					$href = array($this->uri);
 				else :
-					// Assume that we have HTML or XHTML (even if we don't, who's it gonna hurt?)
-					// Autodiscovery is the preferred method
+					// Assume that we have HTML or XHTML (even if we don't, who's
+					// it gonna hurt?) Autodiscovery is the preferred method.
 					$href = $this->_link_rel_feeds();
 					
 					// ... but we'll also take the little orange buttons
@@ -66,8 +106,8 @@ class FeedFinder {
 						endif;
 					endif;
 					
-					// Our search may turn up duplicate URIs. We only need to do any given URI once.
-					// Props to Camilo <http://projects.radgeek.com/2008/12/14/feedwordpress-20081214/#comment-20090122160414>
+					// Our search may turn up duplicate URIs. We only need to do
+					// any given URI once. Props to Camilo <http://projects.radgeek.com/2008/12/14/feedwordpress-20081214/#comment-20090122160414>
 					$href = array_unique($href);
 				endif;
 
@@ -83,7 +123,7 @@ class FeedFinder {
 			foreach ($href as $u) :
 				$the_uri = SimplePie_Misc::absolutize_url($u, $this->uri);
 				if ($this->verify and ($u != $this->uri and $the_uri != $this->uri)) :
-					$feed = new FeedFinder($the_uri);
+					$feed = new FeedFinder($the_uri, $this->credentials);
 					if ($feed->is_feed()) : $ret[] = $the_uri; endif;
 					unset($feed);
 				else :
@@ -91,7 +131,13 @@ class FeedFinder {
 				endif;
 			endforeach;
 		endif;
-	
+
+		if ($this->is_401($uri)) :
+			$ret = array_merge(array(
+				new WP_Error('http_request_failed', '401 Not authorized', array("uri" => $this->uri, "status" => 401)),
+			), $ret);
+		endif;
+		
 		return array_values($ret);
 	} /* FeedFinder::find () */
 
@@ -128,6 +174,10 @@ class FeedFinder {
 		return $message;
 	}
 	
+	function is_401 ($uri = NULL) {
+		return (intval($this->status($uri))==401);
+	} /* FeedFinder::is_401 () */
+	
 	function is_feed ($uri = NULL) {
 		$data = $this->data($uri);
 
@@ -163,9 +213,12 @@ class FeedFinder {
 			$headers['User-Agent'] = 'feedfinder/1.2 (compatible; PHP FeedFinder) +http://projects.radgeek.com/feedwordpress';
 
 			// Use WordPress API function
-			$client = wp_remote_request($this->uri, array(
+			$client = wp_remote_request($this->uri, array_merge(
+				$this->credentials,
+				array(
 				'headers' => $headers,
 				'timeout' => FeedWordPress::fetch_timeout(),
+				)
 			));
 
 			$this->_response = $client;

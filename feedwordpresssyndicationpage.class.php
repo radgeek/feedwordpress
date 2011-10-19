@@ -1119,6 +1119,7 @@ function fwp_switchfeed_page () {
 			$link_id = FeedWordPress::syndicate_link($fwp_post['feed_title'], $fwp_post['feed_link'], $fwp_post['feed']);
 			if ($link_id):
 				$existingLink = new SyndicatedLink($link_id);
+				
 			?>
 <div class="updated"><p><a href="<?php print $fwp_post['feed_link']; ?>"><?php print esc_html($fwp_post['feed_title']); ?></a>
 has been added as a contributing site, using the feed at
@@ -1143,7 +1144,22 @@ updated to &lt;<a href="<?php echo esc_html($fwp_post['feed']); ?>"><?php echo e
 	endif;
 
 	if (isset($existingLink)) :
+		$auth = FeedWordPress::post('link_rss_auth_method');
+		if (!is_null($auth) and $auth != '-') :
+			$existingLink->update_setting('http auth method', $auth);
+			$existingLink->update_setting('http username',
+				FeedWordPress::post('link_rss_username')
+			);
+			$existingLink->update_setting('http password',
+				FeedWordPress::post('link_rss_password')
+			);
+		else :
+			$existingLink->update_setting('http auth method', NULL);
+			$existingLink->update_setting('http username', NULL);
+			$existingLink->update_setting('http password', NULL);
+		endif;
 		do_action('feedwordpress_admin_switchfeed', $fwp_post['feed'], $existingLink); 
+		$existingLink->save_settings(/*reload=*/ true);
 	endif;
 	
 	if (!$changed) :

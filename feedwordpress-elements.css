@@ -387,12 +387,16 @@ table.twofer td.secondary { padding-left: 10px; width: 30%; }
 	vertical-align: middle;
 }
 
-#link-rss-userpass-use, #link-rss-authentication {
+#link-rss-userpass-use, .link-rss-authentication table {
 	display: block;
 	font-size: 75%;
 	white-space: nowrap; 
 	padding: 0.5em 0;
 }
+#feed-finder .link-rss-authentication table {
+	font-size: inherit;
+}
+
 #link-rss-authentication label {
 	font-weight: bold;
 	padding-left: 1.5em;

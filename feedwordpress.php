@@ -1582,6 +1582,11 @@ class FeedWordPress {
 	}
 	
 	/*static*/ function fetch ($url, $params = array()) {
+		if (is_wp_error($url)) :
+			// Let's bounce.
+			return $url;
+		endif;
+		
 		$force_feed = true; // Default
 
 		// Allow user to change default feed-fetch timeout with a global setting. Props Erigami Scholey-Fuller <http://www.piepalace.ca/blog/2010/11/feedwordpress-broke-my-heart.html>			'timeout' => 

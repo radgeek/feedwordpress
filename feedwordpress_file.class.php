@@ -1,4 +1,6 @@
 <?php
+$GLOBALS['fwp_credentials'] = NULL;
+
 class FeedWordPress_File extends WP_SimplePie_File {
 	function FeedWordPress_File ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
 		self::__construct($url, $timeout, $redirects, $headers, $useragent, $force_fsockopen);
@@ -14,6 +16,7 @@ class FeedWordPress_File extends WP_SimplePie_File {
 		$this->method = SIMPLEPIE_FILE_SOURCE_REMOTE;
 		
 		global $wpdb;
+		global $fwp_credentials;
 		
 		if ( preg_match('/^http(s)?:\/\//i', $url) ) {
 			$args = array( 'timeout' => $this->timeout, 'redirection' => $this->redirects);
@@ -24,14 +27,27 @@ class FeedWordPress_File extends WP_SimplePie_File {
 			if ( SIMPLEPIE_USERAGENT != $this->useragent ) //Use default WP user agent unless custom has been specified
 				$args['user-agent'] = $this->useragent;
 
-			$links = $wpdb->get_results(
-				$wpdb->prepare("SELECT * FROM {$wpdb->links} WHERE link_rss = '%s'", $url)
-			);
-			if ($links) :
-				$source = new SyndicatedLink($links[0]);
-				$args['authentication'] = $source->authentication_method();
-				$args['username'] = $source->username();
-				$args['password'] = $source->password();
+			// This is ugly as hell, but communicating up and down the chain
+			// in any other way is difficult.
+
+			if (!is_null($fwp_credentials)) :
+
+				$args['authentication'] = $fwp_credentials['authentication'];
+				$args['username'] = $fwp_credentials['username'];
+				$args['password'] = $fwp_credentials['password'];
+
+			else :
+			
+				$links = $wpdb->get_results(
+					$wpdb->prepare("SELECT * FROM {$wpdb->links} WHERE link_rss = '%s'", $url)
+				);
+				if ($links) :
+					$source = new SyndicatedLink($links[0]);
+					$args['authentication'] = $source->authentication_method();
+					$args['username'] = $source->username();
+					$args['password'] = $source->password();
+				endif;
+			
 			endif;
 			
 			$res = wp_remote_request($url, $args);
