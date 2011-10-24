@@ -119,6 +119,7 @@ require_once("${dir}/feedwordpresshtml.class.php");
 require_once("${dir}/feedwordpress-content-type-sniffer.class.php");
 require_once("${dir}/inspectpostmeta.class.php");
 require_once("${dir}/syndicationdataqueries.class.php");
+require_once("${dir}/feedwordpie.class.php");
 require_once("${dir}/feedwordpress_file.class.php");
 require_once("${dir}/feedwordpress_parser.class.php");
 require_once("${dir}/feedwordpressrpc.class.php");
@@ -1604,7 +1605,7 @@ class FeedWordPress {
 		endif;
 		$timeout = intval($timeout);
 		
-		$pie_class = apply_filters('feedwordpress_simplepie_class', 'SimplePie');
+		$pie_class = apply_filters('feedwordpress_simplepie_class', 'FeedWordPie');
 		$cache_class = apply_filters('feedwordpress_cache_class', 'WP_Feed_Cache');
 		$file_class = apply_filters('feedwordpress_file_class', 'FeedWordPress_File');
 		$parser_class = apply_filters('feedwordpress_parser_class', 'FeedWordPress_Parser');

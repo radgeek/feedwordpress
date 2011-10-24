@@ -197,7 +197,7 @@ class SyndicatedLink {
 
 		$this->simplepie = apply_filters(
 			'syndicated_feed',
-			FeedWordPress::fetch($url, array('timeout' => $timeout)),
+			FeedWordPress::fetch($this, array('timeout' => $timeout)),
 			$this
 		);
 		
@@ -602,9 +602,9 @@ class SyndicatedLink {
 	} /* SyndicatedLink::update_setting () */
 	
 	function uri ($params = array()) {
-		$params = shortcode_atts(array(
+		$params = wp_parse_args($params, array(
 		'add_params' => false,
-		), $params);
+		));
 		
 		$uri = (is_object($this->link) ? $this->link->link_rss : NULL);
 		if (!is_null($uri) and strlen($uri) > 0 and $params['add_params']) :

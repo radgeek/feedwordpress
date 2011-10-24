@@ -7,6 +7,13 @@ class FeedWordPress_File extends WP_SimplePie_File {
 	}
 	
 	function __construct ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
+		global $fwp_oLinks;
+		
+		$source = NULL;
+		if (isset($fwp_oLinks[$url])) :
+			$source = $fwp_oLinks[$url];
+		endif;
+		
 		$this->url = $url;
 		$this->timeout = $timeout;
 		$this->redirects = $redirects;
@@ -36,17 +43,11 @@ class FeedWordPress_File extends WP_SimplePie_File {
 				$args['username'] = $fwp_credentials['username'];
 				$args['password'] = $fwp_credentials['password'];
 
-			else :
-			
-				$links = $wpdb->get_results(
-					$wpdb->prepare("SELECT * FROM {$wpdb->links} WHERE link_rss = '%s'", $url)
-				);
-				if ($links) :
-					$source = new SyndicatedLink($links[0]);
-					$args['authentication'] = $source->authentication_method();
-					$args['username'] = $source->username();
-					$args['password'] = $source->password();
-				endif;
+			elseif ($source InstanceOf SyndicatedLink) :
+
+				$args['authentication'] = $source->authentication_method();
+				$args['username'] = $source->username();
+				$args['password'] = $source->password();
 			
 			endif;
 			
