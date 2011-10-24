@@ -325,7 +325,7 @@ class SyndicatedLink {
 			$posts = apply_filters(
 				'syndicated_feed_items',
 				$this->simplepie->get_items(),
-				&$this
+				$this
 			);
 
 			$this->magpie->originals = $posts;

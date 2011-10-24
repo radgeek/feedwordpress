@@ -50,7 +50,7 @@ class FeedWordPressAdminPage {
 		elseif ($this->save_requested_in($post)) : // User mashed Save Changes
 			$this->save_settings($post);
 		endif;
-		do_action($this->dispatch.'_post', &$post, &$this);		
+		do_action($this->dispatch.'_post', $post, $this);		
 	}
 
 	function update_feed () {
@@ -81,7 +81,7 @@ class FeedWordPressAdminPage {
 	}
 
 	function save_settings ($post) {
-		do_action($this->dispatch.'_save', &$post, &$this);
+		do_action($this->dispatch.'_save', $post, $this);
 
 		if ($this->for_feed_settings()) :
 			// Save settings

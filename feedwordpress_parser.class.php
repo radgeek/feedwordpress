@@ -40,7 +40,7 @@ class FeedWordPress_Parser extends SimplePie_Parser {
 
 		if (substr($data, 0, 5) === '<?xml' && strspn(substr($data, 5, 1), "\x09\x0A\x0D\x20") && ($pos = strpos($data, '?>')) !== false)
 		{
-			$declaration =& new SimplePie_XML_Declaration_Parser(substr($data, 5, $pos - 5));
+			$declaration = new SimplePie_XML_Declaration_Parser(substr($data, 5, $pos - 5));
 			if ($declaration->parse())
 			{
 				$data = substr($data, $pos + 2);
@@ -93,7 +93,7 @@ class FeedWordPress_Parser extends SimplePie_Parser {
 		else
 		{
 			libxml_clear_errors();
-			$xml =& new XMLReader();
+			$xml = new XMLReader();
 			$xml->xml($data);
 			while (@$xml->read())
 			{
