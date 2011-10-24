@@ -200,7 +200,7 @@ class SyndicatedLink {
 			FeedWordPress::fetch($this, array('timeout' => $timeout)),
 			$this
 		);
-		
+
 		// Filter compatibility mode
 		if (is_wp_error($this->simplepie)) :
 			$this->magpie = $this->simplepie;
@@ -360,6 +360,7 @@ class SyndicatedLink {
 			if (!$crashed) :
 				$this->settings['update/unfinished'] = 'no';
 			endif;
+			$this->update_setting('link/item count', count($posts));
 
 			$update_set = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
 			

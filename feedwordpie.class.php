@@ -7,18 +7,21 @@ class FeedWordPie extends SimplePie {
 	function set_feed_url ($url) {
 		global $fwp_oLinks;
 		if ($url InstanceOf SyndicatedLink) :
-			// Store data for later retrieval.
-			$this->subscription = $url;
 
 			// Get URL with relevant parameters attached.
-			$url = $this->subscription->uri(array('add_params' => true));
+			$new_url = $url->uri(array('add_params' => true));
 
 			// Keep for access elsewhere. God this sucks.
 			if (!is_array($fwp_oLinks)) :
 				$fwp_oLinks = array();
 			endif;
 			
-			$fwp_oLinks[$url] = $this->subscription;
+			// Store data for later retrieval.
+			# $this->subscription = $url;
+			$fwp_oLinks[$new_url] = $url;
+			
+			$url = $new_url;
+			
 		else :
 			$this->subscription = NULL;
 		endif;

@@ -61,6 +61,13 @@ class FeedWordPress_File extends WP_SimplePie_File {
 				$this->body = wp_remote_retrieve_body( $res );
 				$this->status_code = wp_remote_retrieve_response_code( $res );
 			}
+			
+			if ($source InstanceOf SyndicatedLink) :
+				$source->update_setting('link/filesize', strlen($this->body));
+				$source->update_setting('link/http status', $this->status_code);
+				$source->save_settings(/*reload=*/ true);
+			endif;
+			
 		} else {
 			if ( ! $this->body = file_get_contents($url) ) {
 				$this->error = 'file_get_contents could not read the file';
