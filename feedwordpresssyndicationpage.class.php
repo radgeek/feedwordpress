@@ -340,8 +340,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			return;
 		endif;
 		
-		?>
-		<?php
 		$cont = true;
 		$dispatcher = array(
 			"feedfinder" => 'fwp_feedfinder_page',
@@ -352,8 +350,10 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			'Unsubscribe' => 'multidelete_page',
 			FWP_RESUB_CHECKED => 'multiundelete_page',
 		);
-		if (isset($_REQUEST['action']) and isset($dispatcher[$_REQUEST['action']])) :
-			$method = $dispatcher[$_REQUEST['action']];
+		
+		$act = FeedWordPress::param('action');
+		if (isset($dispatcher[$act])) :
+			$method = $dispatcher[$act];
 			if (method_exists($this, $method)) :
 				$cont = $this->{$method}();
 			else :
@@ -488,8 +488,8 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		  value="Source URL" style="width: 55%;" /></label>
 		
 		  <?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
-		
-		  <input style="vertical-align: middle;" type="image" src="<?php print WP_PLUGIN_URL.'/'.$fwp_path; ?>/plus.png" alt="<?php print FWP_SYNDICATE_NEW; ?>" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
+		  <input type="hidden" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
+		  <input style="vertical-align: middle;" type="image" src="<?php print WP_PLUGIN_URL.'/'.$fwp_path; ?>/plus.png" alt="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
 		  </form>
 		</div> <!-- id="add-single-uri" -->
 		
