@@ -431,10 +431,11 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		
 		// Hey ho, let's go...
 		?>
+		<div style="float: left; background: #F5F5F5; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></a></div>
+
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;">Managed by <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
 		<?php print FEEDWORDPRESS_VERSION; ?>.</p>
 		<?php if (FEEDWORDPRESS_BLEG) : ?>
-		<div style="float: left; background: white; margin-top: 5px; margin-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></a></div>
 		<p class="info" style="margin-top: 0px; font-style: italic; font-size: 75%; color: #666;">If you find this tool useful for your daily work, you can
 		contribute to ongoing support and development with
 		<a href="http://feedwordpress.radgeek.com/donate/">a modest donation</a>.</p>
