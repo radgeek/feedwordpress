@@ -789,7 +789,21 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		$feeds = array_values( // Renumber from 0..(N-1)
 			$feeds
 		);
-
+		
+		// Allow for some simple FeedFinder results filtering
+		$feeds = apply_filters(
+			'feedwordpress_feedfinder_results',
+			$feeds,
+			array(
+				"url" => $lookup,
+				"auth" => $auth,
+				"username" => $username,
+				"password" => $password,
+				"finder" => $finder,
+			),
+			$this
+		);
+		
 		if (count($feeds) > 0):
 			if ($feedSwitch) :
 				?>

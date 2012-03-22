@@ -1,6 +1,7 @@
 <?php
 class FeedWordPress_Parser extends SimplePie_Parser {
 	function parse (&$data, $encoding) {
+		
 		// Use UTF-8 if we get passed US-ASCII, as every US-ASCII character is a UTF-8 character
 		if (strtoupper($encoding) === 'US-ASCII')
 		{
@@ -78,8 +79,23 @@ class FeedWordPress_Parser extends SimplePie_Parser {
 			// Parse!
 			if (!xml_parse($xml, $data, true))
 			{
+				if (class_exists('DOMDocument')) :
+					libxml_use_internal_errors(true);	
+					$doc = new DOMDocument;
+					$doc->loadHTML('<html>'.$data.'</html>');
+					///*DBG*/ echo "<plaintext>";
+					///*DBG*/ $dd = $doc->getElementsByTagName('html');
+					///*DBG*/ for ($i = 0; $i < $dd->length; $i++) :
+					///*DBG*/		var_dump($dd->item($i)->nodeName);
+					///*DBG*/ endfor;
+					///*DBG*/ var_dump($doc);
+					libxml_use_internal_errors(false);
+					///*DBG*/ die;
+				endif;
+				
 				$this->error_code = xml_get_error_code($xml);
 				$this->error_string = xml_error_string($this->error_code);
+				///*DBG*/ echo "WOOGA WOOGA"; var_dump($this->error_string); die;
 				$return = false;
 			}
 
