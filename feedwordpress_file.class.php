@@ -37,10 +37,10 @@ class FeedWordPress_File extends WP_SimplePie_File {
 				$args['user-agent'] = $this->useragent;
 			else :
 				$args['user-agent'] = apply_filters('feedwordpress_user_agent',
-					'FeedWordPress '.FEEDWORDPRESS_VERSION
+					'FeedWordPress/'.FEEDWORDPRESS_VERSION
 					.' (aggregator:feedwordpress; WordPress/'.$wp_version
 					.' + '.SIMPLEPIE_NAME.'/'.SIMPLEPIE_VERSION
-					.'; Allow like Gecko; +http://feedwordpress.radgeek.com/) '
+					.'; Allow like Gecko; +http://feedwordpress.radgeek.com/) at '
 					. feedwordpress_display_url(get_bloginfo('url')),
 					$this
 				);
