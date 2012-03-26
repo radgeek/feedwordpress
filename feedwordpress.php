@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2012.0322
+Version: 2012.0326
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -1802,7 +1802,11 @@ class FeedWordPress {
 		return $ret;
 	}
 	
-	function email_diagnostic_log () {
+	function email_diagnostic_log ($params = array()) {
+		$params = wp_parse_args($params, array(
+		"force" => false,
+		));
+
 		$dlog = get_option('feedwordpress_diagnostics_log', array());
 		
 		if ($this->has_emailed_diagnostics($dlog)) :
@@ -1887,9 +1891,26 @@ EOMAIL;
 						$recipients = FeedWordPressDiagnostic::admin_emails();
 					endif;
 
+					$mesgId = 'feedwordpress+'.time().'@'.$home;
+					$parentId = get_option('feedwordpress_diagnostics_email_root_message_id', NULL);
+
+					$head = array("Message-ID: <$mesgId>");
+					if (!is_null($parentId)) :
+						// We've already sent off a diagnostic message in the past. Let's do some
+						// magic to help with threading, in the hopes that all diagnostic messages
+						// get threaded together.
+						$head[] = "References: <$parentId>";
+						$head[] = "In-Reply-To: <$parentId>";
+						$subj = "Re: ".$subj;
+					else :
+						// This is the first of its kind. Let's mark it as such.
+						update_option('feedwordpress_diagnostics_email_root_message_id', $mesgId);
+					endif;
+					$head = apply_filters('feedwordpress_diagnostic_email_headers', $head);
+
 					foreach ($recipients as $email) :						
 						add_filter('wp_mail_content_type', array('FeedWordPress', 'allow_html_mail'));
-						wp_mail($email, $subj, $body);
+						wp_mail($email, $subj, $body, $head);
 						remove_filter('wp_mail_content_type', array('FeedWordPress', 'allow_html_mail'));
 					endforeach;
 				endif;
