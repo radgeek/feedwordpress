@@ -8,7 +8,8 @@ class FeedWordPress_File extends WP_SimplePie_File {
 	
 	function __construct ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
 		global $fwp_oLinks;
-		
+		global $wp_version;
+
 		$source = NULL;
 		if (isset($fwp_oLinks[$url])) :
 			$source = $fwp_oLinks[$url];
@@ -19,7 +20,7 @@ class FeedWordPress_File extends WP_SimplePie_File {
 		$this->redirects = $redirects;
 		$this->headers = $headers;
 		$this->useragent = $useragent;
-		
+
 		$this->method = SIMPLEPIE_FILE_SOURCE_REMOTE;
 		
 		global $wpdb;
@@ -31,8 +32,19 @@ class FeedWordPress_File extends WP_SimplePie_File {
 			if ( !empty($this->headers) )
 				$args['headers'] = $this->headers;
 
-			if ( SIMPLEPIE_USERAGENT != $this->useragent ) //Use default WP user agent unless custom has been specified
+			// Use default FWP user agent unless custom has been specified
+			if ( SIMPLEPIE_USERAGENT != $this->useragent ) :
 				$args['user-agent'] = $this->useragent;
+			else :
+				$args['user-agent'] = apply_filters('feedwordpress_user_agent',
+					'FeedWordPress '.FEEDWORDPRESS_VERSION
+					.' (aggregator:feedwordpress; WordPress/'.$wp_version
+					.' + '.SIMPLEPIE_NAME.'/'.SIMPLEPIE_VERSION
+					.'; Allow like Gecko; +http://feedwordpress.radgeek.com/) '
+					. feedwordpress_display_url(get_bloginfo('url')),
+					$this
+				);
+			endif;
 
 			// This is ugly as hell, but communicating up and down the chain
 			// in any other way is difficult.
@@ -50,7 +62,7 @@ class FeedWordPress_File extends WP_SimplePie_File {
 				$args['password'] = $source->password();
 			
 			endif;
-			
+
 			$res = wp_remote_request($url, $args);
 
 			if ( is_wp_error($res) ) {
