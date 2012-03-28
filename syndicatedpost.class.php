@@ -1509,7 +1509,7 @@ class SyndicatedPost {
 				
 				foreach ($doNotMunge as $field) :
 					$dbpost[$field] = get_post_field($field, $this->wp_id());
-				endforeach;				
+				endforeach;
 			endif;
 			
 			// WP3's wp_insert_post scans current_user_can() for the
@@ -1554,7 +1554,7 @@ class SyndicatedPost {
 			// Turn off ridiculous fucking kludges #1 and #2
 			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
 			foreach ($removed as $filter) :
-				add_filter('content_save_pre', $removed);
+				add_filter('content_save_pre', $filter);
 			endforeach;
 			
 			$this->validate_post_id($dbpost, $update, array(__CLASS__, __FUNCTION__));
