@@ -94,6 +94,11 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
+= Trunk =
+
+*	USER-AGENT STRING: FeedWordPress now sends a distinctive User-Agent string
+	identifying itself, and noting that it is a feed aggregator.
+
 = 2011.1019 =
 
 *	BUGFIX: "THERE ARE NO HTTP TRANSPORTS AVAILABLE" ERROR FIXED: The initial
