@@ -242,6 +242,7 @@ testing but absolutely inappropriate for a production server.</p>
 				'updated_feeds' => 'as each feed is checked for updates',
 				'updated_feeds:errors:persistent' => 'when attempts to update a feed have resulted in errors</label> <label>for at least <input type="number" min="1" max="360" step="1" name="diagnostics_persistent_error_hours" value="'.$hours.'" /> hours',
 				'updated_feeds:errors' => 'any time FeedWordPress encounters any errors while checking a feed for updates',
+				'updated_feeds:http' => "displaying the raw HTTP data passed to and from the feed being checked for updates",
 				'syndicated_posts' => 'as each syndicated post is added to the database',
 				'feed_items' => 'as each syndicated item is considered on the feed',
 				'memory_usage' => 'indicating how much memory was used',

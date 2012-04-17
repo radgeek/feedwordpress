@@ -63,7 +63,9 @@ class FeedWordPress_File extends WP_SimplePie_File {
 			
 			endif;
 
+			FeedWordPress::diagnostic('updated_feeds:http', "HTTP [$url] &#8668; ".esc_html(FeedWordPress::val($args)));
 			$res = wp_remote_request($url, $args);
+			FeedWordPress::diagnostic('updated_feeds:http', "HTTP [$url] &#8669; ".esc_html(FeedWordPress::val($res)));
 
 			if ( is_wp_error($res) ) {
 				$this->error = 'WP HTTP Error: ' . $res->get_error_message();
