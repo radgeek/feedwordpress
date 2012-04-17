@@ -1146,7 +1146,7 @@ updated to &lt;<a href="<?php echo esc_html($fwp_post['feed']); ?>"><?php echo e
 
 	if (isset($existingLink)) :
 		$auth = FeedWordPress::post('link_rss_auth_method');
-		if (!is_null($auth) and $auth != '-') :
+		if (!is_null($auth) and (strlen($auth) > 0) and ($auth != '-')) :
 			$existingLink->update_setting('http auth method', $auth);
 			$existingLink->update_setting('http username',
 				FeedWordPress::post('link_rss_username')

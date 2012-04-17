@@ -378,7 +378,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	
 	function display_authentication_credentials_box ($params = array()) {
 		static $count = 0;
-		
+
 		$params = wp_parse_args($params, array(
 		'username' => NULL,
 		'password' => NULL,
@@ -502,7 +502,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 		global $feedwordpress;
 
-		if (is_null($auth)) :
+		if (is_null($auth) or (strlen($auth)==0)) :
 			$auth = '-';
 			$hideAuth = true;
 		endif;
