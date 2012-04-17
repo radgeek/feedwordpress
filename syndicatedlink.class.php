@@ -625,11 +625,11 @@ class SyndicatedLink {
 				endforeach;
 				
 				// Are we appending to a URI that already has params?
-				$sep = ((strpos('?', $uri)===false) ? '?' : '&');
+				$sep = ((strpos($uri, "?")===false) ? '?' : '&');
 				
 				// Tack it on
 				$uri .= $sep . implode("&", $q);
-			endif;
+			endif;			
 		endif;
 		
 		return $uri;
