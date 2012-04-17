@@ -164,6 +164,10 @@ class SyndicatedLink {
 		return is_object($this->link) and !is_wp_error($this->link);
 	} /* SyndicatedLink::found () */
 
+	function id () {
+		return (is_object($this->link) ? $this->link->link_id : NULL);
+	}
+	
 	function stale () {
 		global $feedwordpress;
 		

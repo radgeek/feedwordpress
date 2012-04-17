@@ -7,12 +7,12 @@ class FeedWordPress_File extends WP_SimplePie_File {
 	}
 	
 	function __construct ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
-		global $fwp_oLinks;
+		global $feedwordpress;
 		global $wp_version;
 
 		$source = NULL;
-		if (isset($fwp_oLinks[$url])) :
-			$source = $fwp_oLinks[$url];
+		if ($feedwordpress->subscribed($url)) :
+			$source = $feedwordpress->subscription($url);
 		endif;
 		
 		$this->url = $url;

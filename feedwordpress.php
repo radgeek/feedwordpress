@@ -393,23 +393,12 @@ function get_syndication_feed_guid ($original = NULL, $id = NULL) {
 function get_syndication_feed_id ($id = NULL) { list($u) = get_post_custom_values('syndication_feed_id', $id); return $u; }
 function the_syndication_feed_id ($id = NULL) { echo get_syndication_feed_id($id); }
 
-$feedwordpress_linkcache =  array (); // only load links from database once
 function get_syndication_feed_object ($id = NULL) {
-	global $feedwordpress_linkcache;
-
-	$link = NULL;
-
+	global $feedwordpress;
+	
 	$feed_id = get_syndication_feed_id($id);
-	if (strlen($feed_id) > 0):
-		if (isset($feedwordpress_linkcache[$feed_id])) :
-			$link = $feedwordpress_linkcache[$feed_id];
-		else :
-			$link = new SyndicatedLink($feed_id);
-			$feedwordpress_linkcache[$feed_id] = $link;
-		endif;
-	endif;
-	return $link;
-}
+	return $feedwordpress->subscription($feed_id);
+} /* function get_syndication_feed_object() */
 
 function get_feed_meta ($key, $id = NULL) {
 	$ret = NULL;
@@ -419,7 +408,7 @@ function get_feed_meta ($key, $id = NULL) {
 		$ret = $link->settings[$key];
 	endif;
 	return $ret;
-} /* get_feed_meta() */
+} /* function get_feed_meta() */
 
 function get_syndication_permalink ($id = NULL) {
 	list($u) = get_post_custom_values('syndication_permalink', $id); return $u;
@@ -898,19 +887,53 @@ class FeedWordPress {
 	);
 
 	var $feeds = NULL;
-
+	var $feedurls = NULL;
 	var $httpauth = NULL;
+	
 	# function FeedWordPress (): Contructor; retrieve a list of feeds 
 	function FeedWordPress () {
 		$this->feeds = array ();
+		$this->feedurls  = array();
 		$links = FeedWordPress::syndicated_links();
 		if ($links): foreach ($links as $link):
-			$this->feeds[] = new SyndicatedLink($link);
+			$id = intval($link->link_id);
+			$url = $link->link_rss;
+			
+			// Store for later reference.
+			$this->feeds[$id] = $id;
+			if (strlen($url) > 0) :
+				$this->feedurls[$url] = $id;
+			endif;
 		endforeach; endif;
-		
+
 		$this->httpauth = new FeedWordPressHTTPAuthenticator;
 	} // FeedWordPress::FeedWordPress ()
 
+	function subscribed ($id) {
+		return (isset($this->feedurls[$id]) or isset($this->feeds[$id]));
+	} /* FeedWordPress::subscribed () */
+	
+	function subscription ($which) {
+		$sub = NULL;
+		
+		if (is_string($which) and isset($this->feedurls[$which])) :
+			$which = $this->feedurls[$which];
+		endif;
+		
+		if (isset($this->feeds[$which])) :
+			$sub = $this->feeds[$which];
+		endif;
+		
+		// Load 'er up if you haven't already.
+		if (!is_null($sub) and !($sub InstanceOf SyndicatedLink)) :
+			$link = new SyndicatedLink($sub);
+			$this->feeds[$which] = $link;
+			$sub = $link;
+		endif;
+		
+		return $sub;
+	} /* FeedWordPress::subscriptions () */
+	
 	# function update (): polls for updates on one or more Contributor feeds
 	#
 	# Arguments:
@@ -987,7 +1010,7 @@ class FeedWordPress {
 		endif;
 		
 		// Randomize order for load balancing purposes
-		$feed_set = $this->feeds;
+		$feed_set = array_keys($this->feeds);
 		shuffle($feed_set);
 
 		$updateWindow = (int) get_option('feedwordpress_update_window', DEFAULT_UPDATE_PERIOD) * 60 /* sec/min */;
@@ -1002,10 +1025,13 @@ class FeedWordPress {
 		), $uri);
 
 		$feed_set = apply_filters('feedwordpress_update_feeds', $feed_set, $uri);
-
+		
+	
 		// Loop through and check for new posts
 		$delta = NULL; $remaining = $max_polls;
-		foreach ($feed_set as $feed) :
+		foreach ($feed_set as $feed_id) :
+
+			$feed = $this->subscription($feed_id);
 
 			// Has this process overstayed its welcome?
 			if (
@@ -1621,7 +1647,7 @@ class FeedWordPress {
 		$feed->set_file_class($file_class);
 		$feed->set_parser_class($parser_class);
 		$feed->force_feed($force_feed);
-		$feed->set_cache_duration(FeedWordPress::cache_duration());
+		$feed->set_cache_duration(FeedWordPress::cache_duration($params));
 		$feed->init();
 		$feed->handle_content_type();
 		
@@ -1658,9 +1684,15 @@ class FeedWordPress {
 		return ($magpies + $simplepies);
 	} /* FeedWordPress::clear_cache () */
 
-	function cache_duration () {
+	function cache_duration ($params = array()) {
+		$params = wp_parse_args($params, array(
+		"cache" => true,
+		));
+		
 		$duration = NULL;
-		if (defined('FEEDWORDPRESS_CACHE_AGE')) :
+		if (!$params['cache']) :
+			$duration = 0;
+		elseif (defined('FEEDWORDPRESS_CACHE_AGE')) :
 			$duration = FEEDWORDPRESS_CACHE_AGE;
 		endif;
 		return $duration;

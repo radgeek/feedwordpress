@@ -829,7 +829,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			foreach ($feeds as $key => $f):
 				$ofc = $fwp_credentials;
 				$fwp_credentials = $credentials; // Set
-				$pie = FeedWordPress::fetch($f);
+				$pie = FeedWordPress::fetch($f, array("cache" => false));
 				$fwp_credentials = $ofc; // Re-Set
 				
 				$rss = (is_wp_error($pie) ? $pie : new MagpieFromSimplePie($pie));
