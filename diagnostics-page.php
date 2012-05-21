@@ -7,6 +7,9 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressdiagnosticspage');
 		$this->dispatch = 'feedwordpress_diagnostics';
 		$this->filename = __FILE__;
+		
+		$this->test_html = array();
+		add_action('feedwordpress_diagnostics_do_http_test', array($this, 'do_http_test'), 10, 1);
 	}
 
 	function has_link () { return false; }
@@ -42,6 +45,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 			'info_box' => __('Diagnostic Information'),
 			'diagnostics_box' => __('Display Diagnostics'),
 			'updates_box' => __('Updates'),
+			'tests_box' => __('Diagnostic Tests'),
 		);
 	
 		foreach ($boxes_by_methods as $method => $title) :
@@ -68,7 +72,8 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 
 	function accept_POST ($post) {
 		if (isset($post['submit'])
-		or isset($post['save'])) :
+		or isset($post['save'])
+		or isset($post['feedwordpress_diagnostics_do'])) :
 			update_option('feedwordpress_debug', $post['feedwordpress_debug']);
 			update_option('feedwordpress_secret_key', $post['feedwordpress_secret_key']);
 			
@@ -100,6 +105,12 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 				update_option('feedwordpress_diagnostics_email_destination', $ded);
 			else :
 				delete_option('feedwordpress_diagnostics_email_destination');
+			endif;
+			
+			if (isset($post['feedwordpress_diagnostics_do'])) :
+				foreach ($post['feedwordpress_diagnostics_do'] as $do => $value) :
+					do_action('feedwordpress_diagnostics_do_'.$do, $post);
+				endforeach;
 			endif;
 			
 			$this->updated = true; // Default update message
@@ -290,6 +301,101 @@ testing but absolutely inappropriate for a production server.</p>
 </table>
 		<?php
 	} /* FeedWordPressDiagnosticsPage::updates_box () */
+	
+	function tests_box ($page, $box = NULL) {
+?>
+<script type="text/javascript">
+function clone_http_test_args_keyvalue_prototype () {
+	var next = jQuery('#http-test-args').find('.http-test-args-keyvalue').length;
+	var newRow = jQuery('#http-test-args-keyvalue-prototype').clone().attr('id', 'http-test-args-keyvalue-' + next);
+	newRow.find('.http_test_args_key').attr('name', 'http_test_args_key['+next+']').val('');
+	newRow.find('.http_test_args_value').attr('name', 'http_test_args_value['+next+']').val('');
+
+	newRow.appendTo('#http-test-args');	
+	return false;
+}
+</script>
+
+<table class="edit-form">
+	<tr>
+	<th scope="row">HTTP:</th>
+	<td><div><input type="url" name="http_test_url" value="" placeholder="http://www.example.com/" size="127" style="width: 80%; max-width: 80.0em;" />
+	<input type="submit" name="feedwordpress_diagnostics_do[http_test]" value="Test &raquo;" /></div>
+	<div><select name="http_test_method" size="1">
+		<option value="wp_remote_request">wp_remote_request</option>
+		<option value="FeedWordPress_File">FeedWordPress_File</option>
+	</select></div>
+	<table>
+	<tr>
+	<td>
+	<div id="http-test-args">
+	<div id="http-test-args-keyvalue-prototype" class="http-test-args-keyvalue"><label>Args:
+	<input type="text" class='http_test_args_key' name="http_test_args_key[0]" value="" placeholder="key" /></label>
+	<label>= <input type="text" class='http_test_args_value' name="http_test_args_value[0]" value="" placeholder="value" /></label>
+	</div>
+	</div>
+	</td>
+	<td><a href="#http-test-args" onclick="return clone_http_test_args_keyvalue_prototype();">+ Add</a></td>
+	</tr>
+	</table>
+	
+	<?php if (isset($page->test_html['http_test'])) : ?>
+	<div style="position: relative">
+	<div style="width: 100%; overflow: scroll; background-color: #eed">
+	<pre style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -o-pre-wrap;"><?php print $page->test_html['http_test']; ?></pre>
+	</div>
+	</div>
+	<?php endif; ?>
+	</td>
+	</tr>
+</table>
+
+<?php
+	} /* FeedWordPressDiagnosticsPage::tests_box () */
+
+	var $test_html;
+	function do_http_test ($post) {
+		if (isset($post['http_test_url']) and isset($post['http_test_method'])) :
+			$url = $post['http_test_url'];
+			
+			$args = array();
+			if (isset($post['http_test_args_key'])) :
+				foreach ($post['http_test_args_key'] as $idx => $name) :
+					$name = trim($name);
+					if (strlen($name) > 0) :
+						$value = NULL;
+						if (isset($post['http_test_args_value'])
+						and isset($post['http_test_args_value'][$idx])) :
+							$value = $post['http_test_args_value'][$idx];
+						endif;
+						
+						if (preg_match('/^javascript:(.*)$/i', $value, $refs)) :
+							if (function_exists('json_decode')) :	
+								$json_value = json_decode($refs[1]);
+								if (!is_null($json_value)) :
+									$value = $json_value;
+								endif;
+							endif;
+						endif;
+						
+						$args[$name] = $value;
+					endif;
+				endforeach;
+			endif;
+			
+			switch ($post['http_test_method']) :
+			case 'wp_remote_request' :
+				$out = wp_remote_request($url, $args);
+				break;
+			case 'FeedWordPress_File' :
+				$out = new FeedWordPress_File($url);
+				break;
+			endswitch;
+			
+			$this->test_html['http_test'] = esc_html(FeedWordPress::val($out));
+		endif;
+	} /* FeedWordPressDiagnosticsPage::do_http_test () */
+	
 } /* class FeedWordPressDiagnosticsPage */
 
 	$diagnosticsPage = new FeedWordPressDiagnosticsPage;
