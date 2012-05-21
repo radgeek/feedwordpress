@@ -787,7 +787,13 @@ function fwp_publish_post_hook ($post_id) {
 }
 
 	function feedwordpress_add_post_edit_controls () {
+		global $feedwordpress;
+		
+		// Put in Manual Editing checkbox
 		add_meta_box('feedwordpress-post-controls', __('Syndication'), 'feedwordpress_post_edit_controls', 'post', 'side', 'high');
+		
+		add_filter('user_can_richedit', array($feedwordpress, 'user_can_richedit'), 1000, 1);
+		
 		if (FeedWordPress::diagnostic_on('syndicated_posts:static_meta_data')) :
 			$GLOBALS['inspectPostMeta'] = new InspectPostMeta;
 		endif;
@@ -1271,6 +1277,20 @@ class FeedWordPress {
 		$syndicationPage->dashboard_box($syndicationPage);
 	} /* FeedWordPress::dashboard () */
 
+	function user_can_richedit ($rich_edit) {
+
+		global $post;
+		
+		if (is_syndicated($post->ID)) :
+			// Disable visual editor and only allow operations
+			// directly on HTML if post is syndicated.
+			$rich_edit = false;
+		endif;
+		
+		return $rich_edit;
+
+	} /* FeedWordPress::user_can_richedit () */
+	
 	function update_magic_url () {
 		global $wpdb;
 
