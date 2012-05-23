@@ -155,7 +155,8 @@ class MagpieFromSimplePie {
 				endforeach;
 			endforeach;
 		endforeach; endif;
-		return $ret;
+		
+		return apply_filters('feedwordpress_magpiefromsimplepie_processfeeddata', $ret, $data, $this);
 	} /* MagpieFromSimplePie::processFeedData() */
 
 	/**
@@ -183,7 +184,7 @@ class MagpieFromSimplePie {
 			+ $this->handleChildren($data, $path, 'processChannelData')
 			+ $ret;
 
-		return $ret;
+		return apply_filters('feedwordpress_magpiefromsimplepie_processchanneldata', $ret, $data, $path, $this);
         } /* MagpieFromSimplePie::processChannelData() */
 
 	/**
@@ -213,7 +214,7 @@ class MagpieFromSimplePie {
 			+ $this->handleChildren($data, $path, 'processItemData')
 			+ $ret;
 
-		return $ret;
+		return apply_filters('feedwordpress_magpiefromsimplepie_processitemdata', $ret, $data, $path, $this);
 	} /* MagpieFromSimplePie::processItemData() */
 
 	/**
@@ -250,7 +251,8 @@ class MagpieFromSimplePie {
 				endif;
 			endforeach;
 		endforeach; endif;
-		return $ret;
+
+		return apply_filters('feedwordpress_magpiefromsimplepie_handleattributes', $ret, $data, $path, $this);
 	} /* MagpieFromSimplePie::handleAttributes() */
 	
 	var $inImage = false;
@@ -346,7 +348,8 @@ class MagpieFromSimplePie {
 			endforeach; endforeach;
 			
 		endforeach; endif;
-		return $ret;
+
+		return apply_filters('feedwordpress_magpiefromsimplepie_handlechildren', $ret, $data, $path, $method, $this);
 	} /* MagpieFromSimplePie::handleChildren() */
 
 	/**
@@ -386,6 +389,8 @@ class MagpieFromSimplePie {
 	 * @uses FeedTime::timestamp
 	 */
 	function normalize () {
+		do_action('feedwordpress_magpiefromsimplepie_normalize_pre', $this);
+
 		if (!is_null($this->channel)) :
 			// Normalize channel data
 			if ( $this->is_atom() ) :
@@ -497,6 +502,8 @@ class MagpieFromSimplePie {
 				$this->items[$i] = $item;
 			endfor;
 		endif;
+		
+		do_action('feedwordpress_magpiefromsimplepie_normalize_post', $this);
 	} /* MagpieFromSimplePie::normalize() */
 
 	/**

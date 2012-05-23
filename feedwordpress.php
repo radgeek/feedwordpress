@@ -120,6 +120,7 @@ require_once("${dir}/feedwordpress-content-type-sniffer.class.php");
 require_once("${dir}/inspectpostmeta.class.php");
 require_once("${dir}/syndicationdataqueries.class.php");
 require_once("${dir}/feedwordpie.class.php");
+require_once("${dir}/feedwordpie_item.class.php");
 require_once("${dir}/feedwordpress_file.class.php");
 require_once("${dir}/feedwordpress_parser.class.php");
 require_once("${dir}/feedwordpressrpc.class.php");
@@ -1655,7 +1656,7 @@ class FeedWordPress {
 		$cache_class = apply_filters('feedwordpress_cache_class', 'WP_Feed_Cache');
 		$file_class = apply_filters('feedwordpress_file_class', 'FeedWordPress_File');
 		$parser_class = apply_filters('feedwordpress_parser_class', 'FeedWordPress_Parser');
-
+		$item_class = apply_filters('feedwordpress_item_class', 'FeedWordPie_Item');
 		$sniffer_class = apply_filters('feedwordpress_sniffer_class', 'FeedWordPress_Content_Type_Sniffer');
 
 		$feed = new $pie_class;
@@ -1666,6 +1667,7 @@ class FeedWordPress {
 		$feed->set_content_type_sniffer_class($sniffer_class);
 		$feed->set_file_class($file_class);
 		$feed->set_parser_class($parser_class);
+		$feed->set_item_class($item_class);
 		$feed->force_feed($force_feed);
 		$feed->set_cache_duration(FeedWordPress::cache_duration($params));
 		$feed->init();

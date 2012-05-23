@@ -1270,8 +1270,7 @@ class SyndicatedPost {
 					!is_null($updated_ts)
 					and ($updated_ts > $last_rev_ts)
 				);
-				
-				
+
 				if (!$updated) :
 					// Or the hash...
 					$hash = $this->update_hash();

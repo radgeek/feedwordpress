@@ -1,6 +1,7 @@
 <?php
 class FeedWordPress_Parser extends SimplePie_Parser {
 	function parse (&$data, $encoding) {
+		$data = apply_filters('feedwordpress_parser_parse', $data, $encoding, $this);
 		
 		// Use UTF-8 if we get passed US-ASCII, as every US-ASCII character is a UTF-8 character
 		if (strtoupper($encoding) === 'US-ASCII')

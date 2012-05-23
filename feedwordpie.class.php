@@ -1,4 +1,6 @@
 <?php
+define('FEEDWORDPIE_TYPE_CUSTOM_XML', ~SIMPLEPIE_TYPE_NONE & ~SIMPLEPIE_TYPE_ALL);
+
 class FeedWordPie extends SimplePie {
 	var $subscription = NULL;
 	
@@ -23,6 +25,49 @@ class FeedWordPie extends SimplePie {
 		// OK, let's go.
 		return parent::set_feed_url($url);
 	} /* class SimplePie */
+	
+	function get_type () {
+		// Allow filters to pre-empt a type determination from SimplePie
+		$ret = apply_filters(
+			'feedwordpie_get_type',
+			NULL,
+			$this
+		);
+				
+		// If not preempted by a filter, fall back on SimplePie
+		if (is_null($ret)) :
+			$ret = parent::get_type();
+		endif;
+
+		return $ret;
+	}
+	
+	function get_feed_tags ($namespace, $tag) {
+		// Allow filters to filter SimplePie handling
+		return apply_filters(
+			'feedwordpie_get_feed_tags',
+			parent::get_feed_tags($namespace, $tag),
+			$namespace,
+			$tag,
+			$this
+		);
+	}
+	
+	function get_items ($start = 0, $end = 0) {
+		// Allow filters to set up for, or pre-empt, SimplePie handling
+		$ret = apply_filters(
+			'feedwordpie_get_items',
+			NULL,
+			$start,
+			$end,
+			$this
+		);
+		
+		if (is_null($ret)) :
+			$ret = parent::get_items();
+		endif;
+		return $ret;
+	}
 	
 } /* class FeedWordPie */
 
