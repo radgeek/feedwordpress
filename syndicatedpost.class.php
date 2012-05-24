@@ -178,28 +178,16 @@ class SyndicatedPost {
 			$postMetaIn = array_merge($default_custom_settings, $custom_settings);
 			$postMetaOut = array();
 
-			// Big ugly fuckin loop to do any element substitutions
-			// that we may need.
-			foreach ($postMetaIn as $key => $values) :
-				if (is_string($values)) : $values = array($values); endif;
+			$elements = array();
+ 			foreach ($postMetaIn as $key => $values) :
+ 				$values = apply_filters("syndicated_post_meta_${key}_pre", $values);
+	 			if (!is_null($values)) :
+					if (is_string($values)) : $values = array($values); endif;
 				
-				$postMetaOut[$key] = array();
-				foreach ($values as $value) :
-					if (preg_match('/\$\( ([^)]+) \)/x', $value, $ref)) :
-						$elements = $this->query($ref[1]);
-						foreach ($elements as $element) :
-							$postMetaOut[$key][] = str_replace(
-								$ref[0],
-								$element,
-								$value
-							);
-						endforeach;
-					else :
-						$postMetaOut[$key][] = $value;	
-					endif;
-				endforeach;
+					$postMetaOut[$key] = $this->do_substitutions($values);
+				endif;
 			endforeach;
-
+			
 			foreach ($postMetaOut as $key => $values) :
 				$this->post['meta'][$key] = array();
 				foreach ($values as $value) :
@@ -380,6 +368,95 @@ class SyndicatedPost {
 	#####################################
 	#### EXTRACT DATA FROM FEED ITEM ####
 	#####################################
+
+	function substitution_pattern () {
+		$stringFunctions = array(
+			'trim', 'ltrim', 'rtrim',
+			'strtoupper', 'strtolower',
+			'urlencode', 'urldecode',
+		);
+
+		return '/\$\( \s* ('
+		 	.'('.implode('|', array_map('preg_quote', $stringFunctions)).')\('
+		 	.'\s* ([^()]+) \s*'
+		 	.'\)'
+		 	.'| ([^()]+)'
+		 .') \s* \)/x';
+	}
+	
+	function do_substitutions ($in, $refs = NULL, $element_values = NULL) {
+		if (!is_array($in)) :
+			$in = array($in);
+		endif;
+
+		$out = array();
+
+		$pattern = $this->substitution_pattern();		
+
+		// Init. cache if not already initialized.
+		if (is_null($element_values)) :
+			$element_values = array();
+		endif;
+
+		// First, collect all the substitutions we need to make.
+		if (is_null($refs)) :
+			$refs = array();
+			foreach ($in as $item) :
+				preg_match_all(
+					$pattern,
+					$item,
+					$refs0,
+					PREG_SET_ORDER
+				);
+				$refs = array_merge($refs, $refs0);
+			endforeach;
+		endif;
+		
+		// Do we have anything to do here?
+		if (count($refs) > 0) :
+		
+			// Yes. Let's pop off one substitution to do here.
+			$element = array_pop($refs);
+			
+			// Now loop through what we got in, and substitute in
+			// values for this element.
+
+			$tag = (isset($element[4]) ? $element[4] : $element[3]);
+			$filter = (isset($element[2]) ? $element[2] : '');
+			
+			if (!isset($element_values[$tag])) :
+				$element_values[$tag] = $this->query($tag);
+			endif;
+			
+			$out = array();
+			foreach ($element_values[$tag] as $val) :
+				$filtered_value = (strlen($filter > 0) ? $filter($val) : $val);
+				
+				if (strlen($filter) > 0) :
+					$filtered_value = $filter($val);
+				endif;
+				
+				foreach ($in as $item) :
+					$scratch = str_replace(
+						$element[0],
+						$filtered_value,
+						$item
+					);
+					
+					$constrained_elements = $element_values;
+					$constrained_elements[$tag] = array($val);
+					$outSeg = $this->do_substitutions($scratch, $refs, $constrained_elements);
+					$out = array_merge($out, $outSeg);
+				endforeach;
+			endforeach;
+			
+		else :
+			// No substitutions left to do; just return what came in
+			$out = $in;
+		endif;
+
+		return $out;		
+	}
 	
 	/**
 	 * SyndicatedPost::query uses an XPath-like syntax to query arbitrary
