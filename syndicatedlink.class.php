@@ -51,6 +51,7 @@ class SyndicatedLink {
 			$this->id = $link->link_id;
 		else :
 			$this->id = $link;
+			
 			if (function_exists('get_bookmark')) : // WP 2.1+
 				$this->link = get_bookmark($link);
 			else :
@@ -62,102 +63,7 @@ class SyndicatedLink {
 		endif;
 
 		if (strlen($this->link->link_rss) > 0) :
-			// Read off feed settings from link_notes
-			$notes = explode("\n", $this->link->link_notes);
-			foreach ($notes as $note):
-				$pair = explode(": ", $note, 2);
-				$key = (isset($pair[0]) ? $pair[0] : null);
-				$value = (isset($pair[1]) ? $pair[1] : null);
-				if (!is_null($key) and !is_null($value)) :
-					// Unescape and trim() off the whitespace.
-					// Thanks to Ray Lischner for pointing out the
-					// need to trim off whitespace.
-					$this->settings[$key] = stripcslashes (trim($value));
-				endif;
-			endforeach;
-
-			// "Magic" feed settings
-			$this->settings['link/uri'] = $this->link->link_rss;
-			$this->settings['link/name'] = $this->link->link_name;
-			$this->settings['link/id'] = $this->link->link_id;
-			
-			// `hardcode categories` and `unfamiliar categories` are deprecated in favor of `unfamiliar category`
-			if (
-				isset($this->settings['unfamiliar categories'])
-				and !isset($this->settings['unfamiliar category'])
-			) :
-				$this->settings['unfamiliar category'] = $this->settings['unfamiliar categories'];
-			endif;
-			if (
-				FeedWordPress::affirmative($this->settings, 'hardcode categories')
-				and !isset($this->settings['unfamiliar category'])
-			) :
-				$this->settings['unfamiliar category'] = 'default';
-			endif;
-
-			// Set this up automagically for del.icio.us
-			$bits = parse_url($this->link->link_rss);
-			$tagspacers = array('del.icio.us', 'feeds.delicious.com');
-			if (!isset($this->settings['cat_split']) and in_array($bits['host'], $tagspacers)) : 
-				$this->settings['cat_split'] = '\s'; // Whitespace separates multiple tags in del.icio.us RSS feeds
-			endif;
-
-			// Simple lists
-			foreach ($this->imploded_settings() as $what) :
-				if (isset($this->settings[$what])):
-					$this->settings[$what] = explode(
-						FEEDWORDPRESS_CAT_SEPARATOR,
-						$this->settings[$what]
-					);
-				endif;
-			endforeach;
-
-			if (isset($this->settings['terms'])) :
-				// Look for new format
-				$this->settings['terms'] = maybe_unserialize($this->settings['terms']);
-				
-				if (!is_array($this->settings['terms'])) :
-					// Deal with old format instead. Ugh.
-
-					// Split on two *or more* consecutive breaks
-					// because in the old format, a taxonomy
-					// without any associated terms would
-					// produce tax_name#1\n\n\ntax_name#2\nterm,
-					// and the naive split on the first \n\n
-					// would screw up the tax_name#2 list.
-					//
-					// Props to David Morris for pointing this
-					// out.
-
-					$this->settings['terms'] = preg_split(
-						"/".FEEDWORDPRESS_CAT_SEPARATOR."{2,}/",
-						$this->settings['terms']
-					);
-					$terms = array();
-					foreach ($this->settings['terms'] as $line) :
-						$line = explode(FEEDWORDPRESS_CAT_SEPARATOR, $line);
-						$tax = array_shift($line);
-						$terms[$tax] = $line;
-					endforeach;
-					$this->settings['terms'] = $terms;
-				endif;
-			endif;
-			
-			if (isset($this->settings['map authors'])) :
-				$author_rules = explode("\n\n", $this->settings['map authors']);
-				$ma = array();
-				foreach ($author_rules as $rule) :
-					list($rule_type, $author_name, $author_action) = explode("\n", $rule);
-					
-					// Normalize for case and whitespace
-					$rule_type = strtolower(trim($rule_type));
-					$author_name = strtolower(trim($author_name));
-					$author_action = strtolower(trim($author_action));
-					
-					$ma[$rule_type][$author_name] = $author_action;
-				endforeach;
-				$this->settings['map authors'] = $ma;
-			endif;
+			$this->get_settings_from_notes();
 		endif;
 	} /* SyndicatedLink::SyndicatedLink () */
 	
@@ -215,10 +121,10 @@ class SyndicatedLink {
 
 		$new_count = NULL;
 
-		$resume = FeedWordPress::affirmative($this->settings, 'update/unfinished');
+		$resume = ('yes'==$this->setting('update/unfinished'));
 		if ($resume) :
 			// pick up where we left off
-			$processed = array_map('trim', explode("\n", $this->settings['update/processed']));
+			$processed = array_map('trim', explode("\n", $this->setting('update/processed')));
 		else :
 			// begin at the beginning
 			$processed = array();
@@ -241,26 +147,25 @@ class SyndicatedLink {
 				// Copy over the in-error-since timestamp
 				$theError['since'] = $oldError['since'];
 				
-				// If this is a repeat error, then we should take
-				// a step back before we try to fetch it again.
-				$this->settings['update/last'] = time();
-				$this->settings['update/ttl'] = $this->automatic_ttl();
-				$this->settings['update/ttl'] = apply_filters('syndicated_feed_ttl', $this->settings['update/ttl'], $this);
-				$this->settings['update/ttl'] = apply_filters('syndicated_feed_ttl_from_error', $this->settings['update/ttl'], $this);
-
-				$this->settings['update/timed'] = 'automatically';
+				// If this is a repeat error, then we should
+				// take a step back before we try to fetch it
+				// again.
+				$this->update_setting('update/last', time(), NULL);
+				$ttl = $this->automatic_ttl();
+				$ttl = apply_filters('syndicated_feed_ttl', $ttl, $this);
+				$ttl = apply_filters('syndicated_feed_ttl_from_error', $ttl, $this);
+				$this->update_setting('update/ttl', $ttl, $this);
+				$this->update_setting('update/timed', 'automatically');
 			endif;
 			
 			do_action('syndicated_feed_error', $theError, $oldError, $this);
 			
-			$this->settings['update/error'] = serialize($theError);
+			$this->update_setting('update/error', serialize($theError));
 			$this->save_settings(/*reload=*/ true);
 
 		elseif (is_object($this->simplepie)) :
 			// Success; clear out error setting, if any.
-			if (isset($this->settings['update/error'])) :
-				unset($this->settings['update/error']);
-			endif;
+			$this->update_setting('update/error', NULL);
 
 			$new_count = array('new' => 0, 'updated' => 0);
 
@@ -287,30 +192,34 @@ class SyndicatedLink {
 					$update[] = "link_description = '".$wpdb->escape($channel['description'])."'";
 				endif;
 			endif;
-	
-			$this->settings = array_merge($this->settings, $this->flatten_array($channel));
 
-			$this->settings['update/last'] = time();
+			$this->merge_settings($channel, 'feed/');
+
+			$this->update_setting('update/last', time());
 			list($ttl, $xml) = $this->ttl(/*return element=*/ true);
 			
 			if (!is_null($ttl)) :
-				$this->settings['update/ttl'] = $ttl;
-				$this->settings['update/xml'] = $xml;
-				$this->settings['update/timed'] = 'feed';
+				$this->update_setting('update/ttl', $ttl);
+				$this->update_setting('update/xml', $xml);
+				$this->update_setting('update/timed', 'feed');
 			else :
 				$ttl = $this->automatic_ttl();
-				$this->settings['update/ttl'] = $ttl;
-				$this->settings['update/xml'] = NULL;
-				$this->settings['update/timed'] = 'automatically';
+				$this->update_setting('update/ttl', $ttl);
+				$this->update_setting('update/xml', NULL);
+				$this->update_setting('update/timed', 'automatically');
 			endif;
-			$this->settings['update/fudge'] = rand(0, ($ttl/3))*60;
-			$this->settings['update/ttl'] = apply_filters('syndicated_feed_ttl', $this->setting('update/ttl'), $this);
+			$this->update_setting('update/fudge', rand(0, ($ttl/3))*60);
+			$this->update_setting('update/ttl', apply_filters(
+				'syndicated_feed_ttl',
+				$this->setting('update/ttl'),
+				$this
+			));
 
 			if (!$this->setting('update/hold') != 'ping') :
-				$this->settings['update/hold'] = 'scheduled';
+				$this->update_setting('update/hold', 'scheduled');
 			endif;
 
-			$this->settings['update/unfinished'] = 'yes';
+			$this->update_setting('update/unfinished', 'yes');
 
 			$update[] = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
 
@@ -358,15 +267,14 @@ class SyndicatedLink {
 			do_action('update_syndicated_feed_items', $this->id, $this);
 			do_action("update_syndicated_feed_items_${suffix}", $this->id, $this);
 
-			// Copy back any changes to feed settings made in the course of updating (e.g. new author rules)
-			$to_notes = $this->settings;
-
-			$this->settings['update/processed'] = $processed;
+			$this->update_setting('update/processed', $processed);
 			if (!$crashed) :
-				$this->settings['update/unfinished'] = 'no';
+				$this->update_setting('update/unfinished', 'no');
 			endif;
 			$this->update_setting('link/item count', count($posts));
 
+			// Copy back any changes to feed settings made in the
+			// course of updating (e.g. new author rules)
 			$update_set = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
 			
 			// Update the properties of the link from the feed information
@@ -472,9 +380,11 @@ class SyndicatedLink {
 			$newuser_id = fwp_insert_new_user($newuser_name);
 			if (is_numeric($newuser_id)) :
 				if (is_null($name)) : // Unfamiliar author
-					$this->settings['unfamiliar author'] = $newuser_id;
+					$this->update_setting('unfamiliar author', $newuser_id);
 				else :
-					$this->settings['map authors']['name'][$name] = $newuser_id;
+					$map = $this->setting('map authors');
+					$map['name'][$name] = $newuser_id;
+					$this->update_setting('map authors', $map);
 				endif;
 			else :
 				// TODO: Add some error detection and reporting
@@ -487,6 +397,108 @@ class SyndicatedLink {
 	function imploded_settings () {
 		return array('cats', 'tags', 'match/cats', 'match/tags', 'match/filter');
 	}
+	
+	function get_settings_from_notes () {
+		// Read off feed settings from link_notes
+		$notes = explode("\n", $this->link->link_notes);
+		foreach ($notes as $note):
+			$pair = explode(": ", $note, 2);
+			$key = (isset($pair[0]) ? $pair[0] : null);
+			$value = (isset($pair[1]) ? $pair[1] : null);
+			if (!is_null($key) and !is_null($value)) :
+				// Unescape and trim() off the whitespace.
+				// Thanks to Ray Lischner for pointing out the
+				// need to trim off whitespace.
+				$this->settings[$key] = stripcslashes (trim($value));
+			endif;
+		endforeach;
+
+		// "Magic" feed settings
+		$this->settings['link/uri'] = $this->link->link_rss;
+		$this->settings['link/name'] = $this->link->link_name;
+		$this->settings['link/id'] = $this->link->link_id;
+		
+		// `hardcode categories` and `unfamiliar categories` are
+		// deprecated in favor of `unfamiliar category`
+		if (
+			isset($this->settings['unfamiliar categories'])
+			and !isset($this->settings['unfamiliar category'])
+		) :
+			$this->settings['unfamiliar category'] = $this->settings['unfamiliar categories'];
+		endif;
+		if (
+			FeedWordPress::affirmative($this->settings, 'hardcode categories')
+			and !isset($this->settings['unfamiliar category'])
+		) :
+			$this->settings['unfamiliar category'] = 'default';
+		endif;
+
+		// Set this up automagically for del.icio.us
+		$bits = parse_url($this->link->link_rss);
+		$tagspacers = array('del.icio.us', 'feeds.delicious.com');
+		if (!isset($this->settings['cat_split']) and in_array($bits['host'], $tagspacers)) : 
+			$this->settings['cat_split'] = '\s'; // Whitespace separates multiple tags in del.icio.us RSS feeds
+		endif;
+
+		// Simple lists
+		foreach ($this->imploded_settings() as $what) :
+			if (isset($this->settings[$what])):
+				$this->settings[$what] = explode(
+					FEEDWORDPRESS_CAT_SEPARATOR,
+					$this->settings[$what]
+				);
+			endif;
+		endforeach;
+
+		if (isset($this->settings['terms'])) :
+			// Look for new format
+			$this->settings['terms'] = maybe_unserialize($this->settings['terms']);
+			
+			if (!is_array($this->settings['terms'])) :
+				// Deal with old format instead. Ugh.
+
+				// Split on two *or more* consecutive breaks
+				// because in the old format, a taxonomy
+				// without any associated terms would
+				// produce tax_name#1\n\n\ntax_name#2\nterm,
+				// and the naive split on the first \n\n
+				// would screw up the tax_name#2 list.
+				//
+				// Props to David Morris for pointing this
+				// out.
+
+				$this->settings['terms'] = preg_split(
+					"/".FEEDWORDPRESS_CAT_SEPARATOR."{2,}/",
+					$this->settings['terms']
+				);
+				$terms = array();
+				foreach ($this->settings['terms'] as $line) :
+					$line = explode(FEEDWORDPRESS_CAT_SEPARATOR, $line);
+					$tax = array_shift($line);
+					$terms[$tax] = $line;
+				endforeach;
+				$this->settings['terms'] = $terms;
+			endif;
+		endif;
+
+		if (isset($this->settings['map authors'])) :
+			$author_rules = explode("\n\n", $this->settings['map authors']);
+			$ma = array();
+			foreach ($author_rules as $rule) :
+				list($rule_type, $author_name, $author_action) = explode("\n", $rule);
+				
+				// Normalize for case and whitespace
+				$rule_type = strtolower(trim($rule_type));
+				$author_name = strtolower(trim($author_name));
+				$author_action = strtolower(trim($author_action));
+				
+				$ma[$rule_type][$author_name] = $author_action;
+			endforeach;
+			$this->settings['map authors'] = $ma;
+		endif;
+
+	} /* SyndicatedLink::get_settings_from_notes () */
+	
 	function settings_to_notes () {
 		$to_notes = $this->settings;
 
@@ -599,6 +611,11 @@ class SyndicatedLink {
 		return $ret;
 	} /* SyndicatedLink::setting () */
 
+	function merge_settings ($data, $prefix, $separator = '/') {
+		$dd = $this->flatten_array($data, $prefix, $separator);
+		$this->settings = array_merge($this->settings, $dd);
+	} /* SyndicatedLink::merge_settings () */
+	
 	function update_setting ($name, $value, $default = 'default') {
 		if (!is_null($value) and $value != $default) :
 			$this->settings[$name] = $value;
@@ -697,14 +714,15 @@ class SyndicatedLink {
 		return $ret;
 	} /* SyndicatedLink::postmeta () */
 	
-	function property_cascade ($fromFeed, $link_field, $setting, $simplepie_method) {
+	function property_cascade ($fromFeed, $link_field, $setting, $method) {
 		$value = NULL;
 		if ($fromFeed) :
-			if (isset($this->settings[$setting])) :
-				$value = $this->settings[$setting];
-			elseif (is_object($this->simplepie)
-			and method_exists($this->simplepie, $simplepie_method)) :
-				$value = $this->simplepie->{$simplepie_method}();
+			$value = $this->setting($setting, NULL, NULL, NULL);
+			
+			$s = $this->simplepie;
+			$callable = (is_object($s) and method_exists($s, $method));
+			if (is_null($value) and $callable) :
+				$fallback = $s->{$method}();
 			endif;
 		else :
 			$value = $this->link->{$link_field};
@@ -840,17 +858,13 @@ class SyndicatedLink {
 	} /* SyndicatedLink::flatten_array () */
 
 	function hardcode ($what) {
-		$default = get_option("feedwordpress_hardcode_$what");
-		if ( $default === 'yes' ) :
-			// If the default is to hardcode, then we want the
-			// negation of negative(): TRUE by default and FALSE if
-			// the setting is explicitly "no"
-			$ret = !FeedWordPress::negative($this->settings, "hardcode $what");
+		
+		$ret = $this->setting('hardcode '.$what, 'hardcode_'.$what, NULL);
+		
+		if ('yes' == $ret) :
+			$ret = true;
 		else :
-			// If the default is NOT to hardcode, then we want
-			// affirmative(): FALSE by default and TRUE if the
-			// setting is explicitly "yes"
-			$ret = FeedWordPress::affirmative($this->settings, "hardcode $what");
+			$ret = false;
 		endif;
 		return $ret;
 	} /* SyndicatedLink::hardcode () */
@@ -858,19 +872,8 @@ class SyndicatedLink {
 	function syndicated_status ($what, $default, $fallback = true) {
 		global $wpdb;
 
-		// Use local setting if we have it
-		if ( isset($this->settings["$what status"]) ) :
-			$ret = $this->settings["$what status"];
-		
-		// Or fall back to global default if we can
-		elseif ($fallback) :
-			$ret = FeedWordPress::syndicated_status($what, $default);
-
-		// Or use default value if we can't.
-		else :
-			$ret = $default;
-
-		endif;
+		$g_set = ($fallback ? 'syndicated_' . $what . '_status' : NULL);
+		$ret = $this->setting($what.' status', $g_set, $default);
 
 		return $wpdb->escape(trim(strtolower($ret)));
 	} /* SyndicatedLink:syndicated_status () */
