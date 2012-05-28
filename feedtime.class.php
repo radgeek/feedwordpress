@@ -1,7 +1,18 @@
 <?php
 /**
  * class FeedTime: handle common date-time formats used in feeds.
+ * We will try to be as tolerant as possible of different representations, since
+ * RSS Is A Fucking Mess, broken dates seem to be especially pervasive, etc.
  *
+ * To parse a string representation of a date-time from a feed, instantiate and
+ * then pull the timestamp:
+ *
+ * 	$time = new FeedTime($s);
+ *	if (!$time->failed()) :
+ * 		$ts = $time->timestamp();
+ *	else :
+ *		// ...
+ *	endif;
  */
 class FeedTime {
 	var $rep;
@@ -21,10 +32,10 @@ class FeedTime {
 			$this->ts = $this->parse_w3cdtf();
 			
 			if ($this->failed()) :
-				// In some versions of PHP, strtotime() does not support
-				// the UT timezone. Since UT is by definition within 1
-				// second of UTC, we'll just convert it preemptively to avoid
-				// problems.
+				// In some versions of PHP, strtotime() does not
+				// support the UT timezone. But since UT is by
+				// definition within 1 second of UTC, we'll just
+				// convert it preemptively to avoid problems.
 				$time = preg_replace(
 					'/(\s)UT$/',
 					'$1UTC',
