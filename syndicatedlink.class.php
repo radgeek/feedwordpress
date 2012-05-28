@@ -50,16 +50,8 @@ class SyndicatedLink {
 			$this->link = $link;
 			$this->id = $link->link_id;
 		else :
-			$this->id = $link;
-			
-			if (function_exists('get_bookmark')) : // WP 2.1+
-				$this->link = get_bookmark($link);
-			else :
-				$this->link = $wpdb->get_row("
-				SELECT * FROM $wpdb->links
-				WHERE (link_id = '".$wpdb->escape($link)."')"
-				);
-			endif;
+			$this->id = $link;			
+			$this->link = get_bookmark($link);
 		endif;
 
 		if (strlen($this->link->link_rss) > 0) :

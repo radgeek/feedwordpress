@@ -257,7 +257,7 @@ class FeedWordPressAdminPage {
 			"Feed" => array('page' => 'feeds-page.php', 'long' => 'Feeds & Updates'),
 			"Posts" => array('page' => 'posts-page.php', 'long' => 'Posts & Links'),
 			"Authors" => array('page' => 'authors-page.php', 'long' => 'Authors'),
-			'Categories' => array('page' => 'categories-page.php', 'long' => 'Categories'.FEEDWORDPRESS_AND_TAGS),
+			'Categories' => array('page' => 'categories-page.php', 'long' => 'Categories & Tags'),
 		);
 		
 		$hrefPrefix = 'admin.php?';

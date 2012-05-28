@@ -691,7 +691,7 @@ function fwp_add_pages () {
 
 	do_action('feedwordpress_admin_menu_pre_categories', $menu_cap, $settings_cap);
 	add_submenu_page(
-		$syndicationMenu, 'Categories'.FEEDWORDPRESS_AND_TAGS, 'Categories'.FEEDWORDPRESS_AND_TAGS,
+		$syndicationMenu, 'Categories & Tags', 'Categories & Tags',
 		$settings_cap, FeedWordPress::path('categories-page.php')
 	);
 
