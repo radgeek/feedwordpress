@@ -158,34 +158,12 @@ class SyndicatedPost {
 			// Unique ID (hopefully a unique tag: URI); failing that, the permalink
 			$this->post['guid'] = apply_filters('syndicated_item_guid', $this->guid(), $this);
 
-			// User-supplied custom settings to apply to each post. Do first so that FWP-generated custom settings will overwrite if necessary; thus preventing any munging
-			$default_custom_settings = get_option('feedwordpress_custom_settings');
-			if ($default_custom_settings and !is_array($default_custom_settings)) :
-				$default_custom_settings = unserialize($default_custom_settings);
-			endif;
-			if (!is_array($default_custom_settings)) :
-				$default_custom_settings = array();
-			endif;
-			
-			$custom_settings = (isset($this->link->settings['postmeta']) ? $this->link->settings['postmeta'] : null);
-			if ($custom_settings and !is_array($custom_settings)) :
-				$custom_settings = unserialize($custom_settings);
-			endif;
-			if (!is_array($custom_settings)) :
-				$custom_settings = array();
-			endif;
-			
-			$postMetaIn = array_merge($default_custom_settings, $custom_settings);
-			$postMetaOut = array();
-
-			$elements = array();
- 			foreach ($postMetaIn as $key => $values) :
- 				$values = apply_filters("syndicated_post_meta_${key}_pre", $values);
-	 			if (!is_null($values)) :
-					if (is_string($values)) : $values = array($values); endif;
-				
-					$postMetaOut[$key] = $this->do_substitutions($values);
-				endif;
+			// User-supplied custom settings to apply to each post.
+			// Do first so that FWP-generated custom settings will
+			// overwrite if necessary; thus preventing any munging.
+			$postMetaIn = $this->link->postmeta(array("parsed" => true));
+			foreach ($postMetaIn as $key => $meta) :
+				$postMetaOut[$key] = $meta->do_substitutions($this);
 			endforeach;
 			
 			foreach ($postMetaOut as $key => $values) :
@@ -369,93 +347,21 @@ class SyndicatedPost {
 	#### EXTRACT DATA FROM FEED ITEM ####
 	#####################################
 
-	function substitution_pattern () {
-		$stringFunctions = array(
-			'trim', 'ltrim', 'rtrim',
-			'strtoupper', 'strtolower',
-			'urlencode', 'urldecode',
-		);
-
-		return '/\$\( \s* ('
-		 	.'('.implode('|', array_map('preg_quote', $stringFunctions)).')\('
-		 	.'\s* ([^()]+) \s*'
-		 	.'\)'
-		 	.'| ([^()]+)'
-		 .') \s* \)/x';
-	}
-	
-	function do_substitutions ($in, $refs = NULL, $element_values = NULL) {
-		if (!is_array($in)) :
-			$in = array($in);
-		endif;
-
-		$out = array();
-
-		$pattern = $this->substitution_pattern();		
-
-		// Init. cache if not already initialized.
-		if (is_null($element_values)) :
-			$element_values = array();
-		endif;
-
-		// First, collect all the substitutions we need to make.
-		if (is_null($refs)) :
-			$refs = array();
-			foreach ($in as $item) :
-				preg_match_all(
-					$pattern,
-					$item,
-					$refs0,
-					PREG_SET_ORDER
-				);
-				$refs = array_merge($refs, $refs0);
-			endforeach;
-		endif;
+	function substitution_function ($name) {
+		$ret = NULL;
 		
-		// Do we have anything to do here?
-		if (count($refs) > 0) :
-		
-			// Yes. Let's pop off one substitution to do here.
-			$element = array_pop($refs);
-			
-			// Now loop through what we got in, and substitute in
-			// values for this element.
-
-			$tag = (isset($element[4]) ? $element[4] : $element[3]);
-			$filter = (isset($element[2]) ? $element[2] : '');
-			
-			if (!isset($element_values[$tag])) :
-				$element_values[$tag] = $this->query($tag);
-			endif;
-			
-			$out = array();
-			foreach ($element_values[$tag] as $val) :
-				$filtered_value = (strlen($filter > 0) ? $filter($val) : $val);
-				
-				if (strlen($filter) > 0) :
-					$filtered_value = $filter($val);
-				endif;
-				
-				foreach ($in as $item) :
-					$scratch = str_replace(
-						$element[0],
-						$filtered_value,
-						$item
-					);
-					
-					$constrained_elements = $element_values;
-					$constrained_elements[$tag] = array($val);
-					$outSeg = $this->do_substitutions($scratch, $refs, $constrained_elements);
-					$out = array_merge($out, $outSeg);
-				endforeach;
-			endforeach;
-			
-		else :
-			// No substitutions left to do; just return what came in
-			$out = $in;
-		endif;
-
-		return $out;		
+		switch ($name) :
+		// Allowed PHP string functions
+		case 'trim':
+		case 'ltrim':
+		case 'rtrim':
+		case 'strtoupper':
+		case 'strtolower':
+		case 'urlencode':
+		case 'urldecode':
+			$ret = $name;
+		endswitch;
+		return $ret;
 	}
 	
 	/**

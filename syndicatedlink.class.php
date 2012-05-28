@@ -34,6 +34,7 @@
 #	the function `get_feed_meta($key)` if this plugin is activated.
 
 require_once(dirname(__FILE__).'/magpiefromsimplepie.class.php');
+require_once(dirname(__FILE__).'/feedwordpressparsedpostmeta.class.php');
 
 class SyndicatedLink {
 	var $id = null;
@@ -650,6 +651,51 @@ class SyndicatedLink {
 		endif;
 		return $auth;
 	} /* SyndicatedLink::authentication_method () */
+
+	var $postmeta = array();	
+	function postmeta ($params = array()) {
+		$params = wp_parse_args($params, /*defaults=*/ array(
+		"field" => NULL,
+		"parsed" => false,
+		"force" => false,
+		));
+
+		if ($params['force'] or !isset($this->postmeta[/*parsed = */ false])) :
+			// First, get the global settings.
+			$default_custom_settings = get_option('feedwordpress_custom_settings');
+			if ($default_custom_settings and !is_array($default_custom_settings)) :
+				$default_custom_settings = unserialize($default_custom_settings);
+			endif;
+			if (!is_array($default_custom_settings)) :
+				$default_custom_settings = array();
+			endif;
+			
+			// Next, get the settings for this particular feed.
+			$custom_settings = $this->setting('postmeta', NULL, NULL);
+			if ($custom_settings and !is_array($custom_settings)) :
+				$custom_settings = unserialize($custom_settings);
+			endif;
+			if (!is_array($custom_settings)) :
+				$custom_settings = array();
+			endif;
+			
+			$this->postmeta[/*parsed=*/ false] = array_merge($default_custom_settings, $custom_settings);
+			$this->postmeta[/*parsed=*/ true] = array();
+			
+			// Now, run through and parse them all.
+			foreach ($this->postmeta[/*parsed=*/ false] as $key => $meta) :
+				$meta = apply_filters("syndicated_link_post_meta_${key}_pre", $meta, $this);
+				$this->postmeta[/*parsed=*/ false][$key] = $meta;
+				$this->postmeta[/*parsed=*/ true][$key] = new FeedWordPressParsedPostMeta($meta);
+			endforeach;
+		endif;
+
+		$ret = $this->postmeta[!!$params['parsed']];
+		if (is_string($params['field'])) :
+			$ret = $ret[$params['field']];
+		endif;
+		return $ret;
+	} /* SyndicatedLink::postmeta () */
 	
 	function property_cascade ($fromFeed, $link_field, $setting, $simplepie_method) {
 		$value = NULL;
