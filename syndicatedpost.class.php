@@ -758,7 +758,13 @@ class SyndicatedPost {
 	}
 
 	function update_hash ($hashed = true) {
-		$hash = $this->item;
+		// Basis for tracking possible changes to item.
+		$hash = array(
+			"title" => $this->entry->get_title(),
+			"link" => $this->permalink(),
+			"content" => $this->content(),
+			"excerpt" => $this->excerpt(),
+		);
 		
 		if ($hashed) :
 			$hash = md5(serialize($hash));
@@ -1288,7 +1294,7 @@ class SyndicatedPost {
 						.' not in {'
 						.implode(", ", array_map(array('FeedWordPress', 'val'), $seen))
 						.'}. Basis: '
-						.FeedWordPress::val(array_keys($this->update_hash(false)));
+						.FeedWordPress::val($this->update_hash(false));
 					endif;
 				endif;
 				
