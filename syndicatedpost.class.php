@@ -757,8 +757,14 @@ class SyndicatedPost {
 		return $this->_hashes[$id];
 	}
 
-	function update_hash () {
-		return md5(serialize($this->item));
+	function update_hash ($hashed = true) {
+		$hash = $this->item;
+		
+		if ($hashed) :
+			$hash = md5(serialize($hash));
+		endif;
+		
+		return $hash;
 	} /* SyndicatedPost::update_hash() */
 
 	/*static*/ function normalize_guid_prefix () {
@@ -1256,7 +1262,17 @@ class SyndicatedPost {
 					and ($updated_ts > $last_rev_ts)
 				);
 
-				if (!$updated) :
+				$updatedReason = NULL;
+				if ($updated) :
+					$updatedReason = preg_replace(
+						"/\s+/", " ",
+						'has been marked with a new timestamp ('
+						.date('Y-m-d H:i:s', $updated_ts)
+						." > "
+						.date('Y-m-d H:i:s', $last_rev_ts)
+						.')'
+					);
+				else :
 					// Or the hash...
 					$hash = $this->update_hash();
 					$seen = $this->stored_hashes($old_post->ID);
@@ -1264,6 +1280,15 @@ class SyndicatedPost {
 						$updated = !in_array($hash, $seen); // Not seen yet?
 					else :
 						$updated = true; // Can't find syndication meta-data
+					endif;
+					
+					if ($updated and FeedWordPress::diagnostic_on('feed_items:freshness:reasons')) :
+					$updatedReason = ' has a not-yet-seen update hash: '
+						.FeedWordPress::val($hash)
+						.' not in {'
+						.implode(", ", array_map(array('FeedWordPress', 'val'), $seen))
+						.'}. Basis: '
+						.FeedWordPress::val(array_keys($this->update_hash(false)));
 					endif;
 				endif;
 				
@@ -1273,12 +1298,22 @@ class SyndicatedPost {
 					if (!$frozen) :
 						$frozen_values = get_post_custom_values('_syndication_freeze_updates', $old_post->ID);
 						$frozen = (count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
+						
+						if ($frozen) :
+							$updatedReason = ' IS BLOCKED FROM BEING UPDATED BY A UPDATE LOCK ON THIS POST, EVEN THOUGH IT '.$updatedReason;
+						endif;
+					else :
+						$updatedReason = ' IS BLOCKED FROM BEING UPDATED BY A FEEDWORDPRESS UPDATE LOCK, EVEN THOUGH IT '.$updatedReason;
 					endif;
 				endif;
 				$updated = ($updated and !$frozen);
 
 				if ($updated) :
 					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$guid.'] "'.$this->entry->get_title().'" is an update of an existing post.');
+					if (!is_null($updatedReason)) :
+						$updatedReason = preg_replace('/\s+/', ' ', $updatedReason);
+						FeedWordPress::diagnostic('feed_items:freshness:reasons', 'Item ['.$guid.'] "'.$this->entry->get_title().'" '.$updatedReason);
+					endif;
 					$this->_freshness = 1; // Updated content
 					$this->_wp_id = $old_post->ID;
 					

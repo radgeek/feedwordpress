@@ -264,6 +264,7 @@ testing but absolutely inappropriate for a production server.</p>
 				'syndicated_posts:meta_data' => 'as syndication meta-data is added on the post',
 			),
 			'Advanced Diagnostics' => array(
+				'feed_items:freshness:reasons' => 'explaining the reason that a post was treated as an update to an existing post',
 				'feed_items:freshness:sql' => 'when FeedWordPress issues the SQL query it uses to decide whether to treat items as new, updates, or duplicates', 
 				'syndicated_posts:static_meta_data' => 'providing meta-data about syndicated posts in the Edit Posts interface',
 			),
