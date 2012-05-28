@@ -599,7 +599,7 @@ blank.</p></td>
 		////////////////////////////////////////////////
 	
 		$this->boxes_by_methods = array(
-			'feed_categories_box' => __('Feed Categories'.FEEDWORDPRESS_AND_TAGS),
+			'feed_categories_box' => __('Feed Categories & Tags'),
 			'categories_box' => array('title' => __('Categories'), 'id' => 'categorydiv'),
 		);
 
