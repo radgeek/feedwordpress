@@ -1289,12 +1289,12 @@ class SyndicatedPost {
 					endif;
 					
 					if ($updated and FeedWordPress::diagnostic_on('feed_items:freshness:reasons')) :
-					$updatedReason = ' has a not-yet-seen update hash: '
+						$updatedReason = ' has a not-yet-seen update hash: '
 						.FeedWordPress::val($hash)
 						.' not in {'
 						.implode(", ", array_map(array('FeedWordPress', 'val'), $seen))
 						.'}. Basis: '
-						.FeedWordPress::val($this->update_hash(false));
+						.FeedWordPress::val(array_keys($this->update_hash(false)));
 					endif;
 				endif;
 				

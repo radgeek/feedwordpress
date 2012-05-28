@@ -1815,6 +1815,7 @@ class FeedWordPress {
 					error_log(FeedWordPress::log_prefix().' '.$out);
 					break;
 				case 'email' :
+					
 					if (is_null($persist)) :
 						$sect = 'occurrent';
 						$hook = (isset($dlog['mesg'][$sect]) ? count($dlog['mesg'][$sect]) : 0);
