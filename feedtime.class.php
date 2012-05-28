@@ -3,6 +3,12 @@
  * class FeedTime: handle common date-time formats used in feeds.
  * We will try to be as tolerant as possible of different representations, since
  * RSS Is A Fucking Mess, broken dates seem to be especially pervasive, etc.
+ * Supports anything that your version of PHP's strtotime() can handle; also has
+ * a built-in parser for W3C DTF, in case your PHP doesn't have that.
+ *
+ * Tries to parse a W3C DTF first; then falls back to strtotime(). If strtotime
+ * fails due to a mystery timezone, then we will try again on local time, with
+ * the timezone stripped out.
  *
  * To parse a string representation of a date-time from a feed, instantiate and
  * then pull the timestamp:
