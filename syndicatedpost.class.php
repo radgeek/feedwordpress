@@ -162,6 +162,8 @@ class SyndicatedPost {
 			// Do first so that FWP-generated custom settings will
 			// overwrite if necessary; thus preventing any munging.
 			$postMetaIn = $this->link->postmeta(array("parsed" => true));
+			$postMetaOut = array();
+			
 			foreach ($postMetaIn as $key => $meta) :
 				$postMetaOut[$key] = $meta->do_substitutions($this);
 			endforeach;
