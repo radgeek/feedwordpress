@@ -850,56 +850,77 @@ class SyndicatedPost {
 	function author () {
 		$author = array ();
 		
-		if (isset($this->item['author_name'])):
-			$author['name'] = $this->item['author_name'];
-		elseif (isset($this->item['dc']['creator'])):
-			$author['name'] = $this->item['dc']['creator'];
-		elseif (isset($this->item['dc']['contributor'])):
-			$author['name'] = $this->item['dc']['contributor'];
-		elseif (isset($this->feed->channel['dc']['creator'])) :
-			$author['name'] = $this->feed->channel['dc']['creator'];
-		elseif (isset($this->feed->channel['dc']['contributor'])) :
-			$author['name'] = $this->feed->channel['dc']['contributor'];
-		elseif (isset($this->feed->channel['author_name'])) :
-			$author['name'] = $this->feed->channel['author_name'];
-		elseif ($this->feed->is_rss() and isset($this->item['author'])) :
-			// The author element in RSS is allegedly an
-			// e-mail address, but lots of people don't use
-			// it that way. So let's make of it what we can.
-			$author = parse_email_with_realname($this->item['author']);
-			
-			if (!isset($author['name'])) :
-				if (isset($author['email'])) :
-					$author['name'] = $author['email'];
-				else :
-					$author['name'] = $this->feed->channel['title'];
-				endif;
-			endif;
-		elseif ($this->link->name()) :
-			$author['name'] = $this->link->name();
-		else :
-			$url = parse_url($this->link->uri());
-			$author['name'] = $url['host'];
-		endif;
-		
-		if (isset($this->item['author_email'])):
-			$author['email'] = $this->item['author_email'];
-		elseif (isset($this->feed->channel['author_email'])) :
-			$author['email'] = $this->feed->channel['author_email'];
-		endif;
-		
-		if (isset($this->item['author_uri'])):
-			$author['uri'] = $this->item['author_uri'];
-		elseif (isset($this->item['author_url'])):
-			$author['uri'] = $this->item['author_url'];
-		elseif (isset($this->feed->channel['author_uri'])) :
-			$author['uri'] = $this->item['author_uri'];
-		elseif (isset($this->feed->channel['author_url'])) :
-			$author['uri'] = $this->item['author_url'];
-		elseif (isset($this->feed->channel['link'])) :
-			$author['uri'] = $this->feed->channel['link'];
+		$aa = $this->entry->get_authors();
+		if (count($aa) > 0) :
+			$a = reset($aa);
+
+			$author = array(
+			'name' => $a->get_name(),
+			'email' => $a->get_email(),
+			'uri' => $a->get_link(),
+			);
 		endif;
 
+		if (FEEDWORDPRESS_COMPATIBILITY) :
+			// Search through the MagpieRSS elements: Atom, Dublin Core, RSS
+			if (isset($this->item['author_name'])):
+				$author['name'] = $this->item['author_name'];
+			elseif (isset($this->item['dc']['creator'])):
+				$author['name'] = $this->item['dc']['creator'];
+			elseif (isset($this->item['dc']['contributor'])):
+				$author['name'] = $this->item['dc']['contributor'];
+			elseif (isset($this->feed->channel['dc']['creator'])) :
+				$author['name'] = $this->feed->channel['dc']['creator'];
+			elseif (isset($this->feed->channel['dc']['contributor'])) :
+				$author['name'] = $this->feed->channel['dc']['contributor'];
+			elseif (isset($this->feed->channel['author_name'])) :
+				$author['name'] = $this->feed->channel['author_name'];
+			elseif ($this->feed->is_rss() and isset($this->item['author'])) :
+				// The author element in RSS is allegedly an
+				// e-mail address, but lots of people don't use
+				// it that way. So let's make of it what we can.
+				$author = parse_email_with_realname($this->item['author']);
+				
+				if (!isset($author['name'])) :
+					if (isset($author['email'])) :
+						$author['name'] = $author['email'];
+					else :
+						$author['name'] = $this->feed->channel['title'];
+					endif;
+				endif;
+			endif;
+		endif;
+		
+		if (!isset($author['name']) or is_null($author['name'])) :
+			// Nothing found. Try some crappy defaults.
+			if ($this->link->name()) :
+				$author['name'] = $this->link->name();
+			else :
+				$url = parse_url($this->link->uri());
+				$author['name'] = $url['host'];
+			endif;
+		endif;
+		
+		if (FEEDWORDPRESS_COMPATIBILITY) :
+			if (isset($this->item['author_email'])):
+				$author['email'] = $this->item['author_email'];
+			elseif (isset($this->feed->channel['author_email'])) :
+				$author['email'] = $this->feed->channel['author_email'];
+			endif;
+			
+			if (isset($this->item['author_uri'])):
+				$author['uri'] = $this->item['author_uri'];
+			elseif (isset($this->item['author_url'])):
+				$author['uri'] = $this->item['author_url'];
+			elseif (isset($this->feed->channel['author_uri'])) :
+				$author['uri'] = $this->item['author_uri'];
+			elseif (isset($this->feed->channel['author_url'])) :
+				$author['uri'] = $this->item['author_url'];
+			elseif (isset($this->feed->channel['link'])) :
+				$author['uri'] = $this->feed->channel['link'];
+			endif;
+		endif;
+		
 		return $author;
 	} /* SyndicatedPost::author() */
 
@@ -1494,6 +1515,20 @@ class SyndicatedPost {
 			$ret = $retval[$freshness];
 		endif;
 
+		// If this is a legit, non-filtered post, tag it as found on the feed
+		// regardless of fresh or stale status
+		if (!$this->filtered()) :
+			$key = '_feedwordpress_retire_me_' . $this->link->id;
+			delete_post_meta($this->wp_id(), $key);
+			
+			$status = get_post_field('post_status', $this->wp_id());
+			if ('fwpretired'==$status and $this->link->is_incremental()) :
+				FeedWordPress::diagnostic('syndicated_posts', "Un-retiring previously retired post # ".$this->wp_id()." due to re-appearance on non-incremental feed."); 
+				set_post_field('post_status', $this->post['post_status'], $this->wp_id());
+				wp_transition_post_status($this->post['post_status'], $status, $old_status, $this->post);
+			endif;
+		endif;
+		
 		// Remove add_rss_meta hook
 		remove_action(
 			/*hook=*/ 'transition_post_status',

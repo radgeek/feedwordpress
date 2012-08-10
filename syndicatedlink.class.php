@@ -57,6 +57,8 @@ class SyndicatedLink {
 		if (strlen($this->link->link_rss) > 0) :
 			$this->get_settings_from_notes();
 		endif;
+		
+		add_filter('feedwordpress_update_complete', array(&$this, 'process_retirements'), 1000, 1);
 	} /* SyndicatedLink::SyndicatedLink () */
 	
 	function found () {
@@ -236,6 +238,21 @@ class SyndicatedLink {
 
 			$this->magpie->originals = $posts;
 
+			// If this is a complete feed, rather than an incremental feed, we
+			// need to prepare to mark everything for presumptive retirement.
+			if ($this->is_incremental()) :
+				$q = new WP_Query(array(
+				'fields' => '_synfrom',
+				'post_status__not' => 'fwpretired',
+				'ignore_sticky_posts' => true,
+				'meta_key' => 'syndication_feed_id',
+				'meta_value' => $this->id,
+				));
+				foreach ($q->posts as $p) :
+					update_post_meta($p->ID, '_feedwordpress_retire_me_'.$this->id, '1');
+				endforeach;
+			endif;
+			
 			if (is_array($posts)) :
 				foreach ($posts as $key => $item) :
 					$post = new SyndicatedPost($item, $this);
@@ -255,6 +272,39 @@ class SyndicatedLink {
 					unset($post);
 				endforeach;
 			endif;
+			
+			if ('yes'==$this->setting('tombstones', 'tombstones', 'yes')) :
+				// Check for use of Atom tombstones. Spec:
+				// <http://tools.ietf.org/html/draft-snell-atompub-tombstones-18>
+				$tombstones = $this->simplepie->get_feed_tags('http://purl.org/atompub/tombstones/1.0', 'deleted-entry');
+				if (count($tombstones) > 0) :
+					foreach ($tombstones as $tombstone) :
+						$ref = NULL;
+						foreach (array('', 'http://purl.org/atompub/tombstones/1.0') as $ns) :
+							if (isset($tombstone['attribs'][$ns])
+							and isset($tombstone['attribs'][$ns]['ref'])) :
+								$ref = $tombstone['attribs'][$ns]['ref'];
+							endif;
+						endforeach;
+						
+						$q = new WP_Query(array(
+						'ignore_sticky_posts' => true,
+						'guid' => $ref,
+						'meta_key' => 'syndication_feed_id',
+						'meta_value' => $this->id, // Only allow a feed to tombstone its own entries.
+						));
+						
+						foreach ($q->posts as $p) :
+							$old_status = $p->post_status;
+							FeedWordPress::diagnostic('syndicated_posts', 'Retiring existing post # '.$p->ID.' "'.$p->post_title.'" due to Atom tombstone element in feed.');
+							set_post_field('post_status', 'fwpretired', $p->ID);
+							wp_transition_post_status('fwpretired', $old_status, $p);
+						endforeach;
+						
+					endforeach;
+				endif;
+			endif;
+			
 			$suffix = ($crashed ? 'crashed' : 'completed');
 			do_action('update_syndicated_feed_items', $this->id, $this);
 			do_action("update_syndicated_feed_items_${suffix}", $this->id, $this);
@@ -292,6 +342,28 @@ class SyndicatedLink {
 		return $new_count;
 	} /* SyndicatedLink::poll() */
 
+	function process_retirements ($delta) {
+		global $post;
+
+		$q = new WP_Query(array(
+		'fields' => '_synfrom',
+		'post_status__not' => 'fwpretired',
+		'ignore_sticky_posts' => true,
+		'meta_key' => '_feedwordpress_retire_me_'.$this->id,
+		'meta_value' => '1',
+		));
+		if ($q->have_posts()) :
+			foreach ($q->posts as $p) :
+				$old_status = $p->post_status;
+				FeedWordPress::diagnostic('syndicated_posts', 'Retiring existing post # '.$p->ID.' "'.$p->post_title.'" due to absence from a non-incremental feed.');
+				set_post_field('post_status', 'fwpretired', $p->ID);
+				wp_transition_post_status('fwpretired', $old_status, $p);
+				delete_post_meta($p->ID, '_feedwordpress_retire_me_'.$this->id);
+			endforeach;
+		endif;
+		return $delta;
+	}
+	
 	/**
 	 * Updates the URL for the feed syndicated by this link.
 	 *
@@ -615,6 +687,10 @@ class SyndicatedLink {
 			unset($this->settings[$name]);
 		endif;
 	} /* SyndicatedLink::update_setting () */
+	
+	function is_incremental () {
+		return ('complete'==$this->setting('update_incremental', 'update_incremental', 'incremental'));
+	} /* SyndicatedLink::is_incremental () */
 	
 	function uri ($params = array()) {
 		$params = wp_parse_args($params, array(

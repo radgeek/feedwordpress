@@ -45,7 +45,8 @@ class SyndicationDataQueries {
 			$q->is_singular = true;	// Doesn't?
 		endif;
 		
-		if ($q->get('fields') == '_synfresh') :
+		$ff = $q->get('fields');
+		if ($ff == '_synfresh' or $ff == '_synfrom') :
 			$q->query_vars['cache_results'] = false; // Not suitable.
 		endif;
 	} /* SyndicationDataQueries::parse_query () */
@@ -60,7 +61,7 @@ class SyndicationDataQueries {
 		endif;
 		return $sql;
 	}
-	
+
 	function posts_search ($search, &$query) {
 		global $wpdb;
 		if ($guid = $query->get('guid')) :
@@ -92,17 +93,26 @@ class SyndicationDataQueries {
 			// Ugly hack to ensure we ONLY check by guid in syndicated freshness
 			// checks -- for reasons of both performance and correctness. Pitch:
 			$search .= " -- '";
+		elseif ($query->get('fields')=='_synfrom') :
+			$search .= " AND ({$wpdb->postmeta}.meta_key = '".$query->get('meta_key')."' AND wp_postmeta.meta_value = '".$query->get('meta_value')."') -- '"; 
 		endif;
 		return $search;
 	} /* SyndicationDataQueries::posts_search () */
 	
 	function posts_where ($where, &$q) {
+		global $wpdb;
+		
 		// Ugly hack to ensure we ONLY check by guid in syndicated freshness
 		// checks -- for reasons of both performance and correctness. Catch:
 		if (strpos($where, " -- '") !== false) :
 			$bits = explode(" -- '", $where, 2);
 			$where = $bits[0];
 		endif;
+		
+		if ($psn = $q->get('post_status__not')) :
+			$where .= " AND ({$wpdb->posts}.post_status <> '".$wpdb->escape($psn)."')"; 
+		endif;
+		
 		return $where;
 	} /* SyndicationDataQueries::post_where () */
 	
@@ -112,6 +122,9 @@ class SyndicationDataQueries {
 			switch ($f) :
 			case '_synfresh' :
 				$fields = "{$wpdb->posts}.ID, {$wpdb->posts}.guid, {$wpdb->posts}.post_modified_gmt";
+				break;
+			case '_synfrom' :
+				$fields = "{$wpdb->posts}.ID, {$wpdb->posts}.guid, {$wpdb->posts}.post_title, {$wpdb->postmeta}.meta_value";
 				break;
 			default :
 				// Do nothing.

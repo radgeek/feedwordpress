@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2012.0720
+Version: 2012.0810
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2012.0720
+ * @version 2012.0810
  */
 
 # This uses code derived from:
@@ -34,7 +34,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2012.0720');
+define ('FEEDWORDPRESS_VERSION', '2012.0810');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -54,6 +54,8 @@ else :
 	endif;
 endif;
 define ('FEEDWORDPRESS_DEBUG', $feedwordpress_debug);
+$feedwordpress_compatibility = true;
+define ('FEEDWORDPRESS_COMPATIBILITY', $feedwordpress_compatibility);
 
 define ('FEEDWORDPRESS_CAT_SEPARATOR_PATTERN', '/[:\n]/');
 define ('FEEDWORDPRESS_CAT_SEPARATOR', "\n");
@@ -1213,9 +1215,43 @@ class FeedWordPress {
 			endif;*/
 		endif;
 
+		// This is a special post status for hiding posts that have expired
+		register_post_status('fwpretired', array(
+		'label' => _x('Retired', 'post'),
+		'label_count' => _n_noop('Retired <span class="count">(%s)</span>', 'Retired <span class="count">(%s)</span>'),
+		'exclude_from_search' => true,
+		'public' => false,
+		'publicly_queryable' => false,
+		'show_in_admin_all_list' => false,
+		'show_in_admin_status_list' => true,
+		));
+		add_action(
+			/*hook=*/ 'template_redirect',
+			/*function=*/ array(&$this, 'redirect_retired'),
+			/*priority=*/ -100
+		);
+
 		$this->clear_cache_magic_url();
 		$this->update_magic_url();
 	} /* FeedWordPress::init() */
+	
+	function redirect_retired () {
+		global $wp_query;
+		if (is_singular()) :
+			if ('fwpretired'==$wp_query->post->post_status) :
+				do_action('feedwordpress_redirect_retired', $wp_query->post);
+				
+				if (!($template = get_404_template())) :
+					$template = get_index_template();
+				endif;
+				if ($template = apply_filters('template_include', $template)) :
+					header("HTTP/1.1 410 Gone");
+					include($template);
+				endif;
+				exit;
+			endif;
+		endif;
+	}
 	
 	function dashboard_setup () {
 		$see_it = FeedWordPress::menu_cap();

@@ -111,7 +111,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			'global_feeds_box' => __('Update Scheduling'),
 			'updated_posts_box' => __('Updated Posts'),
 			'custom_settings_box' => __('Custom Feed Settings (for use in templates)'),
-			'fetch_settings_box' => __('Settings for Fetching Feeds (Advanced)'),
+			'advanced_settings_box' => __('Advanced Settings'),
 		);
 		if ($this->for_default_settings()) :
 			unset($this->boxes_by_methods['custom_settings_box']);
@@ -363,7 +363,13 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		print number_format(intval($setting)) . " " . (($setting==1) ? "second" : "seconds");
 	}
 	
-	function fetch_settings_box ($page, $box = NULL) {
+	function advanced_settings_box ($page, $box = NULL) {
+		?>
+		<table class="edit-form">
+		<tr>
+		<th>Fetch Timeout:</th>
+		<td>
+		<?php
 		$this->setting_radio_control(
 			'fetch timeout', 'fetch_timeout',
 			array(&$this, 'fetch_timeout_setting'),
@@ -374,7 +380,42 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				'labels' => array(&$this, 'fetch_timeout_setting_value'),
 			)
 		);
-	} /* FeedWordPressFeedsPage::fetch_settings_box () */
+		?>
+		</td>
+		</tr>
+		<tr>
+		<th>Feed Update Type:</th>
+		<td><?php
+		$this->setting_radio_control('update_incremental', 'update_incremental',
+			/*options=*/ array(
+				'incremental' => '<strong>Incremental.</strong> When items no longer appear on the feed, keep them in the WordPress posts table.',
+				'complete' => '<strong>Complete.</strong> When items no longer appear on the feed, they are obsolete; retire them from the WordPress posts table.',
+			),
+			/*params=*/ array(
+				'setting-default' => NULL,
+				'global-setting-default' => 'incremental',
+				'default-input-value' => 'default', 
+			)
+		); ?></td>
+		</tr>
+		<tr>
+		<th>Allow Feeds to Delete Posts:</th>
+		<td><?php
+		$this->setting_radio_control('tombstones', 'tombstones',
+			/*options=*/ array(
+				'yes' => 'Yes. If a feed indicates that one of its posts has been deleted, delete the local copy syndicated to this website.',
+				'no' => 'No. Even if a feed indicates that one of its posts has been deleted, retain the local copy on this website.',
+			),
+			/*params=*/ array(
+				'setting-default' => NULL,
+				'global-setting-default' => 'yes',
+				'default-input-value' => 'default',
+			)
+		); ?></td>
+		</tr>
+		</table>
+		<?php
+	} /* FeedWordPressFeedsPage::advanced_settings_box () */
 	
 	function display_authentication_credentials_box ($params = array()) {
 		static $count = 0;
@@ -1174,6 +1215,14 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				$timeout = intval($timeout);
 			endif;
 			$this->update_setting('fetch timeout', $timeout);
+		endif;
+		
+		if (isset($post['update_incremental'])) :
+			$this->update_setting('update_incremental', $post['update_incremental']);
+		endif;
+
+		if (isset($post['tombstones'])) :
+			$this->update_setting('tombstones', $post['tombstones']);
 		endif;
 
 		if (isset($post['update_minimum'])) :
