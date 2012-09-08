@@ -1264,6 +1264,7 @@ class SyndicatedPost {
 				'fields' => '_synfresh', // id, guid, post_modified_gmt
 				'ignore_sticky_posts' => true,
 				'guid' => $guid,
+				'post_type' => 'any',
 			));
 			
 			$old_post = NULL;
