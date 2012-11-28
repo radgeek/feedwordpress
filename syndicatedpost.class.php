@@ -30,6 +30,7 @@ class SyndicatedPost {
 	
 	var $_freshness = null;
 	var $_wp_id = null;
+	var $_wp_post = null;
 
 	/**
 	 * SyndicatedPost constructor: Given a feed item and the source from
@@ -1343,7 +1344,8 @@ class SyndicatedPost {
 					endif;
 					$this->_freshness = 1; // Updated content
 					$this->_wp_id = $old_post->ID;
-					
+					$this->_wp_post = $old_post;
+
 					// We want this to keep a running list of all the
 					// processed update hashes.
 					$this->post['meta']['syndication_item_hash'] = array_merge(
@@ -1473,8 +1475,13 @@ class SyndicatedPost {
 		if (!$this->filtered() and $freshness > 0) :
 			// Filter some individual fields
 			
+			// If there already is a post slug (from syndication or by manual
+			// editing) don't cause WP to overwrite it by sending in a NULL
+			// post_name. Props Chris Fritz 2012-11-28.
+			$post_name = (is_null($this->_wp_post) ? NULL : $this->_wp_post->post_name);			
+
 			// Allow filters to set post slug. Props niska.
-			$post_name = apply_filters('syndicated_post_slug', NULL, $this);
+			$post_name = apply_filters('syndicated_post_slug', $post_name, $this);
 			if (!empty($post_name)) :
 				$this->post['post_name'] = $post_name;
 			endif;

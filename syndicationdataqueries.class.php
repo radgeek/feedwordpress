@@ -121,7 +121,7 @@ class SyndicationDataQueries {
 		if ($f = $query->get('fields')) :
 			switch ($f) :
 			case '_synfresh' :
-				$fields = "{$wpdb->posts}.ID, {$wpdb->posts}.guid, {$wpdb->posts}.post_modified_gmt";
+				$fields = "{$wpdb->posts}.ID, {$wpdb->posts}.guid, {$wpdb->posts}.post_modified_gmt, {$wpdb->posts}.post_name";
 				break;
 			case '_synfrom' :
 				$fields = "{$wpdb->posts}.ID, {$wpdb->posts}.guid, {$wpdb->posts}.post_title, {$wpdb->postmeta}.meta_value";
