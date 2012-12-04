@@ -675,6 +675,12 @@ function fwp_add_pages () {
 
 	do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
 	add_submenu_page(
+		$syndicationMenu, 'Syndicated Sites', 'Syndicated Sites',
+		$settings_cap, $syndicationMenu
+	);
+
+	do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
+	add_submenu_page(
 		$syndicationMenu, 'Syndicated Feeds & Updates', 'Feeds & Updates',
 		$settings_cap, FeedWordPress::path('feeds-page.php')
 	);
