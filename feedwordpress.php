@@ -187,6 +187,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	remove_filter('pre_link_url', 'wp_filter_kses');
 	
 	# Admin menu
+	add_action('admin_init', array('feedwordpress', 'admin_init'));
 	add_action('admin_menu', 'fwp_add_pages');
 	add_action('admin_notices', 'fwp_check_debug');
 
@@ -1198,6 +1199,12 @@ class FeedWordPress {
 		endif;
 		return $ret;
 	} // FeedWordPress::stale()
+
+	static function admin_init () {
+		if (!intval(get_option('link_manager_enabled', false))) :
+			update_option('link_manager_enabled', true);
+		endif;
+	} /* FeedWordPress::admin_init() */
 
 	function init () {
 		global $fwp_path;
