@@ -3,7 +3,7 @@ Contributors: Charles Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
-Tested up to: 3.4.2
+Tested up to: 3.5
 Stable tag: 2011.1019
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
@@ -94,7 +94,32 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
-= Trunk =
+= 2012.1212 =
+
+*	WORDPRESS 3.5 COMPATIBILITY: This release has been tested for compatibility
+	with new releases of WordPress, up to version 3.5, and any documented
+	compatibility issues have been cleared -- in particular, if you were seeing
+	error pages stating that you don't have permission to access the
+	FeedWordPress Syndication page within the WordPress admin interface, then
+	upgrading to this release should fix the problem.
+
+	As always, if you encounter any compatibility problems after upgrading your
+	version of WordPress and your version of FeedWordPress to the most recent
+	versions, please contact me with as detailed a description as possible of
+	the issue you are encountering, the circumstances you're encountering it
+	under, what you expect to see happening, and what is happening instead.
+
+*	PHP 5.4 COMPATIBILITY: This release has been audited to fix potential
+	problems with deprecation notices or fatal errors under recent versions
+	of PHP. In particular, all uses of run-time pass-by-reference have been
+	eliminated from the code; if you were seeing a fatal error reading
+	"Call-time pass-by-reference has been removed ..." then upgrading to
+	this release should fix the problem.
+
+*	CUSTOMIZATION FRAMEWORK: A great deal of work has been done to make the
+	underlying framework more flexible, so that PHP add-ons can be written
+	to adapt FeedWordPress to handle custom XML vocabularies, expiration of
+	posts under specified conditions, and other custom behavior.
 
 *	BUGFIX: MANUALLY EDITED POST SLUGS NOT OVERWRITTEN. Thanks to a report
 	by Chris Fritz, I've identified some code that causes post slugs for the
@@ -107,6 +132,14 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 	
 *	USER-AGENT STRING: FeedWordPress now sends a distinctive User-Agent
 	string identifying itself, and noting that it is a feed aggregator.
+
+*	MISCELLANEOUS PERFORMANCE IMPROVEMENTS: A number of changes have been
+	made to try to reduce the intensity and expense in terms of both
+	database performance and web server memory consumption.
+
+*	DIAGNOSTICS IMPROVEMENTS: A number of new and improved diagnostics have
+	been added which should aid in understanding and troubleshooting issues
+	that may arise.
 
 = 2011.1019 =
 
