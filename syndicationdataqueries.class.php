@@ -3,13 +3,13 @@ define('FEEDWORDPRESS_OPTIMIZE_IN_CLAUSES', get_option('feedwordpress_optimize_i
 
 class SyndicationDataQueries {
 	function SyndicationDataQueries () {
-		add_action('init', array(&$this, 'init'));
-		add_filter('query', array(&$this, 'optimize_in_clauses'));
-		add_action('parse_query', array(&$this, 'parse_query'), 10, 1);
-		add_filter('posts_search', array(&$this, 'posts_search'), 10, 2);
-		add_filter('posts_where', array(&$this, 'posts_where'), 10, 2);
-		add_filter('posts_fields', array(&$this, 'posts_fields'), 10, 2);
-		add_filter('posts_request', array(&$this, 'posts_request'), 10, 2);
+		add_action('init', array($this, 'init'));
+		add_filter('query', array($this, 'optimize_in_clauses'));
+		add_action('parse_query', array($this, 'parse_query'), 10, 1);
+		add_filter('posts_search', array($this, 'posts_search'), 10, 2);
+		add_filter('posts_where', array($this, 'posts_where'), 10, 2);
+		add_filter('posts_fields', array($this, 'posts_fields'), 10, 2);
+		add_filter('posts_request', array($this, 'posts_request'), 10, 2);
 	}
 
 	function init () {

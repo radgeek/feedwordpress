@@ -1189,7 +1189,7 @@ class SyndicatedPost {
 				$pattern = FeedWordPressHTML::attributeRegex($tag, $attr);
 				$content = preg_replace_callback (
 					$pattern,
-					array(&$obj, 'resolve_single_relative_uri'),
+					array($obj, 'resolve_single_relative_uri'),
 					$content
 				);
 			endforeach;
@@ -1218,7 +1218,7 @@ class SyndicatedPost {
 
 			$content = preg_replace_callback (
 				$pattern,
-				array(&$obj, 'strip_attribute_from_tag'),
+				array($obj, 'strip_attribute_from_tag'),
 				$content
 			);
 		endforeach;
@@ -1499,7 +1499,7 @@ class SyndicatedPost {
 		// Hook in early to make sure these get inserted if at all possible
 		add_action(
 			/*hook=*/ 'transition_post_status',
-			/*callback=*/ array(&$this, 'add_rss_meta'),
+			/*callback=*/ array($this, 'add_rss_meta'),
 			/*priority=*/ -10000, /* very early */
 			/*arguments=*/ 3
 		);
@@ -1539,7 +1539,7 @@ class SyndicatedPost {
 		// Remove add_rss_meta hook
 		remove_action(
 			/*hook=*/ 'transition_post_status',
-			/*callback=*/ array(&$this, 'add_rss_meta'),
+			/*callback=*/ array($this, 'add_rss_meta'),
 			/*priority=*/ -10000, /* very early */
 			/*arguments=*/ 3
 		);
@@ -1583,7 +1583,7 @@ class SyndicatedPost {
 			// tax_input, with no apparent way to override. Ugh.
 			add_action(
 			/*hook=*/ 'transition_post_status',
-			/*callback=*/ array(&$this, 'add_terms'),
+			/*callback=*/ array($this, 'add_terms'),
 			/*priority=*/ -10001, /* very early */
 			/*arguments=*/ 3
 			);
@@ -1592,7 +1592,7 @@ class SyndicatedPost {
 			// post_modified. Ugh.
 			add_action(
 			/*hook=*/ 'transition_post_status',
-			/*callback=*/ array(&$this, 'fix_post_modified_ts'),
+			/*callback=*/ array($this, 'fix_post_modified_ts'),
 			/*priority=*/ -10000, /* very early */
 			/*arguments=*/ 3
 			);
@@ -1606,14 +1606,14 @@ class SyndicatedPost {
 
 			remove_action(
 			/*hook=*/ 'transition_post_status',
-			/*callback=*/ array(&$this, 'add_terms'),
+			/*callback=*/ array($this, 'add_terms'),
 			/*priority=*/ -10001, /* very early */
 			/*arguments=*/ 3
 			);
 
 			remove_action(
 			/*hook=*/ 'transition_post_status',
-			/*callback=*/ array(&$this, 'fix_post_modified_ts'),
+			/*callback=*/ array($this, 'fix_post_modified_ts'),
 			/*priority=*/ -10000, /* very early */
 			/*arguments=*/ 3
 			);

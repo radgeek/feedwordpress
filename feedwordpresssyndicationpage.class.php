@@ -384,7 +384,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			add_meta_box(
 				/*id=*/ 'feedwordpress_feeds_box',
 				/*title=*/ __('Syndicated sources'),
-				/*callback=*/ array(&$this, 'syndicated_sources_box'),
+				/*callback=*/ array($this, 'syndicated_sources_box'),
 				/*page=*/ $this->meta_box_context(),
 				/*context =*/ $this->meta_box_context()
 			);

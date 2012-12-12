@@ -444,7 +444,7 @@ class FeedWordPressAdminPage {
 			add_meta_box(
 				/*id=*/ $id,
 				/*title=*/ $title,
-				/*callback=*/ array(&$this, $method),
+				/*callback=*/ array($this, $method),
 				/*page=*/ $this->meta_box_context(),
 				/*context=*/ $this->meta_box_context()
 			);

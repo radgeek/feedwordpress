@@ -265,13 +265,13 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			
 			$this->setting_radio_control(
 				'update/window', 'update_window',
-				array(&$this, 'update_window_edit_box'),
+				array($this, 'update_window_edit_box'),
 				array(
 					'global-setting-default' => DEFAULT_UPDATE_PERIOD,
 					'default-input-name' => 'use_default_update_window',
 					'default-input-id' => 'use-default-update-window-yes',
 					'default-input-id-no' => 'use-default-update-window-no',
-					'labels' => array(&$this, 'update_window_currently'),
+					'labels' => array($this, 'update_window_currently'),
 				)
 			);
 			?></td>
@@ -372,12 +372,12 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php
 		$this->setting_radio_control(
 			'fetch timeout', 'fetch_timeout',
-			array(&$this, 'fetch_timeout_setting'),
+			array($this, 'fetch_timeout_setting'),
 			array(
 				'global-setting-default' => FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT,
 				'input-name' => 'fetch_timeout',
 				'default-input-name' => 'fetch_timeout_default',
-				'labels' => array(&$this, 'fetch_timeout_setting_value'),
+				'labels' => array($this, 'fetch_timeout_setting_value'),
 			)
 		);
 		?>

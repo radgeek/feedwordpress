@@ -2,18 +2,14 @@
 class FeedWordPressHTTPAuthenticator {
 	var $args = array();
 	
-	function FeedWordPressHTTPAuthenticator () {
-		self::__construct();
-	}
-	
 	function __construct () {
-		add_filter('use_curl_transport', array(&$this, 'digest_do_it'), 2, 1000);
+		add_filter('use_curl_transport', array($this, 'digest_do_it'), 2, 1000);
 		foreach (array('fsockopen', 'fopen', 'streams', 'http_extension') as $transport) :
-			add_filter("use_{$transport}_transport", array(&$this, 'digest_dont'), 2, 1000);
+			add_filter("use_{$transport}_transport", array($this, 'digest_dont'), 2, 1000);
 		endforeach;
 		
-		add_filter('pre_http_request', array(&$this, 'pre_http_request'), 10, 3);
-		add_action('http_api_curl', array(&$this, 'set_auth_options'), 1000, 1);
+		add_filter('pre_http_request', array($this, 'pre_http_request'), 10, 3);
+		add_action('http_api_curl', array($this, 'set_auth_options'), 1000, 1);
 	} /* FeedWordPressHTTPAuthenticator::__construct () */
 
 	function methods_available () {

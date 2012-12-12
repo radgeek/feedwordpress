@@ -219,12 +219,12 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	# Cron-less auto-update. Hooray!
 	$autoUpdateHook = $feedwordpress->automatic_update_hook();
 	if (!is_null($autoUpdateHook)) :
-		add_action($autoUpdateHook, array(&$feedwordpress, 'auto_update'));
+		add_action($autoUpdateHook, array($feedwordpress, 'auto_update'));
 	endif;
 	
-	add_action('init', array(&$feedwordpress, 'init'));
-	add_action('shutdown', array(&$feedwordpress, 'email_diagnostic_log'));
-	add_action('wp_dashboard_setup', array(&$feedwordpress, 'dashboard_setup'));
+	add_action('init', array($feedwordpress, 'init'));
+	add_action('shutdown', array($feedwordpress, 'email_diagnostic_log'));
+	add_action('wp_dashboard_setup', array($feedwordpress, 'dashboard_setup'));
 
 	# Default sanitizers
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'resolve_relative_uris'), 0, 2);
@@ -1201,6 +1201,9 @@ class FeedWordPress {
 	} // FeedWordPress::stale()
 
 	static function admin_init () {
+		// WordPress 3.5+ compat: the WP devs are in the midst of removing Links from the WordPress core. Eventually we'll have to deal
+		// with the possible disappearance of the wp_links table as a whole; but in the meantime, we just need to turn on the interface
+		// element to avoid problems with user capabilities that presume the presence of the Links Manager in the admin UI.
 		if (!intval(get_option('link_manager_enabled', false))) :
 			update_option('link_manager_enabled', true);
 		endif;
@@ -1240,7 +1243,7 @@ class FeedWordPress {
 		));
 		add_action(
 			/*hook=*/ 'template_redirect',
-			/*function=*/ array(&$this, 'redirect_retired'),
+			/*function=*/ array($this, 'redirect_retired'),
 			/*priority=*/ -100
 		);
 
@@ -1285,12 +1288,12 @@ class FeedWordPress {
 			add_meta_box(
 				/*id=*/ $widget_id,
 				/*title=*/ $widget_name,
-				/*callback=*/ array(&$this, 'dashboard'),
+				/*callback=*/ array($this, 'dashboard'),
 				/*page=*/ 'dashboard',
 				/*context=*/ $column,
 				/*priority=*/ $priority
 			);
-			/*control_callback= array(&$this, 'dashboard_control') */
+			/*control_callback= array($this, 'dashboard_control') */
 			
 			// This is kind of rude, I know, but the dashboard widget isn't
 			// worth much if users don't know that it exists, and I don't

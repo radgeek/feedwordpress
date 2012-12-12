@@ -58,7 +58,7 @@ class SyndicatedLink {
 			$this->get_settings_from_notes();
 		endif;
 		
-		add_filter('feedwordpress_update_complete', array(&$this, 'process_retirements'), 1000, 1);
+		add_filter('feedwordpress_update_complete', array($this, 'process_retirements'), 1000, 1);
 	} /* SyndicatedLink::SyndicatedLink () */
 	
 	function found () {
