@@ -11,7 +11,7 @@ FeedWordPress syndicates content from feeds you choose into your WordPress weblo
 == Description ==
 
 * Author: [Charles Johnson](http://radgeek.com/contact)
-* Project URI: <http://projects.radgeek.com/feedwordpress>
+* Project URI: <http://feedwordpress.radgeek.com/>
 * License: GPL 2. See License below for copyright jots and tittles.
 
 FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content
