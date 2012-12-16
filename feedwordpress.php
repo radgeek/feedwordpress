@@ -127,6 +127,7 @@ require_once("${dir}/feedwordpress_file.class.php");
 require_once("${dir}/feedwordpress_parser.class.php");
 require_once("${dir}/feedwordpressrpc.class.php");
 require_once("${dir}/feedwordpresshttpauthenticator.class.php");
+require_once("${dir}/feedwordpresslocalpost.class.php");
 
 // Magic quotes are just about the stupidest thing ever.
 if (is_array($_POST)) :
@@ -472,11 +473,8 @@ $feedwordpress_the_original_permalink = NULL;
 function feedwordpress_preserve_syndicated_content ($text) {
 	global $feedwordpress_the_syndicated_content;
 
-	$globalExpose = (get_option('feedwordpress_formatting_filters') == 'yes');
-	$localExpose = get_post_custom_values('_feedwordpress_formatting_filters');
-	$expose = ($globalExpose or ((count($localExpose) > 0) and $localExpose[0]));
-
-	if ( is_syndicated() and !$expose ) :
+	$p = new FeedWordPressLocalPost;
+	if (!$p->is_exposed_to_formatting_filters()) :
 		$feedwordpress_the_syndicated_content = $text;
 	else :
 		$feedwordpress_the_syndicated_content = NULL;
