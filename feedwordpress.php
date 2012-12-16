@@ -1330,11 +1330,11 @@ class FeedWordPress {
 
 	function user_can_richedit ($rich_edit) {
 
-		global $post;
+		$post = new FeedWordPressLocalPost;
 		
-		if (is_syndicated($post->ID)) :
+		if (!$post->is_exposed_to_formatting_filters()) :
 			// Disable visual editor and only allow operations
-			// directly on HTML if post is syndicated.
+			// directly on HTML if post is bypassing fmt filters
 			$rich_edit = false;
 		endif;
 		
