@@ -601,6 +601,7 @@ function syndication_comments_feed_link ($link) {
 		// that value here.
 		$source = get_syndication_feed_object();
 		$replacement = NULL;
+		
 		if ($source->setting('munge comments feed links', 'munge_comments_feed_links', 'yes') != 'no') :
 			$commentFeeds = get_post_custom_values('wfw:commentRSS');
 			if (
@@ -928,7 +929,14 @@ class FeedWordPress {
 		if (isset($this->feeds[$which])) :
 			$sub = $this->feeds[$which];
 		endif;
-		
+
+		// If it's not in the in-memory cache already, try to load it from DB.
+		// This is necessary to fill requests for subscriptions that we don't
+		// cache in memory, e.g. for deactivated feeds.
+		if (is_null($sub)) :
+			$sub = get_bookmark($which);
+		endif;
+
 		// Load 'er up if you haven't already.
 		if (!is_null($sub) and !($sub InstanceOf SyndicatedLink)) :
 			$link = new SyndicatedLink($sub);
@@ -1505,6 +1513,7 @@ class FeedWordPress {
 		else :
 			$links = array();
 		endif;
+
 		return $links;
 	} // function FeedWordPress::syndicated_links()
 

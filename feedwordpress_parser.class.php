@@ -1,5 +1,17 @@
 <?php
 class FeedWordPress_Parser extends SimplePie_Parser {
+	function reset_parser (&$xml) {
+		xml_parser_free($xml);
+				
+		$xml = xml_parser_create_ns($this->encoding, $this->separator);
+		xml_parser_set_option($xml, XML_OPTION_SKIP_WHITE, 1);
+		xml_parser_set_option($xml, XML_OPTION_CASE_FOLDING, 0);
+		xml_set_object($xml, $this);
+		xml_set_character_data_handler($xml, 'cdata');
+		xml_set_element_handler($xml, 'tag_open', 'tag_close');
+		xml_set_start_namespace_decl_handler($xml, 'start_xmlns');
+	}
+	
 	function parse (&$data, $encoding) {
 		$data = apply_filters('feedwordpress_parser_parse', $data, $encoding, $this);
 		
@@ -78,7 +90,19 @@ class FeedWordPress_Parser extends SimplePie_Parser {
 			xml_set_start_namespace_decl_handler($xml, 'start_xmlns');
 
 			// Parse!
-			if (!xml_parse($xml, $data, true))
+			$parseResults = xml_parse($xml, $data, true);
+
+			$endOfJunk = strpos($data, '<?xml');
+			if (!$parseResults and $endOfJunk > 0) :
+				// There is some junk before the feed prolog. Try to get rid of it.
+				$newData = substr($data, $endOfJunk);
+				$newData = trim($newData);
+				$this->reset_parser($xml);
+			
+				$parseResults = xml_parse($xml, $newData, true);
+			endif;
+			
+			if (!$parseResults)
 			{
 				if (class_exists('DOMDocument')) :
 					libxml_use_internal_errors(true);	
