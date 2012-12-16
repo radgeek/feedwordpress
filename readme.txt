@@ -1889,7 +1889,8 @@ The FeedWordPress plugin is copyright © 2005-2010 by Charles Johnson. It uses
 code derived or translated from:
 
 -	[wp-rss-aggregate.php][] by [Kellan Elliot-McCrea](kellan@protest.net)
--	[MagpieRSS][] by [Kellan Elliot-McCrea](kellan@protest.net)
+-	[SimplePie][] feed parser by Ryan Parman, Geoffrey Sneddon, Ryan McCue, et al.
+-	[MagpieRSS][] feed parser by [Kellan Elliot-McCrea](kellan@protest.net)
 -	[Ultra-Liberal Feed Finder][] by [Mark Pilgrim](mark@diveintomark.org)
 -	[WordPress Blog Tool and Publishing Platform](http://wordpress.org/)
 
@@ -1905,6 +1906,7 @@ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
   [wp-rss-aggregate.php]: http://laughingmeme.org/archives/002203.html
+  [SimplePie]: http://www.simplepie.org/
   [MagpieRSS]: http://magpierss.sourceforge.net/
   [HTTP Navigator 2]: http://www.keyvan.net/2004/11/16/http-navigator/
   [Ultra-Liberal Feed Finder]: http://diveintomark.org/projects/feed_finder/

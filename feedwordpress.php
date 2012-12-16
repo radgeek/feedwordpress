@@ -16,7 +16,7 @@ License: GPL
 
 # This uses code derived from:
 # -	wp-rss-aggregate.php by Kellan Elliot-McCrea <kellan@protest.net>
-# -	MagpieRSS by Kellan Elliot-McCrea <kellan@protest.net>
+# - SimplePie feed parser by Ryan Parman, Geoffrey Sneddon, Ryan McCue, et al. # -	MagpieRSS feed parser by Kellan Elliot-McCrea <kellan@protest.net>
 # -	Ultra-Liberal Feed Finder by Mark Pilgrim <mark@diveintomark.org>
 # -	WordPress Blog Tool and Publishing Platform <http://wordpress.org/>
 # according to the terms of the GNU General Public License.
