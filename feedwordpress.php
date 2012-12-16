@@ -164,7 +164,8 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	
 	# Filter in original permalinks if the user wants that
 	add_filter('post_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 3);
-
+	add_filter('post_type_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 4);
+	
 	# When foreign URLs are used for permalinks in feeds or display
 	# contexts, they need to be escaped properly.
 	add_filter('the_permalink', 'syndication_permalink_escaped');
@@ -527,7 +528,7 @@ function feedwordpress_item_feed_data () {
  * @global $id
  * @global $feedwordpress_the_original_permalink
  */
-function syndication_permalink ($permalink = '', $post = null, $leavename = false) {
+function syndication_permalink ($permalink = '', $post = null, $leavename = false, $sample = false) {
 	global $id;
 	global $feedwordpress_the_original_permalink;
 	
