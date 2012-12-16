@@ -393,14 +393,6 @@ function feedAuthenticationMethod (params) {
 	var elMethod = elTable.find('.link-rss-auth-method');
 	var elLink = elDiv.find('.link-rss-userpass-use');
 
-	console.log('--- ---');
-	console.log(s.node);
-	console.log(elDiv);
-	console.log(elTable);
-	console.log(elMethod);
-	console.log(elLink);
-	console.log(elMethod.val());
-	
 	// Set.
 	if (s.value != null) {
 		elMethod.val(s.value);
