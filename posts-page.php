@@ -133,7 +133,6 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 * @uses FeedWordPressPostsPage::these_posts_phrase()
 	 * @uses FeedWordPress::syndicated_status()
 	 * @uses SyndicatedLink::syndicated_status()
-	 * @uses SyndicatedPost::use_api()
 	 */ 
 	/*static*/ function publication_box ($page, $box = NULL) {
 		$thesePosts = $page->these_posts_phrase();

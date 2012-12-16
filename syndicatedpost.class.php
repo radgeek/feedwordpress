@@ -2198,20 +2198,5 @@ EOM;
 		return $terms;
 	} // function SyndicatedPost::category_ids ()
 
-	function use_api ($tag) {
-		global $wp_db_version;
-		switch ($tag) :
-		case 'wp_insert_post':
-			// Before 2.2, wp_insert_post does too much of the wrong stuff to use it
-			// In 1.5 it was such a resource hog it would make PHP segfault on big updates
-			$ret = (isset($wp_db_version) and $wp_db_version > FWP_SCHEMA_21);
-			break;
-		case 'post_status_pending':
-			$ret = (isset($wp_db_version) and $wp_db_version > FWP_SCHEMA_23);
-			break;
-		endswitch;
-		return $ret;		
-	} // function SyndicatedPost::use_api ()
-
 } /* class SyndicatedPost */
 

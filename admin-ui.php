@@ -732,17 +732,10 @@ function fwp_option_box_opener ($legend, $id, $class = "stuffbox") {
 }
 
 function fwp_option_box_closer () {
-	global $wp_db_version;
-	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
 ?>
 	</div> <!-- class="inside" -->
 	</div> <!-- class="stuffbox" -->
 <?php
-	else :
-?>
-	</div> <!-- class="wrap" -->
-<?php
-	endif;
 }
 
 function fwp_tags_box ($tags, $object, $params = array()) {
@@ -853,11 +846,6 @@ function fwp_category_box ($checked, $object, $tags = array(), $params = array()
 	<?php
 	$newcat = 'new'.$taxonomy;
 	
-	// Well, thank God they added "egory" before WP 3.0 came out.
-	if ('newcategory'==$newcat
-	and !FeedWordPressCompatibility::test_version(FWP_SCHEMA_30)) :
-		$newcat = 'newcat';
-	endif;
 	?>
     <label class="screen-reader-text" for="<?php print $idPrefix; ?>new<?php print $taxonomy; ?>"><?php _e('Add New Category'); ?></label>
     <input
@@ -945,9 +933,6 @@ class FeedWordPressSettingsUI {
 		global $fwp_path;
 	
 		wp_enqueue_script('post'); // for magic tag and category boxes
-		if (!FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) : // < 2.9
-			wp_enqueue_script('thickbox'); // for fold-up boxes
-		endif;
 		wp_enqueue_script('admin-forms'); // for checkbox selection
 	
 		wp_register_script('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.js');
