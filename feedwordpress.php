@@ -321,7 +321,8 @@ function debug_out_feedwordpress_footer () {
  * @return bool TRUE if the post's meta-data indicates it was syndicated; FALSE otherwise 
  */ 
 function is_syndicated ($id = NULL) {
-	return (strlen(get_syndication_feed_id($id)) > 0);
+	$p = new FeedWordPressLocalPost($id);
+	return $p->is_syndicated();
 } /* function is_syndicated() */
 
 function feedwordpress_display_url ($url, $before = 60, $after = 0) {
@@ -347,62 +348,58 @@ function feedwordpress_display_url ($url, $before = 60, $after = 0) {
 } /* feedwordpress_display_url () */
 
 function get_syndication_source_property ($original, $id, $local, $remote = NULL) {
-	$ret = NULL;
-	if (is_null($original)) :
-		$original = FeedWordPress::use_aggregator_source_data();
-	endif;
-	
-	if (is_null($remote)) :
-		$remote = $local . '_original';
-	endif;
-	
-	$vals = ($original ? get_post_custom_values($remote, $id) : array());
-	if (count($vals) < 1) :
-		$vals = get_post_custom_values($local, $id);
-	endif;
-	
-	if (count($vals) > 0) :
-		$ret = $vals[0];
-	endif;
-	return $ret;
+	$p = new FeedWordPressLocalPost($id);
+	return $p->meta($local, array("unproxy" => $original, "unproxied setting" => $remote));
 } /* function get_syndication_source_property () */
 
-function the_syndication_source_link ($original = NULL, $id = NULL) { echo get_syndication_source_link($original, $id); }
 function get_syndication_source_link ($original = NULL, $id = NULL) {
-	return get_syndication_source_property($original, $id, 'syndication_source_uri');
+	$p = new FeedWordPressLocalPost($id);
+	return $p->syndication_source_link($original);
 } /* function get_syndication_source_link() */
 
-function the_syndication_source ($original = NULL, $id = NULL) { echo get_syndication_source($original, $id); }
+function the_syndication_source_link ($original = NULL, $id = NULL) {
+	echo get_syndication_source_link($original, $id);
+} /* function the_syndication_source_link() */
+
 function get_syndication_source ($original = NULL, $id = NULL) {
-	$ret = get_syndication_source_property($original, $id, 'syndication_source');
-	if (is_null($ret) or strlen(trim($ret)) == 0) : // Fall back to URL of blog
-		$ret = feedwordpress_display_url(get_syndication_source_link());
-	endif;
-	return $ret;
+	$p = new FeedWordPressLocalPost($id);
+	return $p->syndication_source($original);
 } /* function get_syndication_source() */
 
-function the_syndication_feed ($original = NULL, $id = NULL) { echo get_syndication_feed($original, $id); }
+function the_syndication_source ($original = NULL, $id = NULL) {
+	echo get_syndication_source($original, $id);
+} /* function the_syndication_source () */
+
 function get_syndication_feed ($original = NULL, $id = NULL) {
-	return get_syndication_source_property($original, $id, 'syndication_feed');
+	$p = new FeedWordPressLocalPost($id);
+	return $p->syndication_feed($original);
 } /* function get_syndication_feed() */
 
-function the_syndication_feed_guid ($original = NULL, $id = NULL) { echo get_syndication_feed_guid($original, $id); }
+function the_syndication_feed ($original = NULL, $id = NULL) {
+	echo get_syndication_feed($original, $id);
+} /* function the_syndication_feed() */
+
 function get_syndication_feed_guid ($original = NULL, $id = NULL) {
-	$ret = get_syndication_source_property($original, $id, 'syndication_source_id');
-	if (is_null($ret) or strlen(trim($ret))==0) : // Fall back to URL of feed
-		$ret = get_syndication_feed();
-	endif;
-	return $ret;
+	$p = new FeedWordPressLocalPost($id);
+	return $p->syndication_feed_guid($original);
 } /* function get_syndication_feed_guid () */
 
-function get_syndication_feed_id ($id = NULL) { list($u) = get_post_custom_values('syndication_feed_id', $id); return $u; }
-function the_syndication_feed_id ($id = NULL) { echo get_syndication_feed_id($id); }
+function the_syndication_feed_guid ($original = NULL, $id = NULL) {
+	echo get_syndication_feed_guid($original, $id);
+} /* function the_syndication_feed_guid () */
+
+function get_syndication_feed_id ($id = NULL) {
+	$p = new FeedWordPressLocalPost($id);
+	return $p->feed_id();
+} /* function get_syndication_feed_id () */
+
+function the_syndication_feed_id ($id = NULL) {
+	echo get_syndication_feed_id($id);
+} /* function the_syndication_feed_id () */
 
 function get_syndication_feed_object ($id = NULL) {
-	global $feedwordpress;
-	
-	$feed_id = get_syndication_feed_id($id);
-	return $feedwordpress->subscription($feed_id);
+	$p = new FeedWordPressLocalPost($id);
+	return $p->feed();
 } /* function get_syndication_feed_object() */
 
 function get_feed_meta ($key, $id = NULL) {
@@ -416,11 +413,13 @@ function get_feed_meta ($key, $id = NULL) {
 } /* function get_feed_meta() */
 
 function get_syndication_permalink ($id = NULL) {
-	list($u) = get_post_custom_values('syndication_permalink', $id); return $u;
-}
+	$p = new FeedWordPressLocalPost($id);
+	return $p->syndication_permalink();
+} /* function get_syndication_permalink () */
+
 function the_syndication_permalink ($id = NULL) {
 	echo get_syndication_permalink($id);
-}
+} /* function the_syndication_permalink () */
 
 /**
  * get_local_permalink: returns a string containing the internal permalink
