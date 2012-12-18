@@ -4,7 +4,7 @@ Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
 Tested up to: 3.5
-Stable tag: 2012.1212
+Stable tag: 2012.1218
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -93,6 +93,51 @@ outs, see the documentation at the [FeedWordPress project homepage][].
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
 == Changelog ==
+
+= 2012.1218 =
+
+*	WORDPRESS VISUAL EDITOR FIXED. There was an unlisted change in the
+	2012.1212 release which had the effect of disabling the WordPress Visual
+	Editor for all posts syndicated by FeedWordPress. Many users reported
+	this as a bug. It was actually a deliberate decision -- a crappy way to
+	try to deal with a crappy situation. (Many users had previously reported
+	a "bug" in which all the paragraph or line breaks seemed to be stripped
+	out of their syndicated posts; the issue turned out to be that the
+	Visual Editor was stripping out `<p>` and `<br/>` tags on the assumption
+	that the resulting post would be sent through standard WordPress
+	formatting filters. But under default settings, posts syndicated by FWP
+	deliberately bypass WordPress formatting filters.) In any case, this
+	version adopts a more flexible compromise. *If* FeedWordPress is set up
+	to bypass WordPress formatting filters (as it is by default), *then*
+	the Visual Editor will be disabled for syndicated posts (since using it
+	would produce incorrect results). If on the other hand FeedWordPress is
+	set up to expose syndicated posts to WordPress formatting filters (as it
+	usually is for those using the Visual Editor to manually edit posts),
+	then the Visual Editor tab will be re-enabled for syndicated posts.
+	
+* 	BUG FIX: PERMALINKS REWRITTEN FOR CUSTOM POST TYPES AS WELL AS NORMAL
+	WORDPRESS POSTS. If you had WordPress set up to syndicate incoming posts
+	to a custom post type (under Syndication > Posts & Links), and asked
+	FeedWordPress to make "permalinks point to the original site", then
+	previous versions of FeedWordPress would fail to do the rewriting --
+	permalinks would only be rewritten to point to the original source for
+	normal WordPress posts, not for custom post types. In 2012.1218 this bug
+	has been fixed: all post types will now have permalinks rewritten unless
+	you request for permalinks to point to the local copy on your aggregator
+	site.
+	
+*	BUG FIX: ELIMINATES "PHP Fatal error: Call to a member function
+	setting() on a non-object...." Some changes to the in-memory caching of
+	information about feed subscriptions could result in a fatal PHP error
+	in cases where you have de-activated one of your subscriptions, but
+	posts from that subscription were still in the archive. This would
+	normally show up through half-completed feeds or half-completed pages
+	that suddenly broke off in the middle, and displayed or logged an error
+	message like: "PHP Fatal error: Call to a member function setting() on a
+	non-object in {...}/wp-content/plugins/feedwordpress/feedwordpress.php
+	on line 615". This bug has been eliminated, so affected feeds and pages
+	should now render correctly, and the error message should no longer
+	appear.
 
 = 2012.1212 =
 
@@ -1908,7 +1953,6 @@ PARTICULAR PURPOSE. See the GNU General Public License for more details.
   [wp-rss-aggregate.php]: http://laughingmeme.org/archives/002203.html
   [SimplePie]: http://www.simplepie.org/
   [MagpieRSS]: http://magpierss.sourceforge.net/
-  [HTTP Navigator 2]: http://www.keyvan.net/2004/11/16/http-navigator/
   [Ultra-Liberal Feed Finder]: http://diveintomark.org/projects/feed_finder/
   [GNU General Public License]: http://www.gnu.org/copyleft/gpl.html
 
