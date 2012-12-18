@@ -139,6 +139,11 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 	should now render correctly, and the error message should no longer
 	appear.
 
+*	BUG FIX: CATEGORY BOXES IN SYNDICATION > CATEGORIES & TAGS. Some minor
+	bugs in the appearance and animation of category checkboxes (for
+	example, the checkbox used to select categories for syndicated posts on
+	the Syndication > Categories & Tags settings page) have been fixed.
+	
 = 2012.1212 =
 
 *	WORDPRESS 3.5 COMPATIBILITY: This release has been tested for compatibility
