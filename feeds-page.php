@@ -111,7 +111,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			'global_feeds_box' => __('Update Scheduling'),
 			'updated_posts_box' => __('Updated Posts'),
 			'custom_settings_box' => __('Custom Feed Settings (for use in templates)'),
-			'fetch_settings_box' => __('Settings for Fetching Feeds (Advanced)'),
+			'advanced_settings_box' => __('Advanced Settings'),
 		);
 		if ($this->for_default_settings()) :
 			unset($this->boxes_by_methods['custom_settings_box']);
@@ -265,13 +265,13 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			
 			$this->setting_radio_control(
 				'update/window', 'update_window',
-				array(&$this, 'update_window_edit_box'),
+				array($this, 'update_window_edit_box'),
 				array(
 					'global-setting-default' => DEFAULT_UPDATE_PERIOD,
 					'default-input-name' => 'use_default_update_window',
 					'default-input-id' => 'use-default-update-window-yes',
 					'default-input-id-no' => 'use-default-update-window-no',
-					'labels' => array(&$this, 'update_window_currently'),
+					'labels' => array($this, 'update_window_currently'),
 				)
 			);
 			?></td>
@@ -363,22 +363,63 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		print number_format(intval($setting)) . " " . (($setting==1) ? "second" : "seconds");
 	}
 	
-	function fetch_settings_box ($page, $box = NULL) {
+	function advanced_settings_box ($page, $box = NULL) {
+		?>
+		<table class="edit-form">
+		<tr>
+		<th>Fetch Timeout:</th>
+		<td>
+		<?php
 		$this->setting_radio_control(
 			'fetch timeout', 'fetch_timeout',
-			array(&$this, 'fetch_timeout_setting'),
+			array($this, 'fetch_timeout_setting'),
 			array(
 				'global-setting-default' => FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT,
 				'input-name' => 'fetch_timeout',
 				'default-input-name' => 'fetch_timeout_default',
-				'labels' => array(&$this, 'fetch_timeout_setting_value'),
+				'labels' => array($this, 'fetch_timeout_setting_value'),
 			)
 		);
-	} /* FeedWordPressFeedsPage::fetch_settings_box () */
+		?>
+		</td>
+		</tr>
+		<tr>
+		<th>Feed Update Type:</th>
+		<td><?php
+		$this->setting_radio_control('update_incremental', 'update_incremental',
+			/*options=*/ array(
+				'incremental' => '<strong>Incremental.</strong> When items no longer appear on the feed, keep them in the WordPress posts table.',
+				'complete' => '<strong>Complete.</strong> When items no longer appear on the feed, they are obsolete; retire them from the WordPress posts table.',
+			),
+			/*params=*/ array(
+				'setting-default' => NULL,
+				'global-setting-default' => 'incremental',
+				'default-input-value' => 'default', 
+			)
+		); ?></td>
+		</tr>
+		<tr>
+		<th>Allow Feeds to Delete Posts:</th>
+		<td><?php
+		$this->setting_radio_control('tombstones', 'tombstones',
+			/*options=*/ array(
+				'yes' => 'Yes. If a feed indicates that one of its posts has been deleted, delete the local copy syndicated to this website.',
+				'no' => 'No. Even if a feed indicates that one of its posts has been deleted, retain the local copy on this website.',
+			),
+			/*params=*/ array(
+				'setting-default' => NULL,
+				'global-setting-default' => 'yes',
+				'default-input-value' => 'default',
+			)
+		); ?></td>
+		</tr>
+		</table>
+		<?php
+	} /* FeedWordPressFeedsPage::advanced_settings_box () */
 	
 	function display_authentication_credentials_box ($params = array()) {
 		static $count = 0;
-		
+
 		$params = wp_parse_args($params, array(
 		'username' => NULL,
 		'password' => NULL,
@@ -502,7 +543,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 		global $feedwordpress;
 
-		if (is_null($auth)) :
+		if (is_null($auth) or (strlen($auth)==0)) :
 			$auth = '-';
 			$hideAuth = true;
 		endif;
@@ -789,7 +830,21 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		$feeds = array_values( // Renumber from 0..(N-1)
 			$feeds
 		);
-
+		
+		// Allow for some simple FeedFinder results filtering
+		$feeds = apply_filters(
+			'feedwordpress_feedfinder_results',
+			$feeds,
+			array(
+				"url" => $lookup,
+				"auth" => $auth,
+				"username" => $username,
+				"password" => $password,
+				"finder" => $finder,
+			),
+			$this
+		);
+		
 		if (count($feeds) > 0):
 			if ($feedSwitch) :
 				?>
@@ -815,7 +870,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			foreach ($feeds as $key => $f):
 				$ofc = $fwp_credentials;
 				$fwp_credentials = $credentials; // Set
-				$pie = FeedWordPress::fetch($f);
+				$pie = FeedWordPress::fetch($f, array("cache" => false));
 				$fwp_credentials = $ofc; // Re-Set
 				
 				$rss = (is_wp_error($pie) ? $pie : new MagpieFromSimplePie($pie));
@@ -1160,6 +1215,14 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				$timeout = intval($timeout);
 			endif;
 			$this->update_setting('fetch timeout', $timeout);
+		endif;
+		
+		if (isset($post['update_incremental'])) :
+			$this->update_setting('update_incremental', $post['update_incremental']);
+		endif;
+
+		if (isset($post['tombstones'])) :
+			$this->update_setting('tombstones', $post['tombstones']);
 		endif;
 
 		if (isset($post['update_minimum'])) :

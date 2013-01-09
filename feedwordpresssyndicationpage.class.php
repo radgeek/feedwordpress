@@ -340,8 +340,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			return;
 		endif;
 		
-		?>
-		<?php
 		$cont = true;
 		$dispatcher = array(
 			"feedfinder" => 'fwp_feedfinder_page',
@@ -352,8 +350,10 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			'Unsubscribe' => 'multidelete_page',
 			FWP_RESUB_CHECKED => 'multiundelete_page',
 		);
-		if (isset($_REQUEST['action']) and isset($dispatcher[$_REQUEST['action']])) :
-			$method = $dispatcher[$_REQUEST['action']];
+		
+		$act = FeedWordPress::param('action');
+		if (isset($dispatcher[$act])) :
+			$method = $dispatcher[$act];
 			if (method_exists($this, $method)) :
 				$cont = $this->{$method}();
 			else :
@@ -384,7 +384,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			add_meta_box(
 				/*id=*/ 'feedwordpress_feeds_box',
 				/*title=*/ __('Syndicated sources'),
-				/*callback=*/ array(&$this, 'syndicated_sources_box'),
+				/*callback=*/ array($this, 'syndicated_sources_box'),
 				/*page=*/ $this->meta_box_context(),
 				/*context =*/ $this->meta_box_context()
 			);
@@ -431,10 +431,11 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		
 		// Hey ho, let's go...
 		?>
+		<div style="float: left; background: #F5F5F5; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></a></div>
+
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;">Managed by <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
 		<?php print FEEDWORDPRESS_VERSION; ?>.</p>
 		<?php if (FEEDWORDPRESS_BLEG) : ?>
-		<div style="float: left; background: white; margin-top: 5px; margin-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></a></div>
 		<p class="info" style="margin-top: 0px; font-style: italic; font-size: 75%; color: #666;">If you find this tool useful for your daily work, you can
 		contribute to ongoing support and development with
 		<a href="http://feedwordpress.radgeek.com/donate/">a modest donation</a>.</p>
@@ -488,8 +489,8 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		  value="Source URL" style="width: 55%;" /></label>
 		
 		  <?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
-		
-		  <input style="vertical-align: middle;" type="image" src="<?php print WP_PLUGIN_URL.'/'.$fwp_path; ?>/plus.png" alt="<?php print FWP_SYNDICATE_NEW; ?>" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
+		  <input type="hidden" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
+		  <input style="vertical-align: middle;" type="image" src="<?php print WP_PLUGIN_URL.'/'.$fwp_path; ?>/plus.png" alt="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
 		  </form>
 		</div> <!-- id="add-single-uri" -->
 		
@@ -733,16 +734,12 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 				// ... and kill them all
 				if (count($post_ids) > 0) :
 					foreach ($post_ids as $post_id) :
-						if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) :
-							// Force scrubbing of deleted post
-							// rather than sending to Trashcan
-							wp_delete_post(
-								/*postid=*/ $post_id,
-								/*force_delete=*/ true
-							);
-						else :
-							wp_delete_post($post_id);
-						endif;
+						// Force scrubbing of deleted post
+						// rather than sending to Trashcan
+						wp_delete_post(
+							/*postid=*/ $post_id,
+							/*force_delete=*/ true
+						);
 					endforeach;
 				endif;
 	
@@ -1145,7 +1142,7 @@ updated to &lt;<a href="<?php echo esc_html($fwp_post['feed']); ?>"><?php echo e
 
 	if (isset($existingLink)) :
 		$auth = FeedWordPress::post('link_rss_auth_method');
-		if (!is_null($auth) and $auth != '-') :
+		if (!is_null($auth) and (strlen($auth) > 0) and ($auth != '-')) :
 			$existingLink->update_setting('http auth method', $auth);
 			$existingLink->update_setting('http username',
 				FeedWordPress::post('link_rss_username')

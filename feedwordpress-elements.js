@@ -249,7 +249,7 @@ fwpList = {
 			el = el.get(0);
 		var elem = el, color, rgbaTrans = new RegExp( "rgba\\(\\s*0,\\s*0,\\s*0,\\s*0\\s*\\)", "i" );
 		do {
-			color = jQuery.curCSS(elem, 'backgroundColor');
+			color = jQuery(elem).css('backgroundColor');
 			if ( color != '' && color != 'transparent' && !color.match(rgbaTrans) || jQuery.nodeName(elem, "body") )
 				break;
 		} while ( elem = elem.parentNode );
@@ -299,7 +299,6 @@ fwpList = {
 			color = fwpList.getColor( e );
 			e.css( 'backgroundColor', s.addColor ).animate( { backgroundColor: color }, { complete: function() { $(this).css( 'backgroundColor', '' ); } } );
 		}
-		
 		list.each( function() { this.fwpList.process( e ); } );
 		return e;
 	},
@@ -394,14 +393,6 @@ function feedAuthenticationMethod (params) {
 	var elMethod = elTable.find('.link-rss-auth-method');
 	var elLink = elDiv.find('.link-rss-userpass-use');
 
-	console.log('--- ---');
-	console.log(s.node);
-	console.log(elDiv);
-	console.log(elTable);
-	console.log(elMethod);
-	console.log(elLink);
-	console.log(elMethod.val());
-	
 	// Set.
 	if (s.value != null) {
 		elMethod.val(s.value);

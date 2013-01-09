@@ -38,7 +38,7 @@ class FeedWordPressHTML {
 		);
 	} /* function FeedWordPressHTML::attributeMatch () */
 
-	function tagWithAttributeRegex ($tag, $attr, $value) {
+	function tagWithAttributeRegex ($tag, $attr, $value, $closing = true) {
 		return ":(
 		(<($tag)\s+[^>]*)
 		($attr)=
@@ -50,13 +50,14 @@ class FeedWordPressHTML {
 		|
 			\s*((?!/>)($value))
 			([^>]*>)
-		)
+		)".($closing ? "
 		(((?!</($tag)>).)*)
 		(</($tag)>)
+		" : "")."
 		:ix";
 	} /* FeedWordPressHTML::tagWithAttributeRegex () */
 
-	function tagWithAttributeMatch ($matches) {
+	function tagWithAttributeMatch ($matches, $closing = true) {
 		for ($i = 0; $i <= 21; $i++) :
 			if (!isset($matches[$i])) :
 				$matches[$i] = '';
@@ -77,8 +78,8 @@ class FeedWordPressHTML {
 		"before_attribute" => $matches[2],
 		"after_attribute" => $suffix,
 		"open_tag" => $matches[1].$matches[6].$value.$matches[6].$suffix,
-		"content" => $matches[17],
-		"close_tag" => $matches[20],
+		"content" => ($closing ? $matches[17] : NULL),
+		"close_tag" => ($closing ? $matches[20] : NULL),
 		);
 
 	} /* FeedWordPressHTML::tagWithAttributeMatch () */

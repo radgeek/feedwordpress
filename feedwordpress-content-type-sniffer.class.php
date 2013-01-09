@@ -17,7 +17,7 @@ class FeedWordPress_Content_Type_Sniffer extends SimplePie_Content_Type_Sniffer 
 			endif;
 
 			foreach ($this->file->headers['content-type'] as $type) :
-				$parts = array_map('trim', split(";", $type, 2));
+				$parts = array_map('trim', explode(";", $type, 2));
 				if (isset($parts[1])) :
 					$type = $parts[0];
 					$charset = $parts[1];

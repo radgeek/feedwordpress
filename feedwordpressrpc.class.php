@@ -5,15 +5,15 @@
 
 class FeedWordPressRPC {
 	function FeedWordPressRPC () {
-		add_filter('xmlrpc_methods', array(&$this, 'xmlrpc_methods'));
+		add_filter('xmlrpc_methods', array($this, 'xmlrpc_methods'));
 	}
 	
 	function xmlrpc_methods ($args = array()) {
-		$args['weblogUpdates.ping'] = array(&$this, 'ping');
-		$args['feedwordpress.subscribe'] = array(&$this, 'subscribe');
-		$args['feedwordpress.deactivate'] = array(&$this, 'deactivate');
-		$args['feedwordpress.delete'] = array(&$this, 'delete');
-		$args['feedwordpress.nuke'] = array(&$this, 'nuke');
+		$args['weblogUpdates.ping'] = array($this, 'ping');
+		$args['feedwordpress.subscribe'] = array($this, 'subscribe');
+		$args['feedwordpress.deactivate'] = array($this, 'deactivate');
+		$args['feedwordpress.delete'] = array($this, 'delete');
+		$args['feedwordpress.nuke'] = array($this, 'nuke');
 		return $args;
 	}
 	

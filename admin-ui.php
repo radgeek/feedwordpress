@@ -50,7 +50,7 @@ class FeedWordPressAdminPage {
 		elseif ($this->save_requested_in($post)) : // User mashed Save Changes
 			$this->save_settings($post);
 		endif;
-		do_action($this->dispatch.'_post', &$post, &$this);		
+		do_action($this->dispatch.'_post', $post, $this);		
 	}
 
 	function update_feed () {
@@ -81,7 +81,7 @@ class FeedWordPressAdminPage {
 	}
 
 	function save_settings ($post) {
-		do_action($this->dispatch.'_save', &$post, &$this);
+		do_action($this->dispatch.'_save', $post, $this);
 
 		if ($this->for_feed_settings()) :
 			// Save settings
@@ -257,7 +257,7 @@ class FeedWordPressAdminPage {
 			"Feed" => array('page' => 'feeds-page.php', 'long' => 'Feeds & Updates'),
 			"Posts" => array('page' => 'posts-page.php', 'long' => 'Posts & Links'),
 			"Authors" => array('page' => 'authors-page.php', 'long' => 'Authors'),
-			'Categories' => array('page' => 'categories-page.php', 'long' => 'Categories'.FEEDWORDPRESS_AND_TAGS),
+			'Categories' => array('page' => 'categories-page.php', 'long' => 'Categories & Tags'),
 		);
 		
 		$hrefPrefix = 'admin.php?';
@@ -444,7 +444,7 @@ class FeedWordPressAdminPage {
 			add_meta_box(
 				/*id=*/ $id,
 				/*title=*/ $title,
-				/*callback=*/ array(&$this, $method),
+				/*callback=*/ array($this, $method),
 				/*page=*/ $this->meta_box_context(),
 				/*context=*/ $this->meta_box_context()
 			);
@@ -732,17 +732,10 @@ function fwp_option_box_opener ($legend, $id, $class = "stuffbox") {
 }
 
 function fwp_option_box_closer () {
-	global $wp_db_version;
-	if (isset($wp_db_version) and $wp_db_version >= FWP_SCHEMA_25) :
 ?>
 	</div> <!-- class="inside" -->
 	</div> <!-- class="stuffbox" -->
 <?php
-	else :
-?>
-	</div> <!-- class="wrap" -->
-<?php
-	endif;
 }
 
 function fwp_tags_box ($tags, $object, $params = array()) {
@@ -853,11 +846,6 @@ function fwp_category_box ($checked, $object, $tags = array(), $params = array()
 	<?php
 	$newcat = 'new'.$taxonomy;
 	
-	// Well, thank God they added "egory" before WP 3.0 came out.
-	if ('newcategory'==$newcat
-	and !FeedWordPressCompatibility::test_version(FWP_SCHEMA_30)) :
-		$newcat = 'newcat';
-	endif;
 	?>
     <label class="screen-reader-text" for="<?php print $idPrefix; ?>new<?php print $taxonomy; ?>"><?php _e('Add New Category'); ?></label>
     <input
@@ -880,7 +868,7 @@ function fwp_category_box ($checked, $object, $tags = array(), $params = array()
 		'show_option_none' => __('Parent category'),
 		'tab_index' => 3,
     ) ); ?>
-	<input type="button" id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-add-sumbit" class="add:<?php print $idPrefix; ?><?php print $taxonomy; ?>checklist:<?php print $taxonomy; ?>-add add-categorychecklist-category-add button category-add-submit" value="<?php _e( 'Add' ); ?>" tabindex="3" />
+	<input type="button" id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-add-sumbit" class="add:<?php print $idPrefix; ?><?php print $taxonomy; ?>checklist:<?php print $idPrefix.$taxonomy; ?>-add add-categorychecklist-category-add button category-add-submit" value="<?php _e( 'Add' ); ?>" tabindex="3" />
 	<?php /* wp_nonce_field currently doesn't let us set an id different from name, but we need a non-unique name and a unique id */ ?>
 	<input type="hidden" id="_ajax_nonce<?php print esc_html($idSuffix); ?>" name="_ajax_nonce" value="<?php print wp_create_nonce('add-'.$taxonomy); ?>" />
 	<input type="hidden" id="_ajax_nonce-add-<?php print $taxonomy; ?><?php print esc_html($idSuffix); ?>" name="_ajax_nonce-add-<?php print $taxonomy; ?>" value="<?php print wp_create_nonce('add-'.$taxonomy); ?>" />
@@ -945,9 +933,6 @@ class FeedWordPressSettingsUI {
 		global $fwp_path;
 	
 		wp_enqueue_script('post'); // for magic tag and category boxes
-		if (!FeedWordPressCompatibility::test_version(FWP_SCHEMA_29)) : // < 2.9
-			wp_enqueue_script('thickbox'); // for fold-up boxes
-		endif;
 		wp_enqueue_script('admin-forms'); // for checkbox selection
 	
 		wp_register_script('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.js');
@@ -1118,8 +1103,17 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 				endif;
 
 				// Prep: get last error timestamp, if any
+				$fileSizeLines = array();
 				if (is_null($sLink->setting('update/error'))) :
 					$errorsSince = '';
+					if (!is_null($sLink->setting('link/item count'))) :
+						$N = $sLink->setting('link/item count');	
+						$fileSizeLines[] = sprintf((($N==1) ? __('%d item') : __('%d items')), $N);
+					endif;
+
+					if (!is_null($sLink->setting('link/filesize'))) :
+						$fileSizeLines[] = size_format($sLink->setting('link/filesize')). ' total';
+					endif;
 				else :
 					$trClass[] = 'feed-error';
 
@@ -1173,6 +1167,11 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 				endif;
 				$nextUpdate .= "</div></div>";
 
+				$fileSize = '';
+				if (count($fileSizeLines) > 0) :
+					$fileSize = '<div>'.implode(" / ", $fileSizeLines)."</div>";
+				endif;
+				
 				unset($sLink);
 				
 				$alt_row = !$alt_row;
@@ -1221,6 +1220,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 	<input type="submit" class="button" name="update_uri[<?php print esc_html($link->link_rss); ?>]" value="<?php _e('Update Now'); ?>" />
 	</div>
 	<?php print $lastUpdated; ?>
+	<?php print $fileSize; ?>
 	<?php print $errorsSince; ?>
 	<?php print $nextUpdate; ?>
 	</td>

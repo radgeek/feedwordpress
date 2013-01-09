@@ -3,15 +3,15 @@ Contributors: Charles Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
-Tested up to: 3.2.1
-Stable tag: 2011.1019
+Tested up to: 3.5
+Stable tag: 2012.1218
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
 == Description ==
 
 * Author: [Charles Johnson](http://radgeek.com/contact)
-* Project URI: <http://projects.radgeek.com/feedwordpress>
+* Project URI: <http://feedwordpress.radgeek.com/>
 * License: GPL 2. See License below for copyright jots and tittles.
 
 FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content
@@ -93,6 +93,103 @@ outs, see the documentation at the [FeedWordPress project homepage][].
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
 == Changelog ==
+
+= 2012.1218 =
+
+*	WORDPRESS VISUAL EDITOR FIXED. There was an unlisted change in the
+	2012.1212 release which had the effect of disabling the WordPress Visual
+	Editor for all posts syndicated by FeedWordPress. Many users reported
+	this as a bug. It was actually a deliberate decision -- a crappy way to
+	try to deal with a crappy situation. (Many users had previously reported
+	a "bug" in which all the paragraph or line breaks seemed to be stripped
+	out of their syndicated posts; the issue turned out to be that the
+	Visual Editor was stripping out `<p>` and `<br/>` tags on the assumption
+	that the resulting post would be sent through standard WordPress
+	formatting filters. But under default settings, posts syndicated by FWP
+	deliberately bypass WordPress formatting filters.) In any case, this
+	version adopts a more flexible compromise. *If* FeedWordPress is set up
+	to bypass WordPress formatting filters (as it is by default), *then*
+	the Visual Editor will be disabled for syndicated posts (since using it
+	would produce incorrect results). If on the other hand FeedWordPress is
+	set up to expose syndicated posts to WordPress formatting filters (as it
+	usually is for those using the Visual Editor to manually edit posts),
+	then the Visual Editor tab will be re-enabled for syndicated posts.
+	
+* 	BUG FIX: PERMALINKS REWRITTEN FOR CUSTOM POST TYPES AS WELL AS NORMAL
+	WORDPRESS POSTS. If you had WordPress set up to syndicate incoming posts
+	to a custom post type (under Syndication > Posts & Links), and asked
+	FeedWordPress to make "permalinks point to the original site", then
+	previous versions of FeedWordPress would fail to do the rewriting --
+	permalinks would only be rewritten to point to the original source for
+	normal WordPress posts, not for custom post types. In 2012.1218 this bug
+	has been fixed: all post types will now have permalinks rewritten unless
+	you request for permalinks to point to the local copy on your aggregator
+	site.
+	
+*	BUG FIX: ELIMINATES "PHP Fatal error: Call to a member function
+	setting() on a non-object...." Some changes to the in-memory caching of
+	information about feed subscriptions could result in a fatal PHP error
+	in cases where you have de-activated one of your subscriptions, but
+	posts from that subscription were still in the archive. This would
+	normally show up through half-completed feeds or half-completed pages
+	that suddenly broke off in the middle, and displayed or logged an error
+	message like: "PHP Fatal error: Call to a member function setting() on a
+	non-object in {...}/wp-content/plugins/feedwordpress/feedwordpress.php
+	on line 615". This bug has been eliminated, so affected feeds and pages
+	should now render correctly, and the error message should no longer
+	appear.
+
+*	BUG FIX: CATEGORY BOXES IN SYNDICATION > CATEGORIES & TAGS. Some minor
+	bugs in the appearance and animation of category checkboxes (for
+	example, the checkbox used to select categories for syndicated posts on
+	the Syndication > Categories & Tags settings page) have been fixed.
+	
+= 2012.1212 =
+
+*	WORDPRESS 3.5 COMPATIBILITY: This release has been tested for compatibility
+	with new releases of WordPress, up to version 3.5, and any documented
+	compatibility issues have been cleared -- in particular, if you were seeing
+	error pages stating that you don't have permission to access the
+	FeedWordPress Syndication page within the WordPress admin interface, then
+	upgrading to this release should fix the problem.
+
+	As always, if you encounter any compatibility problems after upgrading your
+	version of WordPress and your version of FeedWordPress to the most recent
+	versions, please contact me with as detailed a description as possible of
+	the issue you are encountering, the circumstances you're encountering it
+	under, what you expect to see happening, and what is happening instead.
+
+*	PHP 5.4 COMPATIBILITY: This release has been audited to fix potential
+	problems with deprecation notices or fatal errors under recent versions
+	of PHP. In particular, all uses of run-time pass-by-reference have been
+	eliminated from the code; if you were seeing a fatal error reading
+	"Call-time pass-by-reference has been removed ..." then upgrading to
+	this release should fix the problem.
+
+*	CUSTOMIZATION FRAMEWORK: A great deal of work has been done to make the
+	underlying framework more flexible, so that PHP add-ons can be written
+	to adapt FeedWordPress to handle custom XML vocabularies, expiration of
+	posts under specified conditions, and other custom behavior.
+
+*	BUGFIX: MANUALLY EDITED POST SLUGS NOT OVERWRITTEN. Thanks to a report
+	by Chris Fritz, I've identified some code that causes post slugs for the
+	posts generated by FWP to be rewritten with every update, even if the
+	user has manually updated the slug from within the WordPress editing
+	interface. This has been fixed: FWP will continue to generate new slugs
+	for syndicated posts, but when syndicated posts are updated, they will
+	retain the slug that they had at the time of the update; any manual
+	changes to the post slug should be preserved.
+	
+*	USER-AGENT STRING: FeedWordPress now sends a distinctive User-Agent
+	string identifying itself, and noting that it is a feed aggregator.
+
+*	MISCELLANEOUS PERFORMANCE IMPROVEMENTS: A number of changes have been
+	made to try to reduce the intensity and expense in terms of both
+	database performance and web server memory consumption.
+
+*	DIAGNOSTICS IMPROVEMENTS: A number of new and improved diagnostics have
+	been added which should aid in understanding and troubleshooting issues
+	that may arise.
 
 = 2011.1019 =
 
@@ -1842,7 +1939,8 @@ The FeedWordPress plugin is copyright © 2005-2010 by Charles Johnson. It uses
 code derived or translated from:
 
 -	[wp-rss-aggregate.php][] by [Kellan Elliot-McCrea](kellan@protest.net)
--	[MagpieRSS][] by [Kellan Elliot-McCrea](kellan@protest.net)
+-	[SimplePie][] feed parser by Ryan Parman, Geoffrey Sneddon, Ryan McCue, et al.
+-	[MagpieRSS][] feed parser by [Kellan Elliot-McCrea](kellan@protest.net)
 -	[Ultra-Liberal Feed Finder][] by [Mark Pilgrim](mark@diveintomark.org)
 -	[WordPress Blog Tool and Publishing Platform](http://wordpress.org/)
 
@@ -1858,8 +1956,8 @@ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
   [wp-rss-aggregate.php]: http://laughingmeme.org/archives/002203.html
+  [SimplePie]: http://www.simplepie.org/
   [MagpieRSS]: http://magpierss.sourceforge.net/
-  [HTTP Navigator 2]: http://www.keyvan.net/2004/11/16/http-navigator/
   [Ultra-Liberal Feed Finder]: http://diveintomark.org/projects/feed_finder/
   [GNU General Public License]: http://www.gnu.org/copyleft/gpl.html
 

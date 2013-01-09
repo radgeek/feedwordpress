@@ -69,10 +69,6 @@ class FeedWordPressCompatibility {
 		return $cat_id;
 	} /* FeedWordPressCompatibility::link_category_id () */
 
-	/*static*/ function post_tags () {
-		return FeedWordPressCompatibility::test_version(FWP_SCHEMA_23);
-	} /* FeedWordPressCompatibility::post_tags () */
-
 	/*static*/ function validate_http_request ($action = -1, $capability = null) {
 		// Only worry about this if we're using a method with significant side-effects
 		if (strtoupper($_SERVER['REQUEST_METHOD']) == 'POST') :
@@ -102,46 +98,10 @@ class FeedWordPressCompatibility {
 	/*static*/ function bottom_script_hook ($filename) {
 		global $fwp_path;
 
-		$hook = 'admin_footer';
-		if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_28)) : // WordPress 2.8+
-			$hook = $hook . '-' . $fwp_path . '/' . basename($filename);
-		endif;
+		$hook = 'admin_footer-'.$fwp_path.'/'.basename($filename);
 		return $hook;
 	} /* FeedWordPressCompatibility::bottom_script_hook() */
 } /* class FeedWordPressCompatibility */
-
-define('FEEDWORDPRESS_AND_TAGS', (FeedWordPressCompatibility::post_tags() ? ' & Tags' : ''));
-
-if (!function_exists('stripslashes_deep')) {
-	function stripslashes_deep($value) {
-		$value = is_array($value) ? array_map('stripslashes_deep', $value) : stripslashes($value);
-		return $value;
-	}
-}
-
-if (!function_exists('sanitize_user')) {
-	function sanitize_user ($text, $strict = false) {
-		return $text; // Don't munge it if it wasn't munged going in...
-	}
-}
-
-if (!function_exists('disabled')) {
-	/**
-	 * Outputs the html disabled attribute.
-	 *
-	 * Compares the first two arguments and if identical marks as disabled
-	 *
-	 * @since 3.0.0
-	 *
-	 * @param mixed $disabled One of the values to compare
-	 * @param mixed $current (true) The other value to compare if not just true
-	 * @param bool $echo Whether to echo or just return the string
-	 * @return string html attribute or empty string
-	 */
-	function disabled( $disabled, $current = true, $echo = true ) {
-		return __checked_selected_helper( $disabled, $current, $echo, 'disabled' );
-	}
-} /* if */
 
 // Compat
 
@@ -173,13 +133,6 @@ if (!function_exists('set_post_field')) {
 		return $wpdb->update($wpdb->posts, array($field => $value), array('ID' => $post_id));
 	} /* function set_post_field () */
 
-} /* if */
-
-if (!function_exists('term_exists')) {
-	// Fucking WordPress 3.0 wordsmithing.
-	function term_exists ( $term, $taxonomy = '', $parent = 0 ) {
-		return is_term($term, $taxonomy, $parent);
-	}
 } /* if */
 
 require_once(dirname(__FILE__).'/feedwordpress-walker-category-checklist.class.php');

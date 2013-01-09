@@ -10,9 +10,9 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpresscategories', $link);
 		$this->dispatch = 'feedwordpress_admin_page_categories';
 		$this->pagenames = array(
-			'default' => 'Categories'.FEEDWORDPRESS_AND_TAGS,
-			'settings-update' => 'Syndicated Categories'.FEEDWORDPRESS_AND_TAGS,
-			'open-sheet' => 'Categories'.FEEDWORDPRESS_AND_TAGS,
+			'default' => 'Categories & Tags',
+			'settings-update' => 'Syndicated Categories & Tags',
+			'open-sheet' => 'Categories & Tags',
 		);
 		$this->filename = __FILE__;
 	}
@@ -599,12 +599,9 @@ blank.</p></td>
 		////////////////////////////////////////////////
 	
 		$this->boxes_by_methods = array(
-			'feed_categories_box' => __('Feed Categories'.FEEDWORDPRESS_AND_TAGS),
+			'feed_categories_box' => __('Feed Categories & Tags'),
 			'categories_box' => array('title' => __('Categories'), 'id' => 'categorydiv'),
 		);
-		if (!FeedWordPressCompatibility::post_tags()) :
-			unset($this->boxes_by_methods['tags_box']);
-		endif;
 
 		parent::display();	
 	}

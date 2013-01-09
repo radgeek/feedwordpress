@@ -13,8 +13,7 @@
 	width: 120px;
 }
 .feedwordpress-category-div ul.category-tabs li.tabs {
-	-moz-border-radius: 3px 0 0 3px;
-	-webkit-border-radius: 3px 0 0 3px;
+	display: block;
 	border-radius: 3px 0 0 3px;
 	border-color: #DFDFDF;
 	border-style: solid none solid solid;
