@@ -1,0 +1,432 @@
+/* Category widget */
+.feedwordpress-category-div .tabs-panel {
+	height: 200px;
+	overflow: auto;
+	border: 1px solid #DFDFDF;
+	margin-left: 126px;
+}
+.feedwordpress-category-div ul.category-tabs {
+	float: left;
+	margin: 0 -120px 0 5px;
+	padding: 0;
+	text-align: right;
+	width: 120px;
+}
+.feedwordpress-category-div ul.category-tabs li.tabs {
+	-moz-border-radius: 3px 0 0 3px;
+	-webkit-border-radius: 3px 0 0 3px;
+	border-radius: 3px 0 0 3px;
+	border-color: #DFDFDF;
+	border-style: solid none solid solid;
+	border-width: 1px 0 1px 1px;
+	margin-right: -1px;
+	padding: 8px;
+	background-color: #F1F1F1;
+}
+
+.feedwordpress-category-div ul.categorychecklist ul {
+	margin-left: 18px;
+}
+.feedwordpress-category-div ul.category-tabs a {
+	color: #333333;
+	font-weight: bold;
+	text-decoration: none;
+}
+
+/* Common settings page elements */
+#fwpfs-container {
+	margin:11px 12px 0;
+	min-width: 130px;
+	position:relative;
+}
+#fwpfs-container .subsubsub {
+	float: none !important;
+}
+.tablenav p.submit {
+	margin: 0px;
+	padding: 0px;
+}
+.fwpfs {
+	color: #dddddd !important; background-color: #333 !important;
+	background-color: #797979;
+	border-color:#777777 #777777 #666666 !important;
+	border-radius: 12px;
+	-moz-border-radius: 12px;
+	-webkit-border-radius: 12px;
+	-khtml-border-radius: 12px;
+	border-style:solid;
+	border-width:1px;
+	line-height:15px;
+	padding:3px 30px 4px 12px;
+}
+.fwpfs.slide-down {
+	border-bottom-color: #626262;
+	border-top-left-radius: 12px; border-top-right-radius: 12px;
+	border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+	-webkit-border-top-left-radius: 12px; -webkit-border-top-right-radius: 12px;
+	-webkit-border-bottom-left-radius: 0; -webkit-border-bottom-right-radius: 0;
+	-khtml-border-top-left-radius: 12px; -khtml-border-top-right-radius: 12px;
+	-khtml-border-bottom-left-radius: 0; -khtml-border-bottom-right-radius: 0;
+	-moz-border-radius-topleft:12px; -moz-border-radius-topright:12px;
+	-moz-border-radius-bottomleft:0; -moz-border-radius-bottomright:0;
+	border-bottom-style:solid;
+	border-bottom-width:1px;
+}
+
+.current-setting {
+	display: block;
+	font-size: smaller; 
+	margin-left: 2.0em;
+	font-size: smaller;
+}
+.twofer tr td h4 {
+	margin-top: 0px;
+	margin-bottom: 3px;
+}
+ul.current-setting {
+	list-style: disc outside;
+	padding-left: 2.0em;
+}
+
+/* Switchfeed interface elements */
+
+#feed-finder form {
+	padding-bottom: 2.0em;
+	border-bottom: 1px dashed #333;
+	margin-bottom: 2.0em;
+}
+#feed-finder form.multi .inside {
+	margin-left: 1.0em;
+	border-left: 3px solid #333;
+	padding-left: 2.0em;
+}
+
+#feed-finder form fieldset {
+	clear: both;
+	border: 1px solid #777;
+	padding: 5px 25px;
+	background-color: #fff;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-khtml-border-radius: 5px;
+	-webkit-border-radius: 5px;
+}
+#feed-finder form fieldset.alt {
+	background-color: #eee;
+}
+#feed-finder form fieldset.current {
+	background-color: #efe;
+}
+#feed-finder form fieldset.current legend {
+	background-color: #7f7;
+}
+#feed-finder form fieldset legend {
+	border-left: 1px solid #777;
+	border-right: 1px solid #777;
+	border-top: 1px solid #777;
+	border-bottom: 1px solid #777;
+	border-radius: 5px;
+	-moz-border-radius: 5px;
+	-khtml-border-radius: 5px;
+	-webkit-border-radius: 5px;
+	background-color: #7FF;
+	padding: 3px 10px;
+	font-weight: bold;
+}
+#feed-finder form fieldset label {
+	font-weight: bold;
+}
+#feed-finder form fieldset div.submit {
+	clear: both;
+	text-align: left;
+}
+#feed-finder form fieldset div.submit input {
+	margin-right: 3.0em;
+}
+
+#feed-finder .feed-sample { 
+	float: right;
+	background-color: #D0D0D0;
+	color: black;
+	width: 45%;
+	font-size: 70%;
+	border-left: 1px dotted #A0A0A0;
+	margin-left: 1.0em;
+	padding: 3px;
+	max-height: 200px;
+	overflow: auto;
+}
+#feed-finder .feed-sample p, .feed-sample h3 {
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+}
+#feed-finder .feed-sample .feed-problem {
+	background-color: #ffd0d0;
+	border-bottom: 1px dotted black;
+	padding-bottom: 0.5em;
+	margin-bottom: 0.5em;
+}
+
+table.edit-form { width: 100%; }
+table.edit-form th { width: 27%; vertical-align: top; text-align: right; padding: 0.5em; }
+table.edit-form th .setting-description { font-weight: normal; font-size: smaller; font-style: italic; }
+
+table.edit-form td { width: 73%; vertical-align: top; padding: 0.5em; }
+table.edit-form td ul.options { margin: 0; padding: 0; list-style: none; }
+table.edit-form td ul.options.compact li { display: inline; margin-left: 3.0em; white-space: nowrap; }
+table.edit-form.narrow th { width: 15%; }
+table.edit-form.narrow td { width: 85%; }
+table.edit-form td p { margin-top: 0px; }
+
+table.twofer { width: 100%; border: none; }
+table.twofer tr { vertical-align: top; }
+table.twofer td.equals.first { width: 49% !important; border-right: 1px dotted #777; padding-top: 0px; padding-bottom: 0px; padding-left: 0px; padding-right: 10px; }
+table.twofer td.equals.second { width: 49% !important; padding-top: 0px; padding-bottom: 0px; padding-left: 10px; padding-right: 0px; }
+
+table.twofer td.active { color: black; background-color: #cfc; border-radius: 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px; -khtml-border-radius: 5px; }
+table.twofer td.inactive { color: #333; }
+table.twofer td.equals.first.active { border-right: none; }
+table.twofer td.equals.first.inactive { border-right: none; }
+
+table.twofer td.primary { width: 69%; border-right: 1px dotted #777; padding-right: 10px; }
+table.twofer td.secondary { padding-left: 10px; width: 30%; }
+
+#add-multiple-uri, #upload-opml {
+	float: right;
+	position: relative;
+	width: 50%;
+	background-color: #cfc;
+	padding-left: 1.0em; padding-right: 1.0em;
+	padding-top: 0.5em; padding-bottom: 0.5em;
+	right: 0;
+	top: auto;
+}
+#add-multiple-uri textarea {
+	width: 100%;
+	margin-top: 0.5em;
+}
+#add-multiple-uri h4 {
+	margin-bottom: 2px;
+	margin-top: 0px;
+	border-bottom: 1px dotted black; 
+}
+
+#dashboard-widgets #feedwordpress_dashboard h4 {
+	color: #777777;
+	font-family: Georgia, "Times New Roman", "Bitstream Charter", Times, serif;
+	font-size: 13px;
+	font-style: italic;
+	font-weight: normal;
+
+	margin: 0px;
+
+	border-bottom: 1px solid #ececec;
+
+	padding-left: 15px;
+	padding-top: 10px;
+	padding-bottom: 5px;
+	padding-right: 0px;
+}
+
+#feedwordpress_dashboard .feedwordpress-stats {
+	width: 49%;
+}
+#feedwordpress_dashboard .feedwordpress-stats table {
+	margin-top: 5px;
+	margin-left: 15px;
+}
+#feedwordpress_dashboard .feedwordpress-actions ul.options {
+	margin-left: 15px !important;
+	margin-top: 5px !important;
+}
+
+#feedwordpress_dashboard .feedwordpress-actions {
+	width: 49%;
+	float: right;
+}
+#feedwordpress_dashboard td.b {
+	padding-right: 12px;
+}
+#feedwordpress_dashboard td.b a {
+	font-size: 18px;
+}
+
+#feedwordpress_dashboard td.t.active a:link,
+#feedwordpress_dashboard td.t.active a:visited {
+	color: green;
+}
+#feedwordpress_dashboard td.t.inactive a:link,
+#feedwordpress_dashboard td.t.inactive a:visited {
+	color: red;
+}
+
+#feedwordpress_dashboard #add-single-uri {
+	clear: both;
+	margin-top: 15px;
+}
+
+#feedwordpress_dashboard #add-single-uri #syndicated-links {
+	border-top: 1px solid #ececec;
+	width: 49%;
+}
+#feedwordpress_dashboard #add-single-uri #syndicated-links .container {
+	margin-top: 5px;
+	margin-left: 15px;
+}
+
+#feedwordpress_dashboard #add-single-uri #check-for-updates {
+	border-top: 1px solid #ececec;
+	float: right;
+	text-align: left;
+	width: 49%;
+}
+#feedwordpress_dashboard #add-single-uri #check-for-updates .container {
+	margin-top: 5px;
+	margin-left: 15px;
+}
+#multiadd-status {
+	position: absolute;
+	padding: 10px;
+	background-color: #ecec70;
+	border-radius: 10px;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+	-khtml-border-radius: 10px;
+	opacity: 0.85;
+	top: auto;
+	left: 45%;
+	right: auto;
+	bottom: -5px;
+}
+#multiadd-form {
+	position: relative;
+	padding-bottom: 3.0em;
+}
+#multiadd-status img {
+	vertical-align: middle;
+}
+#multiadd-list {
+	border-top: 1px dotted black;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	border-bottom: 1px dotted black;
+}
+#multiadd-buttons {
+	position: absolute;
+	bottom: 0px;
+	margin-top: 15px;
+	margin-left: 15px;
+}
+
+.feedwordpress-admin {
+	position: relative;
+}
+.feedwordpress-admin .submit { position: relative; z-index: 40; }
+
+#feedwordpress-admin-syndication .heads-up {
+	background-color: #d0d0d0;
+	color: black;
+	padding: 1.0em;
+	margin: 0.5em 4.0em !important;
+}
+#feedwordpress-admin-syndication .update-form.with-donation {
+	margin-right: 50%;
+	min-height: 255px;
+}
+#feedwordpress-admin-syndication .donation-form,
+#feedwordpress-admin-syndication .donation-thanks {
+	background-color: #ffffcc;
+	text-align: left;
+	padding: 0.5em 0.5em;
+	border-left: thin dashed #777777;
+	font-size: 70%;
+	position: absolute;
+	top: 0; bottom: 0; right: 0; left: auto;
+	width: 50%;		
+}
+#feedwordpress-admin-syndication .donation-thanks {
+	background-color: #ccffcc;
+}
+#feedwordpress-admin-syndication .donation-thanks .signature {
+	text-align: right;
+	font-style: italic;
+}
+#feedwordpress-admin-syndication .donation-form h4,
+#feedwordpress-admin-syndication .donation-thanks h4 {
+	font-size: 10px;
+	text-align: center;
+	border-bottom: 1px solid #777777;
+	margin: 0px;
+}
+#feedwordpress-admin-syndication .donation-form .donate  {
+	text-align: center;
+}
+#feedwordpress-admin-syndication .donation-form .sod-off {
+	padding-top: 0.5em;
+	margin-top: 0.5em;
+	border-top: thin solid #777777;
+}
+#feedwordpress-admin-syndication .feed-missing {
+	background-color:#FFFFD0;
+}
+#feedwordpress-admin-syndication .unsubscribed tr {
+	background-color: #FFE0E0;
+}
+#feedwordpress-admin-syndication .unsubscribed tr.alternate {
+	background-color: #FFF0F0;
+}
+#feedwordpress-admin-syndication tr.feed-error {
+	background-color: #FFFFD0;
+}
+
+#feedwordpress-admin-feeds .add-remove, .feedwordpress-admin .remove-it {
+	padding-left: 1.5em;
+	font-size: 0.80em;
+	text-transform: uppercase;
+	text-decoration: none !important;
+	vertical-align: middle;
+}
+
+#link-rss-userpass-use, .link-rss-authentication table {
+	display: block;
+	font-size: 75%;
+	white-space: nowrap; 
+	padding: 0.5em 0;
+}
+#feed-finder .link-rss-authentication table {
+	font-size: inherit;
+}
+
+#link-rss-authentication label {
+	font-weight: bold;
+	padding-left: 1.5em;
+}
+#link-rss-authentication td {
+	width: 25%;
+}
+
+#feedwordpress-admin-feeds .link-rss-params-row { vertical-align: middle; }
+#feedwordpress-admin-feeds .link-rss-params-remove, .feedwordpress-admin .remove-it {
+	display: block;
+	padding-left: 0em !important;
+	margin-top: 7px;
+	color: #777;
+}
+
+#feedwordpress-admin-feeds .link-rss-params-remove:hover, .feedwordpress-admin .remove-it:hover {
+	color: #aa3030;
+}
+
+#feedwordpress-admin-feeds .link-rss-params-remove .x, .feedwordpress-admin .remove-it .x {
+	cursor: pointer;
+	display: block;
+	float: left;
+	width: 10px; height: 10px;
+	margin-right: 2px;
+	overflow: hidden;
+	text-indent: -9999px;
+}
+
+
+#feedwordpress-admin-feeds #link-rss-params td { width: auto !important; }
+
