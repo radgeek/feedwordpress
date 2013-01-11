@@ -2161,6 +2161,9 @@ function change_author_link() {
 
 	$name = get_post_meta($id, 'syndication_source_author');
 	
+	// the following line will replace all white space within the string with the encoding code %20
+	$name = str_replace( ' ', '%20', $name );
+	
 	if ( $name[0] ) {
 		return get_bloginfo('url').'/author/feedwordpress/?syndication_source_author='.$name[0];
 	} else {
