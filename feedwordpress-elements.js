@@ -486,7 +486,252 @@ jQuery(document).ready( function($) {
 	} ); /* $('.feedwordpress-category-div').each() */
 } ); /* jQuery(document).ready() */
 
+
+function fwp_feedspiper () {
+	var data = {
+		action: 'fwp_feeds'
+	};
+	
+	return jQuery.ajax({
+		type: "POST",
+		url: ajaxurl,
+		data: data
+	});
+}
+
+function fwp_feedcontentspiper (feed_id, callbackOK, callbackFail) {
+	var data = {
+		action: 'fwp_feedcontents',
+		feed_id: feed_id
+	};
+	
+	jQuery.ajax({
+		type: "POST",
+		url: ajaxurl,
+		data: data
+	})
+	.done(function (response) { callbackOK(response); })
+	.fail(function (response) { callbackFail(response); });
+}
+
+function fwp_feedcontentspicker (feed_id, destination, pickCallback, closeCallback) {
+	var picker_id = 'fwp-feed-contents-picker-' + feed_id;
+	
+	jQuery('<div class="fwp-feed-contents-picker" style="display: none;" id="'+picker_id+'"><p>Loading...</p></div>').insertAfter(destination);
+	jQuery('#'+picker_id).show(500);
+	
+	fwp_feedcontentspiper(feed_id, function (response) {
+		var ul = '<h4>Using post...</h4><ul>';
+		for (var i=0; i < response.length; i++) {
+			ul += '<li><a class="fwp-feed-contents-picker-pick-'+feed_id+'" href="'
+				+response[i].guid
+				+'">' + response[i].post_title + '</a></li>';
+		}
+		ul += '</ul>';
+		ul += '<a class="fwp-feed-contents-picker-close" href="#" id="fwp-feed-contents-picker-' + feed_id + '-close">x</a>';
+
+		jQuery('#fwp-feed-contents-picker-' + feed_id).html(ul);
+
+		// Set up event handlers.
+		jQuery('#fwp-feed-contents-picker-' + feed_id + '-close').click(function (e) {
+			jQuery('#fwp-feed-contents-picker-' + feed_id).hide(500, function () { jQuery('#fwp-feed-contents-picker-' + feed_id).remove(); });
+			if (typeof(closeCallback)=='function') {
+				closeCallback(feed_id);
+			}
+			e.preventDefault();
+			return false;
+		});
+		jQuery('.fwp-feed-contents-picker-pick-' + feed_id).click(function (e) {
+			jQuery('#fwp-feed-contents-picker-' + feed_id).hide(500, function () { jQuery('#fwp-feed-contents-picker-' + feed_id).remove(); });
+			if (typeof(pickCallback)=='function') {
+				pickCallback(feed_id, jQuery(this).attr('href'));
+			}
+			e.preventDefault();
+			return false;
+		});
+	},
+	function (response) {
+		jQuery('#' + picker_id).addClass('error').html('There was a problem getting a listing of the feed. Sorry!').delay(5000).hide(500, function () { jQuery(this).remove(); });
+	});
+}
+
+function fwp_feedspicker (destination, pickCallback, closeCallback) {
+	var dabber = jQuery(destination).attr('id');
+	var picker_id = 'fwp-feeds-picker-' + dabber;
+	
+	jQuery('<div class="fwp-feeds-picker" style="display: none;" id="'+picker_id+'"><p>Loading...</p></div>').insertAfter(destination);
+	jQuery('#'+picker_id).show(500);
+	
+	fwp_feedspiper()
+	.done(function (response) {
+		var ul = '<h4>Using subscription...</h4><ul>';
+		for (var i=0; i < response.length; i++) {
+			ul += '<li><a class="fwp-feeds-picker-pick-'+dabber+'" href="#feed-'
+				+response[i].id
+				+'">' + response[i].name + '</a></li>';
+		}
+		ul += '</ul>';
+		ul += '<a class="fwp-feeds-picker-close" href="#" id="fwp-feeds-picker-' + dabber + '-close">x</a>';
+
+		jQuery('#fwp-feeds-picker-' + dabber).html(ul);;
+		
+		// Set up event handlers.
+		jQuery('#fwp-feeds-picker-' + dabber + '-close').click(function (e) {
+			jQuery('#fwp-feeds-picker-' + dabber).hide(500, function () { jQuery('#fwp-feeds-picker-' + dabber).remove(); });
+			if (typeof(closeCallback)=='function') {
+				closeCallback(destination);
+			}
+			e.preventDefault();
+			return false;
+		});
+		jQuery('.fwp-feeds-picker-pick-' + dabber).click(function (e) {
+			jQuery('#fwp-feeds-picker-' + dabber).hide(500, function () {
+				jQuery('#fwp-feeds-picker-' + dabber).remove();
+			});
+			
+			var feed_id = jQuery(this).attr('href').replace(/^#feed-/, '');
+			
+			if (typeof(pickCallback)=='function') {
+				pickCallback(feed_id, jQuery(this));
+			}
+			e.preventDefault();
+			return false;
+		});
+	})
+	.fail(function (response) {
+		jQuery('#' + picker_id).addClass('error').html('There was a problem getting a listing of your subscriptions. Sorry!').delay(5000).hide(500, function () { jQuery(this).remove(); });
+	});
+}
+
+function fwp_xpathtest_ajax (expression, feed_id, post_id) {
+	var data = {
+	action: 'fwp_xpathtest',
+	xpath: expression,
+	feed_id: feed_id,
+	post_id: post_id
+	};
+			
+	return jQuery.ajax({
+		type: "GET",
+		url: ajaxurl,
+		data: data
+	});
+}
+
+function fwp_xpathtest_fail (response, result_id, destination) {
+	jQuery('<div class="fwp-xpath-test-results error" style="display: none;" id="'+result_id+'">There was a problem communicating with the server.<p>result = <code>'+response+'</code></p></div>').insertAfter(destination);
+	jQuery('#'+result_id).show(500).delay(3000).hide(500, function () { jQuery(this).remove(); });
+}
+
+function fwp_xpathtest_ok (response, result_id, destination) {
+	var dabber = jQuery(destination).attr('id');
+	var resultsHtml = '<ul>';
+	
+	if (response.results instanceof Array) {
+		for (var i = 0; i < response.results.length; i++) {
+			resultsHtml += '<li>result['+i.toString()+'] = <code>'+response.results[i]+'</code></li>';
+		}
+	} else {
+		resultsHtml += '<li>result = <code>' + response.results + '</code></li>';
+	} /* if */
+	resultsHtml += '</ul>';
+	
+	jQuery('<div class="fwp-xpath-test-results" style="display: none;" id="'+result_id+'"><h4>'+response.expression+'</h4>'+resultsHtml+'</code> <a class="fwp-xpath-test-results-close">x</a></div>').insertAfter(destination);
+	
+	var link_id = 'fwp-xpath-test-results-post-'+dabber; 
+	if (jQuery('#'+link_id).length > 0) {
+		jQuery('#'+link_id).attr('href', response.guid).html(response.post_title);
+	} else {
+		jQuery('<div id="contain-'+link_id+'" class="fwp-xpath-test-results-post fwp-xpath-test-setting">Using post: <a id="'+link_id+'" href="'+response.guid+'"> '+response.post_title+'</a> (<a href="#" class="fwp-xpath-test-results-post-change">reset</a>)</div>').insertAfter('#'+result_id);
+	} /* if */
+	
+	jQuery('#'+result_id).find('.fwp-xpath-test-results-close').click(function (e) {
+		e.preventDefault();
+		
+		jQuery('#'+result_id).hide(500, function () { jQuery(this).remove(); });
+		return false;
+	});
+	jQuery('#contain-'+link_id).find('.fwp-xpath-test-results-post-change').click(function (e) {
+		e.preventDefault();
+		jQuery('#contain-'+link_id).remove();
+
+		return false;
+	});
+	jQuery('#'+result_id).show(500);
+}
+
+function fwp_xpathtest (expression, destination, feed_id) {
+	var dabber = jQuery(destination).attr('id');
+	var result_id = 'fwp-xpath-test-results-'+dabber;
+	var preset_post_id = 'fwp-xpath-test-results-post-'+dabber; 
+	var post_id = jQuery('#'+preset_post_id).attr('href');
+	
+	// Clear out any previous results.
+	jQuery('#'+result_id).remove();
+	
+	if (jQuery('#xpath-test-feed-id-'+dabber).length > 0) {
+		feed_id = jQuery('#xpath-test-feed-id-'+dabber).val();		
+	}
+	
+	if ('*' == feed_id) {
+	
+		fwp_feedspicker(destination, function (feed_id, a) {
+			var href = a.attr('href');
+			var text = a.text();
+			
+			jQuery('<div class="fwp-xpath-test-feed-id fwp-xpath-test-setting" id="contain-xpath-test-feed-id-'+dabber+'">Using sub: <a href="'+href+'">'+text+'</a><input type="hidden" id="xpath-test-feed-id-'+dabber+'" name="xpath_test_feed_id" value="'+feed_id+'" /> (<a href="#" class="fwp-xpath-test-feed-id-change">reset</a>)</div>').insertAfter(destination);
+			
+			jQuery('#contain-xpath-test-feed-id-'+dabber).find('.fwp-xpath-test-feed-id-change').click(function (e) {
+				e.preventDefault();
+				
+				// If there is a post set, we need to reset that
+				console.log(('#contain-fwp-xpath-test-results-post-'+dabber), jQuery('#contain-fwp-xpath-test-results-post-'+dabber));
+				jQuery('#contain-fwp-xpath-test-results-post-'+dabber).remove();
+				
+				// Show yourself out.
+				jQuery('#contain-xpath-test-feed-id-'+dabber).remove();
+				return false;
+			});
+			
+			// Now recursively call the function in order to force
+			// a post-picker.
+			fwp_xpathtest(expression, destination, feed_id);
+		});
+	}
+	
+	// Check for a pre-selected post GUID.
+	else if (post_id) {
+		fwp_xpathtest_ajax(expression, feed_id, post_id)
+			.done( function (response) { fwp_xpathtest_ok(response, result_id, destination); } )
+			.fail( function (response) { fwp_xpathtest_fail(response, result_id, destination); } );
+	}
+	else {
+		// Pop up the feed content picker
+		fwp_feedcontentspicker(feed_id, destination, function (feed_id, post_id) {
+			fwp_xpathtest_ajax(expression, feed_id, post_id)
+			.done( function (response) { fwp_xpathtest_ok(response, result_id, destination); } )
+			.fail( function (response) { fwp_xpathtest_fail(response, result_id, destination); } );			
+		});
+	}
+	
+}
+
 jQuery(document).ready(function($){
+	if ( $('.xpath-test').length ) {
+		$('.xpath-test').click ( function (e) {
+			e.preventDefault();
+
+			// Pull the local expression from the text box
+			var expr = jQuery(this).closest('tr').find('textarea').val();
+			
+			// Check to see if we are on a Feed settings page or
+			// on the global settings page;
+			var feed_id = jQuery('input[name="save_link_id"]').val();
+			
+			fwp_xpathtest(expr, jQuery(this), feed_id);
+			return false;
+		});
+	}
 	if ( $('.jaxtag').length ) {
 		tagBox.init();
 	}

@@ -187,7 +187,7 @@ class FeedWordPressAdminPage {
 	function stamp_link_id ($field = null) {
 		if (is_null($field)) : $field = 'save_link_id'; endif;
 		?>
-	<input type="hidden" name="<?php print esc_html($field); ?>" value="<?php print ($this->for_feed_settings() ? $this->link->id : '*'); ?>" />
+	<input type="hidden" name="<?php print esc_attr($field); ?>" value="<?php print ($this->for_feed_settings() ? $this->link->id : '*'); ?>" />
 		<?php
 	} /* FeedWordPressAdminPage::stamp_link_id () */
 

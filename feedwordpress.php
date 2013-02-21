@@ -953,7 +953,7 @@ class FeedWordPress {
 		endif;
 		
 		return $sub;
-	} /* FeedWordPress::subscriptions () */
+	} /* FeedWordPress::subscription () */
 	
 	# function update (): polls for updates on one or more Contributor feeds
 	#
@@ -1234,6 +1234,7 @@ class FeedWordPress {
 			// If so, disable the trashcan.
 			define('EMPTY_TRASH_DAYS', 0);
 		endif;
+
 	}
 
 	function init () {
@@ -1274,9 +1275,117 @@ class FeedWordPress {
 			/*priority=*/ -100
 		);
 
+		add_action('wp_ajax_fwp_feeds', array($this, 'fwp_feeds'));
+		add_action('wp_ajax_fwp_feedcontents', array($this, 'fwp_feedcontents'));
+		add_action('wp_ajax_fwp_xpathtest', array($this, 'fwp_xpathtest'));
+		
 		$this->clear_cache_magic_url();
 		$this->update_magic_url();
 	} /* FeedWordPress::init() */
+	
+	function fwp_feeds () {
+		$feeds = array();
+		$feed_ids = $this->feeds;
+		
+		foreach ($feed_ids as $id) :
+			$sub = $this->subscription($id);
+			$feeds[] = array(
+			"id" => $id,
+			"url" => $sub->uri(),
+			"name" => $sub->name(/*fromFeed=*/ false),
+			);
+		endforeach;
+
+		header("Content-Type: application/json");	
+		echo json_encode($feeds);
+		exit;
+	}
+
+	function fwp_feedcontents () {
+		$feed_id = MyPHP::request('feed_id');
+		
+		// Let's load up some data from the feed . . .
+		$feed = $this->subscription($feed_id);
+		$posts = $feed->live_posts();
+		
+		if (is_wp_error($posts)) :
+			header("HTTP/1.1 502 Bad Gateway");
+			$result = $posts;
+		else :
+			$result = array();
+
+			foreach ($posts as $post) :
+				$p = new SyndicatedPost($post, $feed);
+				
+				$result[] = array(
+					"post_title" => $p->entry->get_title(),
+					"post_link" => $p->permalink(),
+					"guid" => $p->guid(),
+					"post_date" => $p->published(),
+				);
+			endforeach;
+		endif;
+		
+		header("Content-Type: application/json");
+		
+		echo json_encode($result);
+		
+		// This is an AJAX request, so close it out thus.
+		die;
+	} /* FeedWordPress::fwp_feedcontents () */
+	
+	function fwp_xpathtest () {
+		$xpath = MyPHP::request('xpath');
+		$feed_id = MyPHP::request('feed_id');
+		$post_id = MyPHP::request('post_id');
+		
+		$expr = new FeedWordPressParsedPostMeta($xpath);
+		
+		// Let's load up some data from the feed . . .
+		$feed = $this->subscription($feed_id);
+		$posts = $feed->live_posts();
+		
+		if (!is_wp_error($posts)) :
+			if (strlen($post_id) == 0) :
+				$post = $posts[0];
+			else :
+				$post = null;
+	
+				foreach ($posts as $p) :
+					if ($p->get_id() == $post_id) :
+						$post = $p;
+					endif;
+				endforeach;
+			endif;
+		
+			$post = new SyndicatedPost($post, $feed);
+			$meta = $expr->do_substitutions($post);
+			
+			$result = array(
+			"post_title" => $post->entry->get_title(),
+			"post_link" => $post->permalink(),
+			"guid" => $post->guid(),
+			"expression" => $xpath,
+			"results" => $meta
+			);
+		else :
+			$result = array(
+			"expression" => $xpath,
+			"feed_id" => $feed_id,
+			"post_id" => $post_id,
+			"results" => $posts
+			);
+			
+			header("HTTP/1.1 503 Bad Gateway");
+		endif;
+		
+		header("Content-Type: application/json");
+		
+		echo json_encode($result);
+		
+		// This is an AJAX request, so close it out thus.
+		die;
+	} /* FeedWordPress::fwp_xpathtest () */
 	
 	function redirect_retired () {
 		global $wp_query;
