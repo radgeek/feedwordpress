@@ -163,12 +163,12 @@ class FeedWordPressAdminPage {
 		);
 		foreach ($submit_buttons as $field) :
 			if (isset($fwp_post[$field])) :
-				$link_id = $_REQUEST['save_link_id'];
+				$link_id = MyPHP::request('save_link_id');
 			endif;
 		endforeach;
 		
 		if (is_null($link_id) and isset($_REQUEST['link_id'])) :
-			$link_id = $_REQUEST['link_id'];
+			$link_id = MyPHP::request('link_id');
 		endif;
 
 		return $link_id;

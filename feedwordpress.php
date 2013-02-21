@@ -1442,10 +1442,7 @@ class FeedWordPress {
 	} /* FeedWordPress::clear_cache_magic_url() */
 	
 	function clear_cache_requested () {
-		return (
-			isset($_GET['clear_cache'])
-			and $_GET['clear_cache']
-		);
+		return MyPHP::request('clear_cache');
 	} /* FeedWordPress::clear_cache_requested() */
 
 	function update_requested () {
@@ -2134,21 +2131,13 @@ EOMAIL;
 		return $path;
 	}
 	
+	// These are superceded by MyPHP::param/post/get/request, but kept
+	// here for backward compatibility.
 	function param ($key, $type = 'REQUEST', $default = NULL) {
-		$where = '_'.strtoupper($type);
-		$ret = $default;
-		if (isset($GLOBALS[$where]) and is_array($GLOBALS[$where])) :
-			if (isset($GLOBALS[$where][$key])) :
-				$ret = $GLOBALS[$where][$key];
-				if (get_magic_quotes_gpc()) :
-					$ret = stripslashes_deep($ret);
-				endif;
-			endif;
-		endif;
-		return $ret;
+		return MyPHP::param($key, $default, $type);
 	}
 	function post ($key, $default = NULL) {
-		return FeedWordPress::param($key, 'POST');
+		return MyPHP::post($key, $default);
 	}
 } // class FeedWordPress
 

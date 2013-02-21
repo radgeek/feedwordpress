@@ -82,8 +82,8 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 		$update_set = array();
 		if ($fwp_update_invoke != 'get') :
-			if (is_array(FeedWordPress::post('link_ids'))
-			and (FeedWordPress::post('action')==FWP_UPDATE_CHECKED)) :
+			if (is_array(MyPHP::post('link_ids'))
+			and (MyPHP::post('action')==FWP_UPDATE_CHECKED)) :
 				$targets = $wpdb->get_results("
 				SELECT * FROM $wpdb->links
 				WHERE link_id IN (".implode(",",$_POST['link_ids']).")
@@ -95,8 +95,8 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 				else : // This should never happen
 					FeedWordPress::critical_bug('fwp_syndication_manage_page::targets', $targets, __LINE__, __FILE__);
 				endif;
-			elseif (!is_null(FeedWordPress::post('update_uri'))) :
-				$targets = FeedWordPress::post('update_uri');
+			elseif (!is_null(MyPHP::post('update_uri'))) :
+				$targets = MyPHP::post('update_uri');
 				if (!is_array($targets)) :
 					$targets = array($targets);
 				endif;
@@ -351,7 +351,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			FWP_RESUB_CHECKED => 'multiundelete_page',
 		);
 		
-		$act = FeedWordPress::param('action');
+		$act = MyPHP::request('action');
 		if (isset($dispatcher[$act])) :
 			$method = $dispatcher[$act];
 			if (method_exists($this, $method)) :
@@ -1141,14 +1141,14 @@ updated to &lt;<a href="<?php echo esc_html($fwp_post['feed']); ?>"><?php echo e
 	endif;
 
 	if (isset($existingLink)) :
-		$auth = FeedWordPress::post('link_rss_auth_method');
+		$auth = MyPHP::post('link_rss_auth_method');
 		if (!is_null($auth) and (strlen($auth) > 0) and ($auth != '-')) :
 			$existingLink->update_setting('http auth method', $auth);
 			$existingLink->update_setting('http username',
-				FeedWordPress::post('link_rss_username')
+				MyPHP::post('link_rss_username')
 			);
 			$existingLink->update_setting('http password',
-				FeedWordPress::post('link_rss_password')
+				MyPHP::post('link_rss_password')
 			);
 		else :
 			$existingLink->update_setting('http auth method', NULL);

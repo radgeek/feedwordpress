@@ -775,9 +775,9 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	
 		$lookup = (isset($_REQUEST['lookup']) ? $_REQUEST['lookup'] : NULL);
 		
-		$auth = FeedWordPress::param('link_rss_auth_method');
-		$username = FeedWordPress::param('link_rss_username');
-		$password = FeedWordPress::param('link_rss_password');
+		$auth = MyPHP::request('link_rss_auth_method');
+		$username = MyPHP::request('link_rss_username');
+		$password = MyPHP::request('link_rss_password');
 		$credentials = array(
 				"authentication" => $auth,
 				"username" => $username,
