@@ -104,6 +104,7 @@ if (!function_exists('wp_insert_user')) :
 endif;
 
 $dir = dirname(__FILE__); 
+require_once("${dir}/myphp.class.php");
 require_once("${dir}/admin-ui.php");
 require_once("${dir}/feedwordpresssyndicationpage.class.php");
 require_once("${dir}/compatability.php"); // Legacy API             
@@ -224,6 +225,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'resolve_relative_uris'), 0, 2);
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'sanitize_content'), 0, 2);
 
+	add_action('plugins_loaded', array('FeedWordPress', 'admin_api'));
 else :
 	# Hook in the menus, which will just point to the upgrade interface
 	add_action('admin_menu', 'fwp_add_pages');
@@ -653,6 +655,8 @@ function syndication_comments_feed_link ($link) {
 ################################################################################
 
 function fwp_add_pages () {
+	global $feedwordpress;
+	
 	$menu_cap = FeedWordPress::menu_cap();
 	$settings_cap = FeedWordPress::menu_cap(/*sub=*/ true);
 	$syndicationMenu = FeedWordPress::path('syndication.php');
@@ -706,6 +710,9 @@ function fwp_add_pages () {
 		$syndicationMenu, 'FeedWordPress Diagnostics', 'Diagnostics',
 		$settings_cap, FeedWordPress::path('diagnostics-page.php')
 	);
+	
+	add_filter('page_row_actions', array($feedwordpress, 'row_actions'), 10, 2);
+	add_filter('post_row_actions', array($feedwordpress, 'row_actions'), 10, 2);
 } /* function fwp_add_pages () */
 
 function fwp_check_debug () {
@@ -1207,6 +1214,28 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::admin_init() */
 
+	function admin_api () {
+		// This sucks, but WordPress doesn't give us any other way to
+		// easily invoke a permanent-delete from a plugged in post
+		// actions link. So we create a magic parameter, and when this
+		// magic parameter is activated, the WordPress trashcan is
+		// temporarily de-activated.
+		
+		if (MyPHP::request('fwp_post_delete')=='nuke') :
+			// Get post ID #
+			$post_id = MyPHP::request('post');
+			if (!$post_id) :
+				$post_id = MyPHP::request('post_ID');
+			endif;
+			
+			// Make sure we've got the right nonce and all that.
+			check_admin_referer('delete-post_' . $post_id);
+			
+			// If so, disable the trashcan.
+			define('EMPTY_TRASH_DAYS', 0);
+		endif;
+	}
+
 	function init () {
 		global $fwp_path;
 		
@@ -1265,6 +1294,34 @@ class FeedWordPress {
 				exit;
 			endif;
 		endif;
+	}
+	
+	function row_actions ($actions, $post) {
+		if (is_syndicated($post->ID)) :
+			$link = get_delete_post_link($post->ID, '', true);
+			$link = MyPHP::url($link, array("fwp_post_delete" => "nuke"));
+			
+			$caption = 'Erase the record of this post (will be re-syndicated if it still appears on the feed).';
+			$linktext = 'Erase/Resyndicate';
+			
+			$keys = array_keys($actions);
+			$links = array();
+			foreach ($keys as $key) :
+				$links[$key] = $actions[$key];
+				
+				if ('trash'==$key) :
+					$links[$key] = "<a class='submitdelete' title='" . esc_attr( __( 'Move this item to the Trash (will NOT be re-syndicated)' ) ) . "' href='" . get_delete_post_link( $post->ID ) . "'>" . __( 'Trash/Don&#8217;t Resyndicate' ) . "</a>";
+					
+					// Placeholder.
+					$links['delete'] = '';
+				endif;
+			endforeach;
+			
+			$links['delete'] = '<a class="submitdelete" title="'.esc_attr(__($caption)).'" href="' . $link . '">' . __($linktext) . '</a>';
+
+			$actions = $links;
+		endif;
+		return $actions;
 	}
 	
 	function dashboard_setup () {
