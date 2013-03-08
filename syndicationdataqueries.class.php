@@ -94,7 +94,7 @@ class SyndicationDataQueries {
 			// checks -- for reasons of both performance and correctness. Pitch:
 			$search .= " -- '";
 		elseif ($query->get('fields')=='_synfrom') :
-			$search .= " AND ({$wpdb->postmeta}.meta_key = '".$query->get('meta_key')."' AND wp_postmeta.meta_value = '".$query->get('meta_value')."') -- '"; 
+			$search .= " AND ({$wpdb->postmeta}.meta_key = '".$query->get('meta_key')."' AND {$wpdb->postmeta}.meta_value = '".$query->get('meta_value')."') -- '"; 
 		endif;
 		return $search;
 	} /* SyndicationDataQueries::posts_search () */
