@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2012.1218
+Version: 2013.0312
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,30 +11,28 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2012.1218
+ * @version 2013.0312
  */
 
 # This uses code derived from:
 # -	wp-rss-aggregate.php by Kellan Elliot-McCrea <kellan@protest.net>
-# - SimplePie feed parser by Ryan Parman, Geoffrey Sneddon, Ryan McCue, et al. # -	MagpieRSS feed parser by Kellan Elliot-McCrea <kellan@protest.net>
+# -	SimplePie feed parser by Ryan Parman, Geoffrey Sneddon, Ryan McCue, et al.
+# -	MagpieRSS feed parser by Kellan Elliot-McCrea <kellan@protest.net>
 # -	Ultra-Liberal Feed Finder by Mark Pilgrim <mark@diveintomark.org>
 # -	WordPress Blog Tool and Publishing Platform <http://wordpress.org/>
 # according to the terms of the GNU General Public License.
 #
-# INSTALLATION: see readme.txt or <http://projects.radgeek.com/install>
+# INSTALLATION: see readme.txt or <http://feedwordpress.radgeek.com/install>
 #
 # USAGE: once FeedWordPress is installed, you manage just about everything from
-# the WordPress Dashboard, under the Syndication menu. To ensure that fresh
-# content is added as it becomes available, you can convince your contributors
-# to put your XML-RPC URI (if WordPress is installed at
-# <http://www.zyx.com/blog>, XML-RPC requests should be sent to
-# <http://www.zyx.com/blog/xmlrpc.php>), or update manually under the
-# Syndication menu, or set up automatic updates under Syndication --> Settings,
-# or use a cron job.
+# the WordPress Dashboard, under the Syndication menu. To keep fresh content
+# coming in as it becomes available, you'll have to either check for updates
+# manually, or set up one of the automatically-scheduled update methods. See 
+# <http://feedwordpress.radgeek.com/wiki/quick-start/> for some details.
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2012.1218');
+define ('FEEDWORDPRESS_VERSION', '2013.0312');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
