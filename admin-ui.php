@@ -307,7 +307,7 @@ class FeedWordPressAdminPage {
 		foreach ($links as $label => $link) :
 			if (!$first) :	print $params['between']; endif;
 			
-			if (isset($link['url'])) : MyPHP::url($link['url'], array("link_id" => $link_id);
+			if (isset($link['url'])) : MyPHP::url($link['url'], array("link_id" => $link_id));
 			else : $url = $this->admin_page_href($link['page'], array(), $sub);
 			endif;
 			$url = esc_html($url);
