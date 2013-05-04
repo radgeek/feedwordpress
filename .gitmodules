@@ -1,3 +1,0 @@
-[submodule "externals/myphp"]
-	path = externals/myphp
-	url = git@git.radgeek.net:/var/www/git.radgeek.net/myphp.git
