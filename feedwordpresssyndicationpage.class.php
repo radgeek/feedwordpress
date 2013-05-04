@@ -663,7 +663,7 @@ support, and documentation.</p>
 <input type="hidden" name="cmd" value="_xclick"  />
 <input type="hidden" name="item_name" value="FeedWordPress donation"  />
 <input type="hidden" name="no_shipping" value="1"  />
-<input type="hidden" name="return" value="<?php print $this->admin_page_href(basename($this->filename), array('paid', 'yes')); ?>"  />
+<input type="hidden" name="return" value="<?php print $this->admin_page_href(basename($this->filename), array('paid' => 'yes')); ?>"  />
 <input type="hidden" name="currency_code" value="USD" />
 <input type="hidden" name="notify_url" value="http://feedwordpress.radgeek.com/ipn/donation"  />
 <input type="hidden" name="custom" value="1"  />
