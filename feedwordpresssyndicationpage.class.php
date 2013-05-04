@@ -567,7 +567,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		<div class="alignleft">
 		<?php
 		if (count($sources[$visibility]) > 0) :
-			fwp_syndication_manage_page_links_subsubsub($sources, $showInactive);
+			$this->manage_page_links_subsubsub($sources, $showInactive);
 		endif;
 		?>
 		</div> <!-- class="alignleft" -->
@@ -590,9 +590,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		if (count($sources[$visibility]) > 0) :
 			$this->display_button_bar($showInactive);
 		else :
-		?>
-			<?php fwp_syndication_manage_page_links_subsubsub($sources, $showInactive); ?>
-		<?php
+			$this->manage_page_links_subsubsub($sources, $showInactive);
 		endif;
 		
 		fwp_syndication_manage_page_links_table_rows($sources[$visibility], $this, $visibility);
@@ -601,7 +599,22 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		</form>
 		<?php
 	} /* FeedWordPressSyndicationPage::syndicated_sources_box() */
-	
+
+	function manage_page_links_subsubsub ($sources, $showInactive) {
+		$hrefPrefix = $this->admin_page_href("syndication.php");
+?>
+	<ul class="subsubsub">
+	<li><a <?php if (!$showInactive) : ?>class="current" <?php endif; ?>href="<?php print $hrefPrefix; ?>&amp;visibility=Y">Subscribed
+	<span class="count">(<?php print count($sources['Y']); ?>)</span></a></li>
+	<?php if ($showInactive or (count($sources['N']) > 0)) : ?>
+	<li><a <?php if ($showInactive) : ?>class="current" <?php endif; ?>href="<?php print $hrefPrefix; ?>&amp;visibility=N">Inactive</a>
+	<span class="count">(<?php print count($sources['N']); ?>)</span></a></li>
+	<?php endif; ?>
+
+	</ul> <!-- class="subsubsub" -->
+<?php
+	}
+
 	function display_button_bar ($showInactive) {
 		?>
 		<div style="clear: left" class="alignleft">
@@ -650,7 +663,7 @@ support, and documentation.</p>
 <input type="hidden" name="cmd" value="_xclick"  />
 <input type="hidden" name="item_name" value="FeedWordPress donation"  />
 <input type="hidden" name="no_shipping" value="1"  />
-<input type="hidden" name="return" value="<?php print admin_url('admin.php'); ?>?page=<?php print $GLOBALS['fwp_path'] ?>/<?php print basename($this->filename); ?>&amp;paid=yes"  />
+<input type="hidden" name="return" value="<?php print $this->admin_page_href(basename($this->filename), array('paid', 'yes')); ?>"  />
 <input type="hidden" name="currency_code" value="USD" />
 <input type="hidden" name="notify_url" value="http://feedwordpress.radgeek.com/ipn/donation"  />
 <input type="hidden" name="custom" value="1"  />
@@ -1068,7 +1081,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 		<p class="heads-up"><strong>Note:</strong> Automatic updates are currently turned
 		<strong>off</strong>. New posts from your feeds will not be syndicated
 		until you manually check for them here. You can turn on automatic
-		updates under <a href="admin.php?page=<?php print $GLOBALS['fwp_path']; ?>/feeds-page.php">Feed &amp; Update Settings<a></a>.</p>
+		updates under <a href="<?php print $object->admin_page_href('feeds-page.php'); ?>">Feed &amp; Update Settings<a></a>.</p>
 	<?php 
 	endif;
 	?>
