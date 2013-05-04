@@ -25,7 +25,7 @@ class FeedWordPressPerformancePage extends FeedWordPressAdminPage {
 	
 		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
 			$this->accept_POST($fwp_post);
-			do_action('feedwordpress_admin_page_performance_save', $GLOBALS['fwp_post'], $this);
+			do_action('feedwordpress_admin_page_performance_save', $fwp_post, $this);
 		endif;
 
 		////////////////////////////////////////////////

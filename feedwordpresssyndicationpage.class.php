@@ -431,7 +431,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		
 		// Hey ho, let's go...
 		?>
-		<div style="float: left; background: #F5F5F5; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></a></div>
+		<div style="float: left; background: #F5F5F5; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_html(WP_PLUGIN_URL."/${fwp_path}/feedwordpress.png"); ?>" alt="" /></a></div>
 
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;">Managed by <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
 		<?php print FEEDWORDPRESS_VERSION; ?>.</p>
@@ -695,21 +695,20 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 	
 	function multidelete_page () {
 		global $wpdb;
-		global $fwp_post;
 		
 		// If this is a POST, validate source and user credentials
 		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_feeds', /*capability=*/ 'manage_links');
 	
-		if (isset($fwp_post['submit']) and $fwp_post['submit']==FWP_CANCEL_BUTTON) :
+		if (MyPHP::post('submit')==FWP_CANCEL_BUTTON) :
 			return true; // Continue without further ado.
 		endif;
 		
 		$link_ids = (isset($_REQUEST['link_ids']) ? $_REQUEST['link_ids'] : array());
 		if (isset($_REQUEST['link_id'])) : array_push($link_ids, $_REQUEST['link_id']); endif;
 	
-		if (isset($GLOBALS['fwp_post']['confirm']) and $GLOBALS['fwp_post']['confirm']=='Delete'):
-			if (isset($GLOBALS['fwp_post']['link_action']) and is_array($GLOBALS['fwp_post']['link_action'])) :
-				$actions = $GLOBALS['fwp_post']['link_action'];
+		if (MyPHP::post('confirm')=='Delete'):
+			if ( is_array(MyPHP::post('link_action')) ) :
+				$actions = MyPHP::post('link_action');
 			else :
 				$actions = array();
 			endif;
@@ -875,9 +874,9 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 		$link_ids = (isset($_REQUEST['link_ids']) ? $_REQUEST['link_ids'] : array());
 		if (isset($_REQUEST['link_id'])) : array_push($link_ids, $_REQUEST['link_id']); endif;
 	
-		if (isset($GLOBALS['fwp_post']['confirm']) and $GLOBALS['fwp_post']['confirm']=='Undelete'):
-			if (isset($GLOBALS['fwp_post']['link_action']) and is_array($GLOBALS['fwp_post']['link_action'])) :
-				$actions = $GLOBALS['fwp_post']['link_action'];
+		if (MyPHP::post('confirm')=='Undelete'):
+			if ( is_array(MyPHP::post('link_action')) ) :
+				$actions = MyPHP::post('link_action');
 			else :
 				$actions = array();
 			endif;
@@ -1117,7 +1116,7 @@ function fwp_feedfinder_page () {
 
 function fwp_switchfeed_page () {
 	global $wpdb, $wp_db_version;
-	global $fwp_post;
+	global $fwp_post, $fwp_path;
 
 	// If this is a POST, validate source and user credentials
 	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_switchfeed', /*capability=*/ 'manage_links');
@@ -1134,7 +1133,7 @@ function fwp_switchfeed_page () {
 <div class="updated"><p><a href="<?php print $fwp_post['feed_link']; ?>"><?php print esc_html($fwp_post['feed_title']); ?></a>
 has been added as a contributing site, using the feed at
 &lt;<a href="<?php print $fwp_post['feed']; ?>"><?php print esc_html($fwp_post['feed']); ?></a>&gt;.
-| <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/feeds-page.php&amp;link_id=<?php print $link_id; ?>">Configure settings</a>.</p></div>
+| <a href="admin.php?page=<?php print $fwp_path; ?>/feeds-page.php&amp;link_id=<?php print $link_id; ?>">Configure settings</a>.</p></div>
 <?php			else: ?>
 <div class="updated"><p>There was a problem adding the feed. [SQL: <?php echo esc_html(mysql_error()); ?>]</p></div>
 <?php			endif;

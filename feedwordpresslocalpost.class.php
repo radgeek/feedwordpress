@@ -91,7 +91,8 @@ class FeedWordPressLocalPost {
 	}
 
 	public function feed () {
-			return $GLOBALS['feedwordpress']->subscription($this->feed_id());
+		global $feedwordpress;
+		return $feedwordpress->subscription($this->feed_id());
 	}
 	
 	public function feed_id () {

@@ -1,5 +1,7 @@
 <?php
-$GLOBALS['fwp_credentials'] = NULL;
+global $fwp_credentials;
+
+$fwp_credentials = NULL;
 
 class FeedWordPress_File extends WP_SimplePie_File {
 	function FeedWordPress_File ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {

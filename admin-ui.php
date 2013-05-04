@@ -366,8 +366,9 @@ class FeedWordPressAdminPage {
 	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
 
 	function display_sheet_header ($pagename = 'Syndication', $all = false) {
+		global $fwp_path;
 		?>
-		<div class="icon32"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></div>
+		<div class="icon32"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress.png'); ?>" alt="" /></div>
 		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name(/*from feed=*/ false)); ?><?php endif; ?></h2>
 		<?php
 	}
@@ -424,6 +425,8 @@ class FeedWordPressAdminPage {
 	}
 
 	function display () {
+		global $fwp_post;
+
 		if (FeedWordPress::needs_upgrade()) :
 			fwp_upgrade_page();
 			return;
@@ -435,7 +438,7 @@ class FeedWordPressAdminPage {
 		// Process POST request, if any ////////////////
 		////////////////////////////////////////////////
 		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
-			$this->accept_POST($GLOBALS['fwp_post']);
+			$this->accept_POST($fwp_post);
 		else :
 			$this->updated = false;
 		endif;

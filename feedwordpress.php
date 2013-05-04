@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2013.0502
+Version: 2013.0504
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2013.0502
+ * @version 2013.0504
  */
 
 # This uses code derived from:
@@ -32,7 +32,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2013.0502');
+define ('FEEDWORDPRESS_VERSION', '2013.0504');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -794,14 +794,15 @@ function fwp_publish_post_hook ($post_id) {
 
 	function feedwordpress_add_post_edit_controls () {
 		global $feedwordpress;
-		
+		global $inspectPostMeta;
+
 		// Put in Manual Editing checkbox
 		add_meta_box('feedwordpress-post-controls', __('Syndication'), 'feedwordpress_post_edit_controls', 'post', 'side', 'high');
 		
 		add_filter('user_can_richedit', array($feedwordpress, 'user_can_richedit'), 1000, 1);
 		
 		if (FeedWordPress::diagnostic_on('syndicated_posts:static_meta_data')) :
-			$GLOBALS['inspectPostMeta'] = new InspectPostMeta;
+			$inspectPostMeta = new InspectPostMeta;
 		endif;
 	} // function FeedWordPress::postEditControls
 	
