@@ -4,7 +4,7 @@ Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
 Tested up to: 3.5.1
-Stable tag: 2013.0503
+Stable tag: 2013.0504
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -93,6 +93,17 @@ outs, see the documentation at the [FeedWordPress project homepage][].
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
 == Changelog ==
+
+= 2012.0504 =
+
+*	BUGFIX: PHP 5.4 compatibility -- includes some more extensive fixes to
+	compatibility issues with PHP 5.4's handling of global variables
+
+*	MODULE REORGANIZATION: Should ensures that all needed submodules will be
+	properly included regardless of whether you are installing from github,
+	from SVN, or from the WordPress plugins page. If you've been getting
+	fatal errors about required modules not being found, this release should
+	hopefully resolve the issue.
 
 = 2012.0503 =
 
