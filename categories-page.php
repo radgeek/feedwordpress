@@ -450,7 +450,8 @@ blank.</p></td>
 			
 			$globalDogs = SyndicatedPost::category_ids($globalCats, /*unfamiliar=*/ 'create:'.$tax, /*taxonomies=*/ array($tax));
 	
-			$siteWideHref = 'admin.php?page='.$GLOBALS['fwp_path'].'/'.basename(__FILE__);
+			$siteWideHref = $this->admin_page_href(basename(__FILE__));
+
 			if ($page->for_feed_settings()) :
 			?>
 			</td>

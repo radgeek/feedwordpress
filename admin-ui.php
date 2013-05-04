@@ -241,6 +241,12 @@ class FeedWordPressAdminPage {
 <?php
 	} /* FeedWordPressAdminPage::ajax_interface_js () */
 
+	function admin_page_href ($page, $params = array()) {
+		global $fwp_path;
+		$params = array_merge($params, array('page' => $fwp_path.'/'.$page));
+		return MyPHP::url('admin.php', $params);
+	} /* FeedWordPressAdminPage::admin_page_href () */
+
 	function display_feed_settings_page_links ($params = array()) {
 		global $fwp_path;
 
