@@ -2020,7 +2020,7 @@ class FeedWordPress {
 				switch ($method) :
 				case 'echo' :
 					if (!FeedWordPress::update_requested()) :
-						echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.$out."</pre></div>";
+						echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.$out."</pre></div>\n";
 					endif;
 					break;
 				case 'echo_in_cronjob' :
