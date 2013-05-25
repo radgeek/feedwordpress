@@ -903,8 +903,11 @@ class FeedWordPress {
 	var $feedurls = NULL;
 	var $httpauth = NULL;
 	
-	# function FeedWordPress (): Contructor; retrieve a list of feeds 
-	function FeedWordPress () {
+	/**
+	 * FeedWordPress::__construct (): Construct FeedWordPress singleton object
+	 * and retrieves a list of feeds for later reference.
+	 */
+	public function __construct () {
 		$this->feeds = array ();
 		$this->feedurls  = array();
 		$links = FeedWordPress::syndicated_links();
@@ -920,13 +923,28 @@ class FeedWordPress {
 		endforeach; endif;
 
 		$this->httpauth = new FeedWordPressHTTPAuthenticator;
-	} // FeedWordPress::FeedWordPress ()
+	} /* FeedWordPress::__construct () */
 
-	function subscribed ($id) {
+	/**
+	 * FeedWordPress::subscribed (): Check whether a feed is currently in the
+	 * subscription list for FeedWordPress.
+	 *
+	 * @param mixed $id Numeric ID of a WordPress link object or URL of a feed
+	 * @return bool TRUE if currently subscribed; FALSE otherwise.
+	 */
+	public function subscribed ($id) {
 		return (isset($this->feedurls[$id]) or isset($this->feeds[$id]));
 	} /* FeedWordPress::subscribed () */
 	
-	function subscription ($which) {
+	/**
+	 * FeedWordPress::subscription (): Get the SyndicatedLink object for a
+	 * given URL or numeric ID, if we have either an active subscription to
+	 * it; or a de-activated subscription.
+	 *
+	 * @param mixed $which Numeric ID for a WordPress link object or string URL for a feed
+	 * @return mixed SyndicatedLink object if subscription is found; NULL if not
+	 */
+	public function subscription ($which) {
 		$sub = NULL;
 		
 		if (is_string($which) and isset($this->feedurls[$which])) :
@@ -1003,7 +1021,7 @@ class FeedWordPress {
 	# *    Updates to existing posts since the last poll are mirrored in the
 	#      WordPress store.
 	#
-	function update ($uri = null, $crash_ts = null) {
+	public function update ($uri = null, $crash_ts = null) {
 		global $wpdb;
 
 		if (FeedWordPress::needs_upgrade()) : // Will make duplicate posts if we don't hold off
@@ -1094,9 +1112,9 @@ class FeedWordPress {
 		do_action('feedwordpress_update_complete', $delta);
 
 		return $delta;
-	}
+	} /* FeedWordPress::update () */
 
-	function crash_ts ($default = NULL) {
+	public function crash_ts ($default = NULL) {
 		$crash_dt = (int) get_option('feedwordpress_update_time_limit', 0);
 		if ($crash_dt > 0) :
 			$crash_ts = time() + $crash_dt;
@@ -1104,32 +1122,23 @@ class FeedWordPress {
 			$crash_ts = $default;
 		endif;
 		return $crash_ts;
-	}
+	} /* FeedWordPress::crash_ts () */
 	
-	function secret_key () {
+	public function secret_key () {
 		$secret = get_option('feedwordpress_secret_key', false);
 		if (!$secret) : // Generate random key.
 			$secret = substr(md5(uniqid(microtime())), 0, 6);
 			update_option('feedwordpress_secret_key', $secret);
 		endif;
 		return $secret;
-	}
+	} /* FeedWordPress::secret_key () */
 	
-	function has_secret () {
-		return ($this->by_request('feedwordpress_key', $this->secret_key()));
-	}
-
-	// Utility function so I don't have to repeat myself w/ 1,000,003 isset()'s
-	function by_request ($param, $eq = NULL) {
-		$match = false;
-		if (isset($_REQUEST[$param])) :
-			$match = (is_null($eq) ? $_REQUEST[$param] : ($eq==$_REQUEST[$param]));
-		endif;
-		return $match;
-	}
+	public function has_secret () {
+		return (MyPHP::request('feedwordpress_key')==$this->secret_key());
+	} /* FeedWordPress::has_secret () */
 	
 	var $update_hooked = NULL;
-	function automatic_update_hook ($params = array()) {
+	public function automatic_update_hook ($params = array()) {
 		$params = wp_parse_args($params, array( // Defaults
 			'setting only' => false,
 		));
@@ -1140,9 +1149,9 @@ class FeedWordPress {
 		if (
 			!$params['setting only']
 			and $this->has_secret()
-			and $this->by_request('automatic_update')
+			and MyPHP::request('automatic_update')
 		) :
-			$hook = $_REQUEST['automatic_update'];
+			$hook = MyPHP::request('automatic_update');
 			$method = 'URL parameter';
 		endif;
 		
@@ -1159,21 +1168,23 @@ class FeedWordPress {
 		endif;
 		
 		return $hook; 
-	}
-	function last_update_all () {
+	} /* FeedWordPress::automatic_update_hook () */
+
+	public function last_update_all () {
 		$last = get_option('feedwordpress_last_update_all');
-		if ($this->has_secret() and $this->by_request('automatic_update')) :
+		if ($this->has_secret() and MyPHP::request('automatic_update')) :
 			$last = 1; // A long, long time ago.
-		elseif ($this->has_secret() and $this->by_request('last_update_all')) :
-			$last = $_REQUEST['last_update_all'];
+		elseif ($this->has_secret() and MyPHP::request('last_update_all')) :
+			$last = MyPHP::request('last_update_all');
 		endif;
 		return $last;
-	}
-	function force_update_all () {
-		return ($this->has_secret() and $this->by_request('force_update_feeds'));
-	}
+	} /* FeedWordPress::last_update_all () */
+
+	public function force_update_all () {
+		return ($this->has_secret() and MyPHP::request('force_update_feeds'));
+	} /* FeedWordPress::force_update_all () */
 	
-	function stale () {
+	public function stale () {
 		if (!is_null($this->automatic_update_hook())) :
 			// Do our best to avoid possible simultaneous
 			// updates by getting up-to-the-minute settings.
@@ -1202,7 +1213,7 @@ class FeedWordPress {
 			$ret = false;
 		endif;
 		return $ret;
-	} // FeedWordPress::stale()
+	} /* FeedWordPress::stale() */
 
 	static function admin_init () {
 		// WordPress 3.5+ compat: the WP devs are in the midst of removing Links from the WordPress core. Eventually we'll have to deal
@@ -1213,7 +1224,7 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::admin_init() */
 
-	function admin_api () {
+	public function admin_api () {
 		// This sucks, but WordPress doesn't give us any other way to
 		// easily invoke a permanent-delete from a plugged in post
 		// actions link. So we create a magic parameter, and when this
@@ -1234,9 +1245,9 @@ class FeedWordPress {
 			define('EMPTY_TRASH_DAYS', 0);
 		endif;
 
-	}
+	} /* FeedWordPress::admin_api () */
 
-	function init () {
+	public function init () {
 		global $fwp_path;
 		
 		// If this is a FeedWordPress admin page, queue up scripts for AJAX
@@ -1282,7 +1293,7 @@ class FeedWordPress {
 		$this->update_magic_url();
 	} /* FeedWordPress::init() */
 	
-	function fwp_feeds () {
+	public function fwp_feeds () {
 		$feeds = array();
 		$feed_ids = $this->feeds;
 		
@@ -1298,9 +1309,9 @@ class FeedWordPress {
 		header("Content-Type: application/json");	
 		echo json_encode($feeds);
 		exit;
-	}
+	} /* FeedWordPress::fwp_feeds () */
 
-	function fwp_feedcontents () {
+	public function fwp_feedcontents () {
 		$feed_id = MyPHP::request('feed_id');
 		
 		// Let's load up some data from the feed . . .
@@ -1333,7 +1344,7 @@ class FeedWordPress {
 		die;
 	} /* FeedWordPress::fwp_feedcontents () */
 	
-	function fwp_xpathtest () {
+	public function fwp_xpathtest () {
 		$xpath = MyPHP::request('xpath');
 		$feed_id = MyPHP::request('feed_id');
 		$post_id = MyPHP::request('post_id');
@@ -1386,7 +1397,7 @@ class FeedWordPress {
 		die;
 	} /* FeedWordPress::fwp_xpathtest () */
 	
-	function redirect_retired () {
+	public function redirect_retired () {
 		global $wp_query;
 		if (is_singular()) :
 			if ('fwpretired'==$wp_query->post->post_status) :
@@ -1402,9 +1413,9 @@ class FeedWordPress {
 				exit;
 			endif;
 		endif;
-	}
+	} /* FeedWordPress::redirect_retired () */
 	
-	function row_actions ($actions, $post) {
+	public function row_actions ($actions, $post) {
 		if (is_syndicated($post->ID)) :
 			$link = get_delete_post_link($post->ID, '', true);
 			$link = MyPHP::url($link, array("fwp_post_delete" => "nuke"));
@@ -1430,9 +1441,9 @@ class FeedWordPress {
 			$actions = $links;
 		endif;
 		return $actions;
-	}
+	} /* FeedWordPress::row_actions () */
 	
-	function dashboard_setup () {
+	public function dashboard_setup () {
 		$see_it = FeedWordPress::menu_cap();
 		
 		if (current_user_can($see_it)) :
@@ -1488,12 +1499,12 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::dashboard_setup () */
 	
-	function dashboard () {
+	public function dashboard () {
 		$syndicationPage = new FeedWordPressSyndicationPage(dirname(__FILE__).'/syndication.php');
 		$syndicationPage->dashboard_box($syndicationPage);
 	} /* FeedWordPress::dashboard () */
 
-	function user_can_richedit ($rich_edit) {
+	public function user_can_richedit ($rich_edit) {
 
 		$post = new FeedWordPressLocalPost;
 		
@@ -1507,7 +1518,7 @@ class FeedWordPress {
 
 	} /* FeedWordPress::user_can_richedit () */
 	
-	function update_magic_url () {
+	public function update_magic_url () {
 		global $wpdb;
 
 		// Explicit update request in the HTTP request (e.g. from a cron job)
@@ -1532,7 +1543,7 @@ class FeedWordPress {
 						print "[".(sprintf('%4.4f', $time/1000.0)) . "ms] $query\n";
 					endforeach;
 				endforeach;
-				echo $this->log_prefix()."$wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of "; timer_stop(1); print " seconds.";
+				echo self::log_prefix()."$wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of "; timer_stop(1); print " seconds.";
 			endif;
 	
 			debug_out_feedwordpress_footer();
@@ -1543,21 +1554,21 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::magic_update_url () */
 
-	function clear_cache_magic_url () {
+	public function clear_cache_magic_url () {
 		if ($this->clear_cache_requested()) :
 			$this->clear_cache();
 		endif;
 	} /* FeedWordPress::clear_cache_magic_url() */
 	
-	function clear_cache_requested () {
+	public function clear_cache_requested () {
 		return MyPHP::request('clear_cache');
 	} /* FeedWordPress::clear_cache_requested() */
 
-	function update_requested () {
-		return FeedWordPress::by_request('update_feedwordpress');
-	} // FeedWordPress::update_requested()
+	public function update_requested () {
+		return MyPHP::request('update_feedwordpress');
+	} /* FeedWordPress::update_requested() */
 
-	function update_requested_url () {
+	public function update_requested_url () {
 		$ret = null;
 		
 		if (($_REQUEST['update_feedwordpress']=='*')
@@ -1566,15 +1577,15 @@ class FeedWordPress {
 		endif;
 
 		return $ret;
-	} // FeedWordPress::update_requested_url()
+	} /* FeedWordPress::update_requested_url() */
 
-	function auto_update () {
+	public function auto_update () {
 		if ($this->stale()) :
 			$this->update();
 		endif;
 	} /* FeedWordPress::auto_update () */
 
-	function find_link ($uri, $field = 'link_rss') {
+	public function find_link ($uri, $field = 'link_rss') {
 		global $wpdb;
 
 		$unslashed = untrailingslashit($uri);
@@ -1587,7 +1598,7 @@ class FeedWordPress {
 		return $link_id;
 	} /* FeedWordPress::find_link () */
 
-	function syndicate_link ($name, $uri, $rss) {
+	public function syndicate_link ($name, $uri, $rss) {
 		// Get the category ID#
 		$cat_id = FeedWordPress::link_category_id();
 		if (!is_wp_error($cat_id)) :
@@ -1612,7 +1623,7 @@ class FeedWordPress {
 		return $link_id;
 	} /* function FeedWordPress::syndicate_link() */
 
-	/*static*/ function syndicated_status ($what, $default) {
+	static function syndicated_status ($what, $default) {
 		$ret = get_option("feedwordpress_syndicated_{$what}_status");
 		if (!$ret) :
 			$ret = $default;
@@ -1620,7 +1631,7 @@ class FeedWordPress {
 		return $ret;
 	} /* FeedWordPress::syndicated_status() */
 
-	function on_unfamiliar ($what = 'author') {
+	public function on_unfamiliar ($what = 'author') {
 		switch ($what) :
 		case 'category' : $suffix = ':category'; break;
 		case 'post_tag' : $suffix = ':post_tag'; break;
@@ -1630,7 +1641,7 @@ class FeedWordPress {
 		return get_option('feedwordpress_unfamiliar_'.$what, 'create'.$suffix);
 	} // function FeedWordPress::on_unfamiliar()
 
-	function null_email_set () {
+	public function null_email_set () {
 		$base = get_option('feedwordpress_null_email_set');
 
 		if ($base===false) :
@@ -1644,16 +1655,16 @@ class FeedWordPress {
 
 	} /* FeedWordPress::null_email_set () */
 
-	function is_null_email ($email) {
+	public function is_null_email ($email) {
 		$ret = in_array(strtolower(trim($email)), FeedWordPress::null_email_set());
 		$ret = apply_filters('syndicated_item_author_is_null_email', $ret, $email);
 		return $ret;
 	} /* FeedWordPress::is_null_email () */
 
-	function use_aggregator_source_data () {
+	public function use_aggregator_source_data () {
 		$ret = get_option('feedwordpress_use_aggregator_source_data');
 		return apply_filters('syndicated_post_use_aggregator_source_data', ($ret=='yes'));
-	}
+	} /* FeedWordPress::use_aggregator_source_data () */
 
 	/**
 	 * FeedWordPress::munge_permalinks: check whether or not FeedWordPress
@@ -1662,11 +1673,11 @@ class FeedWordPress {
 	 *
 	 * @return bool TRUE if FeedWordPress SHOULD rewrite permalinks; FALSE otherwise
 	 */
-	/*static*/ function munge_permalinks () {
+	static function munge_permalinks () {
 		return (get_option('feedwordpress_munge_permalink', /*default=*/ 'yes') != 'no');
 	} /* FeedWordPress::munge_permalinks() */
 
-	function syndicated_links ($args = array()) {
+	public function syndicated_links ($args = array()) {
 		$contributors = FeedWordPress::link_category_id();
 		if (!is_wp_error($contributors)) :
 			$links = get_bookmarks(array_merge(
@@ -1678,9 +1689,9 @@ class FeedWordPress {
 		endif;
 
 		return $links;
-	} // function FeedWordPress::syndicated_links()
+	} /* FeedWordPress::syndicated_links() */
 
-	function link_category_id () {
+	public function link_category_id () {
 		global $wpdb, $wp_db_version;
 
 		$cat_id = get_option('feedwordpress_cat_id');
@@ -1710,38 +1721,28 @@ class FeedWordPress {
 		endif;
 
 		return $cat_id;
-	} // function FeedWordPress::link_category_id()
+	} /* FeedWordPress::link_category_id() */
 
 	# Upgrades and maintenance...
-	function needs_upgrade () {
+	static function needs_upgrade () {
+		
 		global $wpdb;
-		$fwp_db_version = get_option('feedwordpress_version');
+		$fwp_db_version = get_option('feedwordpress_version', NULL);
 		$ret = false; // innocent until proven guilty
-		if (!$fwp_db_version or $fwp_db_version < FEEDWORDPRESS_VERSION) :
-			// This is an older version or a fresh install. Does it
-			// require a database upgrade or database initialization?
-			if ($fwp_db_version <= 0.96) :
-				// Yes. Check to see whether this is a fresh install or an upgrade.
-				$syn = $wpdb->get_col("
-				SELECT post_id
-				FROM $wpdb->postmeta
-				WHERE meta_key = 'syndication_feed'
-				");
-				if (count($syn) > 0) : // contains at least one syndicated post
-					$ret = true;
-				else : // fresh install; brand it as ours
-					update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
-				endif;
-			elseif ($fwp_db_version < 2009.0707) :
-				// We need to clear out any busted AJAX crap
-				$wpdb->query("
-				DELETE FROM $wpdb->usermeta
-				WHERE LOCATE('feedwordpress', meta_key)
-				AND LOCATE('box', meta_key);
-				");
+		if (is_null($fwp_db_version) or ($fwp_db_version < FEEDWORDPRESS_VERSION)) :
 
+			// This is an older version or a fresh install. Does it require a database
+			// upgrade or database initialization?
+
+			if (is_null($fwp_db_version)) :
+
+				// Fresh install; brand it as ours. Or possibly a version of FWP
+				// from before 0.96. But I'm no longer supporting upgrade paths
+				// for versions from the previous decade. Sorry.
 				update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
+
 			elseif ($fwp_db_version < 2010.0814) :
+
 				// Change in terminology.
 				if (get_option('feedwordpress_unfamiliar_category', 'create')=='default') :
 					update_option('feedwordpress_unfamiliar_category', 'null');
@@ -1774,25 +1775,29 @@ class FeedWordPress {
 					$sub->save_settings(/*reload=*/ true);
 				endforeach;
 				update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
+
 			else :
-				// No. Just brand it with the new version.
+
+				// No upgrade needed. Just brand it with the new version.
 				update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
+
 			endif;
+
 		endif;
 		return $ret;
-	}
+	} /* FeedWordPress::needs_upgrade () */
 
-	function upgrade_database ($from = NULL) {
+	static function upgrade_database ($from = NULL) {
 		global $wpdb;
 
 		if (is_null($from) or $from <= 0.96) : $from = 0.96; endif;
 
 		switch ($from) :
 		case 0.96:
-			 // Dropping legacy upgrade code. If anyone is still
-			 // using 0.96 and just now decided to upgrade, well, I'm
-			 // sorry about that. You'll just have to cope with a few
-			 // duplicate posts.
+			// Dropping legacy upgrade code. If anyone is still
+			// using 0.96 and just now decided to upgrade, well, I'm
+			// sorry about that. You'll just have to cope with a few
+			// duplicate posts.
 
 			// Mark the upgrade as successful.
 			update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
@@ -1800,7 +1805,7 @@ class FeedWordPress {
 		echo "<p>Upgrade complete. FeedWordPress is now ready to use again.</p>";
 	} /* FeedWordPress::upgrade_database() */
 
-	function has_guid_index () {
+	public function has_guid_index () {
 		global $wpdb;
 		
 		$found = false; // Guilty until proven innocent.
@@ -1819,7 +1824,7 @@ class FeedWordPress {
 		return $found;
 	} /* FeedWordPress::has_guid_index () */
 	
-	function create_guid_index () {
+	public function create_guid_index () {
 		global $wpdb;
 		
 		$wpdb->query("
@@ -1827,7 +1832,7 @@ class FeedWordPress {
 		");
 	} /* FeedWordPress::create_guid_index () */
 	
-	function remove_guid_index () {
+	public function remove_guid_index () {
 		global $wpdb;
 		
 		$wpdb->query("
@@ -1835,14 +1840,14 @@ class FeedWordPress {
 		");
 	}
 
-	/*static*/ function fetch_timeout () {
+	static function fetch_timeout () {
 		return apply_filters(
 			'feedwordpress_fetch_timeout',
 			intval(get_option('feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT))
 		);
 	}
 	
-	/*static*/ function fetch ($url, $params = array()) {
+	static function fetch ($url, $params = array()) {
 		if (is_wp_error($url)) :
 			// Let's bounce.
 			return $url;
@@ -1850,7 +1855,8 @@ class FeedWordPress {
 		
 		$force_feed = true; // Default
 
-		// Allow user to change default feed-fetch timeout with a global setting. Props Erigami Scholey-Fuller <http://www.piepalace.ca/blog/2010/11/feedwordpress-broke-my-heart.html>			'timeout' => 
+		// Allow user to change default feed-fetch timeout with a global setting.
+		// Props Erigami Scholey-Fuller <http://www.piepalace.ca/blog/2010/11/feedwordpress-broke-my-heart.html>
 		$timeout = FeedWordPress::fetch_timeout();
  		
 		if (!is_array($params)) :
@@ -1894,7 +1900,7 @@ class FeedWordPress {
 		return $ret;
 	} /* FeedWordPress::fetch () */
 	
-	function clear_cache () {
+	public function clear_cache () {
 		global $wpdb;
 		
 		// Just in case, clear out any old MagpieRSS cache records.
@@ -1919,7 +1925,7 @@ class FeedWordPress {
 		return ($magpies + $simplepies);
 	} /* FeedWordPress::clear_cache () */
 
-	function cache_duration ($params = array()) {
+	public function cache_duration ($params = array()) {
 		$params = wp_parse_args($params, array(
 		"cache" => true,
 		));
@@ -1932,7 +1938,8 @@ class FeedWordPress {
 		endif;
 		return $duration;
 	}
-	function cache_lifetime ($duration) {
+
+	public function cache_lifetime ($duration) {
 		// Check for explicit setting of a lifetime duration
 		if (defined('FEEDWORDPRESS_CACHE_LIFETIME')) :
 			$duration = FEEDWORDPRESS_CACHE_LIFETIME;
@@ -1947,18 +1954,18 @@ class FeedWordPress {
 	} /* FeedWordPress::cache_lifetime () */
 
 	# Utility functions for handling text settings
-	function negative ($f, $setting) {
+	static function negative ($f, $setting) {
 		$nego = array ('n', 'no', 'f', 'false');
 		return (isset($f[$setting]) and in_array(strtolower($f[$setting]), $nego));
-	}
+	} /* FeedWordPress::negative () */
 
-	function affirmative ($f, $setting) {
+	static function affirmative ($f, $setting) {
 		$affirmo = array ('y', 'yes', 't', 'true', 1);
 		return (isset($f[$setting]) and in_array(strtolower($f[$setting]), $affirmo));
-	}
+	} /* FeedWordPress::affirmative () */
 
 	# Internal debugging functions
-	function critical_bug ($varname, $var, $line, $file = NULL) {
+	static function critical_bug ($varname, $var, $line, $file = NULL) {
 		global $wp_version;
 		
 		if (!is_null($file)) :
@@ -1976,15 +1983,15 @@ class FeedWordPress {
 		print "Error data:    ";
 		print  $varname.": "; var_dump($var); echo "\n";
 		die;
-	}
+	} /* FeedWordPress::critical_bug () */
 	
-	function noncritical_bug ($varname, $var, $line, $file = NULL) {
+	static function noncritical_bug ($varname, $var, $line, $file = NULL) {
 		if (FEEDWORDPRESS_DEBUG) : // halt only when we are doing debugging
 			FeedWordPress::critical_bug($varname, $var, $line, $file);
 		endif;
-	}
+	} /* FeedWordPress::noncritical_bug () */
 	
-	function val ($v, $no_newlines = false) {
+	static function val ($v, $no_newlines = false) {
 		ob_start();
 		var_dump($v);
 		$out = ob_get_contents(); ob_end_clean();
@@ -1995,12 +2002,12 @@ class FeedWordPress {
 		return $out;
 	} /* FeedWordPress::val () */
 
-	function diagnostic_on ($level) {
+	static function diagnostic_on ($level) {
 		$show = get_option('feedwordpress_diagnostics_show', array());
 		return (in_array($level, $show));
 	} /* FeedWordPress::diagnostic_on () */
 
-	function diagnostic ($level, $out, $persist = NULL, $since = NULL, $mostRecent = NULL) {
+	static function diagnostic ($level, $out, $persist = NULL, $since = NULL, $mostRecent = NULL) {
 		global $feedwordpress_admin_footer;
 
 		$output = get_option('feedwordpress_diagnostics_output', array());
@@ -2050,27 +2057,29 @@ class FeedWordPress {
 		update_option('feedwordpress_diagnostics_log', $dlog);		
 	} /* FeedWordPress::diagnostic () */
 	
-	function email_diagnostics_override () {
+	public function email_diagnostics_override () {
 		return ($this->has_secret() and isset($_REQUEST['feedwordpress_email_diagnostics']) and !!$_REQUEST['feedwordpress_email_diagnostics']);
-	}
-	function has_emailed_diagnostics ($dlog) {
+	} /* FeedWordPress::email_diagnostics_override () */
+
+	public function has_emailed_diagnostics ($dlog) {
 		$ret = false;
 		if ($this->email_diagnostics_override()
 		or (isset($dlog['schedule']) and isset($dlog['schedule']['last']))) :
 			$ret = true;
 		endif;
 		return $ret;
-	}
-	function ready_to_email_diagnostics ($dlog) {
+	} /* FeedWordPress::has_emailed_diagnostics () */
+
+	public function ready_to_email_diagnostics ($dlog) {
 		$ret = false;
 		if ($this->email_diagnostics_override()
 		or (time() > ($dlog['schedule']['last'] + $dlog['schedule']['freq']))) :
 			$ret = true;
 		endif;
 		return $ret;
-	}
+	} /* FeedWordPress::ready_to_email_diagnostics () */
 	
-	function email_diagnostic_log ($params = array()) {
+	public function email_diagnostic_log ($params = array()) {
 		$params = wp_parse_args($params, array(
 		"force" => false,
 		));
@@ -2200,18 +2209,18 @@ EOMAIL;
 		update_option('feedwordpress_diagnostics_log', $dlog);
 	} /* FeedWordPress::email_diagnostic_log () */
 	
-	function allow_html_mail () {
+	static function allow_html_mail () {
 		return 'text/html';
 	} /* FeedWordPress::allow_html_mail () */
 
-	function admin_footer () {
+	static function admin_footer () {
 		global $feedwordpress_admin_footer;
 		foreach ($feedwordpress_admin_footer as $line) :
 			echo '<div><pre>'.$line.'</pre></div>';
 		endforeach;
 	} /* FeedWordPress::admin_footer () */
 	
-	function log_prefix ($date = false) {
+	static function log_prefix ($date = false) {
 		$home = get_bloginfo('url');
 		$prefix = '['.feedwordpress_display_url($home).'] [feedwordpress] ';
 		if ($date) :
@@ -2220,7 +2229,7 @@ EOMAIL;
 		return $prefix;
 	} /* FeedWordPress::log_prefix () */
 	
-	function menu_cap ($sub = false) {
+	static function menu_cap ($sub = false) {
 		if ($sub) :
 			$cap = apply_filters('feedwordpress_menu_settings_capacity', 'manage_options');
 		else :
@@ -2229,7 +2238,7 @@ EOMAIL;
 		return $cap;
 	} /* FeedWordPress::menu_cap () */
 	
-	function path ($filename = '') {
+	static function path ($filename = '') {
 		global $fwp_path;
 		
 		$path = $fwp_path;
@@ -2237,17 +2246,20 @@ EOMAIL;
 			$path .= '/'.$filename;
 		endif;
 		return $path;
-	}
+	} /* FeedWordPress::path () */
 	
 	// These are superceded by MyPHP::param/post/get/request, but kept
 	// here for backward compatibility.
-	function param ($key, $type = 'REQUEST', $default = NULL) {
+
+	static function param ($key, $type = 'REQUEST', $default = NULL) {
 		return MyPHP::param($key, $default, $type);
-	}
-	function post ($key, $default = NULL) {
+	} /* FeedWordPress::param () */
+
+	static function post ($key, $default = NULL) {
 		return MyPHP::post($key, $default);
-	}
-} // class FeedWordPress
+	} /* FeedWordPress::post () */
+
+} /* class FeedWordPress */
 
 $feedwordpress_admin_footer = array();
 
