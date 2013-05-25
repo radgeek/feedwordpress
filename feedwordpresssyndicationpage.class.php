@@ -649,6 +649,17 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 	function bleg_box ($page, $box = NULL) {
 		?>
+<script type="text/javascript">
+/* <![CDATA[ */
+    (function() {
+        var s = document.createElement('script'), t = document.getElementsByTagName('script')[0];
+        s.type = 'text/javascript';
+        s.async = true;
+        s.src = 'http://api.flattr.com/js/0.6/load.js?mode=auto';
+        t.parentNode.insertBefore(s, t);
+    })();
+/* ]]> */</script>
+
 <div class="donation-form">
 <h4>Keep FeedWordPress improving</h4>
 <form action="https://www.paypal.com/cgi-bin/webscr" accept-charset="UTF-8" method="post"><div>
@@ -658,8 +669,22 @@ WordPress hub. That's got to be worth a few lattes. If you're finding FWP useful
 <a href="http://feedwordpress.radgeek.com/donate/">a modest gift</a>
 is the best way to support steady progress on development, enhancements,
 support, and documentation.</p>
-<div class="donate">
-<input type="hidden" name="business" value="commerce@radgeek.com"  />
+
+<div class="donate" style="vertical-align: middle">
+<div style="display: inline-block; vertical-align: middle; ">
+<a class="FlattrButton" style="display:none;"   href="http://feedwordpress.radgeek.com/"></a>
+<noscript>
+<a href="http://flattr.com/thing/1380856/FeedWordPress" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0" /></a>
+</noscript>
+<div>via Flattr</div>
+
+</div> <!-- style="display: inline-block" -->
+
+<strong style="font-size: 1.25em; margin-left: 1.5em; margin-right: 1.5em; display: inline-block; vertical-align: middle">~ or ~</strong>
+
+<div style="display: inline-block; vertical-align: bottom">
+<input type="image" name="submit" src="https://www.paypal.com/en_GB/i/btn/btn_donate_SM.gif" alt="Donate through PayPal" />
+<input type="hidden" name="business" value="distro.to.feedback@radgeek.com"  />
 <input type="hidden" name="cmd" value="_xclick"  />
 <input type="hidden" name="item_name" value="FeedWordPress donation"  />
 <input type="hidden" name="no_shipping" value="1"  />
@@ -667,8 +692,11 @@ support, and documentation.</p>
 <input type="hidden" name="currency_code" value="USD" />
 <input type="hidden" name="notify_url" value="http://feedwordpress.radgeek.com/ipn/donation"  />
 <input type="hidden" name="custom" value="1"  />
-<input type="image" name="submit" src="https://www.paypal.com/en_GB/i/btn/btn_donate_SM.gif" alt="Donate through PayPal" />
-</div>
+<div>via PayPal</div>
+</div> <!-- style="display: inline-block" -->
+
+</div> <!-- class="donate" -->
+
 </div></form>
 
 <p>You can make a gift online (or
