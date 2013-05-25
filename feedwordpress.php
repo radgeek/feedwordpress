@@ -1249,7 +1249,7 @@ class FeedWordPress {
 
 	public function init () {
 		global $fwp_path;
-		
+
 		// If this is a FeedWordPress admin page, queue up scripts for AJAX
 		// functions that FWP uses. If it is a display page or a non-FWP admin
 		// page, don't.
