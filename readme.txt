@@ -94,12 +94,17 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
-= 2012.0504 =
+= Trunk =
 
 *	BUGFIX: PHP 5.4 compatibility -- includes some more extensive fixes to
 	compatibility issues with PHP 5.4's handling of global variables
 
-*	MODULE REORGANIZATION: Should ensures that all needed submodules will be
+*	DIAGNOSTICS: New diagnostics settings added to help track behavior of
+	terms (categories, post tags, etc.) for syndicated posts.
+
+= 2012.0504 =
+
+*	MODULE REORGANIZATION: Should ensure that all needed submodules will be
 	properly included regardless of whether you are installing from github,
 	from SVN, or from the WordPress plugins page. If you've been getting
 	fatal errors about required modules not being found, this release should
