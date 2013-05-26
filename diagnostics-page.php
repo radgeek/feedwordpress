@@ -168,7 +168,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		<?php $data = $link_category_id->get_error_data(); if (!empty($data)) : ?>
 		<tr>
 		<th scope="row">Auxiliary Data:</th>
-		<td><pre><?php print esc_html(FeedWordPress::val($link_category_id->get_error_data())); ?></pre></td>
+		<td><pre><?php print esc_html(MyPHP::val($link_category_id->get_error_data())); ?></pre></td>
 		</tr>
 		<?php endif; ?>
 		</table>
@@ -410,7 +410,7 @@ function clone_http_test_args_keyvalue_prototype () {
 				break;
 			endswitch;
 			
-			$this->test_html['http_test'] = esc_html(FeedWordPress::val($out));
+			$this->test_html['http_test'] = esc_html(MyPHP::val($out));
 		endif;
 	} /* FeedWordPressDiagnosticsPage::do_http_test () */
 	

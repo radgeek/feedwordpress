@@ -1313,11 +1313,11 @@ class SyndicatedPost {
 					
 					if ($updated and FeedWordPress::diagnostic_on('feed_items:freshness:reasons')) :
 						$updatedReason = ' has a not-yet-seen update hash: '
-						.FeedWordPress::val($hash)
+						.MyPHP::val($hash)
 						.' not in {'
 						.implode(", ", array_map(array('FeedWordPress', 'val'), $seen))
 						.'}. Basis: '
-						.FeedWordPress::val(array_keys($this->update_hash(false)));
+						.MyPHP::val(array_keys($this->update_hash(false)));
 					endif;
 				endif;
 				
@@ -1703,8 +1703,8 @@ class SyndicatedPost {
 			// notice if we are in debug mode.
 			$mesg = "Failed to $verb item [$guid]. WordPress API returned no valid post ID.\n"
 				."\t\tID = ".serialize($this->_wp_id)."\n"
-				."\t\tURL = ".FeedWordPress::val($url)
-				."\t\tFeed = ".FeedWordPress::val($feed); 
+				."\t\tURL = ".MyPHP::val($url)
+				."\t\tFeed = ".MyPHP::val($feed); 
 			FeedWordPress::diagnostic('updated_feeds:errors', "WordPress API error: $mesg");
 			FeedWordPress::diagnostic('feed_items:rejected', $mesg);
 
@@ -1874,7 +1874,7 @@ EOM;
 					// Allow for either a single value or an array
 					if (!is_array($values)) $values = array($values);
 					foreach ( $values as $value ) :
-					FeedWordPress::diagnostic('syndicated_posts:meta_data', "Adding post meta-datum to post [$postId]: [$key] = ".FeedWordPress::val($value, /*no newlines=*/ true));
+					FeedWordPress::diagnostic('syndicated_posts:meta_data', "Adding post meta-datum to post [$postId]: [$key] = ".MyPHP::val($value, /*no newlines=*/ true));
 						add_post_meta($postId, $key, $value, /*unique=*/ false);
 					endforeach;
 				endforeach;

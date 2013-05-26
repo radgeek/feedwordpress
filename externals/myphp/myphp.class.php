@@ -82,7 +82,28 @@ if (!class_exists('MyPHP')) :
 			endforeach;
 			return implode("&", $getQuery);
 		} /* MyPHP::to_http_post () */
-	}
+		
+		/**
+		 * MyPHP::val(): Captures the output of var_dump() to a string,
+		 * with some optional filtering removing newlines and replacing 
+		 * them with spaces) applied.
+		 *
+		 * @param mixed $v Value to dump to a string representation
+		 * @param bool $no_newlines Whether to filter out newline chars
+		 *
+		 * @return string
+		 */
+		 static function val ($v, $no_newlines = false) {
+		 	 ob_start();
+		 	 var_dump($v);
+		 	 $out = ob_get_contents(); ob_end_clean();
+		
+		 	 if ($no_newlines) :
+		 	 	$out = preg_replace('/\s+/', " ", $out);
+		 	 endif;
+		 	 return $out;
+		 } /* MyPHP::val () */
+	} /* class MyPHP */
 endif;
 
 

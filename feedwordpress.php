@@ -1992,14 +1992,7 @@ class FeedWordPress {
 	} /* FeedWordPress::noncritical_bug () */
 	
 	static function val ($v, $no_newlines = false) {
-		ob_start();
-		var_dump($v);
-		$out = ob_get_contents(); ob_end_clean();
-		
-		if ($no_newlines) :
-			$out = preg_replace('/\s+/', " ", $out);
-		endif;
-		return $out;
+		return MyPHP::val($v, $no_newlines);
 	} /* FeedWordPress::val () */
 
 	static function diagnostic_on ($level) {

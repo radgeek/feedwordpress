@@ -1034,7 +1034,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 						
 						print "<h4>".__("HTTP Transport").":</h4>\n";
 						print "<ol>\n";
-						print "<li>".FeedWordPress::val($transport)."</li>\n";
+						print "<li>".MyPHP::val($transport)."</li>\n";
 						print "</ol>\n";
 					endif;
 					
