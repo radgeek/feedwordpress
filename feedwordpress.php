@@ -263,7 +263,7 @@ class FeedWordPressDiagnostic {
 	}
 
 	function admin_emails ($id = '') {
-		$users = get_users_of_blog($id);
+		$users = get_users($id);
 		$recipients = array();
 		foreach ($users as $user) :
 			$user_id = (isset($user->user_id) ? $user->user_id : $user->ID);
