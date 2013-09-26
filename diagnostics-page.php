@@ -7,25 +7,25 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressdiagnosticspage');
 		$this->dispatch = 'feedwordpress_diagnostics';
 		$this->filename = __FILE__;
-		
+
 		$this->test_html = array();
 		add_action('feedwordpress_diagnostics_do_http_test', array($this, 'do_http_test'), 10, 1);
 	}
 
-	function has_link () { return false; }
+	public static function has_link () { return false; }
 
 	function display () {
 		global $wpdb, $wp_db_version, $fwp_path;
 		global $fwp_post;
-		
+
 		if (FeedWordPress::needs_upgrade()) :
 			fwp_upgrade_page();
 			return;
 		endif;
-	
+
 		// If this is a POST, validate source and user credentials
 		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_diagnostics', /*capability=*/ 'manage_options');
-	
+
 		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
 			$this->accept_POST($fwp_post);
 			do_action('feedwordpress_admin_page_diagnostics_save', $fwp_post, $this);
@@ -47,7 +47,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 			'updates_box' => __('Updates'),
 			'tests_box' => __('Diagnostic Tests'),
 		);
-	
+
 		foreach ($boxes_by_methods as $method => $title) :
 			add_meta_box(
 				/*id=*/ 'feedwordpress_'.$method,
@@ -76,13 +76,13 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		or isset($post['feedwordpress_diagnostics_do'])) :
 			update_option('feedwordpress_debug', $post['feedwordpress_debug']);
 			update_option('feedwordpress_secret_key', $post['feedwordpress_secret_key']);
-			
+
 			if (!isset($post['diagnostics_output'])
 			or !is_array($post['diagnostics_output'])) :
 				$post['diagnostics_output'] = array();
 			endif;
 			update_option('feedwordpress_diagnostics_output', $post['diagnostics_output']);
-	
+
 			if (!isset($post['diagnostics_show'])
 			or !is_array($post['diagnostics_show'])) :
 				$post['diagnostics_show'] = array();
@@ -95,7 +95,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 			else :
 				delete_option('feedwordpress_diagnostics_persistent_errors_hours');
 			endif;
-			
+
 			if (in_array('email', $post['diagnostics_output'])) :
 				$ded = $post['diagnostics_email_destination'];
 				if ('mailto'==$ded) :
@@ -106,13 +106,13 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 			else :
 				delete_option('feedwordpress_diagnostics_email_destination');
 			endif;
-			
+
 			if (isset($post['feedwordpress_diagnostics_do'])) :
 				foreach ($post['feedwordpress_diagnostics_do'] as $do => $value) :
 					do_action('feedwordpress_diagnostics_do_'.$do, $post);
 				endforeach;
 			endif;
-			
+
 			$this->updated = true; // Default update message
 		endif;
 	} /* FeedWordPressDiagnosticsPage::accept_POST () */
@@ -147,7 +147,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		</ul>
 		</td>
 		</tr>
-		
+
 		<tr>
 		<th scope="row">Link Category:</th>
 		<td><?php if (!is_wp_error($link_category_id)) :
@@ -174,7 +174,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		</table>
 		<?php endif; ?></td>
 		</tr>
-		
+
 		<tr>
 		<th scope="row"><?php _e('Secret Key:'); ?></th>
 		<td><input type="text" name="feedwordpress_secret_key" value="<?php print esc_attr($feedwordpress->secret_key()); ?>" />
@@ -186,13 +186,13 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 
 		<?php
 	} /* FeedWordPressDiagnosticsPage::info_box () */
-	
+
 	function diagnostics_box ($page, $box = NULL) {
 		$settings = array();
 		$settings['debug'] = (get_option('feedwordpress_debug')=='yes');
 
 		$diagnostics_output = get_option('feedwordpress_diagnostics_output', array());
-		
+
 		$users = fwp_author_list();
 
 		$ded = get_option('feedwordpress_diagnostics_email_destination', 'admins');
@@ -202,7 +202,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		else :
 			$ded_addy = NULL;
 		endif;
-		
+
 		// Hey ho, let's go...
 		?>
 <table class="edit-form">
@@ -255,16 +255,16 @@ testing but absolutely inappropriate for a production server.</p>
 			'mailto',
 			'inline'
 		);
-	} );	
+	} );
 </script>
 		<?php
 	} /* FeedWordPressDiagnosticsPage::diagnostics_box () */
-	
+
 	/*static*/ function updates_box ($page, $box = NULL) {
 		$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
 		$fields = apply_filters('feedwordpress_diagnostics', array(
 			'Update Diagnostics' => array(
-				'update_schedule:check' => 'whenever a FeedWordPress checks in on the update schedule', 
+				'update_schedule:check' => 'whenever a FeedWordPress checks in on the update schedule',
 				'updated_feeds' => 'as each feed is checked for updates',
 				'updated_feeds:errors:persistent' => 'when attempts to update a feed have resulted in errors</label> <label>for at least <input type="number" min="1" max="360" step="1" name="diagnostics_persistent_error_hours" value="'.$hours.'" /> hours',
 				'updated_feeds:errors' => 'any time FeedWordPress encounters any errors while checking a feed for updates',
@@ -281,12 +281,12 @@ testing but absolutely inappropriate for a production server.</p>
 			),
 			'Advanced Diagnostics' => array(
 				'feed_items:freshness:reasons' => 'explaining the reason that a post was treated as an update to an existing post',
-				'feed_items:freshness:sql' => 'when FeedWordPress issues the SQL query it uses to decide whether to treat items as new, updates, or duplicates', 
+				'feed_items:freshness:sql' => 'when FeedWordPress issues the SQL query it uses to decide whether to treat items as new, updates, or duplicates',
 				'syndicated_posts:categories:test' => 'as FeedWordPress checks for the familiarity of feed categories and tags',
 				'syndicated_posts:static_meta_data' => 'providing meta-data about syndicated posts in the Edit Posts interface',
 			),
 		), $page);
-		
+
 		foreach ($fields as $section => $items) :
 			foreach ($items as $key => $label) :
 				$checked[$key] = '';
@@ -319,7 +319,7 @@ testing but absolutely inappropriate for a production server.</p>
 </table>
 		<?php
 	} /* FeedWordPressDiagnosticsPage::updates_box () */
-	
+
 	function tests_box ($page, $box = NULL) {
 ?>
 <script type="text/javascript">
@@ -329,7 +329,7 @@ function clone_http_test_args_keyvalue_prototype () {
 	newRow.find('.http_test_args_key').attr('name', 'http_test_args_key['+next+']').val('');
 	newRow.find('.http_test_args_value').attr('name', 'http_test_args_value['+next+']').val('');
 
-	newRow.appendTo('#http-test-args');	
+	newRow.appendTo('#http-test-args');
 	return false;
 }
 </script>
@@ -356,7 +356,7 @@ function clone_http_test_args_keyvalue_prototype () {
 	<td><a href="#http-test-args" onclick="return clone_http_test_args_keyvalue_prototype();">+ Add</a></td>
 	</tr>
 	</table>
-	
+
 	<?php if (isset($page->test_html['http_test'])) : ?>
 	<div style="position: relative">
 	<div style="width: 100%; overflow: scroll; background-color: #eed">
@@ -375,7 +375,7 @@ function clone_http_test_args_keyvalue_prototype () {
 	function do_http_test ($post) {
 		if (isset($post['http_test_url']) and isset($post['http_test_method'])) :
 			$url = $post['http_test_url'];
-			
+
 			$args = array();
 			if (isset($post['http_test_args_key'])) :
 				foreach ($post['http_test_args_key'] as $idx => $name) :
@@ -386,21 +386,21 @@ function clone_http_test_args_keyvalue_prototype () {
 						and isset($post['http_test_args_value'][$idx])) :
 							$value = $post['http_test_args_value'][$idx];
 						endif;
-						
+
 						if (preg_match('/^javascript:(.*)$/i', $value, $refs)) :
-							if (function_exists('json_decode')) :	
+							if (function_exists('json_decode')) :
 								$json_value = json_decode($refs[1]);
 								if (!is_null($json_value)) :
 									$value = $json_value;
 								endif;
 							endif;
 						endif;
-						
+
 						$args[$name] = $value;
 					endif;
 				endforeach;
 			endif;
-			
+
 			switch ($post['http_test_method']) :
 			case 'wp_remote_request' :
 				$out = wp_remote_request($url, $args);
@@ -409,11 +409,11 @@ function clone_http_test_args_keyvalue_prototype () {
 				$out = new FeedWordPress_File($url);
 				break;
 			endswitch;
-			
+
 			$this->test_html['http_test'] = esc_html(FeedWordPress::val($out));
 		endif;
 	} /* FeedWordPressDiagnosticsPage::do_http_test () */
-	
+
 } /* class FeedWordPressDiagnosticsPage */
 
 	$diagnosticsPage = new FeedWordPressDiagnosticsPage;
