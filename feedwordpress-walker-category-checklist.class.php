@@ -15,12 +15,12 @@ class FeedWordPress_Walker_Category_Checklist extends Walker_Category_Checklist 
 	var $checkbox_name = NULL;
 	function FeedWordPress_Walker_Category_Checklist ($params = array()) {
 		$this->set_taxonomy('category');
-		
+
 		if (isset($params['checkbox_name'])) :
 			$this->checkbox_name = $params['checkbox_name'];
 		endif;
 	}
-	
+
 	function set_prefix ($prefix) {
 		$this->prefix = $prefix;
 	}
@@ -28,11 +28,11 @@ class FeedWordPress_Walker_Category_Checklist extends Walker_Category_Checklist 
 		$this->taxonomy = $taxonomy;
 	}
 
-	function start_el (&$output, $category, $depth, $args) {
+	function start_el( &$output, $object, $depth = 0, $args = array(), $current_object_id = 0 ) {
 		extract($args);
                if ( empty($taxonomy) ) :
 			$taxonomy = 'category';
-		endif; 
+		endif;
 
 		if (!is_null($this->checkbox_name)) :
 			$name = $this->checkbox_name;
@@ -41,16 +41,16 @@ class FeedWordPress_Walker_Category_Checklist extends Walker_Category_Checklist 
 		else :
 			$name = 'tax_input['.$taxonomy.']';
 		endif;
-		
+
 		$unit = array();
 		if (strlen($this->prefix) > 0) :
 			$unit[] = $this->prefix;
 		endif;
 		$unit[] = $taxonomy;
-		$unit[] = $category->term_id;
+		$unit[] = $object->term_id;
 		$unitId = implode("-", $unit);
 
-		$class = in_array( $category->term_id, $popular_cats ) ? ' class="popular-category category-checkbox"' : ' class="category-checkbox"';
-		$output .= "\n<li id='{$unitId}'$class>" . '<label class="selectit"><input value="' . $category->term_id . '" type="checkbox" name="'.$name.'[]" id="in-'.$unitId. '"' . checked( in_array( $category->term_id, $selected_cats ), true, false ) . disabled( empty( $args['disabled'] ), false, false ) . ' /> ' . esc_html( apply_filters('the_category', $category->name )) . '</label>';
+		$class = in_array( $object->term_id, $popular_cats ) ? ' class="popular-category category-checkbox"' : ' class="category-checkbox"';
+		$output .= "\n<li id='{$unitId}'$class>" . '<label class="selectit"><input value="' . $object->term_id . '" type="checkbox" name="'.$name.'[]" id="in-'.$unitId. '"' . checked( in_array( $object->term_id, $selected_cats ), true, false ) . disabled( empty( $args['disabled'] ), false, false ) . ' /> ' . esc_html( apply_filters('the_category', $object->name )) . '</label>';
 	} /* FeedWordPress_Walker_Category_Checklist::start_el() */
 } /* FeedWordPress_Walker_Category_Checklist */
