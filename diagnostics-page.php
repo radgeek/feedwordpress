@@ -187,7 +187,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressDiagnosticsPage::info_box () */
 
-	function diagnostics_box ($page, $box = NULL) {
+	static function diagnostics_box ($page, $box = NULL) {
 		$settings = array();
 		$settings['debug'] = (get_option('feedwordpress_debug')=='yes');
 
@@ -260,7 +260,7 @@ testing but absolutely inappropriate for a production server.</p>
 		<?php
 	} /* FeedWordPressDiagnosticsPage::diagnostics_box () */
 
-	/*static*/ function updates_box ($page, $box = NULL) {
+	static function updates_box ($page, $box = NULL) {
 		$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
 		$fields = apply_filters('feedwordpress_diagnostics', array(
 			'Update Diagnostics' => array(
@@ -320,7 +320,7 @@ testing but absolutely inappropriate for a production server.</p>
 		<?php
 	} /* FeedWordPressDiagnosticsPage::updates_box () */
 
-	function tests_box ($page, $box = NULL) {
+	static function tests_box ($page, $box = NULL) {
 ?>
 <script type="text/javascript">
 function clone_http_test_args_keyvalue_prototype () {
