@@ -1677,7 +1677,7 @@ class FeedWordPress {
 		return (get_option('feedwordpress_munge_permalink', /*default=*/ 'yes') != 'no');
 	} /* FeedWordPress::munge_permalinks() */
 
-	public function syndicated_links ($args = array()) {
+	public static function syndicated_links ($args = array()) {
 		$contributors = FeedWordPress::link_category_id();
 		if (!is_wp_error($contributors)) :
 			$links = get_bookmarks(array_merge(
