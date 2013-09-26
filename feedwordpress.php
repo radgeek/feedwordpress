@@ -1585,7 +1585,7 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::auto_update () */
 
-	public function find_link ($uri, $field = 'link_rss') {
+	public static function find_link ($uri, $field = 'link_rss') {
 		global $wpdb;
 
 		$unslashed = untrailingslashit($uri);
@@ -1598,7 +1598,7 @@ class FeedWordPress {
 		return $link_id;
 	} /* FeedWordPress::find_link () */
 
-	public function syndicate_link ($name, $uri, $rss) {
+	public static function syndicate_link ($name, $uri, $rss) {
 		// Get the category ID#
 		$cat_id = FeedWordPress::link_category_id();
 		if (!is_wp_error($cat_id)) :
@@ -1631,7 +1631,7 @@ class FeedWordPress {
 		return $ret;
 	} /* FeedWordPress::syndicated_status() */
 
-	public function on_unfamiliar ($what = 'author') {
+	public static function on_unfamiliar ($what = 'author') {
 		switch ($what) :
 		case 'category' : $suffix = ':category'; break;
 		case 'post_tag' : $suffix = ':post_tag'; break;
@@ -1641,7 +1641,7 @@ class FeedWordPress {
 		return get_option('feedwordpress_unfamiliar_'.$what, 'create'.$suffix);
 	} // function FeedWordPress::on_unfamiliar()
 
-	public function null_email_set () {
+	public static function null_email_set () {
 		$base = get_option('feedwordpress_null_email_set');
 
 		if ($base===false) :
