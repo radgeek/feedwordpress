@@ -1691,7 +1691,7 @@ class FeedWordPress {
 		return $links;
 	} /* FeedWordPress::syndicated_links() */
 
-	public function link_category_id () {
+	public static function link_category_id () {
 		global $wpdb, $wp_db_version;
 
 		$cat_id = get_option('feedwordpress_cat_id');
