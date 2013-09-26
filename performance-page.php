@@ -82,7 +82,7 @@ class FeedWordPressPerformancePage extends FeedWordPressAdminPage {
 
 	} /* FeedWordPressPerformancePage::accept_POST () */
 
-	/*static*/ function performance_box ($page, $box = NULL) {
+	static function performance_box ($page, $box = NULL) {
 
 		// Hey ho, let's go...
 		?>
