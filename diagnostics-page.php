@@ -117,7 +117,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressDiagnosticsPage::accept_POST () */
 
-	function info_box ($page, $box = NULL) {
+	static function info_box ($page, $box = NULL) {
 		global $feedwordpress;
 		global $wp_version;
 		$link_category_id = FeedWordPress::link_category_id();
