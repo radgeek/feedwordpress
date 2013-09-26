@@ -2105,7 +2105,7 @@ EOM;
 	 * @param array|null $taxonomies
 	 * @return array
 	 */
-	function category_ids ($cats, $unfamiliar_category = 'create', $taxonomies = NULL, $params = array()) {
+	static function category_ids ($cats, $unfamiliar_category = 'create', $taxonomies = NULL, $params = array()) {
 		$singleton = (isset($params['singleton']) ? $params['singleton'] : true);
 		$allowFilters = (isset($params['filters']) ? $params['filters'] : false);
 
