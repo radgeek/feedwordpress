@@ -1805,7 +1805,7 @@ class FeedWordPress {
 		echo "<p>Upgrade complete. FeedWordPress is now ready to use again.</p>";
 	} /* FeedWordPress::upgrade_database() */
 
-	public function has_guid_index () {
+	public static function has_guid_index () {
 		global $wpdb;
 
 		$found = false; // Guilty until proven innocent.
