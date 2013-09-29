@@ -1939,7 +1939,7 @@ class FeedWordPress {
 		return $duration;
 	}
 
-	public function cache_lifetime ($duration) {
+	public static function cache_lifetime ($duration) {
 		// Check for explicit setting of a lifetime duration
 		if (defined('FEEDWORDPRESS_CACHE_LIFETIME')) :
 			$duration = FEEDWORDPRESS_CACHE_LIFETIME;
