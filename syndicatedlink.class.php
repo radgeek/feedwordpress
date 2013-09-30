@@ -677,7 +677,12 @@ class SyndicatedLink {
 			// Avoid duplication of this correction
 			$fallback_global = preg_replace('/^feedwordpress_/', '', $fallback_global);
 
-			$ret = get_option('feedwordpress_'.$fallback_global, /*default=*/ NULL);
+			// Occasionally we'll get an array back. Convert it to a string
+			if ( is_array($fallback_global) && sizeof($fallback_global) )
+				$fallback_global = reset($fallback_global);
+
+			if ( $fallback_global )
+				$ret = get_option('feedwordpress_'.$fallback_global, /*default=*/ NULL);
 		endif;
 
 		$no_value = (
