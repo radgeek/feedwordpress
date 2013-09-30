@@ -1900,7 +1900,7 @@ class FeedWordPress {
 		return $ret;
 	} /* FeedWordPress::fetch () */
 
-	public function clear_cache () {
+	public static function clear_cache () {
 		global $wpdb;
 
 		// Just in case, clear out any old MagpieRSS cache records.
@@ -1925,7 +1925,7 @@ class FeedWordPress {
 		return ($magpies + $simplepies);
 	} /* FeedWordPress::clear_cache () */
 
-	public function cache_duration ($params = array()) {
+	public static function cache_duration ($params = array()) {
 		$params = wp_parse_args($params, array(
 		"cache" => true,
 		));
