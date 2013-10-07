@@ -1165,13 +1165,13 @@ class SyndicatedPost {
 
 	var $_base = null;
 
-	function resolve_single_relative_uri ($refs) {
+	static function resolve_single_relative_uri ($refs) {
 		$tag = FeedWordPressHTML::attributeMatch($refs);
 		$url = SimplePie_Misc::absolutize_url($tag['value'], $this->_base);
 		return $tag['prefix'] . $url . $tag['suffix'];
 	} /* function SyndicatedPost::resolve_single_relative_uri() */
 
-	function resolve_relative_uris ($content, $obj) {
+	static function resolve_relative_uris ($content, $obj) {
 		$set = $obj->link->setting('resolve relative', 'resolve_relative', 'yes');
 		if ($set and $set != 'no') :
 			// Fallback: if we don't have anything better, use the
