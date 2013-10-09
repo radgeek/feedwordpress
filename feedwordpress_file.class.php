@@ -5,10 +5,6 @@ $fwp_credentials = NULL;
 
 class FeedWordPress_File extends WP_SimplePie_File {
 	function FeedWordPress_File ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
-		self::__construct($url, $timeout, $redirects, $headers, $useragent, $force_fsockopen);
-	}
-	
-	function __construct ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
 		global $feedwordpress;
 		global $wp_version;
 
@@ -16,7 +12,7 @@ class FeedWordPress_File extends WP_SimplePie_File {
 		if ($feedwordpress->subscribed($url)) :
 			$source = $feedwordpress->subscription($url);
 		endif;
-		
+
 		$this->url = $url;
 		$this->timeout = $timeout;
 		$this->redirects = $redirects;
@@ -24,13 +20,13 @@ class FeedWordPress_File extends WP_SimplePie_File {
 		$this->useragent = $useragent;
 
 		$this->method = SIMPLEPIE_FILE_SOURCE_REMOTE;
-		
+
 		global $wpdb;
 		global $fwp_credentials;
-		
+
 		if ( preg_match('/^http(s)?:\/\//i', $url) ) :
 			$args = array( 'timeout' => $this->timeout, 'redirection' => $this->redirects);
-	
+
 			if ( !empty($this->headers) )
 				$args['headers'] = $this->headers;
 
@@ -62,7 +58,7 @@ class FeedWordPress_File extends WP_SimplePie_File {
 				$args['authentication'] = $source->authentication_method();
 				$args['username'] = $source->username();
 				$args['password'] = $source->password();
-			
+
 			endif;
 
 			FeedWordPress::diagnostic('updated_feeds:http', "HTTP [$url] &#8668; ".esc_html(FeedWordPress::val($args)));
@@ -77,13 +73,13 @@ class FeedWordPress_File extends WP_SimplePie_File {
 				$this->body = wp_remote_retrieve_body( $res );
 				$this->status_code = wp_remote_retrieve_response_code( $res );
 			}
-			
+
 			if ($source InstanceOf SyndicatedLink) :
 				$source->update_setting('link/filesize', strlen($this->body));
 				$source->update_setting('link/http status', $this->status_code);
 				$source->save_settings(/*reload=*/ true);
 			endif;
-		
+
 		// Do not allow schemes other than http(s)? for the time being.
 		// They are unlikely to be used; and unrestricted use of schemes
 		// allows for user to use an unrestricted file:/// scheme, which

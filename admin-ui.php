@@ -28,7 +28,7 @@ class FeedWordPressAdminPage {
 		$slug = preg_replace('/FeedWordPress(.*)Page/', '$1', get_class($this));
 		return strtolower($slug);
 	}
-	
+
 	function pagename ($context = NULL) {
 		if (is_null($context)) :
 			$context = 'default';
@@ -50,7 +50,7 @@ class FeedWordPressAdminPage {
 		elseif ($this->save_requested_in($post)) : // User mashed Save Changes
 			$this->save_settings($post);
 		endif;
-		do_action($this->dispatch.'_post', $post, $this);		
+		do_action($this->dispatch.'_post', $post, $this);
 	}
 
 	function update_feed () {
@@ -58,7 +58,7 @@ class FeedWordPressAdminPage {
 
 		add_action('feedwordpress_check_feed', 'update_feeds_mention');
 		add_action('feedwordpress_check_feed_complete', 'update_feeds_finish', 10, 3);
-		
+
 		print '<div class="updated">';
 		print "<ul>";
 		$uri = $this->link->uri();
@@ -87,7 +87,7 @@ class FeedWordPressAdminPage {
 			// Save settings
 			$this->link->save_settings(/*reload=*/ true);
 			$this->updated = true;
-			
+
 			// Reset, reload
 			$link_id = $this->link->id;
 			unset($this->link);
@@ -118,7 +118,7 @@ class FeedWordPressAdminPage {
 		endif;
 
 		if ($this->for_feed_settings()) : // Check feed-specific setting first; fall back to global
-			if (!$params['fallback']) : $global_name = NULL; endif; 
+			if (!$params['fallback']) : $global_name = NULL; endif;
 			$ret = $this->link->setting($feed_name, $global_name, $fallback_value, $params['default']);
 		else : // Check global setting
 			$ret = get_option($global_name, $fallback_value);
@@ -134,7 +134,7 @@ class FeedWordPressAdminPage {
 			$feed_name = $names['feed'];
 			$global_name = 'feedwordpress_'.$names['global'];
 		endif;
-		
+
 		if ($this->for_feed_settings()) : // Update feed-specific setting
 			$this->link->update_setting($feed_name, $value, $default);
 		else : // Update global setting
@@ -148,8 +148,8 @@ class FeedWordPressAdminPage {
 	function update_requested_in ($post) {
 		return (isset($post['update']) and (strlen($post['update']) > 0));
 	}
-	
-	/*static*/ function submitted_link_id () {
+
+	public static function submitted_link_id () {
 		global $fwp_post;
 
 		// Presume global unless we get a specific link ID
@@ -166,7 +166,7 @@ class FeedWordPressAdminPage {
 				$link_id = MyPHP::request('save_link_id');
 			endif;
 		endforeach;
-		
+
 		if (is_null($link_id) and isset($_REQUEST['link_id'])) :
 			$link_id = MyPHP::request('link_id');
 		endif;
@@ -174,7 +174,7 @@ class FeedWordPressAdminPage {
 		return $link_id;
 	} /* FeedWordPressAdminPage::submitted_link_id() */
 
-	/*static*/ function submitted_link () {
+	public static function submitted_link () {
 		$link_id = FeedWordPressAdminPage::submitted_link_id();
 		if (is_numeric($link_id) and $link_id) :
 			$link = new SyndicatedLink($link_id);
@@ -212,7 +212,7 @@ class FeedWordPressAdminPage {
 	function meta_box_context () {
 		return $this->context;
 	} /* FeedWordPressAdminPage::meta_box_context () */
-	
+
 	/**
 	 * Outputs JavaScript to fix AJAX toggles settings.
 	 *
@@ -252,7 +252,7 @@ class FeedWordPressAdminPage {
 			$link_id = NULL;
 			if (is_object($link)) :
 				if (method_exists($link, 'found')) :
-					// Is this a SyndicatedLink object?					
+					// Is this a SyndicatedLink object?
 					if ($link->found()) :
 						$link_id = $link->link->link_id;
 					endif;
@@ -284,14 +284,14 @@ class FeedWordPressAdminPage {
 			'subscription' => $this->link,
 		));
 		$sub = $params['subscription'];
-		
+
 		$links = array(
 			"Feed" => array('page' => 'feeds-page.php', 'long' => 'Feeds & Updates'),
 			"Posts" => array('page' => 'posts-page.php', 'long' => 'Posts & Links'),
 			"Authors" => array('page' => 'authors-page.php', 'long' => 'Authors'),
 			'Categories' => array('page' => 'categories-page.php', 'long' => 'Categories & Tags'),
 		);
-		
+
 		$link_id = NULL;
 		if (is_object($sub)) :
 			if (method_exists($sub, 'found')) :
@@ -302,40 +302,40 @@ class FeedWordPressAdminPage {
 				$link_id = $sub->link_id;
 			endif;
 		endif;
-		
+
 		print $params['before']; $first = true;
 		foreach ($links as $label => $link) :
 			if (!$first) :	print $params['between']; endif;
-			
+
 			if (isset($link['url'])) : MyPHP::url($link['url'], array("link_id" => $link_id));
 			else : $url = $this->admin_page_href($link['page'], array(), $sub);
 			endif;
 			$url = esc_html($url);
-			
+
 			if ($link['page']==basename($this->filename)) :
 				print "<strong>";
 			else :
 				print "<a href=\"${url}\">";
 			endif;
-			
+
 			if ($params['long']) : print esc_html(__($link['long']));
 			else : print esc_html(__($label));
 			endif;
-			
+
 			if ($link['page']==basename($this->filename)) :
 				print "</strong>";
 			else :
 				print "</a>";
 			endif;
-			
+
 			$first = false;
 		endforeach;
 		print $params['after'];
 	} /* FeedWordPressAdminPage::display_feed_settings_page_links */
-	
+
 	function display_feed_select_dropdown() {
 		$links = FeedWordPress::syndicated_links();
-		
+
 		?>
 		<div id="fwpfs-container"><ul class="subsubsub">
 		<li><select name="link_id" class="fwpfs" style="max-width: 20.0em;">
@@ -353,14 +353,14 @@ class FeedWordPressAdminPage {
 			'after' => '</li>',
 			'subscription' => $this->link,
 		));
-		
+
 		if ($this->for_feed_settings()) :
 		?>
 		<li><input class="button" type="submit" name="update" value="Update Now" /></li>
 		<?php
 		endif;
 		?>
-		</ul>		
+		</ul>
 		</div>
 		<?php
 	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
@@ -385,7 +385,7 @@ class FeedWordPressAdminPage {
 				$this->mesg = $this->updated;
 			endif;
 		endif;
-		
+
 		if (!is_null($this->mesg)) :
 			?>
 			<div class="updated">
@@ -408,12 +408,12 @@ class FeedWordPressAdminPage {
 		<?php
 		endif;
 	} /* FeedWordPressAdminPage::display_settings_scope_message () */
-	
-	/*static*/ function has_link () { return true; }
+
+	public static function has_link () { return true; }
 
 	function form_action ($filename = NULL) {
 		global $fwp_path;
-		
+
 		if (is_null($filename)) :
 			$filename = basename($this->filename);
 		endif;
@@ -451,7 +451,7 @@ class FeedWordPressAdminPage {
 			$this->pagename('settings-update'),
 			$this->update_message()
 		);
-		
+
 		$this->open_sheet($this->pagename('open-sheet'));
 		?>
 		<div id="post-body">
@@ -464,7 +464,7 @@ class FeedWordPressAdminPage {
 				$id = 'feedwordpress_'.$method;
 				$title = $row;
 			endif;
-	
+
 			add_meta_box(
 				/*id=*/ $id,
 				/*title=*/ $title,
@@ -493,7 +493,7 @@ class FeedWordPressAdminPage {
 		$this->ajax_interface_js();
 		?>
 		</script>
-		
+
 		<?php
 		add_action(
 			FeedWordPressCompatibility::bottom_script_hook($this->filename),
@@ -535,14 +535,14 @@ class FeedWordPressAdminPage {
 		endif;
 		?>
 		</div>
-		
+
 		<div id="poststuff">
 		<?php
 	} /* FeedWordPressAdminPage::open_sheet () */
-	
+
 	function close_sheet () {
 		?>
-		
+
 		</div> <!-- id="poststuff" -->
 		<?php
 		if (!is_null($this->dispatch)) :
@@ -551,51 +551,51 @@ class FeedWordPressAdminPage {
 		endif;
 		?>
 		</div> <!-- class="wrap" -->
-		
+
 		<?php
 	} /* FeedWordPressAdminPage::close_sheet () */
-	
+
 	function setting_radio_control ($localName, $globalName, $options, $params = array()) {
 		global $fwp_path;
-		
+
 		if (isset($params['filename'])) : $filename = $params['filename'];
 		else : $filename = basename($this->filename);
 		endif;
-		
+
 		if (isset($params['site-wide-url'])) : $href = $params['site-wide-url'];
 		else : 	$href = $this->admin_page_href($filename);
 		endif;
-		
+
 		if (isset($params['setting-default'])) : $settingDefault = $params['setting-default'];
 		else : $settingDefault = NULL;
 		endif;
-		
+
 		if (isset($params['global-setting-default'])) : $globalSettingDefault = $params['global-setting-default'];
 		else : $globalSettingDefault = $settingDefault;
 		endif;
 
-		$globalSetting = get_option('feedwordpress_'.$globalName, $globalSettingDefault); 
+		$globalSetting = get_option('feedwordpress_'.$globalName, $globalSettingDefault);
 		if ($this->for_feed_settings()) :
 			$setting = $this->link->setting($localName, NULL, $settingDefault);
 		else :
 			$setting = $globalSetting;
 		endif;
-		
+
 		if (isset($params['offer-site-wide'])) : $offerSiteWide = $params['offer-site-wide'];
 		else : $offerSiteWide = $this->for_feed_settings();
 		endif;
-		
+
 		// This allows us to provide an alternative set of human-readable
 		// labels for each potential value. For use in Currently: line.
 		if (isset($params['labels'])) : $labels = $params['labels'];
 		elseif (is_callable($options)) : $labels = NULL;
 		else : $labels = $options;
 		endif;
-		
+
 		if (isset($params['input-name'])) : $inputName = $params['input-name'];
 		else : $inputName = $globalName;
 		endif;
-		
+
 		if (isset($params['default-input-id'])) : $defaultInputId = $params['default-input-id'];
 		else : $defaultInputId = NULL;
 		endif;
@@ -604,7 +604,7 @@ class FeedWordPressAdminPage {
 		elseif (!is_null($defaultInputId)) : $defaultInputIdNo = $defaultInputId.'-no';
 		else : $defaultInputIdNo = NULL;
 		endif;
-		
+
 		// This allows us to either include the site-default setting as
 		// one of the options within the radio box, or else as a simple
 		// yes/no toggle that controls whether or not to check another
@@ -622,7 +622,7 @@ class FeedWordPressAdminPage {
 				: 'site-default'
 			);
 		endif;
-		
+
 		$settingDefaulted = (is_null($setting) or ($settingDefault === $setting));
 
 		if (!is_callable($options)) :
@@ -630,7 +630,7 @@ class FeedWordPressAdminPage {
 			if ($settingDefaulted) :
 				$checked[$defaultInputValue] = ' checked="checked"';
 			endif;
-			
+
 			foreach ($options as $value => $label) :
 				if ($setting == $value) :
 					$checked[$value] = ' checked="checked"';
@@ -647,7 +647,7 @@ class FeedWordPressAdminPage {
 		else :
 			$defaulted['yes'] = (isset($checked[$defaultInputValue]) ? $checked[$defaultInputValue] : '');
 		endif;
-		
+
 		if (isset($params['defaulted'])) :
 			$defaulted['yes'] = ($params['defaulted'] ? ' checked="checked"' : '');
 			$defaulted['no'] = ($params['defaulted'] ? '' : ' checked="checked"');
@@ -674,7 +674,7 @@ class FeedWordPressAdminPage {
 				print $labels[$globalSetting];
 			endif;  ?></strong> (<a href="<?php print $href; ?>">change</a>)</span></li>
 			</ul></td>
-			
+
 			<td class="equals second inactive">
 			<?php if ($defaultInputName != $inputName) : ?>
 				<ul class="options">
@@ -686,7 +686,7 @@ class FeedWordPressAdminPage {
 				<?php _e('Do something different with this feed.'); ?></label>
 			<?php endif;
 		endif;
-		
+
 		// Let's spit out the controls here.
 		if (is_callable($options)) :
 			// Method call to print out options list
@@ -703,7 +703,7 @@ class FeedWordPressAdminPage {
 			</ul> <!-- class="options" -->
 			<?php
 		endif;
-		
+
 		if ($offerSiteWide) :
 			if ($defaultInputName != $inputName) :
 				// Close the <li> and <ul class="options"> we opened above
@@ -712,7 +712,7 @@ class FeedWordPressAdminPage {
 				</ul> <!-- class="options" -->
 			<?php
 			endif;
-			
+
 			// Close off the twofer table that we opened up above.
 			?>
 			</td></tr>
@@ -721,7 +721,7 @@ class FeedWordPressAdminPage {
 			<?php
 		endif;
 	} /* FeedWordPressAdminPage::setting_radio_control () */
-	
+
 	function save_button ($caption = NULL) {
 		if (is_null($caption)) : $caption = __('Save Changes'); endif;
 		?>
@@ -772,13 +772,13 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 	'id' => NULL,
 	'box_title' => __('Post Tags'),
 	));
-	
+
 	if (!is_array($tags)) : $tags = array(); endif;
-	
+
 	$tax_name = $params['taxonomy'];
 	$taxonomy = get_taxonomy($params['taxonomy']);
 	$disabled = (!current_user_can($taxonomy->cap->assign_terms) ? 'disabled="disabled"' : '');
-	
+
 	$desc = "<p style=\"font-size:smaller;font-style:bold;margin:0\">Tag $object as...</p>";
 
 	if (is_null($params['textarea_name'])) :
@@ -793,11 +793,11 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 	if (is_null($params['input_name'])) :
 		$params['input_name'] = "newtag[$tax_name]";
 	endif;
-	
+
 	if (is_null($params['id'])) :
 		$params['id'] = $tax_name;
 	endif;
-	
+
 	print $desc;
 	$helps = __('Separate tags with commas.');
 	$box['title'] = __('Tags');
@@ -807,7 +807,7 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 	<div class="nojs-tags hide-if-js">
     <p><?php echo $taxonomy->labels->add_or_remove_items; ?></p>
 	<textarea name="<?php echo $params['textarea_name']; ?>" class="the-tags" id="<?php echo $params['textarea_id']; ?>"><?php echo esc_attr(implode(",", $tags)); ?></textarea></div>
-	
+
 	<?php if ( current_user_can($taxonomy->cap->assign_terms) ) :?>
 	<div class="ajaxtag hide-if-no-js">
 		<label class="screen-reader-text" for="<?php echo $params['input_id']; ?>"><?php echo $params['box_title']; ?></label>
@@ -818,7 +818,7 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 	<p class="howto"><?php echo esc_attr( $taxonomy->labels->separate_items_with_commas ); ?></p>
 	<?php endif; ?>
 	</div>
-	
+
 	<div class="tagchecklist"></div>
 </div>
 <?php if ( current_user_can($taxonomy->cap->assign_terms) ) : ?>
@@ -869,7 +869,7 @@ function fwp_category_box ($checked, $object, $tags = array(), $params = array()
     <p id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-add" class="category-add wp-hidden-child">
 	<?php
 	$newcat = 'new'.$taxonomy;
-	
+
 	?>
     <label class="screen-reader-text" for="<?php print $idPrefix; ?>new<?php print $taxonomy; ?>"><?php _e('Add New Category'); ?></label>
     <input
@@ -877,7 +877,7 @@ function fwp_category_box ($checked, $object, $tags = array(), $params = array()
     	class="new<?php print $taxonomy; ?> form-required form-input-tip"
     	aria-required="true"
     	tabindex="3"
-    	type="text" name="<?php print $newcat; ?>" 
+    	type="text" name="<?php print $newcat; ?>"
     	value="<?php _e( 'New category name' ); ?>"
     />
     <label class="screen-reader-text" for="<?php print $idPrefix; ?>new<?php print $taxonomy; ?>-parent"><?php _e('Parent Category:'); ?></label>
@@ -926,7 +926,7 @@ function fwp_author_list () {
 	global $wpdb;
 	$ret = array();
 
-	$users = get_users_of_blog();
+	$users = get_users();
 	if (is_array($users)) :
 		foreach ($users as $user) :
 			$id = (int) $user->ID;
@@ -940,9 +940,9 @@ function fwp_author_list () {
 }
 
 class FeedWordPressSettingsUI {
-	function is_admin () {
+	public static function is_admin () {
 		global $fwp_path;
-		
+
 		$admin_page = false; // Innocent until proven guilty
 		if (isset($_REQUEST['page'])) :
 			$admin_page = (
@@ -952,18 +952,18 @@ class FeedWordPressSettingsUI {
 		endif;
 		return $admin_page;
 	}
-	
-	function admin_scripts () {
+
+	public static function admin_scripts () {
 		global $fwp_path;
-	
+
 		wp_enqueue_script('post'); // for magic tag and category boxes
 		wp_enqueue_script('admin-forms'); // for checkbox selection
-	
+
 		wp_register_script('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.js');
 		wp_enqueue_script('feedwordpress-elements');
 	}
 
-	function admin_styles () {
+	public static function admin_styles () {
 		?>
 		<style type="text/css">
 		#feedwordpress-admin-feeds .link-rss-params-remove .x, .feedwordpress-admin .remove-it .x {
@@ -985,7 +985,7 @@ class FeedWordPressSettingsUI {
 			background-position:0 top;
 			background-repeat:repeat-x;
 		}
-		
+
 		.update-results {
 			max-width: 100%;
 			overflow: auto;
@@ -994,8 +994,8 @@ class FeedWordPressSettingsUI {
 		</style>
 		<?php
 	} /* FeedWordPressSettingsUI::admin_styles () */
-	
-	/*static*/ function ajax_nonce_fields () {
+
+	public static function ajax_nonce_fields () {
 		if (function_exists('wp_nonce_field')) :
 			echo "<form style='display: none' method='get' action=''>\n<p>\n";
 			wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false );
@@ -1004,24 +1004,24 @@ class FeedWordPressSettingsUI {
 		endif;
 	} /* FeedWordPressSettingsUI::ajax_nonce_fields () */
 
-	/*static*/ function fix_toggles_js ($context) {
+	public static function fix_toggles_js ($context) {
 	?>
 		<script type="text/javascript">
-			jQuery(document).ready( function($) {	
+			jQuery(document).ready( function($) {
 			// In case someone got here first...
 			$('.postbox h3, .postbox .handlediv').unbind('click');
 			$('.postbox h3 a').unbind('click');
 			$('.hide-postbox-tog').unbind('click');
 			$('.columns-prefs input[type="radio"]').unbind('click');
 			$('.meta-box-sortables').sortable('destroy');
-				
+
 			postboxes.add_postbox_toggles('<?php print $context; ?>');
 			} );
 		</script>
 	<?php
 	} /* FeedWordPressSettingsUI::fix_toggles_js () */
-	
-	function magic_input_tip_js ($id) {
+
+	public static function magic_input_tip_js ($id) {
 			if (!preg_match('/^[.#]/', $id)) :
 				$id = '#'.$id;
 			endif;
@@ -1038,7 +1038,7 @@ class FeedWordPressSettingsUI {
 				inputBox.blur(function() {
 					if ( this.value == '' )
 						jQuery(this).val( this.defaultValue ).addClass( 'form-input-tip' );
-				});			
+				});
 			} );
 			</script>
 		<?php
@@ -1056,10 +1056,10 @@ function fwp_insert_new_user ($newuser_name) {
 		$userdata['user_nicename'] = apply_filters('pre_user_nicename', sanitize_title($newuser_name));
 		$userdata['display_name'] = $newuser_name;
 		$userdata['user_pass'] = substr(md5(uniqid(microtime())), 0, 6); // just something random to lock it up
-		
+
 		$blahUrl = get_bloginfo('url'); $url = parse_url($blahUrl);
 		$userdata['user_email'] = substr(md5(uniqid(microtime())), 0, 6).'@'.$url['host'];
-		
+
 		$newuser_id = wp_insert_user($userdata);
 		$ret = $newuser_id; // Either a numeric ID or a WP_Error object
 	else :
@@ -1081,7 +1081,7 @@ function fwp_add_meta_box ($id, $title, $callback, $page, $context = 'advanced',
 
 function fwp_do_meta_boxes($page, $context, $object) {
 	$ret = do_meta_boxes($page, $context, $object);
-		
+
 	// Avoid JavaScript error from WordPress 2.5 bug
 ?>
 	<div style="display: none">
@@ -1096,7 +1096,7 @@ function fwp_remove_meta_box($id, $page, $context) {
 } /* function fwp_remove_meta_box() */
 
 function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible = 'Y') {
-	
+
 	$subscribed = ('Y' == strtoupper($visible));
 	if ($subscribed or (count($links) > 0)) :
 	?>
@@ -1112,7 +1112,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 
 	<tbody>
 <?php
-		$alt_row = true; 
+		$alt_row = true;
 		if (count($links) > 0):
 			foreach ($links as $link):
 				$trClass = array();
@@ -1130,7 +1130,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 				if (is_null($sLink->setting('update/error'))) :
 					$errorsSince = '';
 					if (!is_null($sLink->setting('link/item count'))) :
-						$N = $sLink->setting('link/item count');	
+						$N = $sLink->setting('link/item count');
 						$fileSizeLines[] = sprintf((($N==1) ? __('%d item') : __('%d items')), $N);
 					endif;
 
@@ -1141,7 +1141,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 					$trClass[] = 'feed-error';
 
 					$theError = unserialize($sLink->setting('update/error'));
-					
+
 					$errorsSince = "<div class=\"returning-errors\">"
 						."<p><strong>Returning errors</strong> since "
 						.fwp_time_elapsed($theError['since'])
@@ -1155,7 +1155,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 				endif;
 
 				$nextUpdate = "<div style='max-width: 30.0em; font-size: 0.9em;'><div style='font-style:italic;'>";
-				
+
 				$ttl = $sLink->setting('update/ttl');
 				if (is_numeric($ttl)) :
 					$next = $sLink->setting('update/last') + $sLink->setting('update/fudge') + ((int) $ttl * 60);
@@ -1178,7 +1178,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 						else :
 							$lastUpdated .= gmdate('F j', $next + (get_option('gmt_offset') * 3600));
 						endif;
-						
+
 						$nextUpdate .= "Scheduled to be checked for updates every ".$ttl." minute".(($ttl!=1)?"s":"")."</div><div style='size:0.9em; margin-top: 0.5em'>	This update schedule was requested by the feed provider";
 						if ($sLink->setting('update/xml')) :
 							$nextUpdate .= " using a standard <code style=\"font-size: inherit; padding: 0; background: transparent\">&lt;".$sLink->setting('update/xml')."&gt;</code> element";
@@ -1194,11 +1194,11 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 				if (count($fileSizeLines) > 0) :
 					$fileSize = '<div>'.implode(" / ", $fileSizeLines)."</div>";
 				endif;
-				
+
 				unset($sLink);
-				
+
 				$alt_row = !$alt_row;
-				
+
 				if ($alt_row) :
 					$trClass[] = 'alternate';
 				endif;
