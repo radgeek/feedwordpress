@@ -1210,7 +1210,7 @@ class SyndicatedPost {
 		return $tag['before_attribute'].$tag['after_attribute'];
 	}
 
-	function sanitize_content ($content, $obj) {
+	static function sanitize_content ($content, $obj) {
 		# This kind of sucks. I intend to replace it with
 		# lib_filter sometime soon.
 		foreach ($obj->strip_attrs as $pair):
