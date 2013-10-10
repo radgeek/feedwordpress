@@ -15,12 +15,12 @@ class FeedWordPress_Walker_Category_Checklist extends Walker_Category_Checklist 
 	var $checkbox_name = NULL;
 	function FeedWordPress_Walker_Category_Checklist ($params = array()) {
 		$this->set_taxonomy('category');
-		
+
 		if (isset($params['checkbox_name'])) :
 			$this->checkbox_name = $params['checkbox_name'];
 		endif;
 	}
-	
+
 	function set_prefix ($prefix) {
 		$this->prefix = $prefix;
 	}
@@ -28,11 +28,11 @@ class FeedWordPress_Walker_Category_Checklist extends Walker_Category_Checklist 
 		$this->taxonomy = $taxonomy;
 	}
 
-	function start_el (&$output, $category, $depth, $args) {
+	function start_el( &$output, $category, $depth = 0, $args = array(), $current_object_id = 0 ) {
 		extract($args);
                if ( empty($taxonomy) ) :
 			$taxonomy = 'category';
-		endif; 
+		endif;
 
 		if (!is_null($this->checkbox_name)) :
 			$name = $this->checkbox_name;
@@ -41,7 +41,7 @@ class FeedWordPress_Walker_Category_Checklist extends Walker_Category_Checklist 
 		else :
 			$name = 'tax_input['.$taxonomy.']';
 		endif;
-		
+
 		$unit = array();
 		if (strlen($this->prefix) > 0) :
 			$unit[] = $this->prefix;
