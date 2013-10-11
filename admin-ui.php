@@ -926,7 +926,7 @@ function fwp_author_list () {
 	global $wpdb;
 	$ret = array();
 
-	$users = get_users_of_blog();
+	$users = get_users();
 	if (is_array($users)) :
 		foreach ($users as $user) :
 			$id = (int) $user->ID;
