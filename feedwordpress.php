@@ -27,7 +27,7 @@ License: GPL
 # USAGE: once FeedWordPress is installed, you manage just about everything from
 # the WordPress Dashboard, under the Syndication menu. To keep fresh content
 # coming in as it becomes available, you'll have to either check for updates
-# manually, or set up one of the automatically-scheduled update methods. See 
+# manually, or set up one of the automatically-scheduled update methods. See
 # <http://feedwordpress.radgeek.com/wiki/quick-start/> for some details.
 
 # -- Don't change these unless you know what you're doing...
@@ -70,9 +70,9 @@ if (FEEDWORDPRESS_DEBUG) :
 	// Help us to pick out errors, if any.
 	ini_set('error_reporting', E_ALL & ~E_NOTICE);
 	ini_set('display_errors', true);
-	
+
 	 // When testing we don't want cache issues to interfere. But this is
-	 // a VERY BAD SETTING for a production server. Webmasters will eat your 
+	 // a VERY BAD SETTING for a production server. Webmasters will eat your
 	 // face for breakfast if you use it, and the baby Jesus will cry. So
 	 // make sure FEEDWORDPRESS_DEBUG is FALSE for any site that will be
 	 // used for more than testing purposes!
@@ -101,11 +101,11 @@ if (!function_exists('wp_insert_user')) :
 	require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
 endif;
 
-$dir = dirname(__FILE__); 
+$dir = dirname(__FILE__);
 require_once("${dir}/externals/myphp/myphp.class.php");
 require_once("${dir}/admin-ui.php");
 require_once("${dir}/feedwordpresssyndicationpage.class.php");
-require_once("${dir}/compatability.php"); // Legacy API             
+require_once("${dir}/compatability.php"); // Legacy API
 require_once("${dir}/syndicatedpost.class.php");
 require_once("${dir}/syndicatedlink.class.php");
 require_once("${dir}/feedwordpresshtml.class.php");
@@ -141,7 +141,8 @@ else : // Something went wrong. Let's just guess.
 	$fwp_path = 'feedwordpress';
 endif;
 
-if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
+$feedwordpress = new FeedWordPress;
+if (!$feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
 
 	# Syndicated items are generally received in output-ready (X)HTML and
 	# should not be folded, crumpled, mutilated, or spindled by WordPress
@@ -158,18 +159,18 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 
 	add_filter('the_content', 'feedwordpress_preserve_syndicated_content', -10000);
 	add_filter('the_content', 'feedwordpress_restore_syndicated_content', 10000);
-	
+
 	add_action('atom_entry', 'feedwordpress_item_feed_data');
-	
+
 	# Filter in original permalinks if the user wants that
 	add_filter('post_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 3);
 	add_filter('post_type_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 4);
-	
+
 	# When foreign URLs are used for permalinks in feeds or display
 	# contexts, they need to be escaped properly.
 	add_filter('the_permalink', 'syndication_permalink_escaped');
 	add_filter('the_permalink_rss', 'syndication_permalink_escaped');
-	
+
 	add_filter('post_comments_feed_link', 'syndication_comments_feed_link');
 
 	# WTF? By default, wp_insert_link runs incoming link_url and link_rss
@@ -178,17 +179,17 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	# happens to fuck up any URI with a & to separate GET parameters.
 	remove_filter('pre_link_rss', 'wp_filter_kses');
 	remove_filter('pre_link_url', 'wp_filter_kses');
-	
+
 	# Admin menu
-	add_action('admin_init', array('feedwordpress', 'admin_init'));
+	add_action('admin_init', array($feedwordpress, 'admin_init'));
 	add_action('admin_menu', 'fwp_add_pages');
 	add_action('admin_notices', 'fwp_check_debug');
 
 	add_action('admin_menu', 'feedwordpress_add_post_edit_controls');
 	add_action('save_post', 'feedwordpress_save_post_edit_controls');
 
-	add_action('admin_footer', array('FeedWordPress', 'admin_footer'));
-	
+	add_action('admin_footer', array($feedwordpress, 'admin_footer'));
+
 	# Inbound XML-RPC update methods
 	$feedwordpressRPC = new FeedWordPressRPC;
 
@@ -206,15 +207,13 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 
 	add_action('wp_footer', 'debug_out_feedwordpress_footer', -100);
 	add_action('admin_footer', 'debug_out_feedwordpress_footer', -100);
-	
-	$feedwordpress = new FeedWordPress;
 
 	# Cron-less auto-update. Hooray!
 	$autoUpdateHook = $feedwordpress->automatic_update_hook();
 	if (!is_null($autoUpdateHook)) :
 		add_action($autoUpdateHook, array($feedwordpress, 'auto_update'));
 	endif;
-	
+
 	add_action('init', array($feedwordpress, 'init'));
 	add_action('shutdown', array($feedwordpress, 'email_diagnostic_log'));
 	add_action('wp_dashboard_setup', array($feedwordpress, 'dashboard_setup'));
@@ -223,7 +222,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'resolve_relative_uris'), 0, 2);
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'sanitize_content'), 0, 2);
 
-	add_action('plugins_loaded', array('FeedWordPress', 'admin_api'));
+	add_action('plugins_loaded', array($feedwordpress, 'admin_api'));
 else :
 	# Hook in the menus, which will just point to the upgrade interface
 	add_action('admin_menu', 'fwp_add_pages');
@@ -237,7 +236,7 @@ class FeedWordPressDiagnostic {
 	function feed_error ($error, $old, $link) {
 		$wpError = $error['object'];
 		$url = $link->uri();
-		
+
 		$mesgs = $wpError->get_error_messages();
 		foreach ($mesgs as $mesg) :
 			$mesg = esc_html($mesg);
@@ -245,7 +244,7 @@ class FeedWordPressDiagnostic {
 				'updated_feeds:errors',
 				"Feed Error: [${url}] update returned error: $mesg"
 			);
-			
+
 			$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
 			$span = ($error['ts'] - $error['since']);
 
@@ -311,8 +310,8 @@ function debug_out_feedwordpress_footer () {
  * displaying a post.
  *
  * @param int $id The post to check for syndicated status. Defaults to the current post in a Loop context.
- * @return bool TRUE if the post's meta-data indicates it was syndicated; FALSE otherwise 
- */ 
+ * @return bool TRUE if the post's meta-data indicates it was syndicated; FALSE otherwise
+ */
 function is_syndicated ($id = NULL) {
 	$p = new FeedWordPressLocalPost($id);
 	return $p->is_syndicated();
@@ -320,12 +319,12 @@ function is_syndicated ($id = NULL) {
 
 function feedwordpress_display_url ($url, $before = 60, $after = 0) {
 	$bits = parse_url($url);
-	
+
 	// Strip out crufty subdomains
 	if (isset($bits['host'])) :
   		$bits['host'] = preg_replace('/^www[0-9]*\./i', '', $bits['host']);
   	endif;
-  
+
   	// Reassemble bit-by-bit with minimum of crufty elements
 	$url = (isset($bits['user'])?$bits['user'].'@':'')
 		.(isset($bits['host'])?$bits['host']:'')
@@ -433,7 +432,7 @@ function the_syndication_permalink ($id = NULL) {
  */
 function get_local_permalink ($id = NULL) {
 	global $feedwordpress_the_original_permalink;
-	
+
 	// get permalink, and thus activate filter and force global to be filled
 	// with original URL.
 	$url = get_permalink($id);
@@ -476,7 +475,7 @@ function feedwordpress_preserve_syndicated_content ($text) {
 
 function feedwordpress_restore_syndicated_content ($text) {
 	global $feedwordpress_the_syndicated_content;
-	
+
 	if ( !is_null($feedwordpress_the_syndicated_content) ) :
 		$text = $feedwordpress_the_syndicated_content;
 	endif;
@@ -531,7 +530,7 @@ function feedwordpress_item_feed_data () {
 function syndication_permalink ($permalink = '', $post = null, $leavename = false, $sample = false) {
 	global $id;
 	global $feedwordpress_the_original_permalink;
-	
+
 	// Save the local permalink in case we need to retrieve it later.
 	$feedwordpress_the_original_permalink = $permalink;
 
@@ -581,11 +580,11 @@ function syndication_permalink_escaped ($permalink) {
 		$permalink = esc_html($permalink);
 	endif;
 	return $permalink;
-} /* function syndication_permalink_escaped() */ 
+} /* function syndication_permalink_escaped() */
 
 /**
  * syndication_comments_feed_link: Escape XML special characters in comments
- * feed links 
+ * feed links
  *
  * @param string $link
  * @return string
@@ -602,7 +601,7 @@ function syndication_comments_feed_link ($link) {
 		// that value here.
 		$source = get_syndication_feed_object();
 		$replacement = NULL;
-		
+
 		if ($source->setting('munge comments feed links', 'munge_comments_feed_links', 'yes') != 'no') :
 			$commentFeeds = get_post_custom_values('wfw:commentRSS');
 			if (
@@ -611,14 +610,14 @@ function syndication_comments_feed_link ($link) {
 				and (strlen($commentFeeds[0]) > 0)
 			) :
 				$replacement = $commentFeeds[0];
-				
+
 				// This is a foreign link; WordPress can't vouch for its not
 				// having any entities that need to be &-escaped. So we'll do it
 				// here.
 				$replacement = esc_html($replacement);
 			endif;
 		endif;
-		
+
 		if (is_null($replacement)) :
 			// Q: How can we get the proper feed format, since the
 			// format is, stupidly, not passed to the filter?
@@ -642,7 +641,7 @@ function syndication_comments_feed_link ($link) {
 				// comments feed link is never munged by FWP.
 			endif;
 		endif;
-		
+
 		if (!is_null($replacement)) : $link = $replacement; endif;
 	endif;
 	return $link;
@@ -654,11 +653,11 @@ function syndication_comments_feed_link ($link) {
 
 function fwp_add_pages () {
 	global $feedwordpress;
-	
+
 	$menu_cap = FeedWordPress::menu_cap();
 	$settings_cap = FeedWordPress::menu_cap(/*sub=*/ true);
 	$syndicationMenu = FeedWordPress::path('syndication.php');
-	
+
 	add_menu_page(
 		'Syndicated Sites', 'Syndication',
 		$menu_cap,
@@ -708,7 +707,7 @@ function fwp_add_pages () {
 		$syndicationMenu, 'FeedWordPress Diagnostics', 'Diagnostics',
 		$settings_cap, FeedWordPress::path('diagnostics-page.php')
 	);
-	
+
 	add_filter('page_row_actions', array($feedwordpress, 'row_actions'), 10, 2);
 	add_filter('post_row_actions', array($feedwordpress, 'row_actions'), 10, 2);
 } /* function fwp_add_pages () */
@@ -779,7 +778,7 @@ function fwp_publish_post_hook ($post_id) {
 			do_action('xmlrpc_publish_post', $post_id);
 		if ( defined('APP_REQUEST') )
 			do_action('app_publish_post', $post_id);
-		
+
 		if ( defined('WP_IMPORTING') )
 			return;
 
@@ -798,17 +797,17 @@ function fwp_publish_post_hook ($post_id) {
 
 		// Put in Manual Editing checkbox
 		add_meta_box('feedwordpress-post-controls', __('Syndication'), 'feedwordpress_post_edit_controls', 'post', 'side', 'high');
-		
+
 		add_filter('user_can_richedit', array($feedwordpress, 'user_can_richedit'), 1000, 1);
-		
+
 		if (FeedWordPress::diagnostic_on('syndicated_posts:static_meta_data')) :
 			$inspectPostMeta = new InspectPostMeta;
 		endif;
 	} // function FeedWordPress::postEditControls
-	
+
 	function feedwordpress_post_edit_controls () {
 		global $post;
-		
+
 		$frozen_values = get_post_custom_values('_syndication_freeze_updates', $post->ID);
 		$frozen_post = (count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
 
@@ -817,7 +816,7 @@ function fwp_publish_post_hook ($post_id) {
 		<p>This is a syndicated post, which originally appeared at
 		<cite><?php print esc_html(get_syndication_source(NULL, $post->ID)); ?></cite>.
 		<a href="<?php print esc_html(get_syndication_permalink($post->ID)); ?>">View original post</a>.</p>
-		
+
 		<p><input type="hidden" name="feedwordpress_noncename" id="feedwordpress_noncename" value="<?php print wp_create_nonce(plugin_basename(__FILE__)); ?>" />
 		<label><input type="checkbox" name="freeze_updates" value="yes" <?php if ($frozen_post) : ?>checked="checked"<?php endif; ?> /> <strong>Manual editing.</strong>
 		If set, FeedWordPress will not overwrite the changes you make manually
@@ -833,22 +832,22 @@ function fwp_publish_post_hook ($post_id) {
 
 	function feedwordpress_save_post_edit_controls ( $post_id ) {
 		global $post;
-		
+
 		if (!isset($_POST['feedwordpress_noncename']) or !wp_verify_nonce($_POST['feedwordpress_noncename'], plugin_basename(__FILE__))) :
 			return $post_id;
 		endif;
-	
+
 		// Verify if this is an auto save routine. If it is our form has
 		// not been submitted, so we don't want to do anything.
 		if ( defined('DOING_AUTOSAVE') and DOING_AUTOSAVE ) :
 			return $post_id;
 		endif;
-		
+
 		// Check permissions
 		if ( !current_user_can( 'edit_'.$_POST['post_type'], $post_id) ) :
 			return $post_id;
 		endif;
-		
+
 		// OK, we're golden. Now let's save some data.
 		if (isset($_POST['freeze_updates'])) :
 			update_post_meta($post_id, '_syndication_freeze_updates', $_POST['freeze_updates']);
@@ -857,7 +856,7 @@ function fwp_publish_post_hook ($post_id) {
 			delete_post_meta($post_id, '_syndication_freeze_updates');
 			$ret = NULL;
 		endif;
-		
+
 		return $ret;
 	} // function feedwordpress_save_edit_controls
 
@@ -902,7 +901,7 @@ class FeedWordPress {
 	var $feeds = NULL;
 	var $feedurls = NULL;
 	var $httpauth = NULL;
-	
+
 	/**
 	 * FeedWordPress::__construct (): Construct FeedWordPress singleton object
 	 * and retrieves a list of feeds for later reference.
@@ -914,7 +913,7 @@ class FeedWordPress {
 		if ($links): foreach ($links as $link):
 			$id = intval($link->link_id);
 			$url = $link->link_rss;
-			
+
 			// Store for later reference.
 			$this->feeds[$id] = $id;
 			if (strlen($url) > 0) :
@@ -935,7 +934,7 @@ class FeedWordPress {
 	public function subscribed ($id) {
 		return (isset($this->feedurls[$id]) or isset($this->feeds[$id]));
 	} /* FeedWordPress::subscribed () */
-	
+
 	/**
 	 * FeedWordPress::subscription (): Get the SyndicatedLink object for a
 	 * given URL or numeric ID, if we have either an active subscription to
@@ -946,11 +945,11 @@ class FeedWordPress {
 	 */
 	public function subscription ($which) {
 		$sub = NULL;
-		
+
 		if (is_string($which) and isset($this->feedurls[$which])) :
 			$which = $this->feedurls[$which];
 		endif;
-		
+
 		if (isset($this->feeds[$which])) :
 			$sub = $this->feeds[$which];
 		endif;
@@ -968,10 +967,10 @@ class FeedWordPress {
 			$this->feeds[$which] = $link;
 			$sub = $link;
 		endif;
-		
+
 		return $sub;
 	} /* FeedWordPress::subscription () */
-	
+
 	# function update (): polls for updates on one or more Contributor feeds
 	#
 	# Arguments:
@@ -1017,7 +1016,7 @@ class FeedWordPress {
 	#      (between 30 minutes and 2 hours).
 	#
 	# *    New posts from the polled feed are added to the WordPress store.
-	# 
+	#
 	# *    Updates to existing posts since the last poll are mirrored in the
 	#      WordPress store.
 	#
@@ -1027,7 +1026,7 @@ class FeedWordPress {
 		if (FeedWordPress::needs_upgrade()) : // Will make duplicate posts if we don't hold off
 			return NULL;
 		endif;
-		
+
 		if (!is_null($uri) and $uri != '*') :
 			$uri = trim($uri);
 		else : // Update all
@@ -1046,7 +1045,7 @@ class FeedWordPress {
 		if (is_null($crash_ts)) :
 			$crash_ts = $this->crash_ts();
 		endif;
-		
+
 		// Randomize order for load balancing purposes
 		$feed_set = array_keys($this->feeds);
 		shuffle($feed_set);
@@ -1063,8 +1062,8 @@ class FeedWordPress {
 		), $uri);
 
 		$feed_set = apply_filters('feedwordpress_update_feeds', $feed_set, $uri);
-		
-	
+
+
 		// Loop through and check for new posts
 		$delta = NULL; $remaining = $max_polls;
 		foreach ($feed_set as $feed_id) :
@@ -1075,13 +1074,13 @@ class FeedWordPress {
 			if (
 				// Over time limit?
 				(!is_null($crash_ts) and (time() > $crash_ts))
-				
+
 				// Over feed count?
-				or ($remaining == 0) 
+				or ($remaining == 0)
 			) :
 				break;
 			endif;
-			
+
 			$pinged_that = (is_null($uri) or ($uri=='*') or in_array($uri, array($feed->uri(), $feed->homepage())));
 
 			if (!is_null($uri)) : // A site-specific ping always updates
@@ -1091,7 +1090,7 @@ class FeedWordPress {
 			endif;
 
 			if ($pinged_that and is_null($delta)) :		// If at least one feed was hit for updating...
-				$delta = array('new' => 0, 'updated' => 0);	// ... don't return error condition 
+				$delta = array('new' => 0, 'updated' => 0);	// ... don't return error condition
 			endif;
 
 			if ($pinged_that and $timely) :
@@ -1123,7 +1122,7 @@ class FeedWordPress {
 		endif;
 		return $crash_ts;
 	} /* FeedWordPress::crash_ts () */
-	
+
 	public function secret_key () {
 		$secret = get_option('feedwordpress_secret_key', false);
 		if (!$secret) : // Generate random key.
@@ -1132,11 +1131,11 @@ class FeedWordPress {
 		endif;
 		return $secret;
 	} /* FeedWordPress::secret_key () */
-	
+
 	public function has_secret () {
 		return (MyPHP::request('feedwordpress_key')==$this->secret_key());
 	} /* FeedWordPress::has_secret () */
-	
+
 	var $update_hooked = NULL;
 	public function automatic_update_hook ($params = array()) {
 		$params = wp_parse_args($params, array( // Defaults
@@ -1154,20 +1153,20 @@ class FeedWordPress {
 			$hook = MyPHP::request('automatic_update');
 			$method = 'URL parameter';
 		endif;
-		
+
 		$exact = $hook; // Before munging
-		
+
 		if (!!$hook) :
 			if ($hook != 'init') : // Constrain values.
 				$hook = 'shutdown';
 			endif;
 		endif;
-		
+
 		if ($hook) :
 			$this->update_hooked = "Initiating an AUTOMATIC CHECK FOR UPDATES ON PAGE LOAD ".$hook." due to ".$method." = ".trim($this->val($exact));
 		endif;
-		
-		return $hook; 
+
+		return $hook;
 	} /* FeedWordPress::automatic_update_hook () */
 
 	public function last_update_all () {
@@ -1183,19 +1182,19 @@ class FeedWordPress {
 	public function force_update_all () {
 		return ($this->has_secret() and MyPHP::request('force_update_feeds'));
 	} /* FeedWordPress::force_update_all () */
-	
+
 	public function stale () {
 		if (!is_null($this->automatic_update_hook())) :
 			// Do our best to avoid possible simultaneous
 			// updates by getting up-to-the-minute settings.
-			
+
 			$last = $this->last_update_all();
-		
+
 			// If we haven't updated all yet, give it a time window
 			if (false === $last) :
 				$ret = false;
 				update_option('feedwordpress_last_update_all', time());
-			
+
 			// Otherwise, check against freshness interval
 			elseif (is_numeric($last)) : // Expect a timestamp
 				$freshness = get_option('feedwordpress_freshness');
@@ -1203,7 +1202,7 @@ class FeedWordPress {
 					$freshness = FEEDWORDPRESS_FRESHNESS_INTERVAL;
 				endif;
 				$ret = ( (time() - $last) > $freshness );
-			
+
 			// This should never happen.
 			else :
 				FeedWordPress::critical_bug('FeedWordPress::stale::last', $last, __LINE__, __FILE__);
@@ -1230,17 +1229,17 @@ class FeedWordPress {
 		// actions link. So we create a magic parameter, and when this
 		// magic parameter is activated, the WordPress trashcan is
 		// temporarily de-activated.
-		
+
 		if (MyPHP::request('fwp_post_delete')=='nuke') :
 			// Get post ID #
 			$post_id = MyPHP::request('post');
 			if (!$post_id) :
 				$post_id = MyPHP::request('post_ID');
 			endif;
-			
+
 			// Make sure we've got the right nonce and all that.
 			check_admin_referer('delete-post_' . $post_id);
-			
+
 			// If so, disable the trashcan.
 			define('EMPTY_TRASH_DAYS', 0);
 		endif;
@@ -1257,13 +1256,13 @@ class FeedWordPress {
 		if (FeedWordPressSettingsUI::is_admin()) :
 			// For JavaScript that needs to be generated dynamically
 			add_action('admin_print_scripts', array('FeedWordPressSettingsUI', 'admin_scripts'));
-		
+
 			// For CSS that needs to be generated dynamically.
 			add_action('admin_print_styles', array('FeedWordPressSettingsUI', 'admin_styles'));
-		
+
 			wp_enqueue_style('dashboard');
 			wp_enqueue_style('feedwordpress-elements');
-		
+
 			/*if (function_exists('wp_admin_css')) :
 				wp_admin_css('css/dashboard');
 			endif;*/
@@ -1288,15 +1287,15 @@ class FeedWordPress {
 		add_action('wp_ajax_fwp_feeds', array($this, 'fwp_feeds'));
 		add_action('wp_ajax_fwp_feedcontents', array($this, 'fwp_feedcontents'));
 		add_action('wp_ajax_fwp_xpathtest', array($this, 'fwp_xpathtest'));
-		
+
 		$this->clear_cache_magic_url();
 		$this->update_magic_url();
 	} /* FeedWordPress::init() */
-	
+
 	public function fwp_feeds () {
 		$feeds = array();
 		$feed_ids = $this->feeds;
-		
+
 		foreach ($feed_ids as $id) :
 			$sub = $this->subscription($id);
 			$feeds[] = array(
@@ -1306,18 +1305,18 @@ class FeedWordPress {
 			);
 		endforeach;
 
-		header("Content-Type: application/json");	
+		header("Content-Type: application/json");
 		echo json_encode($feeds);
 		exit;
 	} /* FeedWordPress::fwp_feeds () */
 
 	public function fwp_feedcontents () {
 		$feed_id = MyPHP::request('feed_id');
-		
+
 		// Let's load up some data from the feed . . .
 		$feed = $this->subscription($feed_id);
 		$posts = $feed->live_posts();
-		
+
 		if (is_wp_error($posts)) :
 			header("HTTP/1.1 502 Bad Gateway");
 			$result = $posts;
@@ -1326,7 +1325,7 @@ class FeedWordPress {
 
 			foreach ($posts as $post) :
 				$p = new SyndicatedPost($post, $feed);
-				
+
 				$result[] = array(
 					"post_title" => $p->entry->get_title(),
 					"post_link" => $p->permalink(),
@@ -1335,42 +1334,42 @@ class FeedWordPress {
 				);
 			endforeach;
 		endif;
-		
+
 		header("Content-Type: application/json");
-		
+
 		echo json_encode($result);
-		
+
 		// This is an AJAX request, so close it out thus.
 		die;
 	} /* FeedWordPress::fwp_feedcontents () */
-	
+
 	public function fwp_xpathtest () {
 		$xpath = MyPHP::request('xpath');
 		$feed_id = MyPHP::request('feed_id');
 		$post_id = MyPHP::request('post_id');
-		
+
 		$expr = new FeedWordPressParsedPostMeta($xpath);
-		
+
 		// Let's load up some data from the feed . . .
 		$feed = $this->subscription($feed_id);
 		$posts = $feed->live_posts();
-		
+
 		if (!is_wp_error($posts)) :
 			if (strlen($post_id) == 0) :
 				$post = $posts[0];
 			else :
 				$post = null;
-	
+
 				foreach ($posts as $p) :
 					if ($p->get_id() == $post_id) :
 						$post = $p;
 					endif;
 				endforeach;
 			endif;
-		
+
 			$post = new SyndicatedPost($post, $feed);
 			$meta = $expr->do_substitutions($post);
-			
+
 			$result = array(
 			"post_title" => $post->entry->get_title(),
 			"post_link" => $post->permalink(),
@@ -1385,24 +1384,24 @@ class FeedWordPress {
 			"post_id" => $post_id,
 			"results" => $posts
 			);
-			
+
 			header("HTTP/1.1 503 Bad Gateway");
 		endif;
-		
+
 		header("Content-Type: application/json");
-		
+
 		echo json_encode($result);
-		
+
 		// This is an AJAX request, so close it out thus.
 		die;
 	} /* FeedWordPress::fwp_xpathtest () */
-	
+
 	public function redirect_retired () {
 		global $wp_query;
 		if (is_singular()) :
 			if ('fwpretired'==$wp_query->post->post_status) :
 				do_action('feedwordpress_redirect_retired', $wp_query->post);
-				
+
 				if (!($template = get_404_template())) :
 					$template = get_index_template();
 				endif;
@@ -1414,47 +1413,47 @@ class FeedWordPress {
 			endif;
 		endif;
 	} /* FeedWordPress::redirect_retired () */
-	
+
 	public function row_actions ($actions, $post) {
 		if (is_syndicated($post->ID)) :
 			$link = get_delete_post_link($post->ID, '', true);
 			$link = MyPHP::url($link, array("fwp_post_delete" => "nuke"));
-			
+
 			$caption = 'Erase the record of this post (will be re-syndicated if it still appears on the feed).';
 			$linktext = 'Erase/Resyndicate';
-			
+
 			$keys = array_keys($actions);
 			$links = array();
 			foreach ($keys as $key) :
 				$links[$key] = $actions[$key];
-				
+
 				if ('trash'==$key) :
 					$links[$key] = "<a class='submitdelete' title='" . esc_attr( __( 'Move this item to the Trash (will NOT be re-syndicated)' ) ) . "' href='" . get_delete_post_link( $post->ID ) . "'>" . __( 'Trash/Don&#8217;t Resyndicate' ) . "</a>";
-					
+
 					// Placeholder.
 					$links['delete'] = '';
 				endif;
 			endforeach;
-			
+
 			$links['delete'] = '<a class="submitdelete" title="'.esc_attr(__($caption)).'" href="' . $link . '">' . __($linktext) . '</a>';
 
 			$actions = $links;
 		endif;
 		return $actions;
 	} /* FeedWordPress::row_actions () */
-	
+
 	public function dashboard_setup () {
 		$see_it = FeedWordPress::menu_cap();
-		
+
 		if (current_user_can($see_it)) :
 			// Get the stylesheet
 			wp_enqueue_style('feedwordpress-elements');
-	
+
 			$widget_id = 'feedwordpress_dashboard';
 			$widget_name = __('Syndicated Sources');
 			$column = 'side';
 			$priority = 'core';
-	
+
 			// I would love to use wp_add_dashboard_widget() here and save
 			// myself some trouble. But WP 3 does not yet have any way to
 			// push a dashboard widget onto the side, or to give it a default
@@ -1468,37 +1467,37 @@ class FeedWordPress {
 				/*priority=*/ $priority
 			);
 			/*control_callback= array($this, 'dashboard_control') */
-			
+
 			// This is kind of rude, I know, but the dashboard widget isn't
 			// worth much if users don't know that it exists, and I don't
 			// know of any better way to reorder the boxen.
 			//
 			// Gleefully ripped off of codex.wordpress.org/Dashboard_Widgets_API
-			
+
 			// Globalize the metaboxes array, this holds all the widgets for wp-admin
 			global $wp_meta_boxes;
-	
-			// Get the regular dashboard widgets array 
+
+			// Get the regular dashboard widgets array
 			// (which has our new widget already but at the end)
-	
+
 			$normal_dashboard = $wp_meta_boxes['dashboard'][$column][$priority];
-		
+
 			// Backup and delete our new dashbaord widget from the end of the array
 			if (isset($normal_dashboard[$widget_id])) :
 				$backup = array();
 				$backup[$widget_id] = $normal_dashboard[$widget_id];
 				unset($normal_dashboard[$widget_id]);
-	
+
 				// Merge the two arrays together so our widget is at the
 				// beginning
 				$sorted_dashboard = array_merge($backup, $normal_dashboard);
-	
-				// Save the sorted array back into the original metaboxes 
+
+				// Save the sorted array back into the original metaboxes
 				$wp_meta_boxes['dashboard'][$column][$priority] = $sorted_dashboard;
 			endif;
 		endif;
 	} /* FeedWordPress::dashboard_setup () */
-	
+
 	public function dashboard () {
 		$syndicationPage = new FeedWordPressSyndicationPage(dirname(__FILE__).'/syndication.php');
 		$syndicationPage->dashboard_box($syndicationPage);
@@ -1507,17 +1506,17 @@ class FeedWordPress {
 	public function user_can_richedit ($rich_edit) {
 
 		$post = new FeedWordPressLocalPost;
-		
+
 		if (!$post->is_exposed_to_formatting_filters()) :
 			// Disable visual editor and only allow operations
 			// directly on HTML if post is bypassing fmt filters
 			$rich_edit = false;
 		endif;
-		
+
 		return $rich_edit;
 
 	} /* FeedWordPress::user_can_richedit () */
-	
+
 	public function update_magic_url () {
 		global $wpdb;
 
@@ -1526,7 +1525,7 @@ class FeedWordPress {
 			$this->update_hooked = "Initiating a CRON JOB CHECK-IN ON UPDATE SCHEDULE due to URL parameter = ".trim($this->val($_REQUEST['update_feedwordpress']));
 
 			$this->update($this->update_requested_url());
-			
+
 			if (FEEDWORDPRESS_DEBUG and count($wpdb->queries) > 0) :
 				$mysqlTime = 0.0;
 				$byTime = array();
@@ -1534,10 +1533,10 @@ class FeedWordPress {
 					$time = $query[1] * 1000000.0;
 					$mysqlTime += $query[1];
 					if (!isset($byTime[$time])) : $byTime[$time] = array(); endif;
-					$byTime[$time][] = $query[0]. ' // STACK: ' . $query[2];   
+					$byTime[$time][] = $query[0]. ' // STACK: ' . $query[2];
 				endforeach;
 				krsort($byTime);
-	       
+
 				foreach ($byTime as $time => $querySet) :
 					foreach ($querySet as $query) :
 						print "[".(sprintf('%4.4f', $time/1000.0)) . "ms] $query\n";
@@ -1545,9 +1544,9 @@ class FeedWordPress {
 				endforeach;
 				echo self::log_prefix()."$wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of "; timer_stop(1); print " seconds.";
 			endif;
-	
+
 			debug_out_feedwordpress_footer();
-	
+
 			// Magic URL should return nothing but a 200 OK header packet
 			// when successful.
 			exit;
@@ -1559,7 +1558,7 @@ class FeedWordPress {
 			$this->clear_cache();
 		endif;
 	} /* FeedWordPress::clear_cache_magic_url() */
-	
+
 	public function clear_cache_requested () {
 		return MyPHP::request('clear_cache');
 	} /* FeedWordPress::clear_cache_requested() */
@@ -1570,7 +1569,7 @@ class FeedWordPress {
 
 	public function update_requested_url () {
 		$ret = null;
-		
+
 		if (($_REQUEST['update_feedwordpress']=='*')
 		or (preg_match('|^http://.*|i', $_REQUEST['update_feedwordpress']))) :
 			$ret = $_REQUEST['update_feedwordpress'];
@@ -1585,7 +1584,7 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::auto_update () */
 
-	public function find_link ($uri, $field = 'link_rss') {
+	public static function find_link ($uri, $field = 'link_rss') {
 		global $wpdb;
 
 		$unslashed = untrailingslashit($uri);
@@ -1594,11 +1593,11 @@ class FeedWordPress {
 		SELECT link_id FROM $wpdb->links WHERE $field IN ('%s', '%s')
 		LIMIT 1", $unslashed, $slashed
 		));
-		
+
 		return $link_id;
 	} /* FeedWordPress::find_link () */
 
-	public function syndicate_link ($name, $uri, $rss) {
+	public static function syndicate_link ($name, $uri, $rss) {
 		// Get the category ID#
 		$cat_id = FeedWordPress::link_category_id();
 		if (!is_wp_error($cat_id)) :
@@ -1609,7 +1608,7 @@ class FeedWordPress {
 
 		// WordPress gets cranky if there's no homepage URI
 		if (!is_string($uri) or strlen($uri)<1) : $uri = $rss; endif;
-		
+
 		// Check if this feed URL is already being syndicated.
 		$link_id = wp_insert_link(array(
 		"link_id" => FeedWordPress::find_link($rss), // insert if nothing was found; else update
@@ -1631,17 +1630,17 @@ class FeedWordPress {
 		return $ret;
 	} /* FeedWordPress::syndicated_status() */
 
-	public function on_unfamiliar ($what = 'author') {
+	public static function on_unfamiliar ($what = 'author') {
 		switch ($what) :
 		case 'category' : $suffix = ':category'; break;
 		case 'post_tag' : $suffix = ':post_tag'; break;
 		default: $suffix = '';
 		endswitch;
-		
+
 		return get_option('feedwordpress_unfamiliar_'.$what, 'create'.$suffix);
 	} // function FeedWordPress::on_unfamiliar()
 
-	public function null_email_set () {
+	public static function null_email_set () {
 		$base = get_option('feedwordpress_null_email_set');
 
 		if ($base===false) :
@@ -1655,13 +1654,13 @@ class FeedWordPress {
 
 	} /* FeedWordPress::null_email_set () */
 
-	public function is_null_email ($email) {
+	public static function is_null_email ($email) {
 		$ret = in_array(strtolower(trim($email)), FeedWordPress::null_email_set());
 		$ret = apply_filters('syndicated_item_author_is_null_email', $ret, $email);
 		return $ret;
 	} /* FeedWordPress::is_null_email () */
 
-	public function use_aggregator_source_data () {
+	public static function use_aggregator_source_data () {
 		$ret = get_option('feedwordpress_use_aggregator_source_data');
 		return apply_filters('syndicated_post_use_aggregator_source_data', ($ret=='yes'));
 	} /* FeedWordPress::use_aggregator_source_data () */
@@ -1677,7 +1676,7 @@ class FeedWordPress {
 		return (get_option('feedwordpress_munge_permalink', /*default=*/ 'yes') != 'no');
 	} /* FeedWordPress::munge_permalinks() */
 
-	public function syndicated_links ($args = array()) {
+	public static function syndicated_links ($args = array()) {
 		$contributors = FeedWordPress::link_category_id();
 		if (!is_wp_error($contributors)) :
 			$links = get_bookmarks(array_merge(
@@ -1691,11 +1690,11 @@ class FeedWordPress {
 		return $links;
 	} /* FeedWordPress::syndicated_links() */
 
-	public function link_category_id () {
+	public static function link_category_id () {
 		global $wpdb, $wp_db_version;
 
 		$cat_id = get_option('feedwordpress_cat_id');
-		
+
 		// If we don't yet have the category ID stored, search by name
 		if (!$cat_id) :
 			$cat_id = FeedWordPressCompatibility::link_category_id(DEFAULT_SYNDICATION_CATEGORY);
@@ -1709,7 +1708,7 @@ class FeedWordPress {
 		else :
 			$cat_id = FeedWordPressCompatibility::link_category_id((int) $cat_id, 'cat_id');
 		endif;
-		
+
 		// If we could not find an appropriate link category,
 		// make a new one for ourselves.
 		if (!$cat_id) :
@@ -1725,7 +1724,7 @@ class FeedWordPress {
 
 	# Upgrades and maintenance...
 	static function needs_upgrade () {
-		
+
 		global $wpdb;
 		$fwp_db_version = get_option('feedwordpress_version', NULL);
 		$ret = false; // innocent until proven guilty
@@ -1749,7 +1748,7 @@ class FeedWordPress {
 				endif;
 				foreach (FeedWordPress::syndicated_links() as $link) :
 					$sub = new SyndicatedLink($link);
-					
+
 					$remap_uf = array(
 						'default' => 'null',
 						'filter' => 'null',
@@ -1766,12 +1765,12 @@ class FeedWordPress {
 							endif;
 						endforeach;
 					endif;
-					
+
 					if (isset($sub->settings['add global categories'])) :
 						$sub->settings['add/category'] = $sub->settings['add global categories'];
 						unset($sub->settings['add global categories']);
 					endif;
-					
+
 					$sub->save_settings(/*reload=*/ true);
 				endforeach;
 				update_option('feedwordpress_version', FEEDWORDPRESS_VERSION);
@@ -1805,9 +1804,9 @@ class FeedWordPress {
 		echo "<p>Upgrade complete. FeedWordPress is now ready to use again.</p>";
 	} /* FeedWordPress::upgrade_database() */
 
-	public function has_guid_index () {
+	public static function has_guid_index () {
 		global $wpdb;
-		
+
 		$found = false; // Guilty until proven innocent.
 
 		$results = $wpdb->get_results("
@@ -1823,18 +1822,18 @@ class FeedWordPress {
 		endif;
 		return $found;
 	} /* FeedWordPress::has_guid_index () */
-	
-	public function create_guid_index () {
+
+	public static function create_guid_index () {
 		global $wpdb;
-		
+
 		$wpdb->query("
 		CREATE INDEX {$wpdb->posts}_guid_idx ON {$wpdb->posts}(guid)
 		");
 	} /* FeedWordPress::create_guid_index () */
-	
-	public function remove_guid_index () {
+
+	public static function remove_guid_index () {
 		global $wpdb;
-		
+
 		$wpdb->query("
 		DROP INDEX {$wpdb->posts}_guid_idx ON {$wpdb->posts}
 		");
@@ -1846,19 +1845,19 @@ class FeedWordPress {
 			intval(get_option('feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT))
 		);
 	}
-	
+
 	static function fetch ($url, $params = array()) {
 		if (is_wp_error($url)) :
 			// Let's bounce.
 			return $url;
 		endif;
-		
+
 		$force_feed = true; // Default
 
 		// Allow user to change default feed-fetch timeout with a global setting.
 		// Props Erigami Scholey-Fuller <http://www.piepalace.ca/blog/2010/11/feedwordpress-broke-my-heart.html>
 		$timeout = FeedWordPress::fetch_timeout();
- 		
+
 		if (!is_array($params)) :
 			$force_feed = $params;
 		else : // Parameter array
@@ -1866,11 +1865,11 @@ class FeedWordPress {
 			'force_feed' => $force_feed,
 			'timeout' => $timeout
 			), $params);
-			
+
 			extract($args);
 		endif;
 		$timeout = intval($timeout);
-		
+
 		$pie_class = apply_filters('feedwordpress_simplepie_class', 'FeedWordPie');
 		$cache_class = apply_filters('feedwordpress_cache_class', 'WP_Feed_Cache');
 		$file_class = apply_filters('feedwordpress_file_class', 'FeedWordPress_File');
@@ -1882,7 +1881,7 @@ class FeedWordPress {
 		$feed->set_feed_url($url);
 		$feed->set_cache_class($cache_class);
 		$feed->set_timeout($timeout);
-		
+
 		$feed->set_content_type_sniffer_class($sniffer_class);
 		$feed->set_file_class($file_class);
 		$feed->set_parser_class($parser_class);
@@ -1891,7 +1890,7 @@ class FeedWordPress {
 		$feed->set_cache_duration(FeedWordPress::cache_duration($params));
 		$feed->init();
 		$feed->handle_content_type();
-		
+
 		if ($feed->error()) :
 			$ret = new WP_Error('simplepie-error', $feed->error());
 		else :
@@ -1899,10 +1898,10 @@ class FeedWordPress {
 		endif;
 		return $ret;
 	} /* FeedWordPress::fetch () */
-	
+
 	public function clear_cache () {
 		global $wpdb;
-		
+
 		// Just in case, clear out any old MagpieRSS cache records.
 		$magpies = $wpdb->query("
 		DELETE FROM {$wpdb->options}
@@ -1929,7 +1928,7 @@ class FeedWordPress {
 		$params = wp_parse_args($params, array(
 		"cache" => true,
 		));
-		
+
 		$duration = NULL;
 		if (!$params['cache']) :
 			$duration = 0;
@@ -1948,7 +1947,7 @@ class FeedWordPress {
 		elseif (defined('FEEDWORDPRESS_CACHE_AGE')) :
 			$duration = FEEDWORDPRESS_CACHE_AGE;
 		endif;
-		
+
 		// Fall back to WordPress default
 		return $duration;
 	} /* FeedWordPress::cache_lifetime () */
@@ -1967,13 +1966,13 @@ class FeedWordPress {
 	# Internal debugging functions
 	static function critical_bug ($varname, $var, $line, $file = NULL) {
 		global $wp_version;
-		
+
 		if (!is_null($file)) :
 			$location = "line # ${line} of ".basename($file);
 		else :
 			$location = "line # ${line}";
 		endif;
-		
+
 		print '<p><strong>Critical error:</strong> There may be a bug in FeedWordPress. Please <a href="'.FEEDWORDPRESS_AUTHOR_CONTACT.'">contact the author</a> and paste the following information into your e-mail:</p>';
 		print "\n<plaintext>";
 		print "Triggered at ${location}\n";
@@ -1984,18 +1983,18 @@ class FeedWordPress {
 		print  $varname.": "; var_dump($var); echo "\n";
 		die;
 	} /* FeedWordPress::critical_bug () */
-	
+
 	static function noncritical_bug ($varname, $var, $line, $file = NULL) {
 		if (FEEDWORDPRESS_DEBUG) : // halt only when we are doing debugging
 			FeedWordPress::critical_bug($varname, $var, $line, $file);
 		endif;
 	} /* FeedWordPress::noncritical_bug () */
-	
+
 	static function val ($v, $no_newlines = false) {
 		ob_start();
 		var_dump($v);
 		$out = ob_get_contents(); ob_end_clean();
-		
+
 		if ($no_newlines) :
 			$out = preg_replace('/\s+/', " ", $out);
 		endif;
@@ -2035,7 +2034,7 @@ class FeedWordPress {
 					error_log(FeedWordPress::log_prefix().' '.$out);
 					break;
 				case 'email' :
-					
+
 					if (is_null($persist)) :
 						$sect = 'occurrent';
 						$hook = (isset($dlog['mesg'][$sect]) ? count($dlog['mesg'][$sect]) : 0);
@@ -2045,18 +2044,18 @@ class FeedWordPress {
 						$hook = md5($level."\n".$persist);
 						$line = array("Since" => $since, "Message" => $out, "Most Recent" => $mostRecent);
 					endif;
-					
+
 					if (!isset($dlog['mesg'])) : $dlog['mesg'] = array(); endif;
 					if (!isset($dlog['mesg'][$sect])) : $dlog['mesg'][$sect] = array(); endif;
-					
+
 					$dlog['mesg'][$sect][$hook] = $line;
 				endswitch;
 			endforeach;
 		endif;
-		
-		update_option('feedwordpress_diagnostics_log', $dlog);		
+
+		update_option('feedwordpress_diagnostics_log', $dlog);
 	} /* FeedWordPress::diagnostic () */
-	
+
 	public function email_diagnostics_override () {
 		return ($this->has_secret() and isset($_REQUEST['feedwordpress_email_diagnostics']) and !!$_REQUEST['feedwordpress_email_diagnostics']);
 	} /* FeedWordPress::email_diagnostics_override () */
@@ -2078,25 +2077,25 @@ class FeedWordPress {
 		endif;
 		return $ret;
 	} /* FeedWordPress::ready_to_email_diagnostics () */
-	
+
 	public function email_diagnostic_log ($params = array()) {
 		$params = wp_parse_args($params, array(
 		"force" => false,
 		));
 
 		$dlog = get_option('feedwordpress_diagnostics_log', array());
-		
+
 		if ($this->has_emailed_diagnostics($dlog)) :
 			if ($this->ready_to_email_diagnostics($dlog)) :
 				// No news is good news; only send if
 				// there are some messages to send.
 				$body = NULL;
 				if (!isset($dlog['mesg'])) : $dlog['mesg'] = array(); endif;
-				
+
 				foreach ($dlog['mesg'] as $sect => $mesgs) :
 					if (count($mesgs) > 0) :
 						if (is_null($body)) : $body = ''; endif;
-						
+
 						$paradigm = reset($mesgs);
 						$body .= "<h2>".ucfirst($sect)." issues</h2>\n"
 							."<table>\n"
@@ -2106,7 +2105,7 @@ class FeedWordPress {
 						endforeach;
 						$body .= "</tr></thead>\n"
 							."<tbody>\n";
-						
+
 						foreach ($mesgs as $line) :
 							$body .= "<tr>\n";
 							foreach ($line as $col => $cell) :
@@ -2118,11 +2117,11 @@ class FeedWordPress {
 							endforeach;
 							$body .= "</tr>\n";
 						endforeach;
-						
+
 						$body .= "</tbody>\n</table>\n\n";
 					endif;
 				endforeach;
-				
+
 				$body = apply_filters('feedwordpress_diagnostic_email_body', $body, $dlog);
 				if (!is_null($body)) :
 					$home = feedwordpress_display_url(get_bloginfo('url'));
@@ -2157,12 +2156,12 @@ EOMAIL;
 					// e-mail address
 					if (preg_match('/^mailto:(.*)$/', $ded, $ref)) :
 						$recipients = array($ref[1]);
-						
+
 					// userid
 					elseif (preg_match('/^user:(.*)$/', $ded, $ref)) :
 						$userdata = get_userdata((int) $ref[1]);
 						$recipients = array($userdata->user_email);
-					
+
 					// admins
 					else :
 						$recipients = FeedWordPressDiagnostic::admin_emails();
@@ -2185,17 +2184,17 @@ EOMAIL;
 					endif;
 					$head = apply_filters('feedwordpress_diagnostic_email_headers', $head);
 
-					foreach ($recipients as $email) :						
+					foreach ($recipients as $email) :
 						add_filter('wp_mail_content_type', array('FeedWordPress', 'allow_html_mail'));
 						wp_mail($email, $subj, $body, $head);
 						remove_filter('wp_mail_content_type', array('FeedWordPress', 'allow_html_mail'));
 					endforeach;
 				endif;
-				
+
 				// Clear the logs
 				$dlog['mesg']['persistent'] = array();
 				$dlog['mesg']['occurrent'] = array();
-				
+
 				// Set schedule for next update
 				$dlog['schedule']['last'] = time();
 			endif;
@@ -2205,10 +2204,10 @@ EOMAIL;
 				'last' => time(),
 			);
 		endif;
-		
+
 		update_option('feedwordpress_diagnostics_log', $dlog);
 	} /* FeedWordPress::email_diagnostic_log () */
-	
+
 	static function allow_html_mail () {
 		return 'text/html';
 	} /* FeedWordPress::allow_html_mail () */
@@ -2219,7 +2218,7 @@ EOMAIL;
 			echo '<div><pre>'.$line.'</pre></div>';
 		endforeach;
 	} /* FeedWordPress::admin_footer () */
-	
+
 	static function log_prefix ($date = false) {
 		$home = get_bloginfo('url');
 		$prefix = '['.feedwordpress_display_url($home).'] [feedwordpress] ';
@@ -2228,7 +2227,7 @@ EOMAIL;
 		endif;
 		return $prefix;
 	} /* FeedWordPress::log_prefix () */
-	
+
 	static function menu_cap ($sub = false) {
 		if ($sub) :
 			$cap = apply_filters('feedwordpress_menu_settings_capacity', 'manage_options');
@@ -2237,17 +2236,17 @@ EOMAIL;
 		endif;
 		return $cap;
 	} /* FeedWordPress::menu_cap () */
-	
+
 	static function path ($filename = '') {
 		global $fwp_path;
-		
+
 		$path = $fwp_path;
 		if (strlen($filename) > 0) :
 			$path .= '/'.$filename;
 		endif;
 		return $path;
 	} /* FeedWordPress::path () */
-	
+
 	// These are superceded by MyPHP::param/post/get/request, but kept
 	// here for backward compatibility.
 
