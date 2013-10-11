@@ -1924,7 +1924,7 @@ class FeedWordPress {
 		return ($magpies + $simplepies);
 	} /* FeedWordPress::clear_cache () */
 
-	public function cache_duration ($params = array()) {
+	static public function cache_duration ($params = array()) {
 		$params = wp_parse_args($params, array(
 		"cache" => true,
 		));
@@ -1938,7 +1938,7 @@ class FeedWordPress {
 		return $duration;
 	}
 
-	public function cache_lifetime ($duration) {
+	static public function cache_lifetime ($duration) {
 		// Check for explicit setting of a lifetime duration
 		if (defined('FEEDWORDPRESS_CACHE_LIFETIME')) :
 			$duration = FEEDWORDPRESS_CACHE_LIFETIME;
