@@ -778,11 +778,11 @@ class SyndicatedPost {
 		return $hash;
 	} /* SyndicatedPost::update_hash() */
 
-	/*static*/ function normalize_guid_prefix () {
+	static function normalize_guid_prefix () {
 		return trailingslashit(get_bloginfo('url')).'?guid=';
 	}
 
-	/*static*/ function normalize_guid ($guid) {
+	static function normalize_guid ($guid) {
 		$guid = trim($guid);
 		if (preg_match('/^[0-9a-z]{32}$/i', $guid)) : // MD5
 			$guid = SyndicatedPost::normalize_guid_prefix().strtolower($guid);
@@ -1174,7 +1174,7 @@ class SyndicatedPost {
 		return $tag['prefix'] . $url . $tag['suffix'];
 	} /* function SyndicatedPost::resolve_single_relative_uri() */
 
-	function resolve_relative_uris ($content, $obj) {
+	static function resolve_relative_uris ($content, $obj) {
 		$set = $obj->link->setting('resolve relative', 'resolve_relative', 'yes');
 		if ($set and $set != 'no') :
 			// Fallback: if we don't have anything better, use the
@@ -1213,7 +1213,7 @@ class SyndicatedPost {
 		return $tag['before_attribute'].$tag['after_attribute'];
 	}
 
-	function sanitize_content ($content, $obj) {
+	static function sanitize_content ($content, $obj) {
 		# This kind of sucks. I intend to replace it with
 		# lib_filter sometime soon.
 		foreach ($obj->strip_attrs as $pair):

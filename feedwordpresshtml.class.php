@@ -1,6 +1,6 @@
-<?php 
+<?php
 class FeedWordPressHTML {
-	function attributeRegex ($tag, $attr) {
+	static function attributeRegex ($tag, $attr) {
 		return ":(
 		(<($tag)\s+[^>]*)
 		($attr)=
@@ -16,7 +16,7 @@ class FeedWordPressHTML {
 		:ix";
 	} /* function FeedWordPressHTML::attributeRegex () */
 
-	function attributeMatch ($matches) {
+	static function attributeMatch ($matches) {
 		for ($i = 0; $i <= 12; $i++) :
 			if (!isset($matches[$i])) :
 				$matches[$i] = '';
@@ -38,7 +38,7 @@ class FeedWordPressHTML {
 		);
 	} /* function FeedWordPressHTML::attributeMatch () */
 
-	function tagWithAttributeRegex ($tag, $attr, $value, $closing = true) {
+	static function tagWithAttributeRegex ($tag, $attr, $value, $closing = true) {
 		return ":(
 		(<($tag)\s+[^>]*)
 		($attr)=
@@ -57,7 +57,7 @@ class FeedWordPressHTML {
 		:ix";
 	} /* FeedWordPressHTML::tagWithAttributeRegex () */
 
-	function tagWithAttributeMatch ($matches, $closing = true) {
+	static function tagWithAttributeMatch ($matches, $closing = true) {
 		for ($i = 0; $i <= 21; $i++) :
 			if (!isset($matches[$i])) :
 				$matches[$i] = '';
