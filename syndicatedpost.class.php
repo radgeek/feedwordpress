@@ -45,6 +45,9 @@ class SyndicatedPost {
 	function SyndicatedPost ($item, &$source) {
 		global $wpdb;
 
+		if ( empty($item) && empty($source) )
+			return;
+
 		if (is_array($item)
 		and isset($item['simplepie'])
 		and isset($item['magpie'])) :

@@ -6,7 +6,7 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 		if (is_numeric($link) and -1 == $link) :
 			$link = $this->submitted_link();
 		endif;
-		
+
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpresscategories', $link);
 		$this->dispatch = 'feedwordpress_admin_page_categories';
 		$this->pagenames = array(
@@ -16,7 +16,7 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 		);
 		$this->filename = __FILE__;
 	}
-	
+
 	function unfamiliar_category_label ($name) {
 		if (preg_match('/^create:(.*)$/', $name, $refs)) :
 			$tax = get_taxonomy($refs[1]);
@@ -24,11 +24,11 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 		endif;
 		return $name;
 	}
-	
-	
+
+
 	function feed_categories_box ($page, $box = NULL) {
 		$link = $page->link;
-		
+
 		$globalPostType = get_option('feedwordpress_syndicated_post_type', 'post');
 		if ($this->for_feed_settings()) :
 			$post_type = $link->setting('syndicated post type', 'syndicated_post_type', 'post');
@@ -42,7 +42,7 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 		$tagLikeTaxonomies = array();
 		foreach ($taxonomies as $tax) :
 			$taxonomy = get_taxonomy($tax);
-			
+
 			if (!$taxonomy->hierarchical) :
 				$tagLikeTaxonomies[] = $tax;
 			endif;
@@ -62,12 +62,12 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 				);
 			endforeach;
 		endforeach;
-		
+
 		foreach ($unmatched as $what => $um) :
 			$unmatched[$what]['null'] = array('label' => __('Don\'t create any matching terms'));
 			$unmatchedRadio[$what]['null'] = '';
 		endforeach;
-		
+
 		$globalUnmatched = array(
 			'category' => FeedWordPress::on_unfamiliar('category'),
 			'post_tag' => FeedWordPress::on_unfamiliar('post_tag'),
@@ -77,21 +77,21 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 			if ($value=='tag') : $value = 'create:post_tag'; endif;
 			$globalUnmatched[$what] = $value;
 		endforeach;
-		
+
 		$globalMatch['cats'] = get_option('feedwordpress_match_cats', $taxonomies);
 		$globalMatch['tags'] = get_option('feedwordpress_match_tags', $tagLikeTaxonomies);
 		$globalMatch['filter'] = get_option('feedwordpress_match_filter', array());
-		
+
 		$globalMatchLabels = array();
 		$nothingDoing = array('cats' => "won't try to match", 'tags' => "won't try to match", "filter" => "won't filter");
-		
+
 		foreach ($globalMatch as $what => $domain) :
 			$labels = array(); $domain = array_filter($domain, 'remove_dummy_zero');
 			foreach ($domain as $tax) :
 				$tax = get_taxonomy($tax);
 				$labels[] = $tax->labels->name;
 			endforeach;
-			
+
 			if (count($labels) > 0) :
 				$globalMatchLabels[$what] = implode(", ", $labels);
 			else :
@@ -126,30 +126,30 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 					$unmatchedDefault[$what] = $opts[0];
 					$unmatchedColumns[$what] = array();
 				endif;
-				
+
 				$ucKey[$what] = $link->setting("unfamiliar $what", NULL, NULL);
 			endforeach;
-			
+
 			$match['cats'] = $this->link->setting('match/cats', NULL, NULL);
 			$match['tags'] = $this->link->setting('match/tags', NULL, NULL);
 			$match['filter'] = $this->link->setting('match/filter', NULL, NULL);
 		else :
 			foreach ($unmatched as $what => $um) :
-				$ucKey[$what] = FeedWordPress::on_unfamiliar($what); 
+				$ucKey[$what] = FeedWordPress::on_unfamiliar($what);
 			endforeach;
 
 			$match = $globalMatch;
 		endif;
-		
+
 		foreach ($ucKey as $what => $uck) :
 			if ($uck == 'tag') : $uck = 'create:post_tag'; endif;
 			if ($uck == 'create') : $uck = 'create:category'; endif;
-			
+
 			if (!is_string($uck)) :
 				$uck = $unmatchedDefault[$what];
 			endif;
 			$ucKey[$what] = $uck;
-			
+
 			if (!array_key_exists($uck, $unmatchedRadio[$what])) :
 				$obsoleteLi = array(
 					$uck => array(
@@ -159,12 +159,12 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 				$unmatched[$what] = array_merge($obsoleteLi, $unmatched[$what]);
 				$unmatchedRadio[$what][$uck] = ' disabled="disabled"';
 			endif;
-			
+
 			$unmatchedRadio[$what][$uck] .= ' checked="checked"';
-			
+
 			$unmatchedColumns[$what][] = $unmatched[$what];
 		endforeach;
-		
+
 		$defaulted = array();
 		foreach ($match as $what => $set) :
 			$defaulted[$what] = false;
@@ -175,7 +175,7 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 					$match[$what] = $globalMatch[$what];
 				endif;
 			endif;
-			
+
 			if (!$defaulted[$what] or $this->for_feed_settings()) :
 				foreach ($set as $against) :
 					if (array_key_exists($against, $matchUl[$what])) :
@@ -350,7 +350,7 @@ least one local <strong><?php $l = $li['labels']; print $l->singular_name; ?></s
 <?php if ($page->for_feed_settings()) : ?>
 <tr>
 <th scope="row">Multiple categories:</th>
-<td> 
+<td>
 <input type="text" size="20" id="cat_split" name="cat_split" value="<?php if (isset($link->settings['cat_split'])) : echo htmlspecialchars($link->settings['cat_split']); endif; ?>" />
 <p class="setting-description">Enter a <a href="http://us.php.net/manual/en/reference.pcre.pattern.syntax.php">Perl-compatible regular expression</a> here if the feed provides multiple
 categories in a single category element. The regular expression should match
@@ -376,9 +376,11 @@ blank.</p></td>
 			'post_tag' => 'tags',
 		);
 	}
-	
+
 	function categories_box ($page, $box = NULL) {
 		$link = $page->link;
+		$dummy = null;
+		$syndicatedpost = new SyndicatedPost(null, $dummy);
 
 		if ($this->for_feed_settings()) :
 			$post_type = $link->setting('syndicated post type', 'syndicated_post_type', 'post');
@@ -417,7 +419,7 @@ blank.</p></td>
 				$add_global_categories = $link->setting("add/$tax", NULL, 'yes');
 				$checked = array('yes' => '', 'no' => '');
 				$checked[$add_global_categories] = ' checked="checked"';
-				
+
 				if (isset($setting_map[$tax])) :
 					$setting = $setting_map[$tax];
 					$cats = $link->setting($setting, NULL, NULL);
@@ -430,7 +432,7 @@ blank.</p></td>
 			else :
 				$cats = $globalCats;
 			endif;
-			
+
 			if ($page->for_feed_settings()) :
 			?>
 			<table class="twofer">
@@ -439,17 +441,17 @@ blank.</p></td>
 			<td class="primary">
 			<?php
 			endif;
-			
-			$dogs = SyndicatedPost::category_ids($cats, /*unfamiliar=*/ NULL, /*taxonomies=*/ array($tax));
-			
+
+			$dogs = $syndicatedpost->category_ids($cats, /*unfamiliar=*/ NULL, /*taxonomies=*/ array($tax));
+
 			if ($taxonomy->hierarchical) : // Use a category-style checkbox
 				fwp_category_box($dogs, 'all '.$page->these_posts_phrase(), /*tags=*/ array(), /*params=*/ array('taxonomy' => $tax));
 			else : // Use a tag-style edit box
 				fwp_tags_box($cats, 'all '.$page->these_posts_phrase(), /*params=*/ array('taxonomy' => $tax));
 			endif;
-			
-			$globalDogs = SyndicatedPost::category_ids($globalCats, /*unfamiliar=*/ 'create:'.$tax, /*taxonomies=*/ array($tax));
-	
+
+			$globalDogs = $syndicatedpost->category_ids($globalCats, /*unfamiliar=*/ 'create:'.$tax, /*taxonomies=*/ array($tax));
+
 			$siteWideHref = $this->admin_page_href(basename(__FILE__));
 
 			if ($page->for_feed_settings()) :
@@ -472,7 +474,7 @@ blank.</p></td>
 			Should <?php print $page->these_posts_phrase(); ?> be assigned
 			these <?php print $taxonomy->labels->name; ?> from the <a href="<?php print esc_html($siteWideHref); ?>">site-wide settings</a>, in
 			addition to the feed-specific <?php print $taxonomy->labels->name; ?> you set up here?</p>
-			
+
 			<ul class="settings">
 			<li><p><label><input type="radio" name="add_global[<?php print $tax; ?>]" value="yes" <?php print $checked['yes']; ?> /> Yes. Place <?php print $page->these_posts_phrase(); ?> under all these categories.</label></p></li>
 			<li><p><label><input type="radio" name="add_global[<?php print $tax; ?>]" value="no" <?php print $checked['no']; ?> /> No. Only use the categories I set up on the left. Do not use the global defaults for <?php print $page->these_posts_phrase(); ?></label></p></li>
@@ -493,7 +495,7 @@ blank.</p></td>
 		</table>
 		<?php
 	} /* FeedWordPressCategoriesPage::categories_box () */
-	
+
 	function save_settings ($post) {
 		if (isset($post['match_categories'])) :
 			foreach ($post['match_categories'] as $what => $set) :
@@ -504,7 +506,7 @@ blank.</p></td>
 				and $post['match_default'][$what]=='yes') :
 					$set = NULL; // Defaulted!
 				endif;
-				
+
 				$this->update_setting("match/$what", $set, NULL);
 			endforeach;
 		endif;
@@ -512,9 +514,9 @@ blank.</p></td>
 		$settingMap = $this->term_setting_map();
 
 		$saveTerms = array(); $separateSaveTerms = array('category' => array(), 'post_tag' => array());
-		
+
 		if (!isset($post['tax_input'])) : $post['tax_input'] = array(); endif;
-		
+
 		// Merge in data from older-notation category check boxes
 		if (isset($post['post_category'])) :
 			// Just merging in for processing below.
@@ -537,7 +539,7 @@ blank.</p></td>
 				$saveTerms[$tax] = explode(",", $terms);
 			endif;
 			$saveTerms[$tax] = array_map('trim', $saveTerms[$tax]);
-			
+
 			if (isset($optionMap[$tax])) :
 				$separateSaveTerms[$tax] = $saveTerms[$tax];
 				unset($saveTerms[$tax]);
@@ -546,10 +548,10 @@ blank.</p></td>
 
 		if (isset($post['post_category'])) :
 			foreach ($post['post_category'] as $cat) :
-				$separateSaveTerms['category'][] = '{category#'.$cat.'}'; 
+				$separateSaveTerms['category'][] = '{category#'.$cat.'}';
 			endforeach;
 		endif;
-		
+
 		// Unmatched categories and tags
 		foreach (array('category', 'post_tag') as $what) :
 			if (isset($post["unfamiliar_{$what}"])) :
@@ -560,7 +562,7 @@ blank.</p></td>
 				);
 			endif;
 		endforeach;
-		
+
 		// Categories and Tags
 		foreach ($separateSaveTerms as $tax => $terms) :
 			if ($this->for_feed_settings()) :
@@ -573,7 +575,7 @@ blank.</p></td>
 				endif;
 			endif;
 		endforeach;
-		
+
 		// Other terms
 		$this->update_setting(array('feed'=>'terms', 'global'=>'syndication_terms'), $saveTerms, array());
 
@@ -582,7 +584,7 @@ blank.</p></td>
 			if (isset($post['cat_split'])) :
 				$this->link->update_setting('cat_split', trim($post['cat_split']), '');
 			endif;
-			
+
 			// Treat global terms (cats, tags, etc.) as additional,
 			// or as defaults to be overridden and replaced?
 			if (isset($post['add_global'])) :
@@ -593,18 +595,18 @@ blank.</p></td>
 		endif;
 		parent::save_settings($post);
 	} /* FeedWordPressCategoriesPage::save_settings() */
-	
+
 	function display () {
 		////////////////////////////////////////////////
 		// Display settings boxes //////////////////////
 		////////////////////////////////////////////////
-	
+
 		$this->boxes_by_methods = array(
 			'feed_categories_box' => __('Feed Categories & Tags'),
 			'categories_box' => array('title' => __('Categories'), 'id' => 'categorydiv'),
 		);
 
-		parent::display();	
+		parent::display();
 	}
 }
 
