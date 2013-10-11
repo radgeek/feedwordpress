@@ -6,7 +6,7 @@ class MagpieMockLink extends SyndicatedLink {
 
 	function MagpieMockLink ($rss, $url) {
 		$this->link = $rss;
-		
+
 		if (is_array($rss) and isset($rss['simplepie']) and isset($rss['magpie'])) :
 			$this->simplepie = $rss['simplepie'];
 			$this->magpie = $rss['magpie'];
@@ -18,7 +18,7 @@ class MagpieMockLink extends SyndicatedLink {
 		$this->id = -1;
 		$this->settings = array(
 			'unfamiliar category' => 'default',
-			
+
 		);
 	} /* function MagpieMockLink::MagpieMockLink () */
 
@@ -30,14 +30,14 @@ class MagpieMockLink extends SyndicatedLink {
 		$this->link = $this->magpie;
 	} /* function MagpieMockLink::poll () */
 
-	function uri () {
+	function uri ($params = array()) {
 		return $this->url;
 	} /* function MagpieMockLink::uri() */
 
-	function homepage () {
+	function homepage ($fromFeed = true) {
 		return (!is_wp_error($this->simplepie) ? $this->simplepie->get_link() : null);
 	} /* function MagpieMockLink::homepage () */
-	
+
 	function save_settings ($reload = false) {
 		// NOOP.
 	}
