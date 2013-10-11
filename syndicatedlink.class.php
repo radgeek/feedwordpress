@@ -192,18 +192,18 @@ class SyndicatedLink {
 
 			$update = array();
 			if (!$this->hardcode('url') and isset($channel['link'])) :
-				$update[] = "link_url = '".$wpdb->escape($channel['link'])."'";
+				$update[] = "link_url = '".esc_sql($channel['link'])."'";
 			endif;
 
 			if (!$this->hardcode('name') and isset($channel['title'])) :
-				$update[] = "link_name = '".$wpdb->escape($channel['title'])."'";
+				$update[] = "link_name = '".esc_sql($channel['title'])."'";
 			endif;
 
 			if (!$this->hardcode('description')) :
 				if (isset($channel['tagline'])) :
-					$update[] = "link_description = '".$wpdb->escape($channel['tagline'])."'";
+					$update[] = "link_description = '".esc_sql($channel['tagline'])."'";
 				elseif (isset($channel['description'])) :
-					$update[] = "link_description = '".$wpdb->escape($channel['description'])."'";
+					$update[] = "link_description = '".esc_sql($channel['description'])."'";
 				endif;
 			endif;
 
@@ -235,7 +235,7 @@ class SyndicatedLink {
 
 			$this->update_setting('update/unfinished', 'yes');
 
-			$update[] = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
+			$update[] = "link_notes = '".esc_sql($this->settings_to_notes())."'";
 
 			$update_set = implode(',', $update);
 
@@ -333,7 +333,7 @@ class SyndicatedLink {
 
 			// Copy back any changes to feed settings made in the
 			// course of updating (e.g. new author rules)
-			$update_set = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
+			$update_set = "link_notes = '".esc_sql($this->settings_to_notes())."'";
 
 			// Update the properties of the link from the feed information
 			$result = $wpdb->query("
@@ -394,8 +394,8 @@ class SyndicatedLink {
 			$result = $wpdb->query("
 			UPDATE $wpdb->links
 			SET
-				link_rss = '".$wpdb->escape($url)."'
-			WHERE link_id = '".$wpdb->escape($this->id)."'
+				link_rss = '".esc_sql($url)."'
+			WHERE link_id = '".esc_sql($this->id)."'
 			");
 
 			$ret = ($result ? true : false);
@@ -630,11 +630,11 @@ class SyndicatedLink {
 
 		// Save channel-level meta-data
 		foreach (array('link_name', 'link_description', 'link_url') as $what) :
-			$alter[] = "{$what} = '".$wpdb->escape($this->link->{$what})."'";
+			$alter[] = "{$what} = '".esc_sql($this->link->{$what})."'";
 		endforeach;
 
 		// Save settings to the notes field
-		$alter[] = "link_notes = '".$wpdb->escape($this->settings_to_notes())."'";
+		$alter[] = "link_notes = '".esc_sql($this->settings_to_notes())."'";
 
 		// Update the properties of the link from settings changes, etc.
 		$update_set = implode(", ", $alter);
@@ -964,7 +964,7 @@ class SyndicatedLink {
 		$g_set = ($fallback ? 'syndicated_' . $what . '_status' : NULL);
 		$ret = $this->setting($what.' status', $g_set, $default);
 
-		return $wpdb->escape(trim(strtolower($ret)));
+		return esc_sql(trim(strtolower($ret)));
 	} /* SyndicatedLink:syndicated_status () */
 
 	function taxonomies () {

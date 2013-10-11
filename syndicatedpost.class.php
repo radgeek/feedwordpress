@@ -117,7 +117,7 @@ class SyndicatedPost {
 		if (is_null($this->item)) :
 			$this->post = NULL;
 		else :
-			# Note that nothing is run through $wpdb->escape() here.
+			# Note that nothing is run through esc_sql() here.
 			# That's deliberate. The escaping is done at the point
 			# of insertion, not here, to avoid double-escaping and
 			# to avoid screwing with syndicated_post filters
@@ -1263,7 +1263,7 @@ class SyndicatedPost {
 
 		if (is_null($this->_freshness)) : // Not yet checked and cached.
 			$guid = $this->post['guid'];
-			$eguid = $wpdb->escape($this->post['guid']);
+			$eguid = esc_sql($this->post['guid']);
 
 			$q = new WP_Query(array(
 				'fields' => '_synfresh', // id, guid, post_modified_gmt
@@ -1676,7 +1676,7 @@ class SyndicatedPost {
 		// Why the fuck doesn't wp_insert_post already do this?
 		foreach ($out as $key => $value) :
 			if (is_string($value)) :
-				$out[$key] = $wpdb->escape($value);
+				$out[$key] = esc_sql($value);
 			else :
 				$out[$key] = $value;
 			endif;
@@ -1865,7 +1865,7 @@ EOM;
 				");
 
 				foreach ( $this->post['meta'] as $key => $values ) :
-					$eKey = $wpdb->escape($key);
+					$eKey = esc_sql($key);
 
 					// If this is an update, clear out the old
 					// values to avoid duplication.
@@ -1973,11 +1973,11 @@ EOM;
 		$nice_author = sanitize_title($author);
 		$nice_author = apply_filters('pre_user_nicename', $nice_author);
 
-		$reg_author = $wpdb->escape(preg_quote($author));
-		$author = $wpdb->escape($author);
-		$email = $wpdb->escape($email);
-		$test_email = $wpdb->escape($test_email);
-		$authorUrl = $wpdb->escape($authorUrl);
+		$reg_author = esc_sql(preg_quote($author));
+		$author = esc_sql($author);
+		$email = esc_sql($email);
+		$test_email = esc_sql($test_email);
+		$authorUrl = esc_sql($authorUrl);
 
 		// Check for an existing author rule....
 		if (isset($this->link->settings['map authors']['name']['*'])) :
