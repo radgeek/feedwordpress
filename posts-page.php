@@ -418,12 +418,16 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 		<?php
 		$i = 0;
-		foreach ($custom_settings as $key => $value) :
+		$testerButton = '<br/><button id="xpath-test-%d"'
+			.'class="xpath-test"'
+			.'>test expression</button>';
+		foreach ($custom_settings as $key => $value) : 
 		?>
 		  <tr style="vertical-align:top">
 		    <th width="30%" scope="row"><input type="hidden" name="notes[<?php echo $i; ?>][key0]" value="<?php echo esc_html($key); ?>" />
 		    <input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo $i; ?>][key1]" value="<?php echo esc_html($key); ?>" /></th>
-		    <td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo esc_html($value); ?></textarea></td>
+		    <td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo esc_html($value); ?></textarea>
+		    <?php print sprintf($testerButton, $i); ?></td>
 		    <td width="10%"><select name="notes[<?php echo $i; ?>][action]">
 		    <option value="update">save changes</option>
 		    <option value="delete">delete this setting</option>
@@ -437,7 +441,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 		  <tr style="vertical-align: top">
 		    <th scope="row"><input type="text" size="10" name="notes[<?php echo $i; ?>][key1]" value="" /></th>
-		    <td><textarea name="notes[<?php echo $i; ?>][value]" rows="2" cols="40"></textarea>
+		    <td><textarea name="notes[<?php echo $i; ?>][value]" rows="2" cols="40"></textarea><?php print sprintf($testerButton, $i); ?>
 		      <p>Enter a text value, or a path to a data element from the syndicated item.<br/>
 		      For data elements, you can use an XPath-like syntax wrapped in <code>$( ... )</code>.<br/>
 		      <code>hello</code> = the text value <code><span style="background-color: #30FFA0;">hello</span></code><br/>

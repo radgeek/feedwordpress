@@ -177,7 +177,7 @@ function fwp_time_elapsed ($ts) {
 ################################################################################
 
 function fwp_upgrade_page () {
-	if (isset($GLOBALS['fwp_post']['action']) and $GLOBALS['fwp_post']['action']=='Upgrade') :
+	if (MyPHP::post('action')=='Upgrade') :
 		$ver = get_option('feedwordpress_version');
 		if (get_option('feedwordpress_version') != FEEDWORDPRESS_VERSION) :
 			echo "<div class=\"wrap\">\n";

@@ -92,12 +92,7 @@ class SyndicatedLink {
 		return $stale;
 	} /* SyndicatedLink::stale () */
 
-	function poll ($crash_ts = NULL) {
-		global $wpdb;
-
-		$url = $this->uri(array('add_params' => true));
-		FeedWordPress::diagnostic('updated_feeds', 'Polling feed ['.$url.']');
-
+	function fetch () {
 		$timeout = $this->setting('fetch timeout', 'feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT);
 
 		$this->simplepie = apply_filters(
@@ -112,6 +107,31 @@ class SyndicatedLink {
 		else :
 			$this->magpie = new MagpieFromSimplePie($this->simplepie, NULL);
 		endif;
+	}
+	function live_posts () {
+		if (!is_object($this->simplepie)) :
+			$this->fetch();
+		endif;
+		
+		if (is_object($this->simplepie) and method_exists($this->simplepie, 'get_items')) :
+			$ret = apply_filters(
+			'syndicated_feed_items',
+			$this->simplepie->get_items(),
+			$this
+			);
+		else :
+			$ret = $this->simplepie;
+		endif;
+		return $ret;
+	}
+	
+	function poll ($crash_ts = NULL) {
+		global $wpdb;
+
+		$url = $this->uri(array('add_params' => true));
+		FeedWordPress::diagnostic('updated_feeds', 'Polling feed ['.$url.']');
+
+		$this->fetch();
 
 		$new_count = NULL;
 
@@ -230,11 +250,7 @@ class SyndicatedLink {
 			# -- Add new posts from feed and update any updated posts
 			$crashed = false;
 
-			$posts = apply_filters(
-				'syndicated_feed_items',
-				$this->simplepie->get_items(),
-				$this
-			);
+			$posts = $this->live_posts();
 
 			$this->magpie->originals = $posts;
 

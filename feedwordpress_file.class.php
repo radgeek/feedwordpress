@@ -1,5 +1,7 @@
 <?php
-$GLOBALS['fwp_credentials'] = NULL;
+global $fwp_credentials;
+
+$fwp_credentials = NULL;
 
 class FeedWordPress_File extends WP_SimplePie_File {
 	function FeedWordPress_File ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
@@ -26,7 +28,7 @@ class FeedWordPress_File extends WP_SimplePie_File {
 		global $wpdb;
 		global $fwp_credentials;
 		
-		if ( preg_match('/^http(s)?:\/\//i', $url) ) {
+		if ( preg_match('/^http(s)?:\/\//i', $url) ) :
 			$args = array( 'timeout' => $this->timeout, 'redirection' => $this->redirects);
 	
 			if ( !empty($this->headers) )
@@ -81,13 +83,16 @@ class FeedWordPress_File extends WP_SimplePie_File {
 				$source->update_setting('link/http status', $this->status_code);
 				$source->save_settings(/*reload=*/ true);
 			endif;
-			
-		} else {
-			if ( ! $this->body = file_get_contents($url) ) {
-				$this->error = 'file_get_contents could not read the file';
-				$this->success = false;
-			}
-		}
+		
+		// Do not allow schemes other than http(s)? for the time being.
+		// They are unlikely to be used; and unrestricted use of schemes
+		// allows for user to use an unrestricted file:/// scheme, which
+		// may result in exploits by WordPress users against the web
+		// hosting environment.
+		else :
+			$this->error = 'FeedWordPress only allows http or https URLs';
+			$this->success = false;
+		endif;
 
 		// SimplePie makes a strongly typed check against integers with
 		// this, but WordPress puts a string in. Which causes caching

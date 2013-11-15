@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2012.1218
+Version: 2013.0504
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,30 +11,28 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2012.1218
+ * @version 2013.0504
  */
 
 # This uses code derived from:
 # -	wp-rss-aggregate.php by Kellan Elliot-McCrea <kellan@protest.net>
-# - SimplePie feed parser by Ryan Parman, Geoffrey Sneddon, Ryan McCue, et al. # -	MagpieRSS feed parser by Kellan Elliot-McCrea <kellan@protest.net>
+# -	SimplePie feed parser by Ryan Parman, Geoffrey Sneddon, Ryan McCue, et al.
+# -	MagpieRSS feed parser by Kellan Elliot-McCrea <kellan@protest.net>
 # -	Ultra-Liberal Feed Finder by Mark Pilgrim <mark@diveintomark.org>
 # -	WordPress Blog Tool and Publishing Platform <http://wordpress.org/>
 # according to the terms of the GNU General Public License.
 #
-# INSTALLATION: see readme.txt or <http://projects.radgeek.com/install>
+# INSTALLATION: see readme.txt or <http://feedwordpress.radgeek.com/install>
 #
 # USAGE: once FeedWordPress is installed, you manage just about everything from
-# the WordPress Dashboard, under the Syndication menu. To ensure that fresh
-# content is added as it becomes available, you can convince your contributors
-# to put your XML-RPC URI (if WordPress is installed at
-# <http://www.zyx.com/blog>, XML-RPC requests should be sent to
-# <http://www.zyx.com/blog/xmlrpc.php>), or update manually under the
-# Syndication menu, or set up automatic updates under Syndication --> Settings,
-# or use a cron job.
+# the WordPress Dashboard, under the Syndication menu. To keep fresh content
+# coming in as it becomes available, you'll have to either check for updates
+# manually, or set up one of the automatically-scheduled update methods. See 
+# <http://feedwordpress.radgeek.com/wiki/quick-start/> for some details.
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2012.1218');
+define ('FEEDWORDPRESS_VERSION', '2013.0504');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -61,6 +59,10 @@ define ('FEEDWORDPRESS_CAT_SEPARATOR_PATTERN', '/[:\n]/');
 define ('FEEDWORDPRESS_CAT_SEPARATOR', "\n");
 
 define ('FEEDVALIDATOR_URI', 'http://feedvalidator.org/check.cgi');
+
+/* CTLT BEGIN */
+define ('FEEDWORDPRESS_USER', 'feedwordpress'); //add the following line to force feedwordpress	to attribute all posts to a specific author
+/* CTLT END */
 
 define ('FEEDWORDPRESS_FRESHNESS_INTERVAL', 10*60); // Every ten minutes
 
@@ -104,6 +106,7 @@ if (!function_exists('wp_insert_user')) :
 endif;
 
 $dir = dirname(__FILE__); 
+require_once("${dir}/externals/myphp/myphp.class.php");
 require_once("${dir}/admin-ui.php");
 require_once("${dir}/feedwordpresssyndicationpage.class.php");
 require_once("${dir}/compatability.php"); // Legacy API             
@@ -164,14 +167,15 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	
 	# Filter in original permalinks if the user wants that
 	add_filter('post_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 3);
+	add_filter('post_type_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 4);
 
 	/* CTLT BEGIN */
-	add_filter('author_link', 'change_author_link', 1, 3);
-	add_filter('the_author', 'change_author_title', 1, 3);
+	$fwp_user = (defined('FEEDWORDPRESS_USER') ? FEEDWORDPRESS_USER : "");
+	if (!empty($fwp_user)) {
+		add_filter('author_link', 'change_author_link', 1, 3);
+		add_filter('the_author', 'change_author_title', 1, 3);
+	}
 	/* CTLT END */
-	
-	// new line
-	add_filter('post_type_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 4);
 	
 	# When foreign URLs are used for permalinks in feeds or display
 	# contexts, they need to be escaped properly.
@@ -231,6 +235,7 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'resolve_relative_uris'), 0, 2);
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'sanitize_content'), 0, 2);
 
+	add_action('plugins_loaded', array('FeedWordPress', 'admin_api'));
 else :
 	# Hook in the menus, which will just point to the upgrade interface
 	add_action('admin_menu', 'fwp_add_pages');
@@ -660,6 +665,8 @@ function syndication_comments_feed_link ($link) {
 ################################################################################
 
 function fwp_add_pages () {
+	global $feedwordpress;
+	
 	$menu_cap = FeedWordPress::menu_cap();
 	$settings_cap = FeedWordPress::menu_cap(/*sub=*/ true);
 	$syndicationMenu = FeedWordPress::path('syndication.php');
@@ -713,6 +720,9 @@ function fwp_add_pages () {
 		$syndicationMenu, 'FeedWordPress Diagnostics', 'Diagnostics',
 		$settings_cap, FeedWordPress::path('diagnostics-page.php')
 	);
+	
+	add_filter('page_row_actions', array($feedwordpress, 'row_actions'), 10, 2);
+	add_filter('post_row_actions', array($feedwordpress, 'row_actions'), 10, 2);
 } /* function fwp_add_pages () */
 
 function fwp_check_debug () {
@@ -796,14 +806,15 @@ function fwp_publish_post_hook ($post_id) {
 
 	function feedwordpress_add_post_edit_controls () {
 		global $feedwordpress;
-		
+		global $inspectPostMeta;
+
 		// Put in Manual Editing checkbox
 		add_meta_box('feedwordpress-post-controls', __('Syndication'), 'feedwordpress_post_edit_controls', 'post', 'side', 'high');
 		
 		add_filter('user_can_richedit', array($feedwordpress, 'user_can_richedit'), 1000, 1);
 		
 		if (FeedWordPress::diagnostic_on('syndicated_posts:static_meta_data')) :
-			$GLOBALS['inspectPostMeta'] = new InspectPostMeta;
+			$inspectPostMeta = new InspectPostMeta;
 		endif;
 	} // function FeedWordPress::postEditControls
 	
@@ -953,7 +964,7 @@ class FeedWordPress {
 		endif;
 		
 		return $sub;
-	} /* FeedWordPress::subscriptions () */
+	} /* FeedWordPress::subscription () */
 	
 	# function update (): polls for updates on one or more Contributor feeds
 	#
@@ -1214,6 +1225,29 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::admin_init() */
 
+	function admin_api () {
+		// This sucks, but WordPress doesn't give us any other way to
+		// easily invoke a permanent-delete from a plugged in post
+		// actions link. So we create a magic parameter, and when this
+		// magic parameter is activated, the WordPress trashcan is
+		// temporarily de-activated.
+		
+		if (MyPHP::request('fwp_post_delete')=='nuke') :
+			// Get post ID #
+			$post_id = MyPHP::request('post');
+			if (!$post_id) :
+				$post_id = MyPHP::request('post_ID');
+			endif;
+			
+			// Make sure we've got the right nonce and all that.
+			check_admin_referer('delete-post_' . $post_id);
+			
+			// If so, disable the trashcan.
+			define('EMPTY_TRASH_DAYS', 0);
+		endif;
+
+	}
+
 	function init () {
 		global $fwp_path;
 		
@@ -1252,9 +1286,117 @@ class FeedWordPress {
 			/*priority=*/ -100
 		);
 
+		add_action('wp_ajax_fwp_feeds', array($this, 'fwp_feeds'));
+		add_action('wp_ajax_fwp_feedcontents', array($this, 'fwp_feedcontents'));
+		add_action('wp_ajax_fwp_xpathtest', array($this, 'fwp_xpathtest'));
+		
 		$this->clear_cache_magic_url();
 		$this->update_magic_url();
 	} /* FeedWordPress::init() */
+	
+	function fwp_feeds () {
+		$feeds = array();
+		$feed_ids = $this->feeds;
+		
+		foreach ($feed_ids as $id) :
+			$sub = $this->subscription($id);
+			$feeds[] = array(
+			"id" => $id,
+			"url" => $sub->uri(),
+			"name" => $sub->name(/*fromFeed=*/ false),
+			);
+		endforeach;
+
+		header("Content-Type: application/json");	
+		echo json_encode($feeds);
+		exit;
+	}
+
+	function fwp_feedcontents () {
+		$feed_id = MyPHP::request('feed_id');
+		
+		// Let's load up some data from the feed . . .
+		$feed = $this->subscription($feed_id);
+		$posts = $feed->live_posts();
+		
+		if (is_wp_error($posts)) :
+			header("HTTP/1.1 502 Bad Gateway");
+			$result = $posts;
+		else :
+			$result = array();
+
+			foreach ($posts as $post) :
+				$p = new SyndicatedPost($post, $feed);
+				
+				$result[] = array(
+					"post_title" => $p->entry->get_title(),
+					"post_link" => $p->permalink(),
+					"guid" => $p->guid(),
+					"post_date" => $p->published(),
+				);
+			endforeach;
+		endif;
+		
+		header("Content-Type: application/json");
+		
+		echo json_encode($result);
+		
+		// This is an AJAX request, so close it out thus.
+		die;
+	} /* FeedWordPress::fwp_feedcontents () */
+	
+	function fwp_xpathtest () {
+		$xpath = MyPHP::request('xpath');
+		$feed_id = MyPHP::request('feed_id');
+		$post_id = MyPHP::request('post_id');
+		
+		$expr = new FeedWordPressParsedPostMeta($xpath);
+		
+		// Let's load up some data from the feed . . .
+		$feed = $this->subscription($feed_id);
+		$posts = $feed->live_posts();
+		
+		if (!is_wp_error($posts)) :
+			if (strlen($post_id) == 0) :
+				$post = $posts[0];
+			else :
+				$post = null;
+	
+				foreach ($posts as $p) :
+					if ($p->get_id() == $post_id) :
+						$post = $p;
+					endif;
+				endforeach;
+			endif;
+		
+			$post = new SyndicatedPost($post, $feed);
+			$meta = $expr->do_substitutions($post);
+			
+			$result = array(
+			"post_title" => $post->entry->get_title(),
+			"post_link" => $post->permalink(),
+			"guid" => $post->guid(),
+			"expression" => $xpath,
+			"results" => $meta
+			);
+		else :
+			$result = array(
+			"expression" => $xpath,
+			"feed_id" => $feed_id,
+			"post_id" => $post_id,
+			"results" => $posts
+			);
+			
+			header("HTTP/1.1 503 Bad Gateway");
+		endif;
+		
+		header("Content-Type: application/json");
+		
+		echo json_encode($result);
+		
+		// This is an AJAX request, so close it out thus.
+		die;
+	} /* FeedWordPress::fwp_xpathtest () */
 	
 	function redirect_retired () {
 		global $wp_query;
@@ -1272,6 +1414,34 @@ class FeedWordPress {
 				exit;
 			endif;
 		endif;
+	}
+	
+	function row_actions ($actions, $post) {
+		if (is_syndicated($post->ID)) :
+			$link = get_delete_post_link($post->ID, '', true);
+			$link = MyPHP::url($link, array("fwp_post_delete" => "nuke"));
+			
+			$caption = 'Erase the record of this post (will be re-syndicated if it still appears on the feed).';
+			$linktext = 'Erase/Resyndicate';
+			
+			$keys = array_keys($actions);
+			$links = array();
+			foreach ($keys as $key) :
+				$links[$key] = $actions[$key];
+				
+				if ('trash'==$key) :
+					$links[$key] = "<a class='submitdelete' title='" . esc_attr( __( 'Move this item to the Trash (will NOT be re-syndicated)' ) ) . "' href='" . get_delete_post_link( $post->ID ) . "'>" . __( 'Trash/Don&#8217;t Resyndicate' ) . "</a>";
+					
+					// Placeholder.
+					$links['delete'] = '';
+				endif;
+			endforeach;
+			
+			$links['delete'] = '<a class="submitdelete" title="'.esc_attr(__($caption)).'" href="' . $link . '">' . __($linktext) . '</a>';
+
+			$actions = $links;
+		endif;
+		return $actions;
 	}
 	
 	function dashboard_setup () {
@@ -1392,10 +1562,7 @@ class FeedWordPress {
 	} /* FeedWordPress::clear_cache_magic_url() */
 	
 	function clear_cache_requested () {
-		return (
-			isset($_GET['clear_cache'])
-			and $_GET['clear_cache']
-		);
+		return MyPHP::request('clear_cache');
 	} /* FeedWordPress::clear_cache_requested() */
 
 	function update_requested () {
@@ -2084,21 +2251,13 @@ EOMAIL;
 		return $path;
 	}
 	
+	// These are superceded by MyPHP::param/post/get/request, but kept
+	// here for backward compatibility.
 	function param ($key, $type = 'REQUEST', $default = NULL) {
-		$where = '_'.strtoupper($type);
-		$ret = $default;
-		if (isset($GLOBALS[$where]) and is_array($GLOBALS[$where])) :
-			if (isset($GLOBALS[$where][$key])) :
-				$ret = $GLOBALS[$where][$key];
-				if (get_magic_quotes_gpc()) :
-					$ret = stripslashes_deep($ret);
-				endif;
-			endif;
-		endif;
-		return $ret;
+		return MyPHP::param($key, $default, $type);
 	}
 	function post ($key, $default = NULL) {
-		return FeedWordPress::param($key, 'POST');
+		return MyPHP::post($key, $default);
 	}
 } // class FeedWordPress
 
@@ -2132,15 +2291,15 @@ function parse_email_with_realname ($email) {
 
 /* CTLT BEGIN */
 function change_author_title($permalink = '', $post = null, $leavename = false) {
-	
+
 	global $id, $feedwordpress_the_original_permalink, $post,$authordata;
-	
+
 	if ( is_null(get_post_meta($id, 'syndication_source_author') ) ) {
-	
+
 		$name = get_post_meta($id, 'real_post_author');
-	
+
 	} else {
-		
+
 		$name = get_post_meta($id, 'syndication_source_author');
 	}
 
@@ -2156,16 +2315,13 @@ function change_author_title($permalink = '', $post = null, $leavename = false) 
 }
 
 function change_author_link() {
-	
+
 	global $id,$feedwordpress_the_original_permalink, $post, $authordata;
 
 	$name = get_post_meta($id, 'syndication_source_author');
-	
-	// the following line will replace all white space within the string with the encoding code %20
-	$name = str_replace( ' ', '%20', $name );
-	
+	$fpw_user = (defined('FEEDWORDPRESS_USER') ? FEEDWORDPRESS_USER : $name[0]);
 	if ( $name[0] ) {
-		return get_bloginfo('url').'/author/feedwordpress/?syndication_source_author='.$name[0];
+		return get_bloginfo('url').'/author/'.$fpw_user.'/?syndication_source_author='.$name[0];
 	} else {
 		return get_bloginfo('url').'/author/'.$authordata->user_login;
 	}
@@ -2173,15 +2329,18 @@ function change_author_link() {
 };
 
 function get_fwp_posts( $query ) {
-    
-    if ( $query->is_author ) {
-        $query->set( 'meta_key', 'syndication_source_author' );
-        $query->set( 'meta_value', $_GET['syndication_source_author'] );
-    }
-    
-    return $query;
+
+	if ( $query->is_author && isset($_GET['syndication_source_author']) ) {
+		$query->set( 'meta_key', 'syndication_source_author' );
+		$query->set( 'meta_value', $_GET['syndication_source_author'] );
+	}
+
+	return $query;
 }
 
-add_filter( 'pre_get_posts', 'get_fwp_posts' );
-
+$fpw_user = (defined('FEEDWORDPRESS_USER') ? FEEDWORDPRESS_USER : $authordata->user_login);
+if (!empty($fpw_user)) {
+	add_filter( 'pre_get_posts', 'get_fwp_posts' );
+}
 /* CTLT END */
+

@@ -163,12 +163,12 @@ class FeedWordPressAdminPage {
 		);
 		foreach ($submit_buttons as $field) :
 			if (isset($fwp_post[$field])) :
-				$link_id = $_REQUEST['save_link_id'];
+				$link_id = MyPHP::request('save_link_id');
 			endif;
 		endforeach;
 		
 		if (is_null($link_id) and isset($_REQUEST['link_id'])) :
-			$link_id = $_REQUEST['link_id'];
+			$link_id = MyPHP::request('link_id');
 		endif;
 
 		return $link_id;
@@ -187,7 +187,7 @@ class FeedWordPressAdminPage {
 	function stamp_link_id ($field = null) {
 		if (is_null($field)) : $field = 'save_link_id'; endif;
 		?>
-	<input type="hidden" name="<?php print esc_html($field); ?>" value="<?php print ($this->for_feed_settings() ? $this->link->id : '*'); ?>" />
+	<input type="hidden" name="<?php print esc_attr($field); ?>" value="<?php print ($this->for_feed_settings() ? $this->link->id : '*'); ?>" />
 		<?php
 	} /* FeedWordPressAdminPage::stamp_link_id () */
 
@@ -241,6 +241,38 @@ class FeedWordPressAdminPage {
 <?php
 	} /* FeedWordPressAdminPage::ajax_interface_js () */
 
+	function admin_page_href ($page, $params = array(), $link = NULL) {
+		global $fwp_path;
+
+		// Merge in the page's filename
+		$params = array_merge($params, array('page' => $fwp_path.'/'.$page));
+
+		// If there is a link ID provided, then merge that in too.
+		if (!is_null($link)) :
+			$link_id = NULL;
+			if (is_object($link)) :
+				if (method_exists($link, 'found')) :
+					// Is this a SyndicatedLink object?					
+					if ($link->found()) :
+						$link_id = $link->link->link_id;
+					endif;
+				else :
+					// Is this a wp_links table record?
+					$link_id = $link->link_id;
+				endif;
+			else :
+				// Is this just a numeric ID?
+				$link_id = $link;
+			endif;
+
+			if (!is_null($link_id)) :
+				$params = array_merge($params, array('link_id' => $link_id));
+			endif;
+		endif;
+
+		return MyPHP::url(admin_url('admin.php'), $params);
+	} /* FeedWordPressAdminPage::admin_page_href () */
+
 	function display_feed_settings_page_links ($params = array()) {
 		global $fwp_path;
 
@@ -260,8 +292,6 @@ class FeedWordPressAdminPage {
 			'Categories' => array('page' => 'categories-page.php', 'long' => 'Categories & Tags'),
 		);
 		
-		$hrefPrefix = 'admin.php?';
-		
 		$link_id = NULL;
 		if (is_object($sub)) :
 			if (method_exists($sub, 'found')) :
@@ -273,21 +303,12 @@ class FeedWordPressAdminPage {
 			endif;
 		endif;
 		
-		if (!is_null($link_id)) :
-			$urlParam = "link_id={$link_id}";
-			$hrefPrefix .= $urlParam."&";
-			$urlSuffix = "&".$urlParam;
-		else :
-			$urlParam = '';
-		endif;
-		$hrefPrefix .= "page=${fwp_path}/";
-		
 		print $params['before']; $first = true;
 		foreach ($links as $label => $link) :
 			if (!$first) :	print $params['between']; endif;
 			
-			if (isset($link['url'])) : $url = $link['url'].$urlSuffix;
-			else : $url = $hrefPrefix.$link['page'];
+			if (isset($link['url'])) : MyPHP::url($link['url'], array("link_id" => $link_id));
+			else : $url = $this->admin_page_href($link['page'], array(), $sub);
 			endif;
 			$url = esc_html($url);
 			
@@ -345,8 +366,9 @@ class FeedWordPressAdminPage {
 	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
 
 	function display_sheet_header ($pagename = 'Syndication', $all = false) {
+		global $fwp_path;
 		?>
-		<div class="icon32"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$GLOBALS['fwp_path'].'/feedwordpress.png'); ?>" alt="" /></div>
+		<div class="icon32"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress.png'); ?>" alt="" /></div>
 		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name(/*from feed=*/ false)); ?><?php endif; ?></h2>
 		<?php
 	}
@@ -395,7 +417,7 @@ class FeedWordPressAdminPage {
 		if (is_null($filename)) :
 			$filename = basename($this->filename);
 		endif;
-		return "admin.php?page=${fwp_path}/".$filename;
+		return $this->admin_page_href($filename);
 	} /* FeedWordPressAdminPage::form_action () */
 
 	function update_message () {
@@ -403,6 +425,8 @@ class FeedWordPressAdminPage {
 	}
 
 	function display () {
+		global $fwp_post;
+
 		if (FeedWordPress::needs_upgrade()) :
 			fwp_upgrade_page();
 			return;
@@ -414,7 +438,7 @@ class FeedWordPressAdminPage {
 		// Process POST request, if any ////////////////
 		////////////////////////////////////////////////
 		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
-			$this->accept_POST($GLOBALS['fwp_post']);
+			$this->accept_POST($fwp_post);
 		else :
 			$this->updated = false;
 		endif;
@@ -539,7 +563,7 @@ class FeedWordPressAdminPage {
 		endif;
 		
 		if (isset($params['site-wide-url'])) : $href = $params['site-wide-url'];
-		else : 	$href = "admin.php?page=${fwp_path}/${filename}";
+		else : 	$href = $this->admin_page_href($filename);
 		endif;
 		
 		if (isset($params['setting-default'])) : $settingDefault = $params['setting-default'];
@@ -1072,7 +1096,6 @@ function fwp_remove_meta_box($id, $page, $context) {
 } /* function fwp_remove_meta_box() */
 
 function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible = 'Y') {
-	global $fwp_path;
 	
 	$subscribed = ('Y' == strtoupper($visible));
 	if ($subscribed or (count($links) > 0)) :
@@ -1183,7 +1206,6 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 	<tr<?php echo ((count($trClass) > 0) ? ' class="'.implode(" ", $trClass).'"':''); ?>>
 	<th class="check-column" scope="row"><input type="checkbox" name="link_ids[]" value="<?php echo $link->link_id; ?>" /></th>
 				<?php
-				$hrefPrefix = "admin.php?link_id={$link->link_id}&amp;page=${fwp_path}/";
 				$caption = (
 					(strlen($link->link_rss) > 0)
 					? __('Switch Feed')
@@ -1191,7 +1213,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 				);
 				?>
 	<td>
-	<strong><a href="<?php print $hrefPrefix; ?>feeds-page.php"><?php print esc_html($link->link_name); ?></a></strong>
+	<strong><a href="<?php print $page->admin_page_href('feeds-page.php', array(), $link); ?>"><?php print esc_html($link->link_name); ?></a></strong>
 	<div class="row-actions"><?php if ($subscribed) :
 		$page->display_feed_settings_page_links(array(
 			'before' => '<div><strong>Settings &gt;</strong> ',
@@ -1202,11 +1224,11 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 
 	<div><strong>Actions &gt;</strong>
 	<?php if ($subscribed) : ?>
-	<a href="<?php print $hrefPrefix; ?>syndication.php&amp;action=feedfinder"><?php echo $caption; ?></a>
+	<a href="<?php print $page->admin_page_href('syndication.php', array('action' => 'feedfinder'), $link); ?>"><?php echo $caption; ?></a>
 	<?php else : ?>
-	<a href="<?php print $hrefPrefix; ?>syndication.php&amp;action=<?php print FWP_RESUB_CHECKED; ?>"><?php _e('Re-subscribe'); ?></a>
+	<a href="<?php print $page->admin_page_href('syndication.php', array('action' => FWP_RESUB_CHECKED), $link); ?>"><?php _e('Re-subscribe'); ?></a>
 	<?php endif; ?>
-	| <a href="<?php print $hrefPrefix; ?>syndication.php&amp;action=Unsubscribe"><?php _e(($subscribed ? 'Unsubscribe' : 'Delete permanently')); ?></a>
+	| <a href="<?php print $page->admin_page_href('syndication.php', array('action' => 'Unsubscribe'), $link); ?>"><?php _e(($subscribed ? 'Unsubscribe' : 'Delete permanently')); ?></a>
 	| <a href="<?php print esc_html($link->link_url); ?>"><?php _e('View')?></a></div>
 	</div>
 	</td>
@@ -1238,20 +1260,4 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 	<?php
 	endif;
 } /* function fwp_syndication_manage_page_links_table_rows () */
-
-function fwp_syndication_manage_page_links_subsubsub ($sources, $showInactive) {
-	global $fwp_path;
-	$hrefPrefix = "admin.php?page=${fwp_path}/syndication.php";
-	?>
-	<ul class="subsubsub">
-	<li><a <?php if (!$showInactive) : ?>class="current" <?php endif; ?>href="<?php print $hrefPrefix; ?>&amp;visibility=Y">Subscribed
-	<span class="count">(<?php print count($sources['Y']); ?>)</span></a></li>
-	<?php if ($showInactive or (count($sources['N']) > 0)) : ?>
-	<li><a <?php if ($showInactive) : ?>class="current" <?php endif; ?>href="<?php print $hrefPrefix; ?>&amp;visibility=N">Inactive</a>
-	<span class="count">(<?php print count($sources['N']); ?>)</span></a></li>
-	<?php endif; ?>
-
-	</ul> <!-- class="subsubsub" -->
-	<?php
-}
 

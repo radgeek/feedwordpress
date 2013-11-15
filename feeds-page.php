@@ -711,11 +711,12 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressFeedsPage::feed_information_box() */
 
 	function custom_settings_box ($page, $box = NULL) {
+		$postsSettings = $this->admin_page_href('posts-page.php', array(), $page->link);
 		?>
 	<p class="setting-description">These custom settings are special fields for the <strong>feed</strong> you are
 	syndicating, to be retrieved in templates using the <code>get_feed_meta()</code> function. They do not create
 	custom fields on syndicated <strong>posts</strong>. If you want to create custom fields that are applied to each
-	individual post from this feed, set up the settings in <a href="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/posts-page.php&amp;link_id=<?php print $page->link->id; ?>">Syndicated Posts</a>.</p>
+	individual post from this feed, set up the settings in <a href="<?php print $postsSettings; ?>">Syndicated Posts</a>.</p>
 	
 	<div id="postcustomstuff">
 	<table id="meta-list" cellpadding="3">
@@ -775,9 +776,9 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	
 		$lookup = (isset($_REQUEST['lookup']) ? $_REQUEST['lookup'] : NULL);
 		
-		$auth = FeedWordPress::param('link_rss_auth_method');
-		$username = FeedWordPress::param('link_rss_username');
-		$password = FeedWordPress::param('link_rss_password');
+		$auth = MyPHP::request('link_rss_auth_method');
+		$username = MyPHP::request('link_rss_username');
+		$password = MyPHP::request('link_rss_password');
 		$credentials = array(
 				"authentication" => $auth,
 				"username" => $username,
@@ -900,7 +901,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 					$feed_version = '';
 				endif;
 				?>
-					<form<?php print $form_class; ?> action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/syndication.php" method="post">
+					<form<?php print $form_class; ?> action="<?php $this->form_action('syndication.php'); ?>" method="post">
 					<div class="inside"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_switchfeed'); ?>
 
 					<?php
@@ -1068,7 +1069,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		$alt = $params['alt'];
 		
 		?>
-		<form action="admin.php?page=<?php print $GLOBALS['fwp_path'] ?>/<?php echo basename(__FILE__); ?>" method="post">
+		<form action="<?php $this->form_action(); ?>" method="post">
 		<div class="inside"><?php
 			FeedWordPressCompatibility::stamp_nonce($this->dispatch);
 		?>
