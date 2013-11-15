@@ -38,7 +38,7 @@ class SyndicationDataQueries {
 		
 		return $q;
 	}
-	
+
 	function parse_query (&$q) {
 		if ($q->get('guid')) :
 			$q->is_single = false;	// Causes nasty side-effects.

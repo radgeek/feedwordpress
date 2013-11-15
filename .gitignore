@@ -1,0 +1,8 @@
+#####################################################################
+# Subversion Repository for the benefit of the WordPress overlords. #
+#####################################################################
+
+.svn
+*(*conflicted copy*)*
+
+

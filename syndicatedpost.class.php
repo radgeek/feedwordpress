@@ -1,5 +1,6 @@
 <?php
 require_once(dirname(__FILE__).'/feedtime.class.php');
+require_once(dirname(__FILE__).'/syndicatedpostterm.class.php');
 
 /**
  * class SyndicatedPost: FeedWordPress uses to manage the conversion of
@@ -10,7 +11,7 @@ require_once(dirname(__FILE__).'/feedtime.class.php');
  * different feed formats, which may be useful to FeedWordPress users
  * who make use of feed data in PHP add-ons and filters.
  *
- * @version 2011.0831
+ * @version 2013.0525
  */
 class SyndicatedPost {
 	var $item = null;	// MagpieRSS representation
@@ -203,7 +204,7 @@ class SyndicatedPost {
 				$this->link->guid(),
 				$this
 			);
-			
+
 			/* CTLT BEGIN */
 			$fwp_user = (defined('FEEDWORDPRESS_USER') ? FEEDWORDPRESS_USER : '');
 			if (!empty($fwp_user)) {
@@ -215,7 +216,7 @@ class SyndicatedPost {
 				);
 			}
 			/* CTLT END */
-			
+
 			// Make use of atom:source data, if present in an aggregated feed
 			$entry_source = $this->source();
 			if (!is_null($entry_source)) :
@@ -1786,16 +1787,33 @@ EOM;
 	 * @param object $post The database record for the post just inserted.
 	 */
 	function add_terms ($new_status, $old_status, $post) {
+
 		if ($new_status!='inherit') : // Bail if we are creating a revision.
 			if ( is_array($this->post) and isset($this->post['tax_input']) and is_array($this->post['tax_input']) ) :
 				foreach ($this->post['tax_input'] as $taxonomy => $terms) :
 					if (is_array($terms)) :
 						$terms = array_filter($terms); // strip out empties
 					endif;
-					wp_set_post_terms($post->ID, $terms, $taxonomy);
+					
+					$res = wp_set_post_terms(
+						/*post_id=*/ $post->ID,
+						/*terms=*/ $terms,
+						/*taxonomy=*/ $taxonomy
+					);
+
+					FeedWordPress::diagnostic(
+						'syndicated_posts:categories',
+						'Category: post('.json_encode($post->ID).') '.$taxonomy
+						.' := '
+						.json_encode($terms)
+						.' / result: '
+						.json_encode($res)
+					);
+
 				endforeach;
 			endif;
 		endif;
+		
 	} /* SyndicatedPost::add_terms () */
 	
 	/**
@@ -2100,7 +2118,8 @@ EOM;
 	} /* function SyndicatedPost::author_id () */
 
 	/**
-	 * category_ids: look up (and create) category ids from a list of categories
+	 * category_ids: look up (and create) category ids from a list of
+	 * categories
 	 *
 	 * @param array $cats
 	 * @param string $unfamiliar_category
@@ -2131,65 +2150,46 @@ EOM;
 		endforeach;
 		
 		foreach ($cats as $cat_name) :
-			if (preg_match('/^{([^#}]*)#([0-9]+)}$/', $cat_name, $backref)) :
-				$cat_id = (int) $backref[2];
-				$tax = $backref[1];
-				if (strlen($tax) < 1) :
-					$tax = $catTax;
-				endif;
-
-				$term = term_exists($cat_id, $tax);
-				if (!is_wp_error($term) and !!$term) :
-					if (!isset($terms[$tax])) :
-						$terms[$tax] = array();
-					endif;
-					$terms[$tax][] = $cat_id;
-				endif;
-			elseif (strlen($cat_name) > 0) :
-				$familiar = false;
-				foreach ($taxonomies as $tax) :
-					if ($tax!='category' or strtolower($cat_name)!='uncategorized') :
-						$term = term_exists($cat_name, $tax);
-						if (!is_wp_error($term) and !!$term) :
-							$familiar = true;
-	
-							if (is_array($term)) :
-								$term_id = (int) $term['term_id'];
-							else :
-								$term_id = (int) $term;
-							endif;
-							
-							if (!isset($terms[$tax])) :
-								$terms[$tax] = array();
-							endif;
-							$terms[$tax][] = $term_id;
-							break; // We're done here.
-						endif;
-					endif;
-				endforeach;
-				
-				if (!$familiar) :
-					if ('tag'==$unfamiliar_category) :
-						$unfamiliar_category = 'create:post_tag';
-					endif;
-					
-					if (preg_match('/^create(:(.*))?$/i', $unfamiliar_category, $ref)) :
-						$tax = $catTax; // Default
-						if (isset($ref[2]) and strlen($ref[2]) > 2) :
-							$tax = $ref[2];
-						endif;
-						$term = wp_insert_term($cat_name, $tax);
-						if (is_wp_error($term)) :
-							FeedWordPress::noncritical_bug('term insertion problem', array('cat_name' => $cat_name, 'term' => $term, 'this' => $this), __LINE__, __FILE__);
-						else :
-							if (!isset($terms[$tax])) :
-								$terms[$tax] = array();
-							endif;
-							$terms[$tax][] = (int) $term['term_id'];
-						endif;
-					endif;
-				endif;
+			if (strlen(trim($cat_name)) < 1) :
+				continue;
 			endif;
+
+			$oTerm = new SyndicatedPostTerm($cat_name, $taxonomies, $this);
+				
+			if ($oTerm->is_familiar()) :
+			
+				$tax = $oTerm->taxonomy();
+				if (!isset($terms[$tax])) :
+					$terms[$tax] = array();
+				endif;
+				$terms[$tax][] = $oTerm->id();
+
+			else :
+
+				if ('tag'==$unfamiliar_category) :
+					$unfamiliar_category = 'create:post_tag';
+				endif;
+					
+				if (preg_match('/^create(:(.*))?$/i', $unfamiliar_category, $ref)) :
+					$tax = $catTax; // Default
+						
+					if (isset($ref[2])
+					and strlen($ref[2]) > 2) :
+						$tax = $ref[2];
+					endif;
+
+					$inserted = $oTerm->insert($tax);
+					if (!is_null($inserted)) :
+						if (!isset($terms[$tax])) :
+							$terms[$tax] = array();
+						endif;
+						$terms[$tax][] = $inserted;
+					else :
+					
+					endif; // !is_null($inserted)
+				endif; // preg_match(...)
+				
+			endif; /* ($oTerm->is_familiar()) */
 		endforeach;
 
 		$filtersOn = $allowFilters;
@@ -2216,6 +2216,11 @@ EOM;
 		if ($singleton and count($terms)==1) : // If we only searched one, just return the term IDs
 			$terms = end($terms);
 		endif;
+		
+		FeedWordPress::diagnostic(
+			'syndicated_posts:categories',
+			'Category: MAPPED term names '.json_encode($cats).' to IDs: '.json_encode($terms)
+		);
 		return $terms;
 	} // function SyndicatedPost::category_ids ()
 

@@ -92,14 +92,25 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
+/* CTLT BEGIN */
+If you define FEEDWORDPRESS_USER in wp-config.php or in feedwordpress.php, then it will force all 
+post authors to be whatever username that constant is set to.  The display of the user still shows 
+the original author's name, but will link to the that user's page.
+/* CTLT END */
+
 == Changelog ==
 
-= 2012.0504 =
+= Trunk =
 
 *	BUGFIX: PHP 5.4 compatibility -- includes some more extensive fixes to
 	compatibility issues with PHP 5.4's handling of global variables
 
-*	MODULE REORGANIZATION: Should ensures that all needed submodules will be
+*	DIAGNOSTICS: New diagnostics settings added to help track behavior of
+	terms (categories, post tags, etc.) for syndicated posts.
+
+= 2012.0504 =
+
+*	MODULE REORGANIZATION: Should ensure that all needed submodules will be
 	properly included regardless of whether you are installing from github,
 	from SVN, or from the WordPress plugins page. If you've been getting
 	fatal errors about required modules not being found, this release should
