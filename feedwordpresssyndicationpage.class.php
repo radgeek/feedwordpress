@@ -648,6 +648,8 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressSyndicationPage::bleg_thanks () */
 
 	function bleg_box ($page, $box = NULL) {
+		$fpw_user = (defined('FEEDWORDPRESS_USER') ? FEEDWORDPRESS_USER : $authordata->user_login);
+		if (empty($fpw_user)):
 		?>
 <script type="text/javascript">
 /* <![CDATA[ */
@@ -711,6 +713,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 </div>
 </div> <!-- class="donation-form" -->
 		<?php
+		endif;
 	} /* FeedWordPressSyndicationPage::bleg_box () */
 
 	/**

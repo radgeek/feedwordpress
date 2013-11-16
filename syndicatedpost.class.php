@@ -204,7 +204,19 @@ class SyndicatedPost {
 				$this->link->guid(),
 				$this
 			);
-			
+
+			/* CTLT BEGIN */
+			$fwp_user = (defined('FEEDWORDPRESS_USER') ? FEEDWORDPRESS_USER : '');
+			if (!empty($fwp_user)) {
+				$real_author = $this->author();
+				$sourcemeta['syndication_source_author'] = apply_filters(
+					'syndicated_item_author_name',
+					$real_author['name'],
+					$this
+				);
+			}
+			/* CTLT END */
+
 			// Make use of atom:source data, if present in an aggregated feed
 			$entry_source = $this->source();
 			if (!is_null($entry_source)) :
@@ -1918,7 +1930,16 @@ EOM;
 		// Pick the first one that works from the list, screening against empty
 		// or forbidden names.
 		
-		$author = NULL;
+		/* CTLT BEGIN */
+		$fwp_user = (defined('FEEDWORDPRESS_USER') ? FEEDWORDPRESS_USER : '');
+		if (!empty($fwp_user)) {
+			//manually force all the posts attribute to the user FEEDWORDPRESS_USER
+			$author = $fwp_user;
+		} else {
+			$author = NULL;
+		}
+		/* CTLT END */
+
 		while (is_null($author) and ($candidate = each($candidates))) :
 			if (!is_null($candidate['value'])
 			and (strlen(trim($candidate['value'])) > 0)

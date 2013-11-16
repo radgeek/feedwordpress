@@ -92,6 +92,12 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
+/* CTLT BEGIN */
+If you define FEEDWORDPRESS_USER in wp-config.php or in feedwordpress.php, then it will force all 
+post authors to be whatever username that constant is set to.  The display of the user still shows 
+the original author's name, but will link to the that user's page.
+/* CTLT END */
+
 == Changelog ==
 
 = Trunk =

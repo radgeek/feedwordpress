@@ -1,8 +1,10 @@
 <?php
+define('FEEDWORDPRESS_OPTIMIZE_IN_CLAUSES', get_option('feedwordpress_optimize_in_clauses', false));
 
 class SyndicationDataQueries {
 	function SyndicationDataQueries () {
 		add_action('init', array($this, 'init'));
+		add_filter('query', array($this, 'optimize_in_clauses'));
 		add_action('parse_query', array($this, 'parse_query'), 10, 1);
 		add_filter('posts_search', array($this, 'posts_search'), 10, 2);
 		add_filter('posts_where', array($this, 'posts_where'), 10, 2);
@@ -13,6 +15,28 @@ class SyndicationDataQueries {
 	function init () {
 		global $wp;
 		$wp->add_query_var('guid');
+	}
+
+	function optimize_in_clauses ($q) {
+		// This is kind of a dicey, low-level thing to do, and Christ,
+		// this is something WordPress should be doing on its own,
+		// so it's disabled by default. But you can enable it in
+		// Performance --> Optimize IN clauses 
+		if (FEEDWORDPRESS_OPTIMIZE_IN_CLAUSES) :
+			if (preg_match_all('/ \s+ IN \s* \((\s*([0-9]+)\s*)\)/x', $q, $r, PREG_OFFSET_CAPTURE)) :
+				$from = 0; $nq = '';
+				foreach ($r[0] as $idx => $ref) :
+					$len = $ref[1] - $from;
+					$nq .= substr($q, $from, $len);
+					$nq .= ' = ' . $r[1][$idx][0];
+					$from = $ref[1] + strlen($ref[0]);
+				endforeach;
+				
+				$q = $nq;
+			endif;
+		endif;
+		
+		return $q;
 	}
 
 	function parse_query (&$q) {

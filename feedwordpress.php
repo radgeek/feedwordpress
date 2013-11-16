@@ -60,6 +60,10 @@ define ('FEEDWORDPRESS_CAT_SEPARATOR', "\n");
 
 define ('FEEDVALIDATOR_URI', 'http://feedvalidator.org/check.cgi');
 
+/* CTLT BEGIN */
+//define ('FEEDWORDPRESS_USER', 'feedwordpress'); //add the following line to force feedwordpress	to attribute all posts to a specific author
+/* CTLT END */
+
 define ('FEEDWORDPRESS_FRESHNESS_INTERVAL', 10*60); // Every ten minutes
 
 define ('FWP_SCHEMA_HAS_USERMETA', 2966);
@@ -164,6 +168,14 @@ if (!FeedWordPress::needs_upgrade()) : // only work if the conditions are safe!
 	# Filter in original permalinks if the user wants that
 	add_filter('post_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 3);
 	add_filter('post_type_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 4);
+
+	/* CTLT BEGIN */
+	$fwp_user = (defined('FEEDWORDPRESS_USER') ? FEEDWORDPRESS_USER : "");
+	if (!empty($fwp_user)) {
+		add_filter('author_link', 'change_author_link', 1, 3);
+		add_filter('the_author', 'change_author_title', 1, 3);
+	}
+	/* CTLT END */
 	
 	# When foreign URLs are used for permalinks in feeds or display
 	# contexts, they need to be escaped properly.
@@ -902,7 +914,7 @@ class FeedWordPress {
 	var $feeds = NULL;
 	var $feedurls = NULL;
 	var $httpauth = NULL;
-	
+
 	/**
 	 * FeedWordPress::__construct (): Construct FeedWordPress singleton object
 	 * and retrieves a list of feeds for later reference.
@@ -1244,7 +1256,6 @@ class FeedWordPress {
 			// If so, disable the trashcan.
 			define('EMPTY_TRASH_DAYS', 0);
 		endif;
-
 	} /* FeedWordPress::admin_api () */
 
 	public function init () {
@@ -1292,7 +1303,7 @@ class FeedWordPress {
 		$this->clear_cache_magic_url();
 		$this->update_magic_url();
 	} /* FeedWordPress::init() */
-	
+
 	public function fwp_feeds () {
 		$feeds = array();
 		$feed_ids = $this->feeds;
@@ -1343,7 +1354,7 @@ class FeedWordPress {
 		// This is an AJAX request, so close it out thus.
 		die;
 	} /* FeedWordPress::fwp_feedcontents () */
-	
+
 	public function fwp_xpathtest () {
 		$xpath = MyPHP::request('xpath');
 		$feed_id = MyPHP::request('feed_id');
@@ -1396,7 +1407,7 @@ class FeedWordPress {
 		// This is an AJAX request, so close it out thus.
 		die;
 	} /* FeedWordPress::fwp_xpathtest () */
-	
+
 	public function redirect_retired () {
 		global $wp_query;
 		if (is_singular()) :
@@ -1498,7 +1509,7 @@ class FeedWordPress {
 			endif;
 		endif;
 	} /* FeedWordPress::dashboard_setup () */
-	
+
 	public function dashboard () {
 		$syndicationPage = new FeedWordPressSyndicationPage(dirname(__FILE__).'/syndication.php');
 		$syndicationPage->dashboard_box($syndicationPage);
@@ -1517,7 +1528,7 @@ class FeedWordPress {
 		return $rich_edit;
 
 	} /* FeedWordPress::user_can_richedit () */
-	
+
 	public function update_magic_url () {
 		global $wpdb;
 
@@ -1559,7 +1570,7 @@ class FeedWordPress {
 			$this->clear_cache();
 		endif;
 	} /* FeedWordPress::clear_cache_magic_url() */
-	
+
 	public function clear_cache_requested () {
 		return MyPHP::request('clear_cache');
 	} /* FeedWordPress::clear_cache_requested() */
@@ -1823,7 +1834,7 @@ class FeedWordPress {
 		endif;
 		return $found;
 	} /* FeedWordPress::has_guid_index () */
-	
+
 	public function create_guid_index () {
 		global $wpdb;
 		
@@ -1831,7 +1842,7 @@ class FeedWordPress {
 		CREATE INDEX {$wpdb->posts}_guid_idx ON {$wpdb->posts}(guid)
 		");
 	} /* FeedWordPress::create_guid_index () */
-	
+
 	public function remove_guid_index () {
 		global $wpdb;
 		
@@ -1846,7 +1857,7 @@ class FeedWordPress {
 			intval(get_option('feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT))
 		);
 	}
-	
+
 	static function fetch ($url, $params = array()) {
 		if (is_wp_error($url)) :
 			// Let's bounce.
@@ -1899,7 +1910,7 @@ class FeedWordPress {
 		endif;
 		return $ret;
 	} /* FeedWordPress::fetch () */
-	
+
 	public function clear_cache () {
 		global $wpdb;
 		
@@ -2056,7 +2067,7 @@ class FeedWordPress {
 		
 		update_option('feedwordpress_diagnostics_log', $dlog);		
 	} /* FeedWordPress::diagnostic () */
-	
+
 	public function email_diagnostics_override () {
 		return ($this->has_secret() and isset($_REQUEST['feedwordpress_email_diagnostics']) and !!$_REQUEST['feedwordpress_email_diagnostics']);
 	} /* FeedWordPress::email_diagnostics_override () */
@@ -2208,7 +2219,7 @@ EOMAIL;
 		
 		update_option('feedwordpress_diagnostics_log', $dlog);
 	} /* FeedWordPress::email_diagnostic_log () */
-	
+
 	static function allow_html_mail () {
 		return 'text/html';
 	} /* FeedWordPress::allow_html_mail () */
@@ -2219,7 +2230,7 @@ EOMAIL;
 			echo '<div><pre>'.$line.'</pre></div>';
 		endforeach;
 	} /* FeedWordPress::admin_footer () */
-	
+
 	static function log_prefix ($date = false) {
 		$home = get_bloginfo('url');
 		$prefix = '['.feedwordpress_display_url($home).'] [feedwordpress] ';
@@ -2228,7 +2239,7 @@ EOMAIL;
 		endif;
 		return $prefix;
 	} /* FeedWordPress::log_prefix () */
-	
+
 	static function menu_cap ($sub = false) {
 		if ($sub) :
 			$cap = apply_filters('feedwordpress_menu_settings_capacity', 'manage_options');
@@ -2237,7 +2248,7 @@ EOMAIL;
 		endif;
 		return $cap;
 	} /* FeedWordPress::menu_cap () */
-	
+
 	static function path ($filename = '') {
 		global $fwp_path;
 		
@@ -2289,3 +2300,57 @@ function parse_email_with_realname ($email) {
 	return $ret;
 }
 
+/* CTLT BEGIN */
+function change_author_title($permalink = '', $post = null, $leavename = false) {
+
+	global $id, $feedwordpress_the_original_permalink, $post,$authordata;
+
+	if ( is_null(get_post_meta($id, 'syndication_source_author') ) ) {
+
+		$name = get_post_meta($id, 'real_post_author');
+
+	} else {
+
+		$name = get_post_meta($id, 'syndication_source_author');
+	}
+
+	if ( $name[0] ) {
+
+		return $name[0];
+
+	} else {
+
+		return $authordata->display_name;
+	}
+
+}
+
+function change_author_link() {
+
+	global $id,$feedwordpress_the_original_permalink, $post, $authordata;
+
+	$name = get_post_meta($id, 'syndication_source_author');
+	if ( $name[0] ) {
+		$fpw_user = urlencode((defined('FEEDWORDPRESS_USER') ? FEEDWORDPRESS_USER : $name[0]));
+		return get_bloginfo('url').'/author/'.$fpw_user.'/?syndication_source_author='.urlencode($name[0]);
+	} else {
+		return get_bloginfo('url').'/author/'.$authordata->user_login;
+	}
+
+};
+
+function get_fwp_posts( $query ) {
+
+	if ( $query->is_author && isset($_GET['syndication_source_author']) ) {
+		$query->set( 'meta_key', 'syndication_source_author' );
+		$query->set( 'meta_value', $_GET['syndication_source_author'] );
+	}
+
+	return $query;
+}
+
+$fpw_user = (defined('FEEDWORDPRESS_USER') ? FEEDWORDPRESS_USER : $authordata->user_login);
+if (!empty($fpw_user)) {
+	add_filter( 'pre_get_posts', 'get_fwp_posts' );
+}
+/* CTLT END */

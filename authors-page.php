@@ -45,7 +45,23 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 		$null_emails = FeedWordPress::null_email_set();
 
 		// Hey ho, let's go...
-		?>
+		/* CTLT BEGIN */
+		$fwp_user = (defined('FEEDWORDPRESS_USER')? FEEDWORDPRESS_USER : "");
+		if (!empty($fwp_user)) {
+		?>		
+			<table class="form-table">
+			<tbody>
+			 
+			<tr>
+			 <th></th>
+			 <td><span>Syndicated authors will always have their posts attributed to username <strong><?php echo $fwp_user; ?></strong> with the original author's display name stored in the custom field.</span>
+			</tr>
+			 
+			</tbody>
+			</table>
+		<?php
+		} else {
+?>
 <table class="form-table">
 <?php
 if ($page->for_default_settings()) :
@@ -190,6 +206,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 </tbody>
 </table>
 		<?php
+		} /* CTLT END */
 	} /* FeedWordPressAuthorsPage::syndicated_authors_box () */
 	
 	/*static*/ function fix_authors_box ($page, $box = NULL) {
