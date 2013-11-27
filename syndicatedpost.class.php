@@ -2011,9 +2011,9 @@ EOM;
 				$id = $wpdb->get_var(
 				"SELECT user_id FROM $wpdb->usermeta
 				WHERE
-					(meta_key = 'description' AND TRIM(LCASE(meta_value)) = TRIM(LCASE('$author')))
+					(meta_key LIKE 'fwp%' AND TRIM(LCASE(meta_value)) = TRIM(LCASE('$author')))
 					OR (
-						meta_key = 'description'
+						meta_key LIKE 'fwp%'
 						AND TRIM(LCASE(meta_value))
 						RLIKE CONCAT(
 							'(^|\\n)a\\.?k\\.?a\\.?( |\\t)*:?( |\\t)*',
