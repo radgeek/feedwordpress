@@ -20,7 +20,7 @@ class SyndicatedPost {
 	var $link = null;
 	var $feed = null;
 	var $feedmeta = null;
-	
+
 	var $xmlns = array ();
 
 	var $post = array ();
@@ -28,7 +28,7 @@ class SyndicatedPost {
 	var $named = array ();
 	var $preset_terms = array ();
 	var $feed_terms = array ();
-	
+
 	var $_freshness = null;
 	var $_wp_id = null;
 	var $_wp_post = null;
@@ -45,6 +45,9 @@ class SyndicatedPost {
 	function SyndicatedPost ($item, &$source) {
 		global $wpdb;
 
+		if ( empty($item) && empty($source) )
+			return;
+
 		if (is_array($item)
 		and isset($item['simplepie'])
 		and isset($item['magpie'])) :
@@ -53,11 +56,11 @@ class SyndicatedPost {
 			$item = $item['magpie'];
 		elseif (is_a($item, 'SimplePie_Item')) :
 			$this->entry = $item;
-			
+
 			// convert to Magpie for compat purposes
 			$mp = new MagpieFromSimplePie($source->simplepie, $this->entry);
 			$this->item = $mp->get_item();
-			
+
 			// done with conversion object
 			$mp = NULL; unset($mp);
 		else :
@@ -77,9 +80,9 @@ class SyndicatedPost {
 			if (!isset($this->xmlns['reverse'][$ns])) :
 				$this->xmlns['reverse'][$ns] = array();
 			endif;
-			$this->xmlns['reverse'][$ns][] = $url; 
+			$this->xmlns['reverse'][$ns][] = $url;
 		endforeach;
-		
+
 		// Fucking SimplePie.
 		$this->xmlns['reverse']['rss'][] = '';
 
@@ -101,7 +104,7 @@ class SyndicatedPost {
 		// Trigger global syndicated_item filter.
 		$changed = apply_filters('syndicated_item', $this->item, $this);
 		$this->item = $changed;
-		
+
 		// Allow for feed-specific syndicated_item filters.
 		$changed = apply_filters(
 			"syndicated_item_".$source->uri(),
@@ -109,12 +112,12 @@ class SyndicatedPost {
 			$this
 		);
 		$this->item = $changed;
-		
+
 		# Filters can halt further processing by returning NULL
 		if (is_null($this->item)) :
 			$this->post = NULL;
 		else :
-			# Note that nothing is run through $wpdb->escape() here.
+			# Note that nothing is run through esc_sql() here.
 			# That's deliberate. The escaping is done at the point
 			# of insertion, not here, to avoid double-escaping and
 			# to avoid screwing with syndicated_post filters
@@ -136,7 +139,7 @@ class SyndicatedPost {
 				'syndicated_item_content',
 				$this->content(), $this
 			);
-			
+
 			$excerpt = apply_filters('syndicated_item_excerpt', $this->excerpt(), $this);
 			if (!empty($excerpt)):
 				$this->post['post_excerpt'] = $excerpt;
@@ -165,18 +168,18 @@ class SyndicatedPost {
 			// overwrite if necessary; thus preventing any munging.
 			$postMetaIn = $this->link->postmeta(array("parsed" => true));
 			$postMetaOut = array();
-			
+
 			foreach ($postMetaIn as $key => $meta) :
 				$postMetaOut[$key] = $meta->do_substitutions($this);
 			endforeach;
-			
+
 			foreach ($postMetaOut as $key => $values) :
 				$this->post['meta'][$key] = array();
 				foreach ($values as $value) :
 					$this->post['meta'][$key][] = apply_filters("syndicated_post_meta_{$key}", $value, $this);
 				endforeach;
 			endforeach;
-			
+
 			// RSS 2.0 / Atom 1.0 enclosure support
 			$enclosures = $this->entry->get_enclosures();
 			if (is_array($enclosures)) : foreach ($enclosures as $enclosure) :
@@ -188,7 +191,7 @@ class SyndicatedPost {
 
 			// In case you want to point back to the blog this was
 			// syndicated from.
-			
+
 			$sourcemeta['syndication_source'] = apply_filters(
 				'syndicated_item_source_title',
 				$this->link->name(),
@@ -204,7 +207,7 @@ class SyndicatedPost {
 				$this->link->guid(),
 				$this
 			);
-			
+
 			// Make use of atom:source data, if present in an aggregated feed
 			$entry_source = $this->source();
 			if (!is_null($entry_source)) :
@@ -214,7 +217,7 @@ class SyndicatedPost {
 						elseif ($what=='feed') : $key = 'syndication_feed';
 						else : $key = "syndication_source_${what}";
 						endif;
-						
+
 						$sourcemeta["${key}_original"] = apply_filters(
 							'syndicated_item_original_source_'.$what,
 							$value,
@@ -223,7 +226,7 @@ class SyndicatedPost {
 					endif;
 				endforeach;
 			endif;
-			
+
 			foreach ($sourcemeta as $meta_key => $value) :
 				if (!is_null($value)) :
 					$this->post['meta'][$meta_key] = $value;
@@ -231,7 +234,7 @@ class SyndicatedPost {
 			endforeach;
 
 			// Store information on human-readable and machine-readable comment URIs
-			
+
 			// Human-readable comment URI
 			$commentLink = apply_filters('syndicated_item_comments', $this->comment_link(), $this);
 			if (!is_null($commentLink)) : $this->post['meta']['rss:comments'] = $commentLink; endif;
@@ -274,14 +277,14 @@ class SyndicatedPost {
 				$cats = array_merge($cats, $fc);
 			endif;
 			$this->preset_terms['category'] = $cats;
-			
+
 			// Now add categories from the post, if we have 'em
 			$cats = array();
 			$post_cats = $this->entry->get_categories();
 			if (is_array($post_cats)) : foreach ($post_cats as $cat) :
 				$cat_name = $cat->get_term();
 				if (!$cat_name) : $cat_name = $cat->get_label(); endif;
-				
+
 				if ($this->link->setting('cat_split', NULL, NULL)) :
 					$pcre = "\007".$this->feedmeta['cat_split']."\007";
 					$cats = array_merge(
@@ -299,24 +302,24 @@ class SyndicatedPost {
 			endforeach; endif;
 
 			$this->feed_terms['category'] = apply_filters('syndicated_item_categories', $cats, $this);
-			
+
 			// Tags: start with default tags, if any
 			$tags = array();
 			if ('no' != $this->link->setting('add/post_tag', NULL, 'yes')) :
 				$ft = get_option("feedwordpress_syndication_tags", NULL);
 				$tags = (is_null($ft) ? array() : explode(FEEDWORDPRESS_CAT_SEPARATOR, $ft));
 			endif;
-			
+
 			$ft = $this->link->setting('tags', NULL, array());
 			if (is_array($ft)) :
 				$tags = array_merge($tags, $ft);
 			endif;
 			$this->preset_terms['post_tag'] = $tags;
-			
+
 			// Scan post for /a[@rel='tag'] and use as tags if present
 			$tags = $this->inline_tags();
 			$this->feed_terms['post_tag'] = apply_filters('syndicated_item_tags', $tags, $this);
-			
+
 			$taxonomies = $this->link->taxonomies();
 			$feedTerms = $this->link->setting('terms', NULL, array());
 			$globalTerms = get_option('feedwordpress_syndication_terms', array());
@@ -325,14 +328,14 @@ class SyndicatedPost {
 			foreach ($taxonomies as $tax) :
 				if (!isset($specials[$tax])) :
 					$terms = array();
-				
+
 					// See if we should get the globals
 					if ('no' != $this->link->setting("add/$tax", NULL, 'yes')) :
 						if (isset($globalTerms[$tax])) :
 							$terms = $globalTerms[$tax];
 						endif;
 					endif;
-					
+
 					// Now merge in the locals
 					if (isset($feedTerms[$tax])) :
 						$terms = array_merge($terms, $feedTerms[$tax]);
@@ -353,7 +356,7 @@ class SyndicatedPost {
 
 	function substitution_function ($name) {
 		$ret = NULL;
-		
+
 		switch ($name) :
 		// Allowed PHP string functions
 		case 'trim':
@@ -367,7 +370,7 @@ class SyndicatedPost {
 		endswitch;
 		return $ret;
 	}
-	
+
 	/**
 	 * SyndicatedPost::query uses an XPath-like syntax to query arbitrary
 	 * elements within the syndicated item.
@@ -384,9 +387,9 @@ class SyndicatedPost {
 	 	foreach ($match as $ref) :
 	 	 	$urlHash[md5($ref[1])] = $ref[1];
 		endforeach;
-	
+
 		foreach ($urlHash as $hash => $url) :
-			$path = str_replace('{'.$url.'}', '{#'.$hash.'}', $path); 
+			$path = str_replace('{'.$url.'}', '{#'.$hash.'}', $path);
 		endforeach;
 
 		$path = explode('/', $path);
@@ -407,7 +410,7 @@ class SyndicatedPost {
 		while (strlen($node)==0 and !is_null($node)) :
 			$node = array_shift($path);
 		endwhile;
-		
+
 		switch ($node) :
 		case 'feed' :
 		case 'channel' :
@@ -441,7 +444,7 @@ class SyndicatedPost {
 									$addenda = $elements[$element];
 									$contexts = $elements[$element];
 								endif;
-								
+
 								foreach ($addenda as $index => $addendum) :
 									$context = $contexts[$index];
 
@@ -451,15 +454,15 @@ class SyndicatedPost {
 									endif;
 								endforeach;
 							endif;
-						endforeach;						
+						endforeach;
 					endif;
 				endforeach;
-		
+
 				$data = $matches;
 			endif;
 			$node = array_shift($path);
 		endwhile;
-	
+
 		$matches = array();
 		foreach ($data as $datum) :
 			if (is_string($datum)) :
@@ -488,7 +491,7 @@ class SyndicatedPost {
 				'http://backend.userland.com/RSS2',
 				SIMPLEPIE_NAMESPACE_RSS_20,
 		);
-		
+
 		$matches = array();
 		foreach ($rss as $ns) :
 			$data = $this->link->simplepie->get_feed_tags($ns, 'channel');
@@ -515,7 +518,7 @@ class SyndicatedPost {
 		else :
 			$defaultNS = SIMPLEPIE_NAMESPACE_RSS_20;
 		endif;
-		return $defaultNS;	
+		return $defaultNS;
 	} /* SyndicatedPost::xpath_default_namespace() */
 
 	function xpath_name_and_axis ($node) {
@@ -550,20 +553,20 @@ class SyndicatedPost {
 			$ns = array($ref[1]);
 		elseif (strpos($node, ':') !== FALSE) :
 			list($xmlns, $element) = explode(':', $node, 2);
-			
+
 			if (isset($this->xmlns['reverse'][$xmlns])) :
 				$ns = $this->xmlns['reverse'][$xmlns];
 			else :
 				$ns = array($xmlns);
 			endif;
-			
+
 			// Fucking SimplePie. For attributes in default xmlns.
 			$defaultNS = $this->xpath_default_namespace();
 			if (isset($this->xmlns['forward'][$defaultNS])
 			and ($xmlns==$this->xmlns['forward'][$defaultNS])) :
 				$ns[] = '';
 			endif;
-			
+
 			if (isset($datum['xmlns'])) :
 				if (isset($datum['xmlns'][$xmlns])) :
 					$ns[] = $datum['xmlns'][$xmlns];
@@ -596,13 +599,13 @@ class SyndicatedPost {
 	function excerpt () {
 		# Identify and sanitize excerpt: atom:summary, or rss:description
 		$excerpt = $this->entry->get_description();
-			
+
 		# Many RSS feeds use rss:description, inadvisably, to
 		# carry the entire post (typically with escaped HTML).
 		# If that's what happened, we don't want the full
 		# content for the excerpt.
 		$content = $this->content();
-		
+
 		// Ignore whitespace, case, and tag cruft.
 		$theExcerpt = preg_replace('/\s+/', '', strtolower(strip_tags($excerpt)));
 		$theContent = preg_replace('/\s+/', '', strtolower(strip_tags($content)));
@@ -629,7 +632,7 @@ class SyndicatedPost {
 	function created ($params = array()) {
 		$unfiltered = false; $default = NULL;
 		extract($params);
-		
+
 		$date = '';
 		if (isset($this->item['dc']['created'])) :
 			$date = $this->item['dc']['created'];
@@ -654,7 +657,7 @@ class SyndicatedPost {
 		else : // New style
 			extract($params);
 		endif;
-		
+
 		$date = '';
 		$ts = null;
 
@@ -673,14 +676,14 @@ class SyndicatedPost {
 		elseif (isset($this->item['pubdate'])):				// RSS 2.0
 			$date = $this->item['pubdate'];
 		endif;
-		
+
 		if (strlen($date) > 0) :
 			$time = new FeedTime($date);
 			$ts = $time->timestamp();
 		elseif ($fallback) :						// Fall back to <updated> / <modified> if present
 			$ts = $this->updated(/*fallback=*/ false, /*default=*/ $default);
 		endif;
-		
+
 		# If everything failed, then default to the current time.
 		if (is_null($ts)) :
 			if (-1 == $default) :
@@ -689,7 +692,7 @@ class SyndicatedPost {
 				$ts = $default;
 			endif;
 		endif;
-		
+
 		if (!$unfiltered) :
 			$ts = apply_filters('syndicated_item_published', $ts, $this);
 		endif;
@@ -719,14 +722,14 @@ class SyndicatedPost {
 		elseif (isset($this->item['updated'])):			// Atom 1.0
 			$date = $this->item['updated'];
 		endif;
-		
+
 		if (strlen($date) > 0) :
 			$time = new FeedTime($date);
 			$ts = $time->timestamp();
 		elseif ($fallback) :						// Fall back to issued / dc:date
 			$ts = $this->published(/*fallback=*/ false, /*default=*/ $default);
 		endif;
-		
+
 		# If everything failed, then default to the current time.
 		if (is_null($ts)) :
 			if (-1 == $default) :
@@ -767,19 +770,19 @@ class SyndicatedPost {
 			"content" => $this->content(),
 			"excerpt" => $this->excerpt(),
 		);
-		
+
 		if ($hashed) :
 			$hash = md5(serialize($hash));
 		endif;
-		
+
 		return $hash;
 	} /* SyndicatedPost::update_hash() */
 
-	/*static*/ function normalize_guid_prefix () {
+	static function normalize_guid_prefix () {
 		return trailingslashit(get_bloginfo('url')).'?guid=';
 	}
-	
-	/*static*/ function normalize_guid ($guid) {
+
+	static function normalize_guid ($guid) {
 		$guid = trim($guid);
 		if (preg_match('/^[0-9a-z]{32}$/i', $guid)) : // MD5
 			$guid = SyndicatedPost::normalize_guid_prefix().strtolower($guid);
@@ -789,7 +792,7 @@ class SyndicatedPost {
 		$guid = trim($guid);
 		return $guid;
 	} /* SyndicatedPost::normalize_guid() */
-	
+
 	function guid () {
 		$guid = null;
 		if (isset($this->item['id'])):						// Atom 0.3 / 1.0
@@ -801,12 +804,12 @@ class SyndicatedPost {
 		elseif (isset($this->item['dc']['identifier'])) :	// yeah, right
 			$guid = $this->item['dc']['identifier'];
 		endif;
-		
+
 		// Un-set or too long to use as-is. Generate a tag: URI.
 		if (is_null($guid) or strlen($guid) > 250) :
 			// In case we need to check this again
 			$original_guid = $guid;
-			
+
 			// The feed does not seem to have provided us with a
 			// usable unique identifier, so we'll have to cobble
 			// together a tag: URI that might work for us. The base
@@ -824,7 +827,7 @@ class SyndicatedPost {
 			// are hashed down into a nice, manageable tag: URI.
 			if (!is_null($original_guid)) :
 				$guid .= ',2010-12-03:id.'.md5($original_guid);
-			
+
 			// If we have a date of creation, then we can use that
 			// to uniquely identify the item. (On the other hand, if
 			// the feed producer was consicentious enough to
@@ -832,7 +835,7 @@ class SyndicatedPost {
 			// conscientious enough to generate unique identifiers.)
 			elseif (!is_null($this->created())) :
 				$guid .= '://post.'.date('YmdHis', $this->created());
-			
+
 			// Otherwise, use both the URI of the item, *and* the
 			// item's title. We have to use both because titles are
 			// often not unique, and sometimes links aren't unique
@@ -848,10 +851,10 @@ class SyndicatedPost {
 		endif;
 		return $guid;
 	} /* SyndicatedPost::guid() */
-	
+
 	function author () {
 		$author = array ();
-		
+
 		$aa = $this->entry->get_authors();
 		if (count($aa) > 0) :
 			$a = reset($aa);
@@ -882,7 +885,7 @@ class SyndicatedPost {
 				// e-mail address, but lots of people don't use
 				// it that way. So let's make of it what we can.
 				$author = parse_email_with_realname($this->item['author']);
-				
+
 				if (!isset($author['name'])) :
 					if (isset($author['email'])) :
 						$author['name'] = $author['email'];
@@ -892,7 +895,7 @@ class SyndicatedPost {
 				endif;
 			endif;
 		endif;
-		
+
 		if (!isset($author['name']) or is_null($author['name'])) :
 			// Nothing found. Try some crappy defaults.
 			if ($this->link->name()) :
@@ -902,14 +905,14 @@ class SyndicatedPost {
 				$author['name'] = $url['host'];
 			endif;
 		endif;
-		
+
 		if (FEEDWORDPRESS_COMPATIBILITY) :
 			if (isset($this->item['author_email'])):
 				$author['email'] = $this->item['author_email'];
 			elseif (isset($this->feed->channel['author_email'])) :
 				$author['email'] = $this->feed->channel['author_email'];
 			endif;
-			
+
 			if (isset($this->item['author_uri'])):
 				$author['uri'] = $this->item['author_uri'];
 			elseif (isset($this->item['author_url'])):
@@ -922,7 +925,7 @@ class SyndicatedPost {
 				$author['uri'] = $this->feed->channel['link'];
 			endif;
 		endif;
-		
+
 		return $author;
 	} /* SyndicatedPost::author() */
 
@@ -946,7 +949,7 @@ class SyndicatedPost {
 		endif;
 		return $tags;
 	}
-	
+
 	/**
 	 * SyndicatedPost::isTaggedAs: Test whether a feed item is
 	 * tagged / categorized with a given string. Case and leading and
@@ -954,7 +957,7 @@ class SyndicatedPost {
 	 *
 	 * @param string $tag Tag to check for
 	 *
-	 * @return bool Whether or not at least one of the categories / tags on 
+	 * @return bool Whether or not at least one of the categories / tags on
 	 *	$this->item is set to $tag (modulo case and leading and trailing
 	 * 	whitespace)
 	 */
@@ -969,7 +972,7 @@ class SyndicatedPost {
 		// on this item is stored under index "category#".
 		if (isset($this->item['category#'])) :
 			$numberOfCategories = (int) $this->item['category#'];
-		
+
 		// We REALLY shouldn't have the old and busted MagpieRSS, but in
 		// case we do, it doesn't support multiple categories, but there
 		// might still be a single value under the "category" index.
@@ -1028,7 +1031,7 @@ class SyndicatedPost {
 				endif;
 			endfor;
 		endif;
-		return $enclosures;		
+		return $enclosures;
 	} /* SyndicatedPost::enclosures() */
 
 	function source ($what = NULL) {
@@ -1039,7 +1042,7 @@ class SyndicatedPost {
 			$ret['title'] = $source->get_title();
 			$ret['uri'] = $source->get_link();
 			$ret['feed'] = $source->get_link(0, 'self');
-			
+
 			if ($id_tags = $source->get_source_tags(SIMPLEPIE_NAMESPACE_ATOM_10, 'id')) :
 				$ret['id'] = $id_tags[0]['data'];
 			elseif ($id_tags = $source->get_source_tags(SIMPLEPIE_NAMESPACE_ATOM_03, 'id')) :
@@ -1052,16 +1055,16 @@ class SyndicatedPost {
 				$ret['id'] = $id_tags[0]['data'];
 			endif;
 		endif;
-		
+
 		if (!is_null($what) and is_scalar($what)) :
 			$ret = $ret[$what];
 		endif;
 		return $ret;
 	}
-	
+
 	function comment_link () {
 		$url = null;
-		
+
 		// RSS 2.0 has a standard <comments> element:
 		// "<comments> is an optional sub-element of <item>. If present,
 		// it is the url of the comments page for the item."
@@ -1074,13 +1077,13 @@ class SyndicatedPost {
 		// element with @rel="replies" and @type="text/html".
 		// Unfortunately, SimplePie_Item::get_links() allows us to filter
 		// by the value of @rel, but not by the value of @type. *sigh*
-		
+
 		// Try Atom 1.0 first
 		$linkElements = $this->entry->get_item_tags(SIMPLEPIE_NAMESPACE_ATOM_10, 'link');
-		
+
 		// Fall back and try Atom 0.3
 		if (is_null($linkElements)) : $linkElements =  $this->entry->get_item_tags(SIMPLEPIE_NAMESPACE_ATOM_03, 'link'); endif;
-		
+
 		// Now loop through the elements, screening by @rel and @type
 		if (is_array($linkElements)) : foreach ($linkElements as $link) :
 			$rel = (isset($link['attribs']['']['rel']) ? $link['attribs']['']['rel'] : 'alternate');
@@ -1171,9 +1174,9 @@ class SyndicatedPost {
 		return $tag['prefix'] . $url . $tag['suffix'];
 	} /* function SyndicatedPost::resolve_single_relative_uri() */
 
-	function resolve_relative_uris ($content, $obj) {
+	static function resolve_relative_uris ($content, $obj) {
 		$set = $obj->link->setting('resolve relative', 'resolve_relative', 'yes');
-		if ($set and $set != 'no') : 
+		if ($set and $set != 'no') :
 			// Fallback: if we don't have anything better, use the
 			// item link from the feed
 			$obj->_base = $obj->permalink(); // Reset the base for resolving relative URIs
@@ -1195,7 +1198,7 @@ class SyndicatedPost {
 				);
 			endforeach;
 		endif;
-		
+
 		return $content;
 	} /* function SyndicatedPost::resolve_relative_uris () */
 
@@ -1210,7 +1213,7 @@ class SyndicatedPost {
 		return $tag['before_attribute'].$tag['after_attribute'];
 	}
 
-	function sanitize_content ($content, $obj) {
+	static function sanitize_content ($content, $obj) {
 		# This kind of sucks. I intend to replace it with
 		# lib_filter sometime soon.
 		foreach ($obj->strip_attrs as $pair):
@@ -1257,24 +1260,24 @@ class SyndicatedPost {
 		if ($this->filtered()) : // This should never happen.
 			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
 		endif;
-		
+
 		if (is_null($this->_freshness)) : // Not yet checked and cached.
 			$guid = $this->post['guid'];
-			$eguid = $wpdb->escape($this->post['guid']);
+			$eguid = esc_sql($this->post['guid']);
 
 			$q = new WP_Query(array(
 				'fields' => '_synfresh', // id, guid, post_modified_gmt
 				'ignore_sticky_posts' => true,
 				'guid' => $guid,
 			));
-			
+
 			$old_post = NULL;
 			if ($q->have_posts()) :
 				while ($q->have_posts()) : $q->the_post();
 					$old_post = $q->post;
 				endwhile;
 			endif;
-			
+
 			if (is_null($old_post)) : // No post with this guid
 				FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$guid.'] "'.$this->entry->get_title().'" is a NEW POST.');
 				$this->_wp_id = NULL;
@@ -1284,7 +1287,7 @@ class SyndicatedPost {
 
 				$last_rev_ts = gmmktime($backref[4], $backref[5], $backref[6], $backref[2], $backref[3], $backref[1]);
 				$updated_ts = $this->updated(/*fallback=*/ true, /*default=*/ NULL);
-				
+
 				// Check timestamps...
 				$updated = (
 					!is_null($updated_ts)
@@ -1310,7 +1313,7 @@ class SyndicatedPost {
 					else :
 						$updated = true; // Can't find syndication meta-data
 					endif;
-					
+
 					if ($updated and FeedWordPress::diagnostic_on('feed_items:freshness:reasons')) :
 						$updatedReason = ' has a not-yet-seen update hash: '
 						.FeedWordPress::val($hash)
@@ -1320,14 +1323,14 @@ class SyndicatedPost {
 						.FeedWordPress::val(array_keys($this->update_hash(false)));
 					endif;
 				endif;
-				
+
 				$frozen = false;
 				if ($updated) : // Ignore if the post is frozen
 					$frozen = ('yes' == $this->link->setting('freeze updates', 'freeze_updates', NULL));
 					if (!$frozen) :
 						$frozen_values = get_post_custom_values('_syndication_freeze_updates', $old_post->ID);
 						$frozen = (count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
-						
+
 						if ($frozen) :
 							$updatedReason = ' IS BLOCKED FROM BEING UPDATED BY A UPDATE LOCK ON THIS POST, EVEN THOUGH IT '.$updatedReason;
 						endif;
@@ -1371,7 +1374,7 @@ class SyndicatedPost {
 		if ($this->filtered()) : // This should never happen.
 			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
 		endif;
-		
+
 		if (is_null($this->_wp_id) and is_null($this->_freshness)) :
 			$fresh = $this->freshness(); // sets WP DB id in the process
 		endif;
@@ -1384,7 +1387,7 @@ class SyndicatedPost {
 		if ($this->filtered()) : // This should never happen.
 			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
 		endif;
-		
+
 		$freshness = $this->freshness();
 		if ($freshness > 0) :
 			# -- Look up, or create, numeric ID for author
@@ -1397,7 +1400,7 @@ class SyndicatedPost {
 				$this->post = NULL;
 			endif;
 		endif;
-		
+
 		if (!$this->filtered() and $freshness > 0) :
 			$consider = array(
 				'category' => array('abbr' => 'cats', 'domain' => array('category', 'post_tag')),
@@ -1409,10 +1412,10 @@ class SyndicatedPost {
 				if (!is_null($this->post)) : // Not filtered out yet
 					# -- Look up, or create, numeric ID for categories
 					$taxonomies = $this->link->setting("match/".$taxes['abbr'], 'match_'.$taxes['abbr'], $taxes['domain']);
-	
+
 					// Eliminate dummy variables
 					$taxonomies = array_filter($taxonomies, 'remove_dummy_zero');
-	
+
 					$terms = $this->category_ids (
 						$this->feed_terms[$what],
 						$this->link->setting("unfamiliar {$what}", "unfamiliar_{$what}", 'create:'.$what),
@@ -1422,7 +1425,7 @@ class SyndicatedPost {
 						  'filters' => true,
 						)
 					);
-					
+
 					if (is_null($terms) or is_null($termSet)) :
 						// filtered out -- no matches
 					else :
@@ -1458,7 +1461,7 @@ class SyndicatedPost {
 					if (!isset($this->post['tax_input'][$tax])) :
 						$this->post['tax_input'][$tax] = array();
 					endif;
-					
+
 					$this->post['tax_input'][$tax] = array_merge (
 						$this->post['tax_input'][$tax],
 						$this->category_ids (
@@ -1472,23 +1475,23 @@ class SyndicatedPost {
 				endforeach;
 			endif;
 		endif;
-		
+
 		if (!$this->filtered() and $freshness > 0) :
 			// Filter some individual fields
-			
+
 			// If there already is a post slug (from syndication or by manual
 			// editing) don't cause WP to overwrite it by sending in a NULL
 			// post_name. Props Chris Fritz 2012-11-28.
-			$post_name = (is_null($this->_wp_post) ? NULL : $this->_wp_post->post_name);			
+			$post_name = (is_null($this->_wp_post) ? NULL : $this->_wp_post->post_name);
 
 			// Allow filters to set post slug. Props niska.
 			$post_name = apply_filters('syndicated_post_slug', $post_name, $this);
 			if (!empty($post_name)) :
 				$this->post['post_name'] = $post_name;
 			endif;
-			
+
 			$this->post = apply_filters('syndicated_post', $this->post, $this);
-			
+
 			// Allow for feed-specific syndicated_post filters.
 			$this->post = apply_filters(
 				"syndicated_post_".$this->link->uri(),
@@ -1496,7 +1499,7 @@ class SyndicatedPost {
 				$this
 			);
 		endif;
-		
+
 		// Hook in early to make sure these get inserted if at all possible
 		add_action(
 			/*hook=*/ 'transition_post_status',
@@ -1506,9 +1509,9 @@ class SyndicatedPost {
 		);
 
 		$retval = array(1 => 'updated', 2 => 'new');
-		
+
 		$ret = false;
-		if (!$this->filtered() and isset($retval[$freshness])) :			
+		if (!$this->filtered() and isset($retval[$freshness])) :
 			$diag = array(
 				1 => 'Updating existing post # '.$this->wp_id().', "'.$this->post['post_title'].'"',
 				2 => 'Inserting new post "'.$this->post['post_title'].'"',
@@ -1516,7 +1519,7 @@ class SyndicatedPost {
 			FeedWordPress::diagnostic('syndicated_posts', $diag[$freshness]);
 
 			$this->insert_post(/*update=*/ ($freshness == 1));
-			
+
 			$hook = array(	1 => 'update_syndicated_item', 2 => 'post_syndicated_item' );
 			do_action($hook[$freshness], $this->wp_id(), $this);
 
@@ -1528,15 +1531,15 @@ class SyndicatedPost {
 		if (!$this->filtered()) :
 			$key = '_feedwordpress_retire_me_' . $this->link->id;
 			delete_post_meta($this->wp_id(), $key);
-			
+
 			$status = get_post_field('post_status', $this->wp_id());
 			if ('fwpretired'==$status and $this->link->is_incremental()) :
-				FeedWordPress::diagnostic('syndicated_posts', "Un-retiring previously retired post # ".$this->wp_id()." due to re-appearance on non-incremental feed."); 
+				FeedWordPress::diagnostic('syndicated_posts', "Un-retiring previously retired post # ".$this->wp_id()." due to re-appearance on non-incremental feed.");
 				set_post_field('post_status', $this->post['post_status'], $this->wp_id());
 				wp_transition_post_status($this->post['post_status'], $status, $old_status, $this->post);
 			endif;
 		endif;
-		
+
 		// Remove add_rss_meta hook
 		remove_action(
 			/*hook=*/ 'transition_post_status',
@@ -1547,17 +1550,17 @@ class SyndicatedPost {
 
 		return $ret;
 	} /* function SyndicatedPost::store () */
-	
+
 	function insert_post ($update = false) {
 		global $wpdb;
 
 		$dbpost = $this->normalize_post(/*new=*/ true);
 		if (!is_null($dbpost)) :
 			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
-	
+
 			// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
 			add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
-				
+
 			// Kludge to prevent kses filters from stripping the
 			// content of posts when updating without a logged in
 			// user who has `unfiltered_html` capability.
@@ -1569,17 +1572,17 @@ class SyndicatedPost {
 					$removed[] = $munger;
 				endif;
 			endforeach;
-			
+
 			if ($update and function_exists('get_post_field')) :
 				// Don't munge status fields that the user may
 				// have reset manually
 				$doNotMunge = array('post_status', 'comment_status', 'ping_status');
-				
+
 				foreach ($doNotMunge as $field) :
 					$dbpost[$field] = get_post_field($field, $this->wp_id());
 				endforeach;
 			endif;
-			
+
 			// WP3's wp_insert_post scans current_user_can() for the
 			// tax_input, with no apparent way to override. Ugh.
 			add_action(
@@ -1588,7 +1591,7 @@ class SyndicatedPost {
 			/*priority=*/ -10001, /* very early */
 			/*arguments=*/ 3
 			);
-			
+
 			// WP3 appears to override whatever you give it for
 			// post_modified. Ugh.
 			add_action(
@@ -1602,7 +1605,7 @@ class SyndicatedPost {
 				$this->post['ID'] = $this->wp_id();
 				$dbpost['ID'] = $this->post['ID'];
 			endif;
-			
+
 			$this->_wp_id = wp_insert_post($dbpost, /*return wp_error=*/ true);
 
 			remove_action(
@@ -1624,11 +1627,11 @@ class SyndicatedPost {
 			foreach ($removed as $filter) :
 				add_filter('content_save_pre', $filter);
 			endforeach;
-			
+
 			$this->validate_post_id($dbpost, $update, array(__CLASS__, __FUNCTION__));
 		endif;
 	} /* function SyndicatedPost::insert_post () */
-	
+
 	function insert_new () {
 		$this->insert_post(/*update=*/ false);
 	} /* SyndicatedPost::insert_new() */
@@ -1661,7 +1664,7 @@ class SyndicatedPost {
 				$feed_url = parse_url($this->post['meta']['syndication_feed']);
 				$source_title = $feed_url['host'];
 			endif;
-			
+
 			$out['post_title'] = $source_title
 				.' '.gmdate('Y-m-d H:i:s', $this->published() + $offset);
 			// FIXME: Option for what to fill a blank title with...
@@ -1673,7 +1676,7 @@ class SyndicatedPost {
 		// Why the fuck doesn't wp_insert_post already do this?
 		foreach ($out as $key => $value) :
 			if (is_string($value)) :
-				$out[$key] = $wpdb->escape($value);
+				$out[$key] = esc_sql($value);
 			else :
 				$out[$key] = $value;
 			endif;
@@ -1704,7 +1707,7 @@ class SyndicatedPost {
 			$mesg = "Failed to $verb item [$guid]. WordPress API returned no valid post ID.\n"
 				."\t\tID = ".serialize($this->_wp_id)."\n"
 				."\t\tURL = ".FeedWordPress::val($url)
-				."\t\tFeed = ".FeedWordPress::val($feed); 
+				."\t\tFeed = ".FeedWordPress::val($feed);
 			FeedWordPress::diagnostic('updated_feeds:errors', "WordPress API error: $mesg");
 			FeedWordPress::diagnostic('feed_items:rejected', $mesg);
 
@@ -1712,9 +1715,9 @@ class SyndicatedPost {
 The WordPress API returned an invalid post ID
 			   when FeedWordPress tried to $verb item $guid
 			   [URL: $url]
-			   from the feed at $feed 
+			   from the feed at $feed
 
-$ns::_wp_id 
+$ns::_wp_id
 EOM;
 			FeedWordPress::noncritical_bug(
 				/*message=*/ $mesg,
@@ -1726,7 +1729,7 @@ EOM;
 			);
 		endif;
 	} /* SyndicatedPost::validate_post_id() */
-	
+
 	/**
 	 * SyndicatedPost::fix_revision_meta() - Fixes the way WP 2.6+ fucks up
 	 * meta-data (authorship, etc.) when storing revisions of an updated
@@ -1746,9 +1749,9 @@ EOM;
 	 */
 	function fix_revision_meta ($revision_id) {
 		global $wpdb;
-		
+
 		$post_author = (int) $this->post['post_author'];
-		
+
 		$revision_id = (int) $revision_id;
 		$wpdb->query("
 		UPDATE $wpdb->posts
@@ -1756,7 +1759,7 @@ EOM;
 		WHERE post_type = 'revision' AND ID='$revision_id'
 		");
 	} /* SyndicatedPost::fix_revision_meta () */
-	 
+
 	/**
 	 * SyndicatedPost::add_terms() -- if FeedWordPress is processing an
 	 * automatic update, that generally means that wp_insert_post() is being
@@ -1782,7 +1785,7 @@ EOM;
 					if (is_array($terms)) :
 						$terms = array_filter($terms); // strip out empties
 					endif;
-					
+
 					$res = wp_set_post_terms(
 						/*post_id=*/ $post->ID,
 						/*terms=*/ $terms,
@@ -1801,9 +1804,9 @@ EOM;
 				endforeach;
 			endif;
 		endif;
-		
+
 	} /* SyndicatedPost::add_terms () */
-	
+
 	/**
 	 * SyndicatedPost::fix_post_modified_ts() -- We would like to set
 	 * post_modified and post_modified_gmt to reflect the value of
@@ -1828,7 +1831,7 @@ EOM;
 			), /*where=*/ array('ID' => $post->ID) );
 		endif;
 	} /* SyndicatedPost::fix_post_modified_ts () */
-	
+
 	/**
 	 * SyndicatedPost::add_rss_meta: adds interesting meta-data to each entry
 	 * using the space for custom keys. The set of keys and values to add is
@@ -1851,7 +1854,7 @@ EOM;
 
 			if ( is_array($this->post) and isset($this->post['meta']) and is_array($this->post['meta']) ) :
 				$postId = $post->ID;
-				
+
 				// Aggregated posts should NOT send out pingbacks.
 				// WordPress 2.1-2.2 claim you can tell them not to
 				// using $post_pingback, but they don't listen, so we
@@ -1860,17 +1863,17 @@ EOM;
 				DELETE FROM $wpdb->postmeta
 				WHERE post_id='$postId' AND meta_key='_pingme'
 				");
-	
+
 				foreach ( $this->post['meta'] as $key => $values ) :
-					$eKey = $wpdb->escape($key);
-	
+					$eKey = esc_sql($key);
+
 					// If this is an update, clear out the old
 					// values to avoid duplication.
 					$result = $wpdb->query("
 					DELETE FROM $wpdb->postmeta
 					WHERE post_id='$postId' AND meta_key='$eKey'
 					");
-					
+
 					// Allow for either a single value or an array
 					if (!is_array($values)) $values = array($values);
 					foreach ( $values as $value ) :
@@ -1899,7 +1902,7 @@ EOM;
 		$source = $this->source();
 		$forbidden = apply_filters('feedwordpress_forbidden_author_names',
 			array('admin', 'administrator', 'www', 'root'));
-		
+
 		// Prepare the list of candidates to try for author name: name from
 		// feed, original source title (if any), immediate source title live
 		// from feed, subscription title, prettied version of feed homepage URL,
@@ -1914,10 +1917,10 @@ EOM;
 		if (strlen($this->link->homepage()) > 0) : $candidates[] = feedwordpress_display_url($this->link->homepage()); endif;
 		$candidates[] = feedwordpress_display_url($this->link->uri());
 		$candidates[] = 'unknown author';
-		
+
 		// Pick the first one that works from the list, screening against empty
 		// or forbidden names.
-		
+
 		$author = NULL;
 		while (is_null($author) and ($candidate = each($candidates))) :
 			if (!is_null($candidate['value'])
@@ -1926,11 +1929,11 @@ EOM;
 				$author = $candidate['value'];
 			endif;
 		endwhile;
-		
+
 		$email = (isset($a['email']) ? $a['email'] : NULL);
 		$authorUrl = (isset($a['uri']) ? $a['uri'] : NULL);
 
-		
+
 		$hostUrl = $this->link->homepage();
 		if (is_null($hostUrl) or (strlen($hostUrl) < 0)) :
 			$hostUrl = $this->link->uri();
@@ -1957,7 +1960,7 @@ EOM;
 			// Uniqueness will be guaranteed below if necessary.
 
 			$url = parse_url($hostUrl);
-			
+
 			$login = sanitize_user($url['host'], /*strict=*/ true);
 			if (strlen($login) < 1) :
 				// This isn't working. Frak it.
@@ -1970,11 +1973,11 @@ EOM;
 		$nice_author = sanitize_title($author);
 		$nice_author = apply_filters('pre_user_nicename', $nice_author);
 
-		$reg_author = $wpdb->escape(preg_quote($author));
-		$author = $wpdb->escape($author);
-		$email = $wpdb->escape($email);
-		$test_email = $wpdb->escape($test_email);
-		$authorUrl = $wpdb->escape($authorUrl);
+		$reg_author = esc_sql(preg_quote($author));
+		$author = esc_sql($author);
+		$email = esc_sql($email);
+		$test_email = esc_sql($test_email);
+		$authorUrl = esc_sql($authorUrl);
 
 		// Check for an existing author rule....
 		if (isset($this->link->settings['map authors']['name']['*'])) :
@@ -1992,7 +1995,7 @@ EOM;
 		// User name is filtered out
 		elseif ('filter' == $author_rule) :
 			$id = NULL;
-		
+
 		else :
 			// Check the database for an existing author record that might fit
 
@@ -2005,7 +2008,7 @@ EOM;
 				LENGTH(TRIM(LCASE(user_email))) > 0
 				AND TRIM(LCASE(user_email)) = TRIM(LCASE('$test_email'))
 			)");
-	
+
 			// If that fails, look for aliases in the user meta data table
 			if (is_null($id)) :
 				$id = $wpdb->get_var(
@@ -2050,7 +2053,7 @@ EOM;
 					if (isset($parts[1])) : $userdata['last_name'] = $parts[1]; endif;
 					$userdata['display_name'] = $author;
 					$userdata['role'] = 'contributor';
-					
+
 					do { // Keep trying until you get it right. Or until PHP crashes, I guess.
 						$id = wp_insert_user($userdata);
 						if (is_wp_error($id)) :
@@ -2064,10 +2067,10 @@ EOM;
 							case 'existing_user_email' :
 								// No disassemble!
 								$parts = explode('@', $userdata['user_email'], 2);
-								
+
 								// Add a random disambiguator as a gmail-style username extension
 								$parts[0] .= '+'.substr(md5(uniqid(microtime())), 0, 6);
-								
+
 								// Reassemble
 								$userdata['user_email'] = $parts[0].'@'.$parts[1];
 								break;
@@ -2084,7 +2087,7 @@ EOM;
 
 		if ($id) :
 			$this->link->settings['map authors']['name'][strtolower(trim($author))] = $id;
-			
+
 			// Multisite: Check whether the author has been recorded
 			// on *this* blog before. If not, put her down as a
 			// Contributor for *this* blog.
@@ -2093,7 +2096,7 @@ EOM;
 				$user->add_role('contributor');
 			endif;
 		endif;
-		return $id;	
+		return $id;
 	} /* function SyndicatedPost::author_id () */
 
 	/**
@@ -2104,11 +2107,11 @@ EOM;
 	 * @param string $unfamiliar_category
 	 * @param array|null $taxonomies
 	 * @return array
-	 */ 
+	 */
 	function category_ids ($cats, $unfamiliar_category = 'create', $taxonomies = NULL, $params = array()) {
 		$singleton = (isset($params['singleton']) ? $params['singleton'] : true);
 		$allowFilters = (isset($params['filters']) ? $params['filters'] : false);
-		
+
 		$catTax = 'category';
 
 		if (is_null($taxonomies)) :
@@ -2127,16 +2130,16 @@ EOM;
 		foreach ($taxonomies as $tax) :
 			$terms[$tax] = array();
 		endforeach;
-		
+
 		foreach ($cats as $cat_name) :
 			if (strlen(trim($cat_name)) < 1) :
 				continue;
 			endif;
 
 			$oTerm = new SyndicatedPostTerm($cat_name, $taxonomies, $this);
-				
+
 			if ($oTerm->is_familiar()) :
-			
+
 				$tax = $oTerm->taxonomy();
 				if (!isset($terms[$tax])) :
 					$terms[$tax] = array();
@@ -2148,10 +2151,10 @@ EOM;
 				if ('tag'==$unfamiliar_category) :
 					$unfamiliar_category = 'create:post_tag';
 				endif;
-					
+
 				if (preg_match('/^create(:(.*))?$/i', $unfamiliar_category, $ref)) :
 					$tax = $catTax; // Default
-						
+
 					if (isset($ref[2])
 					and strlen($ref[2]) > 2) :
 						$tax = $ref[2];
@@ -2164,10 +2167,10 @@ EOM;
 						endif;
 						$terms[$tax][] = $inserted;
 					else :
-					
+
 					endif; // !is_null($inserted)
 				endif; // preg_match(...)
-				
+
 			endif; /* ($oTerm->is_familiar()) */
 		endforeach;
 
@@ -2179,7 +2182,7 @@ EOM;
 			);
 			$filtersOn = ($filtersOn and is_array($filters) and (count($filters) > 0));
 		endif;
-		
+
 		// Check for filter conditions
 		foreach ($terms as $tax => $term_ids) :
 			if ($filtersOn
@@ -2195,7 +2198,7 @@ EOM;
 		if ($singleton and count($terms)==1) : // If we only searched one, just return the term IDs
 			$terms = end($terms);
 		endif;
-		
+
 		FeedWordPress::diagnostic(
 			'syndicated_posts:categories',
 			'Category: MAPPED term names '.json_encode($cats).' to IDs: '.json_encode($terms)
