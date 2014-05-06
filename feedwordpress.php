@@ -333,7 +333,7 @@ function feedwordpress_display_url ($url, $before = 60, $after = 0) {
 		.(isset($bits['query'])?'?'.$bits['query']:'');
 
 	if (strlen($url) > ($before+$after)) :
-		$url = substr($url, 0, $before).'…'.substr($url, 0 - $after, $after);
+		$url = substr($url, 0, $before).'.'.substr($url, 0 - $after, $after);
 	endif;
 
 	return $url;
