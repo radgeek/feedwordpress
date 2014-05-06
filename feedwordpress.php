@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2013.0525
+Version: 2014.0506
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2013.0525
+ * @version 2014.0506
  */
 
 # This uses code derived from:
@@ -32,7 +32,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2013.0525');
+define ('FEEDWORDPRESS_VERSION', '2014.0506');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -1597,6 +1597,35 @@ class FeedWordPress {
 		return $link_id;
 	} /* FeedWordPress::find_link () */
 
+	/**
+	 * FeedWordPress:syndicate_link(): add or update a feed subscription
+	 *
+	 * Add a new subscription to, or update an existing subscription in,
+	 * FWP's list of subscribed feeds.
+	 *
+	 * Postcondition: If $rss is the URL of a feed not yet on FWP's list of
+	 * subscribed feeds, then a new subscription will be added, using $name
+	 * as its initial title and $uri as its initial homepage URL (normally
+	 * these will be updated with new values taken from the feed, the first
+	 * time the new feed is checked for syndicated content, unless feed
+	 * settings prevent this). If $rss is the URL of a feed that is already
+	 * on FWP's list of subscribed feeds, then that feed will be updated to
+	 * use the title provided in $name and the homepage URL in $uri
+	 *
+	 * @param string $name The human-readable title of the feed (for example, "Rad Geek People's Daily")
+	 * @param string $uri The URI for the human-readable homepage associated with the feed (for example, <http://radgeek.com/>)
+	 * @param string $rss The URI for the feed itself (for example, <http://radgeek.com/feed/>)
+	 *
+	 * @return mixed Returns an int with the numeric ID of the new
+	 *   subscription's wp_links record if successful or a WP_Error object
+	 *   if wp_insert_link() failed.
+	 *
+	 * @uses FeedWordPress::link_category_id()
+	 * @uses FeedWordPress::find_link()
+	 * @uses is_wp_error()
+	 * @uses wp_insert_link()
+	 *
+	 */
 	public static function syndicate_link ($name, $uri, $rss) {
 		// Get the category ID#
 		$cat_id = FeedWordPress::link_category_id();
@@ -1610,14 +1639,14 @@ class FeedWordPress {
 		if (!is_string($uri) or strlen($uri)<1) : $uri = $rss; endif;
 
 		// Check if this feed URL is already being syndicated.
-		$link_id = wp_insert_link(array(
+		$link_id = wp_insert_link(/*linkdata=*/ array(
 		"link_id" => FeedWordPress::find_link($rss), // insert if nothing was found; else update
 		"link_rss" => $rss,
 		"link_name" => $name,
 		"link_url" => $uri,
 		"link_category" => $link_category,
 		"link_visible" => 'Y', // reactivate if inactivated
-		));
+		), /*wp_error=*/ true);
 
 		return $link_id;
 	} /* function FeedWordPress::syndicate_link() */
