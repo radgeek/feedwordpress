@@ -28,7 +28,7 @@ class FeedWordPress_Walker_Category_Checklist extends Walker_Category_Checklist 
 		$this->taxonomy = $taxonomy;
 	}
 
-	function start_el( &$output, $category, $depth = 0, $args = array(), $current_object_id = 0 ) {
+	function start_el (&$output, $category, $depth = 0, $args = array(), $id = 0) {
 		extract($args);
                if ( empty($taxonomy) ) :
 			$taxonomy = 'category';
