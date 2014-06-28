@@ -9,19 +9,15 @@
 
 class InspectPostMeta {
 	function InspectPostMeta ($in_hook = true) {
-		if (!$in_hook) :
-			add_action('admin_menu', array($this, 'add_meta_box'));
-		else :
-			$this->add_meta_box();
-		endif;
+		add_action('add_meta_boxes', array($this, 'add_meta_boxes'), 10, 2);
 	}
 	
-	function add_meta_box () {
+	function add_meta_boxes ($post_type, $post) {
 		add_meta_box(
 			/*id=*/ 'inspect_post_guid_box',
 			/*title=*/ 'Post GUID and Meta Data',
 			/*callback=*/ array($this, 'meta_box'),
-			/*page=*/ 'post',
+			/*page=*/ $post_type,
 			/*context=*/ 'normal',
 			/*priority=*/ 'default'
 		);
