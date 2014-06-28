@@ -1539,7 +1539,7 @@ class FeedWordPress {
 		if (!$post->is_exposed_to_formatting_filters()) :
 			// Disable visual editor and only allow operations
 			// directly on HTML if post is bypassing fmt filters
-			$rich_edit = false;
+			# $rich_edit = false;
 		endif;
 
 		return $rich_edit;
