@@ -1287,9 +1287,10 @@ class SyndicatedPost {
 				// Presume there is nothing new until we find
 				// something new.
 				$updated = false;
-
+				$live = false;
+				
 				// Pull the list of existing revisions to get
-				// timestamps.				
+				// timestamps.
 				$revisions = wp_get_post_revisions($old_post->ID);
 				foreach ($revisions as $rev) :
 					$revisions_ts[] = mysql2date('G', $rev->post_modified_gmt); 
@@ -1336,6 +1337,13 @@ class SyndicatedPost {
 					endif;
 
 					if ($updated and FeedWordPress::diagnostic_on('feed_items:freshness:reasons')) :
+						// In the absence of definitive
+						// timestamp information, we
+						// just have to assume that a
+						// hash we haven't seen before
+						// is a newer version.
+						$live = true;
+
 						$updatedReason = ' has a not-yet-seen update hash: '
 						.FeedWordPress::val($hash)
 						.' not in {'
