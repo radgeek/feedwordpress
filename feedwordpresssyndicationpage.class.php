@@ -1051,10 +1051,7 @@ function fwp_dashboard_update_if_requested ($object) {
 		echo "</ul>\n";
 
 		if (!is_null($tdelta)) :
-			$mesg = array();
-			if (isset($delta['new'])) : $mesg[] = ' '.$tdelta['new'].' new posts were syndicated'; endif;
-			if (isset($delta['updated'])) : $mesg[] = ' '.$tdelta['updated'].' existing posts were updated'; endif;
-			echo "<p>Update complete.".implode(' and', $mesg)."</p>";
+			echo "<p><strong>Update complete.</strong>".fwp_update_set_results_message($delta)."</p>";
 			echo "\n"; flush();
 		endif;
 		echo "</div> <!-- class=\"updated\" -->\n";

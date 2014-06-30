@@ -1250,11 +1250,12 @@ class SyndicatedPost {
 	 * still up-to-date.
 	 *
 	 * @return int A status code representing the freshness of the post
+	 *	-1 = post already syndicated; has a revision that needs to be stored, but not updated to
 	 *	0 = post already syndicated; no update needed
 	 *	1 = post already syndicated, but needs to be updated to latest
 	 *	2 = post has not yet been syndicated; needs to be created
 	 */
-	function freshness () {
+	function freshness ($format = 'number') {
 		global $wpdb;
 
 		if ($this->filtered()) : // This should never happen.
@@ -1283,17 +1284,34 @@ class SyndicatedPost {
 				$this->_wp_id = NULL;
 				$this->_freshness = 2; // New content
 			else :
-				preg_match('/([0-9]+)-([0-9]+)-([0-9]+) ([0-9]+):([0-9]+):([0-9]+)/', $old_post->post_modified_gmt, $backref);
+				// Presume there is nothing new until we find
+				// something new.
+				$updated = false;
 
-				$last_rev_ts = gmmktime($backref[4], $backref[5], $backref[6], $backref[2], $backref[3], $backref[1]);
+				// Pull the list of existing revisions to get
+				// timestamps.				
+				$revisions = wp_get_post_revisions($old_post->ID);
+				foreach ($revisions as $rev) :
+					$revisions_ts[] = mysql2date('G', $rev->post_modified_gmt); 
+				endforeach;
+
+				$revisions_ts[] = mysql2date('G', $old_post->post_modified_gmt);
+				$last_rev_ts = end($revisions_ts);
 				$updated_ts = $this->updated(/*fallback=*/ true, /*default=*/ NULL);
+				
+				// If we have an explicit updated timestamp,
+				// check that against existing stamps.
+				if (!is_null($updated_ts)) :
+					$updated = !in_array($updated_ts, $revisions_ts);
 
-				// Check timestamps...
-				$updated = (
-					!is_null($updated_ts)
-					and ($updated_ts > $last_rev_ts)
-				);
+					// If this a newer revision, make it go
+					// live. If an older one, just record
+					// the contents.
+					$live = ($updated and ($updated_ts > $last_rev_ts));
+				endif;
 
+				// This is a revision we haven't seen before, judging by the date.
+				
 				$updatedReason = NULL;
 				if ($updated) :
 					$updatedReason = preg_replace(
@@ -1304,6 +1322,9 @@ class SyndicatedPost {
 						.date('Y-m-d H:i:s', $last_rev_ts)
 						.')'
 					);
+
+				// The date does not indicate a new revision, so
+				// let's check the hash.
 				else :
 					// Or the hash...
 					$hash = $this->update_hash();
@@ -1338,7 +1359,7 @@ class SyndicatedPost {
 						$updatedReason = ' IS BLOCKED FROM BEING UPDATED BY A FEEDWORDPRESS UPDATE LOCK, EVEN THOUGH IT '.$updatedReason;
 					endif;
 				endif;
-				$updated = ($updated and !$frozen);
+				$live = ($live and !$frozen);
 
 				if ($updated) :
 					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$guid.'] "'.$this->entry->get_title().'" is an update of an existing post.');
@@ -1346,7 +1367,9 @@ class SyndicatedPost {
 						$updatedReason = preg_replace('/\s+/', ' ', $updatedReason);
 						FeedWordPress::diagnostic('feed_items:freshness:reasons', 'Item ['.$guid.'] "'.$this->entry->get_title().'" '.$updatedReason);
 					endif;
-					$this->_freshness = 1; // Updated content
+
+					$this->_freshness = apply_filters('syndicated_item_freshness', ($live ? 1 : -1), $updated, $frozen, $updated_ts, $last_rev_ts, $this);
+
 					$this->_wp_id = $old_post->ID;
 					$this->_wp_post = $old_post;
 
@@ -1363,9 +1386,88 @@ class SyndicatedPost {
 				endif;
 			endif;
 		endif;
-		return $this->_freshness;
+		
+		switch ($format) :
+		case 'status' :
+			switch ($this->_freshness) :
+			case -1:
+				$ret = 'stored';
+				break;
+			case 0:
+				$ret = NULL;
+				break;
+			case 1:
+				$ret = 'updated';
+				break;
+			case 2:
+			default:
+				$ret = 'new';
+				break;
+			endswitch;
+			break;
+		case 'number' :
+		default :
+			$ret = $this->_freshness;
+		endswitch;
+		
+		
+		return $ret;
+	} /* SyndicatedPost::freshness () */
+	
+	function has_fresh_content () {
+		return ( ! $this->filtered() and $this->freshness() != 0 );
+	} /* SyndicatedPost::has_fresh_content () */
+	
+	function this_revision_needs_original_post ($freshness = NULL) {
+		if (is_null($freshness)) :
+			$freshness = $this->freshness();
+		endif;
+		return ( $freshness >= 2 );
 	}
-
+	
+	function this_revision_is_current ($freshness = NULL) {
+		if (is_null($freshness)) :
+			$freshness = $this->freshness();
+		endif;
+		return ( $freshness >= 1 );
+	} /* SyndicatedPost::this_revision_is_current () */
+	
+	function fresh_content_is_update () {
+		return ($this->freshness() < 2);
+	} /* SyndicatedPost::fresh_content_is_update () */
+	
+	function fresh_storage_diagnostic () {
+		$ret = NULL;
+		switch ($this->freshness()) :
+		case -1 :
+			$ret = 'Storing alternate revision of existing post # '.$this->wp_id().', "'.$this->post['post_title'].'"';
+			break;
+		case 1 :
+			$ret = 'Updating existing post # '.$this->wp_id().', "'.$this->post['post_title'].'"';
+			break;
+		case 2 :
+		default :
+			$ret = 'Inserting new post "'.$this->post['post_title'].'"';
+			break;			
+		endswitch;
+		return $ret;
+	} /* SyndicatedPost::fresh_storage_diagnostic() */
+	
+	function fresh_storage_hook () {
+		$ret = NULL;
+		switch ($this->freshness()) :
+		case -1 :
+		case 1 :
+			$ret = 'update_syndicated_item';
+			break;
+		case 2 :
+		default :
+			$ret = 'post_syndicated_item';
+			break;
+		endswitch;
+		return $ret;
+	} /* SyndicatedPost::fresh_storage_hook () */
+	
 	#################################################
 	#### INTERNAL STORAGE AND MANAGEMENT METHODS ####
 	#################################################
@@ -1389,7 +1491,7 @@ class SyndicatedPost {
 		endif;
 
 		$freshness = $this->freshness();
-		if ($freshness > 0) :
+		if ($this->has_fresh_content()) :
 			# -- Look up, or create, numeric ID for author
 			$this->post['post_author'] = $this->author_id (
 				$this->link->setting('unfamiliar author', 'unfamiliar_author', 'create')
@@ -1401,7 +1503,9 @@ class SyndicatedPost {
 			endif;
 		endif;
 
-		if (!$this->filtered() and $freshness > 0) :
+		// We have to check again in case post has been filtered during
+		// the author_id lookup
+		if ($this->has_fresh_content()) :
 			$consider = array(
 				'category' => array('abbr' => 'cats', 'domain' => array('category', 'post_tag')),
 				'post_tag' => array('abbr' => 'tags', 'domain' => array('post_tag')),
@@ -1476,7 +1580,9 @@ class SyndicatedPost {
 			endif;
 		endif;
 
-		if (!$this->filtered() and $freshness > 0) :
+		// We have to check again in case the post has been filtered
+		// during the category/tags/taxonomy terms lookup
+		if ($this->has_fresh_content()) :
 			// Filter some individual fields
 
 			// If there already is a post slug (from syndication or by manual
@@ -1507,23 +1613,22 @@ class SyndicatedPost {
 			/*priority=*/ -10000, /* very early */
 			/*arguments=*/ 3
 		);
-
-		$retval = array(1 => 'updated', 2 => 'new');
-
+		
 		$ret = false;
-		if (!$this->filtered() and isset($retval[$freshness])) :
-			$diag = array(
-				1 => 'Updating existing post # '.$this->wp_id().', "'.$this->post['post_title'].'"',
-				2 => 'Inserting new post "'.$this->post['post_title'].'"',
-			);
-			FeedWordPress::diagnostic('syndicated_posts', $diag[$freshness]);
+		if ($this->has_fresh_content()) :
+			$diag = $this->fresh_storage_diagnostic();
+			if (!is_null($diag)) :
+				FeedWordPress::diagnostic('syndicated_posts', $diag);
+			endif;
+			
+			$this->insert_post(/*update=*/ $this->fresh_content_is_update(), $this->freshness());
 
-			$this->insert_post(/*update=*/ ($freshness == 1));
-
-			$hook = array(	1 => 'update_syndicated_item', 2 => 'post_syndicated_item' );
-			do_action($hook[$freshness], $this->wp_id(), $this);
-
-			$ret = $retval[$freshness];
+			$hook = $this->fresh_storage_hook();
+			if (!is_null($hook)) :
+				do_action($hook, $this->wp_id(), $this);
+			endif;
+			
+			$ret = $this->freshness('status');
 		endif;
 
 		// If this is a legit, non-filtered post, tag it as found on the feed
@@ -1551,7 +1656,7 @@ class SyndicatedPost {
 		return $ret;
 	} /* function SyndicatedPost::store () */
 
-	function insert_post ($update = false) {
+	function insert_post ($update = false, $freshness = 2) {
 		global $wpdb;
 
 		$dbpost = $this->normalize_post(/*new=*/ true);
@@ -1606,7 +1711,37 @@ class SyndicatedPost {
 				$dbpost['ID'] = $this->post['ID'];
 			endif;
 
-			$this->_wp_id = wp_insert_post($dbpost, /*return wp_error=*/ true);
+			// O.K., is this a new post? If so, we need to create
+			// the basic post record before we do anything else.
+			if ($this->this_revision_needs_original_post()) :
+				$this->_wp_id = wp_insert_post($dbpost, /*return wp_error=*/ true);
+				$dbpost['ID'] = $this->_wp_id;
+			endif;
+			
+			// Now that we've made sure the original exists, insert
+			// this version here as a revision.
+			$revision_id = _wp_put_post_revision($dbpost, /*autosave=*/ false);
+
+			if (!$this->this_revision_needs_original_post()) :
+			
+				if ($this->this_revision_is_current()) :
+
+					wp_restore_post_revision($revision_id);
+
+				else :
+
+					// If we do not activate this revision, then the
+					// add_rss_meta will not be called, which is
+					// more or less as it should be, but that means
+					// we have to actively record this revision's
+					// update hash from here.
+					$postId = $this->post['ID'];
+					$key = 'syndication_item_hash';
+					$hash = $this->update_hash();
+					FeedWordPress::diagnostic('syndicated_posts:meta_data', "Adding post meta-datum to post [$postId]: [$key] = ".FeedWordPress::val($hash, /*no newlines=*/ true));
+					add_post_meta(	$postId, $key, $hash, /*unique=*/ false );
+				endif;
+			endif;
 
 			remove_action(
 			/*hook=*/ 'transition_post_status',
@@ -1633,11 +1768,11 @@ class SyndicatedPost {
 	} /* function SyndicatedPost::insert_post () */
 
 	function insert_new () {
-		$this->insert_post(/*update=*/ false);
+		$this->insert_post(/*update=*/ false, 1);
 	} /* SyndicatedPost::insert_new() */
 
 	function update_existing () {
-		$this->insert_post(/*update=*/ true);
+		$this->insert_post(/*update=*/ true, 2);
 	} /* SyndicatedPost::update_existing() */
 
 	/**
@@ -1753,6 +1888,7 @@ EOM;
 		$post_author = (int) $this->post['post_author'];
 
 		$revision_id = (int) $revision_id;
+		
 		$wpdb->query("
 		UPDATE $wpdb->posts
 		SET post_author={$this->post['post_author']}

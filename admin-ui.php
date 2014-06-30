@@ -66,10 +66,7 @@ class FeedWordPressAdminPage {
 		print "</ul>";
 
 		if (!is_null($delta)) :
-			$mesg = array();
-			if (isset($delta['new'])) : $mesg[] = ' '.$delta['new'].' new posts were syndicated'; endif;
-			if (isset($delta['updated'])) : $mesg[] = ' '.$delta['updated'].' existing posts were updated'; endif;
-			echo "<p><strong>Update complete.</strong>".implode(' and', $mesg)."</p>";
+			echo "<p><strong>Update complete.</strong>".fwp_update_set_results_message($delta)."</p>";
 			echo "\n"; flush();
 		else :
 			$uri = esc_html($uri);
@@ -731,6 +728,18 @@ class FeedWordPressAdminPage {
 		<?php
 	}
 } /* class FeedWordPressAdminPage */
+
+function fwp_update_set_results_message ($delta, $joiner = ';') {
+	$mesg = array();
+	if (isset($delta['new'])) : $mesg[] = ' '.$delta['new'].' new posts were syndicated'; endif;
+	if (isset($delta['updated']) and ($delta['updated'] != 0)) : $mesg[] = ' '.$delta['updated'].' existing posts were updated'; endif;
+	if (isset($delta['stored']) and ($delta['stored'] != 0)) : $mesg[] = ' '.$delta['stored'].' alternate versions of existing posts were stored for reference'; endif;
+
+	if (!is_null($joiner)) :
+		$mesg = implode($joiner, $mesg);
+	endif;
+	return $mesg;
+} /* function fwp_update_set_results_message () */
 
 function fwp_authors_single_submit ($link = NULL) {
 ?>

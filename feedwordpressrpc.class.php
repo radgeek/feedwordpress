@@ -24,11 +24,8 @@ class FeedWordPressRPC {
 		if (is_null($delta)):
 			return array('flerror' => true, 'message' => "Sorry. I don't syndicate <$args[1]>.");
 		else:
-			$mesg = array();
-			if (isset($delta['new'])) { $mesg[] = ' '.$delta['new'].' new posts were syndicated'; }
-			if (isset($delta['updated'])) { $mesg[] = ' '.$delta['updated'].' existing posts were updated'; }
-	
-			return array('flerror' => false, 'message' => "Thanks for the ping.".implode(' and', $mesg));
+		$mesg = array();
+			return array('flerror' => false, 'message' => "Thanks for the ping.".fwp_update_set_results_message($delta));
 		endif;
 	}
 	

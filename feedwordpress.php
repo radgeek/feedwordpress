@@ -1118,8 +1118,10 @@ class FeedWordPress {
 				$timely = $feed->stale();
 			endif;
 
-			if ($pinged_that and is_null($delta)) :		// If at least one feed was hit for updating...
-				$delta = array('new' => 0, 'updated' => 0);	// ... don't return error condition
+			// If at least one feed was hit for updating...
+			if ($pinged_that and is_null($delta)) :
+				// ... don't return error condition
+				$delta = array('new' => 0, 'updated' => 0, 'stored' => 0);
 			endif;
 
 			if ($pinged_that and $timely) :
@@ -1131,14 +1133,14 @@ class FeedWordPress {
 				do_action('feedwordpress_check_feed_complete', $feed->settings, $added, time() - $start_ts);
 
 				if (is_array($added)) : // Success
-					if (isset($added['new'])) : $delta['new'] += $added['new']; endif;
-					if (isset($added['updated'])) : $delta['updated'] += $added['updated']; endif;
+					foreach ($added as $key => $count) :
+						$delta[$key] += $added[$key];
+					endforeach;
 				endif;
 			endif;
 		endforeach;
 
 		do_action('feedwordpress_update_complete', $delta);
-
 		return $delta;
 	} /* FeedWordPress::update () */
 
