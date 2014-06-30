@@ -251,7 +251,7 @@ class SyndicatedLink {
 			$crashed = false;
 
 			$posts = $this->live_posts();
-
+			
 			$this->magpie->originals = $posts;
 
 			// If this is a complete feed, rather than an incremental feed, we

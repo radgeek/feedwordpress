@@ -134,12 +134,12 @@ class SyndicatedPost {
 			// This just gives us an alphanumeric name for the author.
 			// We look up (or create) the numeric ID for the author
 			// in SyndicatedPost::add().
-
+			
 			$this->post['post_content'] = apply_filters(
 				'syndicated_item_content',
 				$this->content(), $this
 			);
-
+			
 			$excerpt = apply_filters('syndicated_item_excerpt', $this->excerpt(), $this);
 			if (!empty($excerpt)):
 				$this->post['post_excerpt'] = $excerpt;
@@ -1660,6 +1660,7 @@ class SyndicatedPost {
 		global $wpdb;
 
 		$dbpost = $this->normalize_post(/*new=*/ true);
+
 		if (!is_null($dbpost)) :
 			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
 
@@ -1714,7 +1715,13 @@ class SyndicatedPost {
 			// O.K., is this a new post? If so, we need to create
 			// the basic post record before we do anything else.
 			if ($this->this_revision_needs_original_post()) :
-				$this->_wp_id = wp_insert_post($dbpost, /*return wp_error=*/ true);
+				// *sigh*, for handling inconsistent slash expectations < 3.6
+				$sdbpost = $this->db_sanitize_post($dbpost);
+				
+				// Go ahead and insert the first post record to
+				// anchor the revision history.
+				$this->_wp_id = wp_insert_post($sdbpost, /*return wp_error=*/ true);
+				
 				$dbpost['ID'] = $this->_wp_id;
 			endif;
 			
@@ -1808,18 +1815,29 @@ class SyndicatedPost {
 		// Normalize the guid if necessary.
 		$out['guid'] = SyndicatedPost::normalize_guid($out['guid']);
 
-		// Why the fuck doesn't wp_insert_post already do this?
-		foreach ($out as $key => $value) :
-			if (is_string($value)) :
-				$out[$key] = esc_sql($value);
-			else :
-				$out[$key] = $value;
-			endif;
-		endforeach;
-
 		return $out;
 	}
 
+	function db_sanitize_post ($out) {
+		// < 3.6. Core API, including wp_insert_post(), will expect
+		// properly slashed data. If wp_slash() exists, then this is
+		// after the big change-over, and wp_insert_post() etc. will
+		// expect *un*-slashed data.
+		if (!function_exists('wp_slash')) :
+		
+			foreach ($out as $key => $value) :
+				if (is_string($value)) :
+					$out[$key] = esc_sql($value);
+				else :
+					$out[$key] = $value;
+				endif;
+			endforeach;
+
+		endif;
+
+		return $out;
+	}
+	
 	/**
 	 * SyndicatedPost::validate_post_id()
 	 *
