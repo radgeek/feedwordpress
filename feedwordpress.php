@@ -216,6 +216,7 @@ if (!$feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
 
 	add_action('init', array($feedwordpress, 'init'));
 	add_action('shutdown', array($feedwordpress, 'email_diagnostic_log'));
+	add_action('shutdown', array($feedwordpress, 'feedwordpress_cleanup'));
 	add_action('wp_dashboard_setup', array($feedwordpress, 'dashboard_setup'));
 
 	# Default sanitizers
@@ -223,6 +224,8 @@ if (!$feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
 	add_filter('syndicated_item_content', array('SyndicatedPost', 'sanitize_content'), 0, 2);
 
 	add_action('plugins_loaded', array($feedwordpress, 'admin_api'));
+	add_action('all_admin_notices', array($feedwordpress, 'all_admin_notices'));
+
 else :
 	# Hook in the menus, which will just point to the upgrade interface
 	add_action('admin_menu', 'fwp_add_pages');
@@ -950,6 +953,8 @@ class FeedWordPress {
 			endif;
 		endforeach; endif;
 
+		add_filter('feedwordpress_update_complete', array($this, 'process_retirements'), 1000, 1);
+
 		$this->httpauth = new FeedWordPressHTTPAuthenticator;
 	} /* FeedWordPress::__construct () */
 
@@ -1273,10 +1278,172 @@ class FeedWordPress {
 
 			// If so, disable the trashcan.
 			define('EMPTY_TRASH_DAYS', 0);
+			
+		elseif (MyPHP::request('fwp_post_delete')=='zap' OR MyPHP::request('fwp_post_delete') == 'unzap') :
+			// Get post ID #
+			$post_id = MyPHP::request('post');
+			if (!$post_id) :
+				$post_id = MyPHP::request('post_ID');
+			endif;
+			
+			// Make sure we've got the right nonce and all that
+			check_admin_referer('delete-post_' . $post_id);
+
+			$sendback = wp_get_referer();
+			if (
+				! $sendback
+				or strpos( $sendback, 'post.php' ) !== false
+				or strpos( $sendback, 'post-new.php' ) !== false
+			) :
+				if ( 'attachment' == $post_type ) :
+					$sendback = admin_url( 'upload.php' );
+				else :
+					$sendback = admin_url( 'edit.php' );
+					$sendback .= ( ! empty( $post_type ) ) ? '?post_type=' . $post_type : '';
+				endif;
+			else :
+				$sendback = remove_query_arg( array('trashed', 'untrashed', 'deleted', 'zapped', 'unzapped', 'ids'), $sendback );
+			endif;
+
+			// Make sure we have a post corresponding to this ID.
+			$post = $post_type = $post_type_object = null;
+			if ( $post_id ) :
+				$post = get_post( $post_id );
+			endif;
+			
+			if ( $post ) :
+				$post_type = $post->post_type;
+				$post_type_object = get_post_type_object( $post_type );
+			endif;
+			$p = get_post($post_id);
+
+			if ( ! $post ) :
+				wp_die( __( 'The item you are trying to zap no longer exists.' ) );
+			endif;
+			
+			if ( ! $post_type_object ) :
+				wp_die( __( 'Unknown post type.' ) );
+			endif;
+			
+			if ( ! current_user_can( 'delete_post', $post_id ) ) :
+				wp_die( __( 'You are not allowed to zap this item.' ) );
+			endif;
+			
+			#if ( $user_id = wp_check_post_lock( $post_id ) ) :
+			#	$user = get_userdata( $user_id );
+			#	wp_die( sprintf( __( 'You cannot retire this item. %s is currently editing.' ), $user->display_name ) );
+			#endif;
+		
+			if (MyPHP::request('fwp_post_delete')=='zap') :
+				FeedWordPress::diagnostic('syndicated_posts', 'Zapping existing post # '.$p->ID.' "'.$p->post_title.'" due to user request.');
+				
+				$old_status = $post->post_status;
+				set_post_field('post_status', 'fwpzapped', $post_id);
+				wp_transition_post_status('fwpzapped', $old_status, $post);
+
+				# Set up the post to have its content blanked on
+				# next update if you do not undo the zapping.
+				add_post_meta($post_id, '_feedwordpress_zapped_blank_me', 1, /*unique=*/ true);
+				add_post_meta($post_id, '_feedwordpress_zapped_blank_old_status', $old_status, /*unique=*/ true);
+
+				wp_redirect( add_query_arg( array('zapped' => 1, 'ids' => $post_id), $sendback ) );
+
+			else :
+				$old_status = get_post_meta($post_id, '_feedwordpress_zapped_blank_old_status', /*single=*/ true);
+				
+				set_post_field('post_status', $old_status, $post_id);
+				wp_transition_post_status($old_status, 'fwpzapped', $post);
+				
+				# O.K., make sure this post does not get blanked
+				delete_post_meta($post_id, '_feedwordpress_zapped_blank_me');
+				delete_post_meta($post_id, '_feedwordpress_zapped_blank_old_status');
+
+				wp_redirect( add_query_arg( array('unzapped' => 1, 'ids' => $post_id), $sendback ) );
+
+			endif;
+				
+			// Intercept, don't pass on.
+			exit;
+				
 		endif;
 
 	} /* FeedWordPress::admin_api () */
 
+	public function all_admin_notices () {
+		if (MyPHP::request('zapped')) :
+			$n = intval(MyPHP::request('zapped'));
+?>
+<div id="message" class="updated"><p><?php print $n; ?> syndicated item<?php print ($n!=1?'s':''); ?> zapped. <strong>These items will not be re-syndicated.</strong> If this was a mistake, you must <strong>immediately</strong> Un-Zap them in the Zapped items section to avoid losing the data.</p></div>
+<?php
+		endif;
+		
+		if (MyPHP::request('unzapped')) :
+			$n = intval(MyPHP::request('unzapped'));
+?>
+<div id="message" class="updated"><p><?php print $n; ?> syndicated item<?php print ($n!=1?'s':'') ?> un-zapped and restored to normal.</p></div>
+<?php
+		endif;
+	} /* FeedWordPress::all_admin_notices () */
+	
+	public function process_retirements ($delta) {
+		update_option('feedwordpress_process_zaps', 1);
+
+		return $delta;
+	}
+	
+	public function feedwordpress_cleanup () {
+		if (get_option('feedwordpress_process_zaps', null)) :
+			$q = new WP_Query(array(
+			'fields' => '_synfrom',
+			'post_status' => 'fwpzapped',
+			'ignore_sticky_posts' => true,
+			'meta_key' => '_feedwordpress_zapped_blank_me',
+			'meta_value' => 1,
+			));
+			
+			if ($q->have_posts()) :
+				foreach ($q->posts as $p) :
+
+					$post_id = $p->ID;
+					$revisions = wp_get_post_revisions($post_id, array("check_enabled" => false));
+				
+					# Now nuke the content of the post & its revisions
+					set_post_field('post_content', '', $post_id);
+					set_post_field('post_excerpt', '', $post_id);
+				
+					foreach ($revisions as $rev) :
+						set_post_field('post_content', '', $rev->ID);
+						set_post_field('post_excerpt', '', $rev->ID);
+					endforeach;
+					
+					# Un-tag it for blanking.
+					delete_post_meta($p->ID, '_feedwordpress_zapped_blank_me');
+	
+					# Don't remove old_status indicator. A later
+					# update from the feed may cause us to once
+					# again have some content so we can un-zap.
+				
+				endforeach;
+			endif;
+			
+			$q = new WP_Query(array(
+			'fields' => '_synfrom',
+			'post_status' => 'fwpzapped',
+			'ignore_sticky_posts' => true,
+			'meta_key' => '_feedwordpress_zapped_blank_me',
+			'meta_value' => 2,
+			));
+	
+			if ($q->have_posts()) :
+				foreach ($q->posts as $p) :
+					update_post_meta($p->ID, '_feedwordpress_zapped_blank_me', 1);
+				endforeach;
+			endif;
+	
+			update_option('feedwordpress_process_zaps', 0);
+		endif;
+	} /* FeedWordPress::feedwordpress_cleanup () */
+	
 	public function init () {
 		global $fwp_path;
 
@@ -1299,10 +1466,21 @@ class FeedWordPress {
 			endif;*/
 		endif;
 
-		// This is a special post status for hiding posts that have expired
+		// These are a special post statuses for hiding posts that have
+		// expired from the feed or been marked for permanent zapping by
+		// the FWP admin.
 		register_post_status('fwpretired', array(
 		'label' => _x('Retired', 'post'),
 		'label_count' => _n_noop('Retired <span class="count">(%s)</span>', 'Retired <span class="count">(%s)</span>'),
+		'exclude_from_search' => true,
+		'public' => false,
+		'publicly_queryable' => false,
+		'show_in_admin_all_list' => false,
+		'show_in_admin_status_list' => true,
+		));
+		register_post_status('fwpzapped',  array(
+		'label' => _x('Zapped', 'post'),
+		'label_count' => _n_noop('Zapped <span class="count">(%s)</span>', 'Retired <span class="count">(%s)</span>'),
 		'exclude_from_search' => true,
 		'public' => false,
 		'publicly_queryable' => false,
@@ -1430,7 +1608,10 @@ class FeedWordPress {
 	public function redirect_retired () {
 		global $wp_query;
 		if (is_singular()) :
-			if ('fwpretired'==$wp_query->post->post_status) :
+			if (
+				'fwpretired'==$wp_query->post->post_status
+				or 'fwpzapped'==$wp_query->post->post_status
+			) :
 				do_action('feedwordpress_redirect_retired', $wp_query->post);
 
 				if (!($template = get_404_template())) :
@@ -1448,25 +1629,48 @@ class FeedWordPress {
 	public function row_actions ($actions, $post) {
 		if (is_syndicated($post->ID)) :
 			$link = get_delete_post_link($post->ID, '', true);
-			$link = MyPHP::url($link, array("fwp_post_delete" => "nuke"));
+			$eraseLink = MyPHP::url($link, array("fwp_post_delete" => "nuke"));
 
 			$caption = 'Erase the record of this post (will be re-syndicated if it still appears on the feed).';
 			$linktext = 'Erase/Resyndicate';
-
+			
+			if ($post->post_status == 'fwpzapped') :
+				if (count(get_post_meta($post->ID, '_feedwordpress_zapped_blank_me')) > 0) :
+					$retireCap = 'Un-Zap this syndicated post (so it will appear on the site again)';
+					$retireText = 'Un-Zap &amp; Restore';
+					$retireLink = MyPHP::url($link, array("fwp_post_delete" => "unzap"));
+				else :
+					// No Un-Zap link for posts that have
+					// been blanked. You'll just have to
+					// Erase and hope you can resyndicate...
+					$retireLink = NULL;
+				endif;
+			else :
+				$retireCap = 'Zap this syndicated post (so it will not be re-syndicated if it still appears on the feed).';
+				$retireText = 'Zap/Don&#8217;t Resyndicate';
+				$retireLink = MyPHP::url($link, array("fwp_post_delete" => "zap"));
+			endif;
+			
 			$keys = array_keys($actions);
 			$links = array();
 			foreach ($keys as $key) :
 				$links[$key] = $actions[$key];
 
 				if ('trash'==$key) :
-					$links[$key] = "<a class='submitdelete' title='" . esc_attr( __( 'Move this item to the Trash (will NOT be re-syndicated)' ) ) . "' href='" . get_delete_post_link( $post->ID ) . "'>" . __( 'Trash/Don&#8217;t Resyndicate' ) . "</a>";
+					#$links[$key] = "<a class='submitdelete' title='" . esc_attr( __( 'Move this item to the Trash (will NOT be re-syndicated)' ) ) . "' href='" . get_delete_post_link( $post->ID ) . "'>" . __( 'Trash' ) . "</a>";
 
 					// Placeholder.
+					if (!is_null($retireLink)) :
+						$links['zap'] = '';
+					endif;
 					$links['delete'] = '';
 				endif;
 			endforeach;
 
-			$links['delete'] = '<a class="submitdelete" title="'.esc_attr(__($caption)).'" href="' . $link . '">' . __($linktext) . '</a>';
+			if (!is_null($retireLink)) :
+				$links['zap'] = '<a class="retire" title="'.esc_attr(__($retireCap)).'" href="' . $retireLink . '">' . __($retireText) . '</a>';
+			endif;
+			$links['delete'] = '<a class="submitdelete" title="'.esc_attr(__($caption)).'" href="' . $eraseLink . '">' . __($linktext) . '</a>';
 
 			$actions = $links;
 		endif;

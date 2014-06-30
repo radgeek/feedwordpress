@@ -256,7 +256,7 @@ class SyndicatedLink {
 
 			// If this is a complete feed, rather than an incremental feed, we
 			// need to prepare to mark everything for presumptive retirement.
-			if ($this->is_incremental()) :
+			if ($this->is_non_incremental()) :
 				$q = new WP_Query(array(
 				'fields' => '_synfrom',
 				'post_status__not' => 'fwpretired',
@@ -377,6 +377,7 @@ class SyndicatedLink {
 				delete_post_meta($p->ID, '_feedwordpress_retire_me_'.$this->id);
 			endforeach;
 		endif;
+
 		return $delta;
 	}
 
@@ -709,9 +710,9 @@ class SyndicatedLink {
 		endif;
 	} /* SyndicatedLink::update_setting () */
 
-	function is_incremental () {
+	function is_non_incremental () {
 		return ('complete'==$this->setting('update_incremental', 'update_incremental', 'incremental'));
-	} /* SyndicatedLink::is_incremental () */
+	} /* SyndicatedLink::is_non_incremental () */
 
 	function uri ($params = array()) {
 		$params = wp_parse_args($params, array(

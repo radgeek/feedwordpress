@@ -1631,17 +1631,21 @@ class SyndicatedPost {
 			$ret = $this->freshness('status');
 		endif;
 
-		// If this is a legit, non-filtered post, tag it as found on the feed
-		// regardless of fresh or stale status
+		// If this is a legit, non-filtered post, tag it as found on the
+		// feed regardless of fresh or stale status
 		if (!$this->filtered()) :
 			$key = '_feedwordpress_retire_me_' . $this->link->id;
 			delete_post_meta($this->wp_id(), $key);
 
 			$status = get_post_field('post_status', $this->wp_id());
-			if ('fwpretired'==$status and $this->link->is_incremental()) :
+			if ('fwpretired'==$status and $this->link->is_non_incremental()) :
 				FeedWordPress::diagnostic('syndicated_posts', "Un-retiring previously retired post # ".$this->wp_id()." due to re-appearance on non-incremental feed.");
 				set_post_field('post_status', $this->post['post_status'], $this->wp_id());
-				wp_transition_post_status($this->post['post_status'], $status, $old_status, $this->post);
+				wp_transition_post_status($this->post['post_status'], $status, $this->post);
+			elseif ('fwpzapped'==$status) :
+				// Set this new revision up to be
+				// blanked on the next update.
+				add_post_meta($this->wp_id(), '_feedwordpress_zapped_blank_me', 2, /*single=*/ true);
 			endif;
 		endif;
 
