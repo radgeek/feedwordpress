@@ -1930,14 +1930,14 @@ EOM;
 	} /* SyndicatedPost::validate_post_id() */
 
 	/**
-	 * SyndicatedPost::fix_revision_meta() - Fixes the way WP 2.6+ fucks up
-	 * meta-data (authorship, etc.) when storing revisions of an updated
-	 * syndicated post.
+	 * SyndicatedPost::fix_revision_meta() - Ensures that we get the meta
+	 * data (authorship, guid, etc.) that we want when storing revisions of
+	 * a syndicated post.
 	 *
-	 * In their infinite wisdom, the WordPress coders have made it completely
-	 * impossible for a plugin that uses wp_insert_post() to set certain
-	 * meta-data (such as the author) when you store an old revision of an
-	 * updated post. Instead, it uses the WordPress defaults (= currently
+	 * In their infinite wisdom, the WordPress coders seem to have made it
+	 * completely impossible for a plugin that uses wp_insert_post() to set
+	 * certain meta-data (such as the author) when you store an old revision
+	 * of an updated post. Instead, it uses the WordPress defaults (= cur.
 	 * active user ID if the process is running with a user logged in, or
 	 * = #0 if there is no user logged in). This results in bogus authorship
 	 * data for revisions that are syndicated from off the feed, unless we
@@ -1953,11 +1953,15 @@ EOM;
 
 		$revision_id = (int) $revision_id;
 		
-		$wpdb->query("
-		UPDATE $wpdb->posts
-		SET post_author={$this->post['post_author']}
-		WHERE post_type = 'revision' AND ID='$revision_id'
-		");
+		// Let's fix the author.
+		set_post_field('post_author', $this->post['post_author'], $revision_id);
+		
+		// Let's fix the GUID to a dummy URL with the update hash.
+		set_post_field('guid', 'http://feedwordpress.radgeek.com/?rev='.$this->update_hash(), $revision_id);
+
+		// Let's fire an event for add-ons and filters
+		do_action('syndicated_post_fix_revision_meta', $revision_id, $this);
+		
 	} /* SyndicatedPost::fix_revision_meta () */
 
 	/**
