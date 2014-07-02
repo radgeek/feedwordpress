@@ -580,18 +580,52 @@ class SyndicatedPost {
 		return array_unique($ns);
 	} /* SyndicatedPost::xpath_possible_namespaces() */
 
-	function content () {
+	function content ($params = array()) {
+		$params = wp_parse_args($params, array(
+		"full only" => false, 
+		));
+		
 		$content = NULL;
+		
+		// FIXME: This is one of the main places in the code still using
+		// the outmoded SimplePie - to - Magpie construction. We could
+		// replace using SimplePie_Item::get_tags() here. (Or if really
+		// ambitious we could attempt to just use
+		// SimplePie_Item::get_content() with content-only set to TRUE
+		// and some sanitization in effect. -CJ 1jul14
+		
+		// atom:content, standard method of providing full HTML content
+		// in Atom feeds.
 		if (isset($this->item['atom_content'])) :
 			$content = $this->item['atom_content'];
+		elseif (isset($this->item['atom']['atom_content'])) :
+			$content = $this->item['atom']['atom_content'];
+		
+		// Some exotics: back in the day, before widespread convergence
+		// on content:encoding, some RSS feeds took advantage of XML
+		// namespaces to use an inline xhtml:body or xhtml:div element
+		// for full-content HTML. (E.g. Sam Ruby's feed, IIRC.)
 		elseif (isset($this->item['xhtml']['body'])) :
 			$content = $this->item['xhtml']['body'];
 		elseif (isset($this->item['xhtml']['div'])) :
 			$content = $this->item['xhtml']['div'];
+		
+		// content:encoded, most common method of providing full HTML in
+		// RSS 2.0 feeds.
 		elseif (isset($this->item['content']['encoded']) and $this->item['content']['encoded']):
 			$content = $this->item['content']['encoded'];
-		elseif (isset($this->item['description'])) :
-			$content = $this->item['description'];
+		
+		// Fall back on elements that sometimes may contain full HTML
+		// but sometimes not.
+		elseif (!$params['full only']) :
+		
+			// description element is sometimes used for full HTML
+			// sometimes for summary text in RSS. (By the letter of
+			// the standard, it should just be for summary text.)
+			if (isset($this->item['description'])) :
+				$content = $this->item['description'];
+			endif;
+			
 		endif;
 		return $content;
 	} /* SyndicatedPost::content() */
