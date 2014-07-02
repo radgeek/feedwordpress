@@ -973,5 +973,111 @@ class SyndicatedLink {
 		return get_object_taxonomies(array('object_type' => $post_type), 'names');
 	} /* SyndicatedLink::taxonomies () */
 
+	/**
+	 * category_ids: look up (and create) category ids from a list of
+	 * categories
+	 *
+	 * @param array $cats
+	 * @param string $unfamiliar_category
+	 * @param array|null $taxonomies
+	 * @return array
+	 */
+	function category_ids ($post, $cats, $unfamiliar_category = 'create', $taxonomies = NULL, $params = array()) {
+		$singleton = (isset($params['singleton']) ? $params['singleton'] : true);
+		$allowFilters = (isset($params['filters']) ? $params['filters'] : false);
+
+		$catTax = 'category';
+
+		if (is_null($taxonomies)) :
+			$taxonomies = array('category');
+		endif;
+
+		// We need to normalize whitespace because (1) trailing
+		// whitespace can cause PHP and MySQL not to see eye to eye on
+		// VARCHAR comparisons for some versions of MySQL (cf.
+		// <http://dev.mysql.com/doc/mysql/en/char.html>), and (2)
+		// because I doubt most people want to make a semantic
+		// distinction between 'Computers' and 'Computers  '
+		$cats = array_map('trim', $cats);
+
+		$terms = array();
+		foreach ($taxonomies as $tax) :
+			$terms[$tax] = array();
+		endforeach;
+
+		foreach ($cats as $cat_name) :
+			if (strlen(trim($cat_name)) < 1) :
+				continue;
+			endif;
+
+			$oTerm = new SyndicatedPostTerm($cat_name, $taxonomies, $post);
+
+			if ($oTerm->is_familiar()) :
+
+				$tax = $oTerm->taxonomy();
+				if (!isset($terms[$tax])) :
+					$terms[$tax] = array();
+				endif;
+				$terms[$tax][] = $oTerm->id();
+
+			else :
+
+				if ('tag'==$unfamiliar_category) :
+					$unfamiliar_category = 'create:post_tag';
+				endif;
+
+				if (preg_match('/^create(:(.*))?$/i', $unfamiliar_category, $ref)) :
+					$tax = $catTax; // Default
+
+					if (isset($ref[2])
+					and strlen($ref[2]) > 2) :
+						$tax = $ref[2];
+					endif;
+
+					$inserted = $oTerm->insert($tax);
+					if (!is_null($inserted)) :
+						if (!isset($terms[$tax])) :
+							$terms[$tax] = array();
+						endif;
+						$terms[$tax][] = $inserted;
+					else :
+
+					endif; // !is_null($inserted)
+				endif; // preg_match(...)
+
+			endif; /* ($oTerm->is_familiar()) */
+		endforeach;
+
+		$filtersOn = $allowFilters;
+		if ($allowFilters) :
+			$filters = array_filter(
+				$this->setting('match/filter', 'match_filter', array()),
+				'remove_dummy_zero'
+			);
+			$filtersOn = ($filtersOn and is_array($filters) and (count($filters) > 0));
+		endif;
+
+		// Check for filter conditions
+		foreach ($terms as $tax => $term_ids) :
+			if ($filtersOn
+			and (count($term_ids)==0)
+			and in_array($tax, $filters)) :
+				$terms = NULL; // Drop the post
+				break;
+			else :
+				$terms[$tax] = array_unique($term_ids);
+			endif;
+		endforeach;
+
+		if ($singleton and count($terms)==1) : // If we only searched one, just return the term IDs
+			$terms = end($terms);
+		endif;
+
+		FeedWordPress::diagnostic(
+			'syndicated_posts:categories',
+			'Category: MAPPED term names '.json_encode($cats).' to IDs: '.json_encode($terms)
+		);
+		return $terms;
+	} /* SyndicatedLink::category_ids () */
 } // class SyndicatedLink
 

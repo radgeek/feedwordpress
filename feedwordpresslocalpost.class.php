@@ -1,8 +1,9 @@
 <?php
 
 class FeedWordPressLocalPost {
-	private $post;
-
+	public $post;
+	public $link;
+	
 	public function __construct ($p = NULL) {
 		global $post;
 		
@@ -92,7 +93,8 @@ class FeedWordPressLocalPost {
 
 	public function feed () {
 		global $feedwordpress;
-		return $feedwordpress->subscription($this->feed_id());
+		$this->link = $feedwordpress->subscription($this->feed_id());
+		return $this->link;
 	}
 	
 	public function feed_id () {
