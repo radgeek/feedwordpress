@@ -1635,9 +1635,10 @@ class FeedWordPress {
 			$link = get_delete_post_link($post->ID, '', true);
 			$eraseLink = MyPHP::url($link, array("fwp_post_delete" => "nuke"));
 
-			$caption = 'Erase the record of this post (will be re-syndicated if it still appears on the feed).';
-			$linktext = 'Erase/Resyndicate';
+			$caption = apply_filters('feedwordpress_ui_erase_link_caption', __('Erase the record of this post (will be re-syndicated if it still appears on the feed).'));
+			$linktext = apply_filters('feedwordpress_ui_erase_link_text', __('Erase/Resyndicate'));
 			
+			$retireClass = NULL;
 			if ($post->post_status == 'fwpzapped') :
 				if (count(get_post_meta($post->ID, '_feedwordpress_zapped_blank_me')) > 0) :
 					$retireCap = 'Un-Zap this syndicated post (so it will appear on the site again)';
@@ -1650,9 +1651,10 @@ class FeedWordPress {
 					$retireLink = NULL;
 				endif;
 			else :
-				$retireCap = 'Zap this syndicated post (so it will not be re-syndicated if it still appears on the feed).';
-				$retireText = 'Zap/Don&#8217;t Resyndicate';
+				$retireCap = apply_filters('feedwordpress_ui_zap_link_caption', __('Zap this syndicated post (so it will not be re-syndicated if it still appears on the feed).'));
+				$retireText = apply_filters('feedwordpress_ui_zap_link_text', __('Zap/Don&#8217;t Resyndicate'));
 				$retireLink = MyPHP::url($link, array("fwp_post_delete" => "zap"));
+				$retireClass = 'submitdelete';
 			endif;
 			
 			$keys = array_keys($actions);
@@ -1665,14 +1667,14 @@ class FeedWordPress {
 
 					// Placeholder.
 					if (!is_null($retireLink)) :
-						$links['zap'] = '';
+						$links['zap trash'] = '';
 					endif;
 					$links['delete'] = '';
 				endif;
 			endforeach;
 
 			if (!is_null($retireLink)) :
-				$links['zap'] = '<a class="retire" title="'.esc_attr(__($retireCap)).'" href="' . $retireLink . '">' . __($retireText) . '</a>';
+				$links['zap trash'] = '<a class="'.esc_attr($retireClass).'" title="'.esc_attr(__($retireCap)).'" href="' . $retireLink . '">' . __($retireText) . '</a>';
 			endif;
 			$links['delete'] = '<a class="submitdelete" title="'.esc_attr(__($caption)).'" href="' . $eraseLink . '">' . __($linktext) . '</a>';
 
