@@ -580,6 +580,14 @@ class SyndicatedPost {
 		return array_unique($ns);
 	} /* SyndicatedPost::xpath_possible_namespaces() */
 
+	function get_categories ($params = array()) {
+		return $this->entry->get_categories();
+	}
+	
+	function title ($params = array()) {
+		return $this->entry->get_title();
+	} /* SyndicatedPost::title () */
+	
 	function content ($params = array()) {
 		$params = wp_parse_args($params, array(
 		"full only" => false, 
