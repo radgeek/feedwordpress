@@ -1257,6 +1257,81 @@ class FeedWordPress {
 		if (!intval(get_option('link_manager_enabled', false))) :
 			update_option('link_manager_enabled', true);
 		endif;
+		
+		if (defined('FEEDWORDPRESS_PREPARE_TO_ZAP') and FEEDWORDPRESS_PREPARE_TO_ZAP) :
+			$post_id = FEEDWORDPRESS_PREPARE_TO_ZAP;
+			$sendback = wp_get_referer();
+			if (
+				! $sendback
+				or strpos( $sendback, 'post.php' ) !== false
+				or strpos( $sendback, 'post-new.php' ) !== false
+			) :
+				if ( 'attachment' == $post_type ) :
+					$sendback = admin_url( 'upload.php' );
+				else :
+					$sendback = admin_url( 'edit.php' );
+					$sendback .= ( ! empty( $post_type ) ) ? '?post_type=' . $post_type : '';
+				endif;
+			else :
+				$sendback = remove_query_arg( array('trashed', 'untrashed', 'deleted', 'zapped', 'unzapped', 'ids'), $sendback );
+			endif;
+
+			// Make sure we have a post corresponding to this ID.
+			$post = $post_type = $post_type_object = null;
+			if ( $post_id ) :
+				$post = get_post( $post_id );
+			endif;
+
+			if ( $post ) :
+				$post_type = $post->post_type;
+			endif;
+			$p = get_post($post_id);
+
+			if ( ! $post ) :
+				wp_die( __( 'The item you are trying to zap no longer exists.' ) );
+			endif;
+			
+			if ( ! current_user_can( 'delete_post', $post_id ) ) :
+				wp_die( __( 'You are not allowed to zap this item.' ) );
+			endif;
+			
+			if ( $user_id = wp_check_post_lock( $post_id ) ) :
+				$user = get_userdata( $user_id );
+				wp_die( sprintf( __( 'You cannot retire this item. %s is currently editing.' ), $user->display_name ) );
+			endif;
+		
+			if (MyPHP::request('fwp_post_delete')=='zap') :
+				FeedWordPress::diagnostic('syndicated_posts', 'Zapping existing post # '.$p->ID.' "'.$p->post_title.'" due to user request.');
+				
+				$old_status = $post->post_status;
+				
+				set_post_field('post_status', 'fwpzapped', $post_id);
+				wp_transition_post_status('fwpzapped', $old_status, $post);
+
+				# Set up the post to have its content blanked on
+				# next update if you do not undo the zapping.
+				add_post_meta($post_id, '_feedwordpress_zapped_blank_me', 1, /*unique=*/ true);
+				add_post_meta($post_id, '_feedwordpress_zapped_blank_old_status', $old_status, /*unique=*/ true);
+				
+				wp_redirect( add_query_arg( array('zapped' => 1, 'ids' => $post_id), $sendback ) );
+
+			else :
+				$old_status = get_post_meta($post_id, '_feedwordpress_zapped_blank_old_status', /*single=*/ true);
+				
+				set_post_field('post_status', $old_status, $post_id);
+				wp_transition_post_status($old_status, 'fwpzapped', $post);
+				
+				# O.K., make sure this post does not get blanked
+				delete_post_meta($post_id, '_feedwordpress_zapped_blank_me');
+				delete_post_meta($post_id, '_feedwordpress_zapped_blank_old_status');
+
+				wp_redirect( add_query_arg( array('unzapped' => 1, 'ids' => $post_id), $sendback ) );
+
+			endif;
+				
+			// Intercept, don't pass on.
+			exit;
+		endif;
 	} /* FeedWordPress::admin_init() */
 
 	public function admin_api () {
@@ -1289,82 +1364,11 @@ class FeedWordPress {
 			// Make sure we've got the right nonce and all that
 			check_admin_referer('delete-post_' . $post_id);
 
-			$sendback = wp_get_referer();
-			if (
-				! $sendback
-				or strpos( $sendback, 'post.php' ) !== false
-				or strpos( $sendback, 'post-new.php' ) !== false
-			) :
-				if ( 'attachment' == $post_type ) :
-					$sendback = admin_url( 'upload.php' );
-				else :
-					$sendback = admin_url( 'edit.php' );
-					$sendback .= ( ! empty( $post_type ) ) ? '?post_type=' . $post_type : '';
-				endif;
-			else :
-				$sendback = remove_query_arg( array('trashed', 'untrashed', 'deleted', 'zapped', 'unzapped', 'ids'), $sendback );
-			endif;
-
-			// Make sure we have a post corresponding to this ID.
-			$post = $post_type = $post_type_object = null;
-			if ( $post_id ) :
-				$post = get_post( $post_id );
-			endif;
+			// If so, get ready to intercept the call a little
+			// further down the line.
 			
-			if ( $post ) :
-				$post_type = $post->post_type;
-				$post_type_object = get_post_type_object( $post_type );
-			endif;
-			$p = get_post($post_id);
-
-			if ( ! $post ) :
-				wp_die( __( 'The item you are trying to zap no longer exists.' ) );
-			endif;
+			define('FEEDWORDPRESS_PREPARE_TO_ZAP', $post_id);
 			
-			if ( ! $post_type_object ) :
-				wp_die( __( 'Unknown post type.' ) );
-			endif;
-			
-			if ( ! current_user_can( 'delete_post', $post_id ) ) :
-				wp_die( __( 'You are not allowed to zap this item.' ) );
-			endif;
-			
-			#if ( $user_id = wp_check_post_lock( $post_id ) ) :
-			#	$user = get_userdata( $user_id );
-			#	wp_die( sprintf( __( 'You cannot retire this item. %s is currently editing.' ), $user->display_name ) );
-			#endif;
-		
-			if (MyPHP::request('fwp_post_delete')=='zap') :
-				FeedWordPress::diagnostic('syndicated_posts', 'Zapping existing post # '.$p->ID.' "'.$p->post_title.'" due to user request.');
-				
-				$old_status = $post->post_status;
-				set_post_field('post_status', 'fwpzapped', $post_id);
-				wp_transition_post_status('fwpzapped', $old_status, $post);
-
-				# Set up the post to have its content blanked on
-				# next update if you do not undo the zapping.
-				add_post_meta($post_id, '_feedwordpress_zapped_blank_me', 1, /*unique=*/ true);
-				add_post_meta($post_id, '_feedwordpress_zapped_blank_old_status', $old_status, /*unique=*/ true);
-
-				wp_redirect( add_query_arg( array('zapped' => 1, 'ids' => $post_id), $sendback ) );
-
-			else :
-				$old_status = get_post_meta($post_id, '_feedwordpress_zapped_blank_old_status', /*single=*/ true);
-				
-				set_post_field('post_status', $old_status, $post_id);
-				wp_transition_post_status($old_status, 'fwpzapped', $post);
-				
-				# O.K., make sure this post does not get blanked
-				delete_post_meta($post_id, '_feedwordpress_zapped_blank_me');
-				delete_post_meta($post_id, '_feedwordpress_zapped_blank_old_status');
-
-				wp_redirect( add_query_arg( array('unzapped' => 1, 'ids' => $post_id), $sendback ) );
-
-			endif;
-				
-			// Intercept, don't pass on.
-			exit;
-				
 		endif;
 
 	} /* FeedWordPress::admin_api () */
