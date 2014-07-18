@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2014.0630
+Version: 2014.0715
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -239,6 +239,10 @@ class FeedWordPressDiagnostic {
 	function feed_error ($error, $old, $link) {
 		$wpError = $error['object'];
 		$url = $link->uri();
+		
+		// check for effects of an effective-url filter
+		$effectiveUrl = $link->uri(array('fetch' => true));
+		if ($url != $effectiveUrl) : $url .= ' | ' . $effectiveUrl; endif;
 
 		$mesgs = $wpError->get_error_messages();
 		foreach ($mesgs as $mesg) :
@@ -851,7 +855,6 @@ function fwp_publish_post_hook ($post_id) {
 
 	function feedwordpress_save_post_edit_controls ( $post_id ) {
 		global $post;
-
 		if (!isset($_POST['feedwordpress_noncename']) or !wp_verify_nonce($_POST['feedwordpress_noncename'], plugin_basename(__FILE__))) :
 			return $post_id;
 		endif;
@@ -874,6 +877,7 @@ function fwp_publish_post_hook ($post_id) {
 		
 		// OK, we're golden. Now let's save some data.
 		if (isset($_POST['freeze_updates'])) :
+
 			update_post_meta($post_id, '_syndication_freeze_updates', $_POST['freeze_updates']);
 			$ret = $_POST['freeze_updates'];
 			

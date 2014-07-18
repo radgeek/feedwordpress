@@ -380,7 +380,7 @@ blank.</p></td>
 	function categories_box ($page, $box = NULL) {
 		$link = $page->link;
 		$dummy = null;
-		$syndicatedpost = new SyndicatedPost(null, $dummy);
+		$syndicatedlink = new SyndicatedLink($dummy);
 
 		if ($this->for_feed_settings()) :
 			$post_type = $link->setting('syndicated post type', 'syndicated_post_type', 'post');
@@ -442,7 +442,7 @@ blank.</p></td>
 			<?php
 			endif;
 
-			$dogs = $syndicatedpost->category_ids($cats, /*unfamiliar=*/ NULL, /*taxonomies=*/ array($tax));
+			$dogs = $syndicatedlink->category_ids($cats, /*unfamiliar=*/ NULL, /*taxonomies=*/ array($tax));
 
 			if ($taxonomy->hierarchical) : // Use a category-style checkbox
 				fwp_category_box($dogs, 'all '.$page->these_posts_phrase(), /*tags=*/ array(), /*params=*/ array('taxonomy' => $tax));
@@ -450,7 +450,7 @@ blank.</p></td>
 				fwp_tags_box($cats, 'all '.$page->these_posts_phrase(), /*params=*/ array('taxonomy' => $tax));
 			endif;
 
-			$globalDogs = $syndicatedpost->category_ids($globalCats, /*unfamiliar=*/ 'create:'.$tax, /*taxonomies=*/ array($tax));
+			$globalDogs = $syndicatedlink->category_ids($globalCats, /*unfamiliar=*/ 'create:'.$tax, /*taxonomies=*/ array($tax));
 
 			$siteWideHref = $this->admin_page_href(basename(__FILE__));
 

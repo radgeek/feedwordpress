@@ -40,7 +40,7 @@ class SyndicatedLink {
 	var $id = null;
 	var $link = null;
 	var $settings = array ();
-	var $simplepie = null;
+	public $simplepie = null;
 	var $magpie = null;
 
 	function SyndicatedLink ($link) {
@@ -128,7 +128,7 @@ class SyndicatedLink {
 	function poll ($crash_ts = NULL) {
 		global $wpdb;
 
-		$url = $this->uri(array('add_params' => true));
+		$url = $this->uri(array('add_params' => true, 'fetch' => true));
 		FeedWordPress::diagnostic('updated_feeds', 'Polling feed ['.$url.']');
 
 		$this->fetch();
@@ -717,9 +717,12 @@ class SyndicatedLink {
 	function uri ($params = array()) {
 		$params = wp_parse_args($params, array(
 		'add_params' => false,
+		'fetch' => false,
 		));
 
-		$uri = (is_object($this->link) ? $this->link->link_rss : NULL);
+		$link_rss = (is_object($this->link) ? $this->link->link_rss : NULL); 
+
+		$uri = $link_rss;
 		if (!is_null($uri) and strlen($uri) > 0 and $params['add_params']) :
 			$qp = maybe_unserialize($this->setting('query parameters', array()));
 
@@ -740,6 +743,10 @@ class SyndicatedLink {
 			endif;
 		endif;
 
+		// Do we have any filters that apply here?
+		$uri = apply_filters('syndicated_link_uri', $uri, $link_rss, $qp, $params, $this);
+
+		// Return the filtered link URI.		
 		return $uri;
 	} /* SyndicatedLink::uri () */
 
@@ -834,6 +841,7 @@ class SyndicatedLink {
 		// If we can get it live from the feed, do so.
 		if (is_object($this->simplepie)) :
 			$search = array(
+				array('', 'id'),
 				array(SIMPLEPIE_NAMESPACE_ATOM_10, 'id'),
 				array(SIMPLEPIE_NAMESPACE_ATOM_03, 'id'),
 				array(SIMPLEPIE_NAMESPACE_RSS_20, 'guid'),
@@ -854,6 +862,60 @@ class SyndicatedLink {
 		return $ret;
 	}
 
+	function links ($params = array()) {
+		$params = wp_parse_args($params, array(
+		"rel" => NULL,
+		));
+		
+		$fLinks = array();
+		$search = array(
+			array('', 'link'),
+			array(SIMPLEPIE_NAMESPACE_ATOM_10, 'link'),
+			array(SIMPLEPIE_NAMESPACE_ATOM_03, 'link'),
+		);
+		
+		foreach ($search as $pair) :
+			if ($link_tags = $this->simplepie->get_feed_tags($pair[0], $pair[1])) :
+				$fLinks = array_merge($fLinks, $link_tags);
+			endif;
+			if ($link_tags = $this->simplepie->get_channel_tags($pair[0], $pair[1])) :
+				$fLinks = array_merge($fLinks, $link_tags);
+			endif;
+		endforeach;
+		
+		$ret = array();
+		foreach ($fLinks as $link) :
+			$filter = false;
+			if (!is_null($params['rel'])) :
+				$filter = true;
+
+				if (isset($link['attribs'])) :
+					// Get a list of NSes from the search
+					foreach ($search as $pair) :
+						$ns = $pair[0];
+						
+						if (isset($link['attribs'][$ns])
+						and isset($link['attribs'][$ns]['rel'])
+						) :
+							$rel = strtolower(trim($link['attribs'][$ns]['rel']));
+							$fRel = strtolower(trim($params['rel']));
+					
+							if ($rel == $fRel) :
+								$filter = false;
+							endif;
+						endif;
+					endforeach;
+				endif;
+			endif;
+			
+			if (!$filter) :
+				$ret[] = $link;
+			endif;
+		endforeach;
+
+		return $ret;
+	}
+	
 	function ttl ($return_element = false) {
 		if (is_object($this->magpie)) :
 			$channel = $this->magpie->channel;

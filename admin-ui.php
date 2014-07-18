@@ -62,6 +62,12 @@ class FeedWordPressAdminPage {
 		print '<div class="updated">';
 		print "<ul>";
 		$uri = $this->link->uri();
+		$displayUrl = $uri;
+		
+		// check for effects of an effective-url filter
+		$effectiveUrl = $link->uri(array('fetch' => true));
+		if ($uri != $effectiveUrl) : $displayUrl .= ' | ' . $effectiveUrl; endif;
+
 		$delta = $feedwordpress->update($uri);
 		print "</ul>";
 
@@ -69,8 +75,8 @@ class FeedWordPressAdminPage {
 			echo "<p><strong>Update complete.</strong>".fwp_update_set_results_message($delta)."</p>";
 			echo "\n"; flush();
 		else :
-			$uri = esc_html($uri);
-			echo "<p><strong>Error:</strong> There was a problem updating <a href=\"$uri\">$uri</a></p>\n";
+			$effectiveUrl  = esc_html($effectiveUrl);
+			echo "<p><strong>Error:</strong> There was a problem updating <a href=\"$effectiveUrl\">$displayUrl</a></p>\n";
 		endif;
 		print "</div>\n";
 		remove_action('feedwordpress_check_feed', 'update_feeds_mention');
