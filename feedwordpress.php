@@ -865,6 +865,12 @@ function fwp_publish_post_hook ($post_id) {
 			return $post_id;
 		endif;
 
+		// The data in $_POST is for applying only to the post actually
+		// in the edit window, i.e. $post
+		if ($post_id != $post->ID) :
+			return $post_id;		
+		endif;
+		
 		// Check permissions
 		$cap[0] = 'edit_post';
 		$cap[1] = 'edit_' . $_POST['post_type'];
