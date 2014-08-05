@@ -442,15 +442,15 @@ blank.</p></td>
 			<?php
 			endif;
 
-			$dogs = $syndicatedlink->category_ids($cats, /*unfamiliar=*/ NULL, /*taxonomies=*/ array($tax));
-
+			$dogs = $syndicatedlink->category_ids(/*post=*/ NULL, $cats, /*unfamiliar=*/ NULL, /*taxonomies=*/ array($tax));
+			
 			if ($taxonomy->hierarchical) : // Use a category-style checkbox
 				fwp_category_box($dogs, 'all '.$page->these_posts_phrase(), /*tags=*/ array(), /*params=*/ array('taxonomy' => $tax));
 			else : // Use a tag-style edit box
 				fwp_tags_box($cats, 'all '.$page->these_posts_phrase(), /*params=*/ array('taxonomy' => $tax));
 			endif;
 
-			$globalDogs = $syndicatedlink->category_ids($globalCats, /*unfamiliar=*/ 'create:'.$tax, /*taxonomies=*/ array($tax));
+			$globalDogs = $syndicatedlink->category_ids(/*post=*/ NULL, $globalCats, /*unfamiliar=*/ 'create:'.$tax, /*taxonomies=*/ array($tax));
 
 			$siteWideHref = $this->admin_page_href(basename(__FILE__));
 
