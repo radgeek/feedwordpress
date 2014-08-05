@@ -1,8 +1,9 @@
 <?php
 
 class FeedWordPressLocalPost {
-	private $post;
-
+	public $post;
+	public $link;
+	
 	public function __construct ($p = NULL) {
 		global $post;
 		
@@ -92,7 +93,8 @@ class FeedWordPressLocalPost {
 
 	public function feed () {
 		global $feedwordpress;
-		return $feedwordpress->subscription($this->feed_id());
+		$this->link = $feedwordpress->subscription($this->feed_id());
+		return $this->link;
 	}
 	
 	public function feed_id () {
@@ -145,6 +147,42 @@ class FeedWordPressLocalPost {
 		);
 		
 	} /* FeedWordPressLocalPost::is_exposed_to_formatting_filters () */
+	
+
+	public function content () {
+		return apply_filters('the_content', $this->post->post_content, $this->post->ID);
+	}
+	
+	public function title () {
+		return apply_filters('the_title', $this->post->post_title, $this->post->ID);
+	}
+
+	public function guid () {
+		return apply_filters('get_the_guid', $this->post->guid);
+	}
+	
+	public function get_categories () {
+		$terms = wp_get_object_terms(
+			$this->post->ID,
+			get_taxonomies(array(
+				'public' => true,
+			), 'names'),
+			'all'
+		);
+		$rootUrl = get_bloginfo('url');
+
+		$cats = array();
+		foreach ($terms as $term) :
+			$taxUrl = MyPHP::url($rootUrl, array("taxonomy" => $term->taxonomy));
+			//array("taxonomy" => $term->taxonomy ));
+			$cats[] = new SimplePie_Category(
+				/*term=*/ $term->slug,
+				/*scheme=*/ $taxUrl,
+				/*label=*/ $term->name
+			);
+		endforeach;
+		return $cats;
+	}
 	
 } /* class FeedWordPressLocalPost */
 

@@ -89,7 +89,7 @@ class MagpieFromSimplePie {
 		endif;
 
 		$this->normalize();
-
+		
 		// In case anyone goes poking around our private members (uh...)
 		$this->feed_type = ($this->is_atom() ? 'Atom' : 'RSS');
 		$this->feed_version = $this->feed_version();

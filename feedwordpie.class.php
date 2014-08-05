@@ -10,7 +10,7 @@ class FeedWordPie extends SimplePie {
 
 			// Get URL with relevant parameters attached.
 			// Credentials will be handled further down.
-			$new_url = $url->uri(array('add_params' => true));
+			$new_url = $url->uri(array('add_params' => true, 'fetch' => true));
 			
 			// Store for reference.
 			$this->subscription = $url->id();
@@ -43,10 +43,12 @@ class FeedWordPie extends SimplePie {
 	}
 	
 	function get_feed_tags ($namespace, $tag) {
+		$tags = parent::get_feed_tags($namespace, $tag);
+		
 		// Allow filters to filter SimplePie handling
 		return apply_filters(
 			'feedwordpie_get_feed_tags',
-			parent::get_feed_tags($namespace, $tag),
+			$tags,
 			$namespace,
 			$tag,
 			$this
