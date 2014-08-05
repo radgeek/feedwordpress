@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2014.00805
+ * @version 2014.0805
  */
 
 # This uses code derived from:
