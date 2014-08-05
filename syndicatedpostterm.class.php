@@ -43,8 +43,7 @@ class SyndicatedPostTerm {
 	} /* SyndicatedPostTerm constructor */
 	
 	public function is_familiar () {
-
-		$ex = NULL;
+		$ex = $this->exists;
 		if (is_null($this->exists)) :
 			$ex = $this->search();
 		endif;
@@ -55,7 +54,6 @@ class SyndicatedPostTerm {
 			  .' by feed; checking '.json_encode($this->tax)
 			  . ' with result: '.json_encode($ex) 
 		);
-		
 		return (!is_wp_error($ex) and !!$ex);
 	} /* SyndicatedPostTerm::familiar () */
 	
