@@ -4,7 +4,7 @@ Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
 Tested up to: 3.9.1
-Stable tag: 2013.0504
+Stable tag: 2014.0805
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -94,8 +94,37 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
-= Trunk =
+= 2014.0805 =
 
+
+*	FILTERS AND ADD-ONS: A number of new hooks for filters and add-ons to
+	further customize the behavior of FWP have been added.
+
+* 	COMPATIBILITY/BUGFIX: Many users saw odd characters, especially "n,"
+	appearing in posts in versions of WordPress from 3.6 on, due to a change
+	in when the API expects HTML data for posts to be slashed and when it
+	does not. This has been fixed, so that the junk characters should no
+	longer appear, regardless of your version of WordPress.
+
+*	BUGFIX: A bug preventing FWP from saving categories assigned under
+	Syndication > Categories & Tags has been fixed.
+	
+*	BUGFIX: Post-editing related metaboxes should now show up when you edit
+	items of any post type, including custom types, not only normal WordPress
+	posts.
+	
+*	BUGFIX: A bug in the admin UI that caused the "Alternative Feeds" /
+	"Find Feeds" box to throw a permissions error has been fixed.
+	
+*	BUGFIX: A bug preventing proper mapping of categories and other terms in
+	2013.0504 has been fixed.
+	
+*	BUGFIX: A number of small fixes contributed through Github by Flynsarmy
+	should eliminate PHP warnings for many users on several methods that are
+	called as static methods within FeedWordPress.
+
+= 2013.0504 =
+	
 *	BUGFIX: PHP 5.4 compatibility -- includes some more extensive fixes to
 	compatibility issues with PHP 5.4's handling of global variables
 
