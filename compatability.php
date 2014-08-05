@@ -15,9 +15,9 @@ class FeedWordPressCompatibility {
 	 * @return bool TRUE if within the range of versions, FALSE if too low
 	 * 	or too high.
 	 */
-	/*static*/ function test_version ($floor, $ceiling = null) {
+	static function test_version ($floor, $ceiling = null) {
 		global $wp_db_version;
-		
+
 		$ver = (isset($wp_db_version) ? $wp_db_version : 0);
 		$good = ($ver >= $floor);
 		if (!is_null($ceiling)) :
@@ -26,7 +26,7 @@ class FeedWordPressCompatibility {
 		return $good;
 	} /* FeedWordPressCompatibility::test_version() */
 
-	/*static*/ function insert_link_category ($name) {
+	static function insert_link_category ($name) {
 		global $wpdb;
 
 		// WordPress 2.3+ term/taxonomy API
@@ -45,12 +45,12 @@ class FeedWordPressCompatibility {
 		else :
 			$cat_id = $term;
 		endif;
-	
+
 		// Return newly-created category ID
 		return $cat_id;
 	} /* FeedWordPressCompatibility::insert_link_category () */
 
-	/*static*/ function link_category_id ($value, $key = 'cat_name') {
+	static function link_category_id ($value, $key = 'cat_name') {
 		global $wpdb;
 
 		$cat_id = NULL;
@@ -65,11 +65,11 @@ class FeedWordPressCompatibility {
 		else :
 			$cat_id = $the_term;
 		endif;
-		
+
 		return $cat_id;
 	} /* FeedWordPressCompatibility::link_category_id () */
 
-	/*static*/ function validate_http_request ($action = -1, $capability = null) {
+	static function validate_http_request ($action = -1, $capability = null) {
 		// Only worry about this if we're using a method with significant side-effects
 		if (strtoupper($_SERVER['REQUEST_METHOD']) == 'POST') :
 			// Limit post by user capabilities
@@ -87,15 +87,15 @@ class FeedWordPressCompatibility {
 			endif;
 		endif;
 	} /* FeedWordPressCompatibility::validate_http_request() */
-	
-	/*static*/ function stamp_nonce ($action = -1) {
+
+	static function stamp_nonce ($action = -1) {
 		// stamp form with hidden fields for a nonce in WP 2.0.3 & later
 		if (function_exists('wp_nonce_field')) :
 			wp_nonce_field($action);
 		endif;
 	} /* FeedWordPressCompatibility::stamp_nonce() */
-	
-	/*static*/ function bottom_script_hook ($filename) {
+
+	static function bottom_script_hook ($filename) {
 		global $fwp_path;
 
 		$hook = 'admin_footer-'.$fwp_path.'/'.basename($filename);
@@ -125,11 +125,11 @@ if (!function_exists('set_post_field')) {
 	 * Included under terms of GPL from WordPress Ticket #10946 <http://core.trac.wordpress.org/attachment/ticket/10946/post.php.diff>
 	 */
 	function set_post_field ($field, $value, $post_id) {
-		global $wpdb; 
+		global $wpdb;
 
 		$post_id = absint($post_id);
 		// sigh ... when FWP is active, I need to avoid avoid_kses_munge
-		// $value = sanitize_post_field($field, $value, $post_id, 'db'); 
+		// $value = sanitize_post_field($field, $value, $post_id, 'db');
 		return $wpdb->update($wpdb->posts, array($field => $value), array('ID' => $post_id));
 	} /* function set_post_field () */
 
@@ -145,10 +145,10 @@ function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selec
 		$prefix = (isset($params['prefix']) ? $params['prefix'] : '');
 		$taxonomy = (isset($params['taxonomy']) ? $params['taxonomy'] : 'category');
 	endif;
-	
+
 	$walker = new FeedWordPress_Walker_Category_Checklist($params);
 	$walker->set_prefix($prefix);
-	$walker->set_taxonomy($taxonomy); 
+	$walker->set_taxonomy($taxonomy);
 	wp_terms_checklist(/*post_id=*/ $post_id, array(
 		'taxonomy' => $taxonomy,
 		'descendents_and_self' => $descendents_and_self,

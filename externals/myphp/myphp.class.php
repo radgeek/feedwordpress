@@ -1,7 +1,23 @@
 <?php
+/**
+ * MyPHP: handy general utility functions, for things that PHP should do, but
+ * doesn't do (yet).
+ * 
+ * @package MyPHP
+ * @version 2014.0805
+ */
 if (!class_exists('MyPHP')) :
 	class MyPHP {
-		// For dealing with HTTP GET/POST parameters sent to us as input
+		/**
+		 * MyPHP::param: For dealing with HTTP GET/POST parameters sent
+		 * to us as input.
+		 *
+		 * @param string $key The name of the GET/POST parameter
+		 * @param mixed $default Default to return if parameter is unset
+		 * @param string $type 'GET', 'POST' or 'REQUEST' (=both GET and POST)
+		 * @return mixed The value of the named parameter, or the fallback
+		 *    in $default if there is no value set for that param name.
+		 */
 		static public function param ($key, $default = NULL, $type = 'REQUEST') {
 			// PHP 5.4 introduces "just-in-time" initialization of
 			// $GLOBALS. Which seems to me largely to defeat the
@@ -26,14 +42,40 @@ if (!class_exists('MyPHP')) :
 			return $ret;
 		} /* MyPHP::param () */
 		
+		/**
+		 * MyPHP::post: For dealing with HTTP POST parameters sent as input
+		 *
+		 * @param string $key The name of the POST parameter
+		 * @param mixed $default Default to return if parameter is unset
+		 * @return mixed The value of the named parameter, or the fallback
+		 *    in $default if there is no value set for that param name.
+		 */
 		static function post ($key, $default = NULL) {
 			return self::param($key, $default, 'POST');
 		} /*MyPHP::post () */
 		
+		/**
+		 * MyPHP::post: For dealing with HTTP GET parameters sent as input
+		 *
+		 * @param string $key The name of the GET parameter
+		 * @param mixed $default Default to return if parameter is unset
+		 * @return mixed The value of the named parameter, or the fallback
+		 *    in $default if there is no value set for that param name.
+		 */
 		static function get ($key, $default = NULL) {
 			return self::param($key, $default, "GET");
 		} /* MyPHP::get () */
 		
+		/**
+		 * MyPHP::request: For dealing with HTTP GET/POST parameters
+		 * sent as input. This method checks both GET parameters and POST
+		 * parameters and will return values from either.
+		 *
+		 * @param string $key The name of the GET/POST parameter
+		 * @param mixed $default Default to return if parameter is unset
+		 * @return mixed The value of the named parameter, or the fallback
+		 *    in $default if there is no value set for that param name.
+		 */
 		static function request ($key, $default = NULL) {
 			return self::param($key, $default, "REQUEST");
 		} /* MyPHP::request () */
@@ -105,5 +147,3 @@ if (!class_exists('MyPHP')) :
 		 } /* MyPHP::val () */
 	} /* class MyPHP */
 endif;
-
-

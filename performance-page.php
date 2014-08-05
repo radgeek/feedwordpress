@@ -14,15 +14,15 @@ class FeedWordPressPerformancePage extends FeedWordPressAdminPage {
 	function display () {
 		global $wpdb, $wp_db_version, $fwp_path;
 		global $fwp_post;
-		
+
 		if (FeedWordPress::needs_upgrade()) :
 			fwp_upgrade_page();
 			return;
 		endif;
-	
+
 		// If this is a POST, validate source and user credentials
 		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_performance', /*capability=*/ 'manage_options');
-	
+
 		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
 			$this->accept_POST($fwp_post);
 			do_action('feedwordpress_admin_page_performance_save', $fwp_post, $this);
@@ -41,7 +41,7 @@ class FeedWordPressPerformancePage extends FeedWordPressAdminPage {
 		$boxes_by_methods = array(
 			'performance_box' => __('Performance'),
 		);
-	
+
 		foreach ($boxes_by_methods as $method => $title) :
 			add_meta_box(
 				/*id=*/ 'feedwordpress_'.$method,
@@ -79,11 +79,11 @@ class FeedWordPressPerformancePage extends FeedWordPressAdminPage {
 			$feeds = (($N == 1) ? __("feed") : __("feeds"));
 			$this->updated = sprintf(__("Cleared %d cached %s from WordPress database."), $N, $feeds);
 		endif;
-		
+
 	} /* FeedWordPressPerformancePage::accept_POST () */
 
-	/*static*/ function performance_box ($page, $box = NULL) {
-		
+	static function performance_box ($page, $box = NULL) {
+
 		// Hey ho, let's go...
 		?>
 <table class="editform" width="100%" cellspacing="2" cellpadding="5">
