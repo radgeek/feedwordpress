@@ -38,6 +38,7 @@ define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 if (!defined('FEEDWORDPRESS_BLEG')) :
 	define ('FEEDWORDPRESS_BLEG', true);
 endif;
+define('FEEDWORDPRESS_BLEG_BTC', '1FN3Q4VSR4jV7unRjaknVQVe5ky88ktPHS');
 
 // Defaults
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');

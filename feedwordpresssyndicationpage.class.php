@@ -661,16 +661,19 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 /* ]]> */</script>
 
 <div class="donation-form">
-<h4>Keep FeedWordPress improving</h4>
+<h4>Consider a Donation to FeedWordPress</h4>
 <form action="https://www.paypal.com/cgi-bin/webscr" accept-charset="UTF-8" method="post"><div>
 <p><a href="http://feedwordpress.radgeek.com/">FeedWordPress</a> makes syndication
 simple and empowers you to stream content from all over the web into your
-WordPress hub. That's got to be worth a few lattes. If you're finding FWP useful,
+WordPress hub. If you&#8217;re finding FWP useful,
 <a href="http://feedwordpress.radgeek.com/donate/">a modest gift</a>
 is the best way to support steady progress on development, enhancements,
 support, and documentation.</p>
 
 <div class="donate" style="vertical-align: middle">
+
+<div id="flattr-paypal">
+
 <div style="display: inline-block; vertical-align: middle; ">
 <a class="FlattrButton" style="display:none;"   href="http://feedwordpress.radgeek.com/"></a>
 <noscript>
@@ -680,10 +683,13 @@ support, and documentation.</p>
 
 </div> <!-- style="display: inline-block" -->
 
-<strong style="font-size: 1.25em; margin-left: 1.5em; margin-right: 1.5em; display: inline-block; vertical-align: middle">~ or ~</strong>
+<div class="hovered-component" style="display: inline-block; vertical-align: bottom">
+<a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>"><img src="<?php print esc_url(WP_PLUGIN_URL.'/'.FeedWordPress::path('btc-qr-64px.png')); ?>" alt="Donate" /></a>
+<div><a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>">via bitcoin<span class="hover-on pop-over" style="background-color: #ddffdd; padding: 5px; color: black; border-radius: 5px;">bitcoin:<?php print esc_html(FEEDWORDPRESS_BLEG_BTC); ?></span></a></div>
+</div>
 
 <div style="display: inline-block; vertical-align: bottom">
-<input type="image" name="submit" src="https://www.paypal.com/en_GB/i/btn/btn_donate_SM.gif" alt="Donate through PayPal" />
+<input type="image" name="submit" src="<?php print esc_url(WP_PLUGIN_URL.'/'.FeedWordPress::path('paypal-donation-64px.png')); ?>" alt="Donate through PayPal" />
 <input type="hidden" name="business" value="distro.to.feedback@radgeek.com"  />
 <input type="hidden" name="cmd" value="_xclick"  />
 <input type="hidden" name="item_name" value="FeedWordPress donation"  />
@@ -695,9 +701,11 @@ support, and documentation.</p>
 <div>via PayPal</div>
 </div> <!-- style="display: inline-block" -->
 
+</div> <!-- id="flattr-paypal" -->
 </div> <!-- class="donate" -->
 
-</div></form>
+</div> <!-- class="donation-form" -->
+</form>
 
 <p>You can make a gift online (or
 <a href="http://feedwordpress.radgeek.com/donation">set up an automatic

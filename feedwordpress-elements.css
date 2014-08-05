@@ -468,4 +468,6 @@ table.twofer td.secondary { padding-left: 10px; width: 30%; }
 	padding: 10px;
 }
 
-
+.hovered-component .hover-on { display: none; }
+.hovered-component:hover .hover-on { display: inline; }
+.hovered-component:hover .hover-on.pop-over { display: block; position: absolute; }
