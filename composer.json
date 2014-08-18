@@ -1,5 +1,6 @@
 {
     "name": "bof/feedwordpress",
+    "version": "1.0.1",
     "type": "wordpress-plugin",
     "description": "Feedwordpress",
     "minimum-stability": "dev",
