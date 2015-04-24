@@ -1284,7 +1284,7 @@ class FeedWordPress {
 					$sendback .= ( ! empty( $post_type ) ) ? '?post_type=' . $post_type : '';
 				endif;
 			else :
-				$sendback = remove_query_arg( array('trashed', 'untrashed', 'deleted', 'zapped', 'unzapped', 'ids'), $sendback );
+				$sendback = esc_url( remove_query_arg( array('trashed', 'untrashed', 'deleted', 'zapped', 'unzapped', 'ids'), $sendback ) );
 			endif;
 
 			// Make sure we have a post corresponding to this ID.
@@ -1324,7 +1324,7 @@ class FeedWordPress {
 				add_post_meta($post_id, '_feedwordpress_zapped_blank_me', 1, /*unique=*/ true);
 				add_post_meta($post_id, '_feedwordpress_zapped_blank_old_status', $old_status, /*unique=*/ true);
 				
-				wp_redirect( add_query_arg( array('zapped' => 1, 'ids' => $post_id), $sendback ) );
+				wp_redirect( esc_url_raw( add_query_arg( array('zapped' => 1, 'ids' => $post_id), $sendback ) ) );
 
 			else :
 				$old_status = get_post_meta($post_id, '_feedwordpress_zapped_blank_old_status', /*single=*/ true);
@@ -1336,7 +1336,7 @@ class FeedWordPress {
 				delete_post_meta($post_id, '_feedwordpress_zapped_blank_me');
 				delete_post_meta($post_id, '_feedwordpress_zapped_blank_old_status');
 
-				wp_redirect( add_query_arg( array('unzapped' => 1, 'ids' => $post_id), $sendback ) );
+				wp_redirect( esc_url_raw( add_query_arg( array('unzapped' => 1, 'ids' => $post_id), $sendback ) ) );
 
 			endif;
 				
