@@ -3,8 +3,8 @@ Contributors: Charles Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
-Tested up to: 3.9.1
-Stable tag: 2014.0805
+Tested up to: 4.2
+Stable tag: 2015.0426
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -26,12 +26,12 @@ developed, originally, because I needed a more flexible replacement for
 [Feminist Blogs]: http://feministblogs.org/
 
 FeedWordPress is designed with flexibility, ease of use, and ease of
-configuration in mind. You'll need a working installation of WordPress or
-WordPress MU (version [3.0] or later), and also FTP or SFTP access to your web
-host. The ability to create cron jobs on your web host is helpful but not
-required. You *don't* need to tweak any plain-text configuration files and you
-*don't* need shell access to your web host to make it work. (Although, I should
-point out, web hosts that *don't* offer shell access are *bad web hosts*.)
+configuration in mind. You'll need a working installation of WordPress (version
+[3.0] or later), and also FTP or SFTP access to your web host. The ability to
+create cron jobs on your web host is helpful but not required. You *don't* need
+to tweak any plain-text configuration files and you *don't* need shell access
+to your web host to make it work. (Although, I should point out, web hosts that
+*don't* offer shell access are *bad web hosts*.)
 
   [WordPress]: http://wordpress.org/
   [WordPress MU]: http://mu.wordpress.org/
