@@ -1,0 +1,22 @@
+{
+	"name": 		"ubc/feedwordpress",
+	"description": 	"",
+	"keywords": 	[ "wordpress", "plugin" ],
+	"homepage": 	"http://github.com/ubc/",
+	"license": 		"GPLv2",
+
+	"authors": [
+		{
+			"name": 	"University of British Columbia",
+			"email": 	"web.admin@ubc.ca",
+			"homepage": "http://ctlt.ubc.ca/"
+		}
+	],
+
+	"type": "wordpress-plugin",
+
+	"require": {
+		"php": ">=5.3",
+		"composer/installers": "~1.0"
+	}
+}
