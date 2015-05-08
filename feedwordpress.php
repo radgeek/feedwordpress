@@ -671,7 +671,7 @@ function fwp_add_pages () {
 		$menu_cap,
 		$syndicationMenu,
 		NULL,
-		WP_PLUGIN_URL.'/'.FeedWordPress::path('feedwordpress-tiny.png')
+		'dashicons-rss'
 	);
 
 	do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
