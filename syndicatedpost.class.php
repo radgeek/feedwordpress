@@ -1317,7 +1317,7 @@ class SyndicatedPost {
 			$old_post = NULL;
 			if ($q->have_posts()) :
 				while ($q->have_posts()) : $q->the_post();
-					if (get_post_type($q->post->ID) == $this->link->settings['syndicated post type']):
+					if (get_post_type($q->post->ID) == $this->post['syndicated post type']):
 						$old_post = $q->post;
 					endif;
 				endwhile;
