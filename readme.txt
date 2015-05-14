@@ -94,8 +94,40 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
-= 2014.0805 =
+= 2015.0514 =
 
+*	IMPORTANT SECURITY UPDATE: This version includes two important fixes for
+	potential security vulnerabilities reported to me through support channels.
+	
+	The first is a common problem across several plugins due to an ambiguity in
+	the WordPress documentation and a change in	the behavior of WordPress's
+	built-in add_query_arg() and remove_query_arg() functions
+	which could, under certain low-probability conditions, allow for potential
+	XSS attack vectors. This fixes issue # 39
+	reported at <https://github.com/radgeek/feedwordpress/issues/39>
+	Thanks to github.com/quassy
+	
+	The second is a security vulnerability fixes a security vulnerability that
+	was reported to me privately (thanks to Adrián M. F.) which, under other
+	low-probability conditions, could allow for SQL insertion attacks by
+	a malicious user with access to login credentials, which would compromise
+	data security.
+
+	It is *IMPORTANT* and worth your while to upgrade FeedWordPress as soon as
+	possible in order to eliminate these vulnerabilities. If you have any
+	questions or if there is something blocking you from making the upgrade
+	which you need my help with, don't hesitate to get in touch.
+
+*	ADMIN UI BUGFIX: "Update Now" button in feeds setting pages should now work
+	once again instead of causing a PHP fatal error. See
+	<https://github.com/radgeek/feedwordpress/issues/46>
+	
+*	SEVERAL OTHER SMALL BUG FIXES. See <https://github.com/radgeek/feedwordpress/issues/32>
+	<https://github.com/radgeek/feedwordpress/issues/30>
+	<https://github.com/radgeek/feedwordpress/issues/29>
+	etc.
+
+= 2014.0805 =
 
 *	FILTERS AND ADD-ONS: A number of new hooks for filters and add-ons to
 	further customize the behavior of FWP have been added.
