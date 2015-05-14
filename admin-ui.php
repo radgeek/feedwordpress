@@ -59,11 +59,13 @@ class FeedWordPressAdminPage {
 		add_action('feedwordpress_check_feed', 'update_feeds_mention');
 		add_action('feedwordpress_check_feed_complete', 'update_feeds_finish', 10, 3);
 
+		$link = $this->link;
+		
 		print '<div class="updated">';
 		print "<ul>";
 		$uri = $this->link->uri();
 		$displayUrl = $uri;
-		
+
 		// check for effects of an effective-url filter
 		$effectiveUrl = $link->uri(array('fetch' => true));
 		if ($uri != $effectiveUrl) : $displayUrl .= ' | ' . $effectiveUrl; endif;

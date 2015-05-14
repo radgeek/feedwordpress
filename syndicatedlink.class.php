@@ -130,9 +130,9 @@ class SyndicatedLink {
 
 		$url = $this->uri(array('add_params' => true, 'fetch' => true));
 		FeedWordPress::diagnostic('updated_feeds', 'Polling feed ['.$url.']');
-
+	
 		$this->fetch();
-
+	
 		$new_count = NULL;
 
 		$resume = ('yes'==$this->setting('update/unfinished'));
@@ -178,6 +178,7 @@ class SyndicatedLink {
 			$this->save_settings(/*reload=*/ true);
 
 		elseif (is_object($this->simplepie)) :
+
 			// Success; clear out error setting, if any.
 			$this->update_setting('update/error', NULL);
 
@@ -285,7 +286,9 @@ class SyndicatedLink {
 							break;
 						endif;
 					endif;
+
 					unset($post);
+					
 				endforeach;
 			endif;
 
