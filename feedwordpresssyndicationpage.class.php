@@ -70,6 +70,47 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		return ($this->visibility_toggle() == 'N');
 	}
 
+	/**
+	 * sanitize_ids: Protect id numbers from untrusted sources (POST array etc.)
+	 * from possibility of SQLi attacks. Runs everything through an intval filter
+	 * and then for good measure through esc_sql()
+	 *
+	 * @param array $link_ids An array of one or more putative link IDs
+	 * @return array 
+	 */
+	public function sanitize_ids_sql ($link_ids) {
+		$link_ids = array_map(
+			'esc_sql',
+			array_map(
+				'intval',
+				$link_ids
+			)
+		);
+		return $link_ids;
+	} /* FeedWordPressSyndicationPage::sanitize_ids_sql () */
+
+	/**
+	 * requested_link_ids_sql ()
+	 *
+	 * @return string An SQL list literal containing the link IDs, sanitized
+	 * 		and escaped for direct use in MySQL queries.
+	 *
+	 * @uses sanitize_ids_sql()
+	 */
+	public function requested_link_ids_sql () {
+		// Multiple link IDs passed in link_ids[]=... . . .
+		$link_ids = (isset($_REQUEST['link_ids']) ? $_REQUEST['link_ids'] : array());
+		
+		// Or single in link_id=...
+		if (isset($_REQUEST['link_id'])) : array_push($link_ids, $_REQUEST['link_id']); endif;
+
+		// Filter for safe use in MySQL queries.
+		$link_ids = $this->sanitize_ids_sql($link_ids);
+		
+		// Convert to MySQL list literal.
+		return "('".implode("', '", $link_ids)."')";	
+	} /* FeedWordPressSyndicationPage::requested_link_ids_sql () */
+	
 	function updates_requested () {
 		global $wpdb;
 
@@ -84,9 +125,14 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		if ($fwp_update_invoke != 'get') :
 			if (is_array(MyPHP::post('link_ids'))
 			and (MyPHP::post('action')==FWP_UPDATE_CHECKED)) :
+				// Get single link ID or multiple link IDs from REQUEST parameters
+				// if available. Sanitize values for MySQL.
+				$link_list = $this->requested_link_ids_sql();
+				
+				// $link_list has previously been sanitized for html by self::requested_link_ids_sql
 				$targets = $wpdb->get_results("
 				SELECT * FROM $wpdb->links
-				WHERE link_id IN (".implode(",",$_POST['link_ids']).")
+				WHERE link_id IN ${link_list}
 				");
 				if (is_array($targets)) :
 					foreach ($targets as $target) :
@@ -738,10 +784,11 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 		if (MyPHP::post('submit')==FWP_CANCEL_BUTTON) :
 			return true; // Continue without further ado.
 		endif;
-		
-		$link_ids = (isset($_REQUEST['link_ids']) ? $_REQUEST['link_ids'] : array());
-		if (isset($_REQUEST['link_id'])) : array_push($link_ids, $_REQUEST['link_id']); endif;
-	
+
+		// Get single link ID or multiple link IDs from REQUEST parameters
+		// if available. Sanitize values for MySQL.		
+		$link_list = $this->requested_link_ids_sql();
+
 		if (MyPHP::post('confirm')=='Delete'):
 			if ( is_array(MyPHP::post('link_action')) ) :
 				$actions = MyPHP::post('link_action');
@@ -835,9 +882,10 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 	
 			return true; // Continue on to Syndicated Sites listing
 		else :
+			// $link_list has previously been sanitized for html by self::requested_link_ids_sql
 			$targets = $wpdb->get_results("
 				SELECT * FROM $wpdb->links
-				WHERE link_id IN (".implode(",",$link_ids).")
+				WHERE link_id IN ${link_list}
 				");
 	?>
 	<form action="<?php print $this->form_action(); ?>" method="post">
@@ -907,9 +955,10 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 		// If this is a POST, validate source and user credentials
 		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_feeds', /*capability=*/ 'manage_links');
 	
-		$link_ids = (isset($_REQUEST['link_ids']) ? $_REQUEST['link_ids'] : array());
-		if (isset($_REQUEST['link_id'])) : array_push($link_ids, $_REQUEST['link_id']); endif;
-	
+		// Get single link ID or multiple link IDs from REQUEST parameters
+		// if available. Sanitize values for MySQL.
+		$link_list = $this->requested_link_ids_sql();
+
 		if (MyPHP::post('confirm')=='Undelete'):
 			if ( is_array(MyPHP::post('link_action')) ) :
 				$actions = MyPHP::post('link_action');
@@ -956,9 +1005,10 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 	
 			return true; // Continue on to Syndicated Sites listing
 		else :
+			// $link_list has previously been sanitized for html by self::requested_link_ids_sql
 			$targets = $wpdb->get_results("
 				SELECT * FROM $wpdb->links
-				WHERE link_id IN (".implode(",",$link_ids).")
+				WHERE link_id IN ${link_list}
 				");
 	?>
 	<form action="<?php print $this->form_action(); ?>" method="post">
