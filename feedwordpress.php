@@ -1642,7 +1642,7 @@ class FeedWordPress {
 	} /* FeedWordPress::redirect_retired () */
 
 	public function row_actions ($actions, $post) {
-		if (is_syndicated($post->ID)) :
+		if (is_syndicated($post->ID) && current_user_can('edit_post', $post->ID)) :
 			$link = get_delete_post_link($post->ID, '', true);
 			$eraseLink = MyPHP::url($link, array("fwp_post_delete" => "nuke"));
 
