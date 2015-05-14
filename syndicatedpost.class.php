@@ -117,6 +117,7 @@ class SyndicatedPost {
 		if (is_null($this->item)) :
 			$this->post = NULL;
 		else :
+
 			# Note that nothing is run through esc_sql() here.
 			# That's deliberate. The escaping is done at the point
 			# of insertion, not here, to avoid double-escaping and
@@ -127,6 +128,7 @@ class SyndicatedPost {
 				$this->entry->get_title(), $this
 			);
 
+
 			$this->named['author'] = apply_filters(
 				'syndicated_item_author',
 				$this->author(), $this
@@ -134,7 +136,7 @@ class SyndicatedPost {
 			// This just gives us an alphanumeric name for the author.
 			// We look up (or create) the numeric ID for the author
 			// in SyndicatedPost::add().
-			
+
 			$this->post['post_content'] = apply_filters(
 				'syndicated_item_content',
 				$this->content(), $this
@@ -348,6 +350,7 @@ class SyndicatedPost {
 
 			$this->post['post_type'] = apply_filters('syndicated_post_type', $this->link->setting('syndicated post type', 'syndicated_post_type', 'post'), $this);
 		endif;
+		
 	} /* SyndicatedPost::SyndicatedPost() */
 
 	#####################################
@@ -589,6 +592,7 @@ class SyndicatedPost {
 	} /* SyndicatedPost::title () */
 	
 	function content ($params = array()) {
+
 		$params = wp_parse_args($params, array(
 		"full only" => false, 
 		));
@@ -635,6 +639,7 @@ class SyndicatedPost {
 			endif;
 			
 		endif;
+		
 		return $content;
 	} /* SyndicatedPost::content() */
 
@@ -1213,6 +1218,7 @@ class SyndicatedPost {
 	function resolve_single_relative_uri ($refs) {
 		$tag = FeedWordPressHTML::attributeMatch($refs);
 		$url = SimplePie_Misc::absolutize_url($tag['value'], $this->_base);
+
 		return $tag['prefix'] . $url . $tag['suffix'];
 	} /* function SyndicatedPost::resolve_single_relative_uri() */
 
