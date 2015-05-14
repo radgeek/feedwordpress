@@ -1239,11 +1239,17 @@ class SyndicatedPost {
 			foreach ($obj->uri_attrs as $pair) :
 				list($tag, $attr) = $pair;
 				$pattern = FeedWordPressHTML::attributeRegex($tag, $attr);
+
+				// FIXME: Encountered issue while testing an extremely long (= 88827 characters) item
+				// Relying on preg_replace_callback() here can cause a PHP seg fault on my development
+				// server. preg_match_all() causes a similar problem. Apparently this is a PCRE issue
+				// Cf. discussion of similar issue <https://bugs.php.net/bug.php?id=65009>
 				$content = preg_replace_callback (
 					$pattern,
 					array($obj, 'resolve_single_relative_uri'),
 					$content
 				);
+
 			endforeach;
 		endif;
 
