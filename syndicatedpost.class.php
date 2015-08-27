@@ -1885,10 +1885,12 @@ class SyndicatedPost {
 	}
 
 	function db_sanitize_post ($out) {
-		// < 3.6. Core API, including wp_insert_post(), will expect
-		// properly slashed data. If wp_slash() exists, then this is
-		// after the big change-over, and wp_insert_post() etc. will
-		// expect *un*-slashed data.
+		global $wp_db_version;
+		
+		// < 3.6. Core API, including `wp_insert_post()`, expects
+		// properly slashed data. If `wp_slash()` exists, then
+		// this is after the big change-over in how data slashing
+		// was handled.
 		if (!function_exists('wp_slash')) :
 		
 			foreach ($out as $key => $value) :
@@ -1898,7 +1900,21 @@ class SyndicatedPost {
 					$out[$key] = $value;
 				endif;
 			endforeach;
-
+			
+		// For revisions [@23416,@23554), core API expects
+		// unslashed data. Cf. <https://core.trac.wordpress.org/browser/trunk/wp-includes/post.php?rev=23416>
+		// 	NOOP for those revisions.
+		
+		// In revisions @23554 to present, `wp_insert_post()`
+		// expects slashed data once again.
+		// Cf. <https://core.trac.wordpress.org/changeset/23554/trunk/wp-includes/post.php?contextall=1>
+		// But at least now we can use the wp_slash API function to do that.
+		// Hooray.
+		
+		elseif ($wp_db_version >= 23524) :
+		
+			$out = wp_slash($out);
+			
 		endif;
 
 		return $out;
