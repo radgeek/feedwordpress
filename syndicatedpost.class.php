@@ -1895,9 +1895,42 @@ class SyndicatedPost {
 		return $out;
 	}
 
+	public function db_sanitize_post_check_encoding ($out) {
+		// Check encoding recursively: every string field needs to be checked
+		// for character encoding issues. This is a bit problematic because we
+		// *should* be using DB_CHARSET, but DB_CHARSET sometimes has values
+		// that work for MySQL but not for PHP mb_check_encoding. So instead
+		// we must rely on WordPress setting blog_charset and hope that the user
+		// has got their database encoding set up to roughly match
+		$charset = get_option('blog_charset', 'utf8');
+		
+		foreach ($out as $key => $value) :
+			if (is_string($value)) :
+				
+				if (!function_exists('mb_check_encoding') or mb_check_encoding($value, $charset)) :
+					$out[$key] = $value;
+				else :
+					$fromCharset = mb_detect_encoding($value, mb_detect_order(), /*strict=*/ true);
+					$out[$key] = mb_convert_encoding($value, $charset, $fromCharset);
+				endif;
+				
+			elseif (is_array($value)) :
+				$out[$key] = $this->db_sanitize_post_check_encoding($value);
+
+			else :
+				$out[$key] = $value;
+			endif;
+			
+		endforeach;
+		
+		return $out;
+	} /* SyndicatedPost::db_sanitize_post_check_encoding () */
+	
 	function db_sanitize_post ($out) {
 		global $wp_db_version;
 		
+		$out = $this->db_sanitize_post_check_encoding($out);
+				
 		// < 3.6. Core API, including `wp_insert_post()`, expects
 		// properly slashed data. If `wp_slash()` exists, then
 		// this is after the big change-over in how data slashing
@@ -2365,4 +2398,3 @@ EOM;
 	} /* SyndicatedPost::category_ids () */
 
 } /* class SyndicatedPost */
-
