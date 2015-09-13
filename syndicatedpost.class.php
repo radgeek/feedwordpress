@@ -1727,6 +1727,8 @@ class SyndicatedPost {
 
 		$dbpost = $this->normalize_post(/*new=*/ true);
 
+		$ret = null;
+
 		if (!is_null($dbpost)) :
 			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
 
@@ -1791,28 +1793,34 @@ class SyndicatedPost {
 				$dbpost['ID'] = $this->_wp_id;
 			endif;
 			
-			// Now that we've made sure the original exists, insert
-			// this version here as a revision.
-			$revision_id = _wp_put_post_revision($dbpost, /*autosave=*/ false);
+			// Sanity check: if the attempt to insert post
+			// returned an error, then feeding that error
+			// object in to _wp_put_post_revision() would
+			// cause a fatal error. Better to break out.
+			if (!is_wp_error($this->_wp_id)) :
+				// Now that we've made sure the original exists, insert
+				// this version here as a revision.
+				$revision_id = _wp_put_post_revision($dbpost, /*autosave=*/ false);
 
-			if (!$this->this_revision_needs_original_post()) :
+				if (!$this->this_revision_needs_original_post()) :
 			
-				if ($this->this_revision_is_current()) :
+					if ($this->this_revision_is_current()) :
 
-					wp_restore_post_revision($revision_id);
+						wp_restore_post_revision($revision_id);
 
-				else :
+					else :
 
-					// If we do not activate this revision, then the
-					// add_rss_meta will not be called, which is
-					// more or less as it should be, but that means
-					// we have to actively record this revision's
-					// update hash from here.
-					$postId = $this->post['ID'];
-					$key = 'syndication_item_hash';
-					$hash = $this->update_hash();
-					FeedWordPress::diagnostic('syndicated_posts:meta_data', "Adding post meta-datum to post [$postId]: [$key] = ".FeedWordPress::val($hash, /*no newlines=*/ true));
-					add_post_meta(	$postId, $key, $hash, /*unique=*/ false );
+						// If we do not activate this revision, then the
+						// add_rss_meta will not be called, which is
+						// more or less as it should be, but that means
+						// we have to actively record this revision's
+						// update hash from here.
+						$postId = $this->post['ID'];
+						$key = 'syndication_item_hash';
+						$hash = $this->update_hash();
+						FeedWordPress::diagnostic('syndicated_posts:meta_data', "Adding post meta-datum to post [$postId]: [$key] = ".FeedWordPress::val($hash, /*no newlines=*/ true));
+						add_post_meta(	$postId, $key, $hash, /*unique=*/ false );
+					endif;
 				endif;
 			endif;
 
@@ -1837,7 +1845,10 @@ class SyndicatedPost {
 			endforeach;
 
 			$this->validate_post_id($dbpost, $update, array(__CLASS__, __FUNCTION__));
+			
+			$ret = $this->_wp_id;
 		endif;
+		return $ret;
 	} /* function SyndicatedPost::insert_post () */
 
 	function insert_new () {
