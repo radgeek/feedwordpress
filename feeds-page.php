@@ -204,11 +204,11 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		$path = preg_replace('/\n+$/', '', $path);
 		$crontab = `crontab -l`;
 		
-		$cmdline = $path . ' ' . sprintf($opts, get_bloginfo('url').'?update_feedwordpress=1');
+		$cmdline = $path . ' ' . sprintf($opts, get_bloginfo('url').'/?update_feedwordpress=1');
 		
 		?>If you want to use a cron job,
 		you can perform scheduled updates by sending regularly-scheduled
-		requests to <a href="<?php bloginfo('url'); ?>?update_feedwordpress=1"><code><?php bloginfo('url') ?>?update_feedwordpress=1</code></a>
+		requests to <a href="<?php bloginfo('url'); ?>?update_feedwordpress=1"><code><?php bloginfo('url') ?>/?update_feedwordpress=1</code></a>
 		For example, inserting the following line in your crontab:</p>
 		<pre style="font-size: 0.80em"><code>*/10 * * * * <?php print esc_html($cmdline); ?></code></pre>
 		<p class="setting-description">will check in every 10 minutes
