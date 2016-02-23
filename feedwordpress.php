@@ -237,7 +237,7 @@ endif; // if (!FeedWordPress::needs_upgrade())
 ################################################################################
 
 class FeedWordPressDiagnostic {
-	function feed_error ($error, $old, $link) {
+	public static function feed_error ($error, $old, $link) {
 		$wpError = $error['object'];
 		$url = $link->uri();
 		
