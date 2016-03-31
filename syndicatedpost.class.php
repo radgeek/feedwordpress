@@ -86,21 +86,6 @@ class SyndicatedPost {
 		// Fucking SimplePie.
 		$this->xmlns['reverse']['rss'][] = '';
 
-		# These globals were originally an ugly kludge around a bug in
-		# apply_filters from WordPress 1.5. The bug was fixed in 1.5.1,
-		# and I sure hope at this point that nobody writing filters for
-		# FeedWordPress is still relying on them.
-		#
-		# Anyway, I hereby declare them DEPRECATED as of 8 February
-		# 2010. I'll probably remove the globals within 1-2 releases in
-		# the interests of code hygiene and memory usage. If you
-		# currently use them in your filters, I advise you switch off to
-		# accessing the public members SyndicatedPost::feed and
-		# SyndicatedPost::feedmeta.
-
-		global $fwp_channel, $fwp_feedmeta;
-		$fwp_channel = $this->feed; $fwp_feedmeta = $this->feedmeta;
-
 		// Trigger global syndicated_item filter.
 		$changed = apply_filters('syndicated_item', $this->item, $this);
 		$this->item = $changed;
