@@ -250,91 +250,10 @@ class SyndicatedPost {
 			// Store a hash of the post content for checking whether something needs to be updated
 			$this->post['meta']['syndication_item_hash'] = $this->update_hash();
 
-			// Categories: start with default categories, if any.
-			$cats = array();
-			if ('no' != $this->link->setting('add/category', NULL, 'yes')) :
-				$fc = get_option("feedwordpress_syndication_cats");
-				if ($fc) :
-					$cats = array_merge($cats, explode("\n", $fc));
-				endif;
-			endif;
-
-			$fc = $this->link->setting('cats', NULL, array());
-			if (is_array($fc)) :
-				$cats = array_merge($cats, $fc);
-			endif;
-			$this->preset_terms['category'] = $cats;
-
-			// Now add categories from the post, if we have 'em
-			$cats = array();
-			$post_cats = $this->entry->get_categories();
-			if (is_array($post_cats)) : foreach ($post_cats as $cat) :
-				$cat_name = $cat->get_term();
-				if (!$cat_name) : $cat_name = $cat->get_label(); endif;
-
-				if ($this->link->setting('cat_split', NULL, NULL)) :
-					$pcre = "\007".$this->feedmeta['cat_split']."\007";
-					$cats = array_merge(
-						$cats,
-						preg_split(
-							$pcre,
-							$cat_name,
-							-1 /*=no limit*/,
-							PREG_SPLIT_NO_EMPTY
-						)
-					);
-				else :
-					$cats[] = $cat_name;
-				endif;
-			endforeach; endif;
-
-			$this->feed_terms['category'] = apply_filters('syndicated_item_categories', $cats, $this);
-
-			// Tags: start with default tags, if any
-			$tags = array();
-			if ('no' != $this->link->setting('add/post_tag', NULL, 'yes')) :
-				$ft = get_option("feedwordpress_syndication_tags", NULL);
-				$tags = (is_null($ft) ? array() : explode(FEEDWORDPRESS_CAT_SEPARATOR, $ft));
-			endif;
-
-			$ft = $this->link->setting('tags', NULL, array());
-			if (is_array($ft)) :
-				$tags = array_merge($tags, $ft);
-			endif;
-			$this->preset_terms['post_tag'] = $tags;
-
-			// Scan post for /a[@rel='tag'] and use as tags if present
-			$tags = $this->inline_tags();
-			$this->feed_terms['post_tag'] = apply_filters('syndicated_item_tags', $tags, $this);
-
-			// Allow plugins to do weirder things with taxonomies than the stock behavior
-			$this->feed_terms = apply_filters('syndicated_item_feed_terms', $this->feed_terms, $this);
-
-			$taxonomies = $this->link->taxonomies();
-			$feedTerms = $this->link->setting('terms', NULL, array());
-			$globalTerms = get_option('feedwordpress_syndication_terms', array());
-
-			$specials = array('category' => 'cats', 'post_tag' => 'tags');
-			foreach ($taxonomies as $tax) :
-				if (!isset($specials[$tax])) :
-					$terms = array();
-
-					// See if we should get the globals
-					if ('no' != $this->link->setting("add/$tax", NULL, 'yes')) :
-						if (isset($globalTerms[$tax])) :
-							$terms = $globalTerms[$tax];
-						endif;
-					endif;
-
-					// Now merge in the locals
-					if (isset($feedTerms[$tax])) :
-						$terms = array_merge($terms, $feedTerms[$tax]);
-					endif;
-
-					// That's all, folks.
-					$this->preset_terms[$tax] = $terms;
-				endif;
-			endforeach;
+			// Categories, Tags, and other Terms: from settings assignments (global settings, subscription settings),
+			// and from feed assignments (item metadata, post content)
+			$this->preset_terms = apply_filters('syndicated_item_preset_terms', $this->get_terms_from_settings(), $this);
+			$this->feed_terms = apply_filters('syndicated_item_feed_terms', $this->get_terms_from_feeds(), $this);
 
 			$this->post['post_type'] = apply_filters('syndicated_post_type', $this->link->setting('syndicated post type', 'syndicated_post_type', 'post'), $this);
 		endif;
@@ -963,6 +882,119 @@ class SyndicatedPost {
 
 		return $author;
 	} /* SyndicatedPost::author() */
+
+	/**
+	 * SyndicatedPost::get_terms_from_settings(): Return an array of terms to associate with the incoming
+	 * post based on the Categories, Tags, and other terms associated with each new post by the user's
+	 * settings (global and feed-specific).
+	 *
+	 * @since 2016.0331
+	 * @return array of lists, each element has the taxonomy for a key ('category', 'post_tag', etc.),
+	 * 		and a list of term codes (either alphanumeric names, or ID numbers encoded in a format that
+	 * 		SyndicatedLink::category_ids() can understand) within that taxonomy
+	 *	 
+	 */
+	public function get_terms_from_settings () {
+		// Categories: start with default categories, if any.
+		$cats = array();
+		if ('no' != $this->link->setting('add/category', NULL, 'yes')) :
+			$fc = get_option("feedwordpress_syndication_cats");
+			if ($fc) :
+				$cats = array_merge($cats, explode("\n", $fc));
+			endif;
+		endif;
+
+		$fc = $this->link->setting('cats',NULL, array());
+		if (is_array($fc)) :
+			$cats = array_merge($cats, $fc);
+		endif;
+		$preset_terms['category'] = $cats;
+
+		// Tags: start with default tags, if any
+		$tags = array();
+		if ('no' != $this->link->setting('add/post_tag', NULL, 'yes')) :
+			$ft = get_option("feedwordpress_syndication_tags", NULL);
+			$tags = (is_null($ft) ? array() : explode(FEEDWORDPRESS_CAT_SEPARATOR, $ft));
+		endif;
+
+		$ft = $this->link->setting('tags', NULL, array());
+		if (is_array($ft)) :
+			$tags = array_merge($tags, $ft);
+		endif;
+		$preset_terms['post_tag'] = $tags;
+
+		$taxonomies = $this->link->taxonomies();
+		$feedTerms = $this->link->setting('terms', NULL, array());
+		$globalTerms = get_option('feedwordpress_syndication_terms', array());
+		$specials = array('category' => 'cats', 'post_tag' => 'tags');
+
+		foreach ($taxonomies as $tax) :
+			// category and tag settings have already previously been handled
+			// but if this is from another taxonomy, then...
+			if (!isset($specials[$tax])) :
+				$terms = array();
+
+				// See if we should get the globals
+				if ('no' != $this->link->setting("add/$tax", NULL, 'yes')) :
+					if (isset($globalTerms[$tax])) :
+						$terms = $globalTerms[$tax];
+					endif;
+				endif;
+
+				// Now merge in the locals
+				if (isset($feedTerms[$tax])) :
+					$terms = array_merge($terms, $feedTerms[$tax]);
+				endif;
+
+				// That's all, folks.
+				$preset_terms[$tax] = $terms;
+			endif;
+		endforeach;
+		
+		return $preset_terms;
+	} /* SyndicatedPost::get_terms_from_settings () */
+		
+	/**
+	 * SyndicatedPost::get_terms_from_feeds(): Return an array of terms to associate with the incoming
+	 * post based on the contents of the subscribed feed (atom:category and rss:category elements, dc:subject
+	 * elements, tags embedded using microformats in the post content, etc.)
+	 *
+	 * @since 2016.0331
+	 * @return array of lists, each element has the taxonomy for a key ('category', 'post_tag', etc.),
+	 * 		and a list of alphanumeric term names
+	 */
+	public function get_terms_from_feeds () {	
+		// Now add categories from the post, if we have 'em
+		$cats = array();
+		$post_cats = $this->entry->get_categories();
+		if (is_array($post_cats)) : foreach ($post_cats as $cat) :
+			$cat_name = $cat->get_term();
+			if (!$cat_name) : $cat_name = $cat->get_label(); endif;
+
+			if ($this->link->setting('cat_split', NULL, NULL)) :
+				$pcre = "\007".$this->feedmeta['cat_split']."\007";
+				$cats = array_merge(
+					$cats,
+					preg_split(
+						$pcre,
+						$cat_name,
+						-1 /*=no limit*/,
+						PREG_SPLIT_NO_EMPTY
+					)
+				);
+			else :
+				$cats[] = $cat_name;
+			endif;
+		endforeach; endif;
+
+		$feed_terms['category'] = apply_filters('syndicated_item_categories', $cats, $this);
+
+		// Scan post for /a[@rel='tag'] and use as tags if present
+		$tags = $this->inline_tags();
+		$feed_terms['post_tag'] = apply_filters('syndicated_item_tags', $tags, $this);
+
+		return $feed_terms;
+	} /* SyndicatedPost::get_terms_from_feeds () */
 
 	/**
 	 * SyndicatedPost::inline_tags: Return a list of all the tags embedded
