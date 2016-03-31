@@ -322,6 +322,9 @@ class SyndicatedPost {
 			$tags = $this->inline_tags();
 			$this->feed_terms['post_tag'] = apply_filters('syndicated_item_tags', $tags, $this);
 
+			// Allow plugins to do weirder things with taxonomies than the stock behavior
+			$this->feed_terms = apply_filters('syndicated_item_feed_terms', $this->feed_terms, $this);
+
 			$taxonomies = $this->link->taxonomies();
 			$feedTerms = $this->link->setting('terms', NULL, array());
 			$globalTerms = get_option('feedwordpress_syndication_terms', array());
@@ -1568,13 +1571,17 @@ class SyndicatedPost {
 		// We have to check again in case post has been filtered during
 		// the author_id lookup
 		if ($this->has_fresh_content()) :
-			$consider = array(
-				'category' => array('abbr' => 'cats', 'domain' => array('category', 'post_tag')),
-				'post_tag' => array('abbr' => 'tags', 'domain' => array('post_tag')),
-			);
+			$mapping = apply_filters('syndicated_post_terms_mapping', array(
+				'category' => array('abbr' => 'cats', 'unfamiliar' => 'category', 'domain' => array('category', 'post_tag')),
+				'post_tag' => array('abbr' => 'tags', 'unfamiliar' => 'post_tag', 'domain' => array('post_tag')),
+			), $this);
 
 			$termSet = array(); $valid = null;
-			foreach ($consider as $what => $taxes) :
+			foreach ($this->feed_terms as $what => $anTerms) :
+				// Default to using the inclusive procedures (for cats) rather than exclusive (for inline tags)
+				$taxes = (isset($mapping[$what]) ? $mapping[$what] : $mapping['category']);
+				$unfamiliar = $taxes['unfamiliar'];
+				
 				if (!is_null($this->post)) : // Not filtered out yet
 					# -- Look up, or create, numeric ID for categories
 					$taxonomies = $this->link->setting("match/".$taxes['abbr'], 'match_'.$taxes['abbr'], $taxes['domain']);
@@ -1582,9 +1589,24 @@ class SyndicatedPost {
 					// Eliminate dummy variables
 					$taxonomies = array_filter($taxonomies, 'remove_dummy_zero');
 
+					// Allow FWP add-on filters to control the taxonomies we use to search for a term
+					$taxonomies = apply_filters("syndicated_post_terms_match", $taxonomies, $what, $this);
+					$taxonomies = apply_filters("syndicated_post_terms_match_${what}", $taxonomies, $this);
+
+					// Allow FWP add-on filters to control with greater precision what happens on unmatched
+					$unmatched = apply_filters("syndicated_post_terms_unfamiliar",
+						$this->link->setting(
+							"unfamiliar {$unfamiliar}",
+							"unfamiliar_{$unfamiliar}",
+							'create:'.$unfamiliar
+						),
+						$what,
+						$this
+					);
+
 					$terms = $this->category_ids (
-						$this->feed_terms[$what],
-						$this->link->setting("unfamiliar {$what}", "unfamiliar_{$what}", 'create:'.$what),
+						$anTerms,
+						$unmatched,
 						/*taxonomies=*/ $taxonomies,
 						array(
 						  'singleton' => false, // I don't like surprises
