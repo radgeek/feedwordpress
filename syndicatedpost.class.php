@@ -42,7 +42,7 @@ class SyndicatedPost {
 	 * @param array $item The item syndicated from the feed.
 	 * @param SyndicatedLink $source The feed it was syndicated from.
 	 */
-	function SyndicatedPost ($item, &$source) {
+	function __construct ($item, &$source) {
 		global $wpdb;
 
 		if ( empty($item) && empty($source) )
