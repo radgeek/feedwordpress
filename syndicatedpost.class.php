@@ -354,7 +354,7 @@ class SyndicatedPost {
 			$this->post['post_type'] = apply_filters('syndicated_post_type', $this->link->setting('syndicated post type', 'syndicated_post_type', 'post'), $this);
 		endif;
 		
-	} /* SyndicatedPost::SyndicatedPost() */
+	} /* SyndicatedPost::__construct() */
 
 	#####################################
 	#### EXTRACT DATA FROM FEED ITEM ####
