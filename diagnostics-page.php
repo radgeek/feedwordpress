@@ -356,23 +356,36 @@ function clone_http_test_args_keyvalue_prototype () {
 	<td><a href="#http-test-args" onclick="return clone_http_test_args_keyvalue_prototype();">+ Add</a></td>
 	</tr>
 	</table>
+	</td>
+	</tr>
 
+	<tr>
+	<th>XPath:</th>
+	<td><div><input type="text" name="http_test_xpath" value="" placeholder="xpath-like query" /></div>
+	<div><p>Leave blank to test HTTP, fill in to test a query.</p></div>
+	</td>
+	</tr>
+	
 	<?php if (isset($page->test_html['http_test'])) : ?>
+	<tr>
+	<th scope="row">RESULTS:</th>
+	<td>
+	<div>URL: <code><?php print esc_html($page->test_html['url']); ?></code></div>
 	<div style="position: relative">
 	<div style="width: 100%; overflow: scroll; background-color: #eed">
 	<pre style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -o-pre-wrap;"><?php print $page->test_html['http_test']; ?></pre>
 	</div>
 	</div>
-	<?php endif; ?>
 	</td>
 	</tr>
+	<?php endif; ?>
 </table>
 
 <?php
 	} /* FeedWordPressDiagnosticsPage::tests_box () */
 
-	var $test_html;
-	static function do_http_test ($post) {
+	private $test_html;
+	public function do_http_test ($post) {
 		if (isset($post['http_test_url']) and isset($post['http_test_method'])) :
 			$url = $post['http_test_url'];
 
@@ -410,6 +423,7 @@ function clone_http_test_args_keyvalue_prototype () {
 				break;
 			endswitch;
 			
+			$this->test_html['url'] = $url;
 			$this->test_html['http_test'] = esc_html(MyPHP::val($out));
 		endif;
 	} /* FeedWordPressDiagnosticsPage::do_http_test () */

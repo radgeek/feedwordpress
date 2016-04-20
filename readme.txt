@@ -115,6 +115,9 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 	<http://feedwordpress.radgeek.com/wiki/syndicatedpost> and
 	<http://feedwordpress.radgeek.com/wiki/syndicatedlink>.
 
+*	BUGFIX: Syndication > Diagnostics HTTP diagnostic test widget was broken due to
+	a dumb error on my part. Now fixed.
+	
 *	SMALL CODING CHANGES: Lots of small changes to code organization, incorporation
 	of some PHP 5.x coding conventions, etc.
 
