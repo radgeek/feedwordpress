@@ -98,6 +98,26 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 *	WORDPRESS COMPATIBILITY: Tested with new versions of WordPress up to 4.5.
 
+*	FILTERS AND ADD-ONS: Allow filters and add-ons to filter terms and taxonomy
+	(categories, tags, custom taxonomies, etc.) more thoroughly and more
+	fine-grainedly using syndicated_post_terms_match, syndicated_post_terms_match_{taxonomy},
+	syndicated_post_terms_unfamiliar, syndicated_post_terms_mapping,
+	syndicated_item_feed_terms, and syndicated_item_preset_terms filters.
+
+*	FILTERS AND ADD-ONS: Globals $fwp_channel and $fwp_feedmeta REMOVED.
+	These global variables, originally introduced to allow filters access to
+	information about the source feed in `syndicated_item` filters were
+	deprecated 6+ years ago. If you have any filters or add-ons which still
+	depend on these global variables, you've been using obsolete techniques
+	and you should see about fixing them to access data	about the source feed
+	using the SyndicatedPost::link element instead. For documentation, see
+	the FeedWordPress documentation wiki at
+	<http://feedwordpress.radgeek.com/wiki/syndicatedpost> and
+	<http://feedwordpress.radgeek.com/wiki/syndicatedlink>.
+
+*	SMALL CODING CHANGES: Lots of small changes to code organization, incorporation
+	of some PHP 5.x coding conventions, etc.
+
 = 2015.0514 =
 
 *	IMPORTANT SECURITY UPDATE: This version includes two important fixes for
