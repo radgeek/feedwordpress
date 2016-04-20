@@ -19,6 +19,10 @@ class SyndicatedPostXPathQuery {
 	 *
 	 */
 	public function __construct ($args = array()) {
+		if (is_string($args)) :
+			$args = array("path" => $args);
+		endif;
+		
 		$args = wp_parse_args($args, array(
 		"path" => "",
 		));
@@ -49,7 +53,7 @@ class SyndicatedPostXPathQuery {
 		$this->urlHash = array();
 		
 		$this->path = $path;
-		
+
 	 	// Allow {url} notation for namespaces. URLs will contain : and /, so...
 	 	preg_match_all('/{([^}]+)}/', $path, $match, PREG_SET_ORDER);
 	 	foreach ($match as $ref) :
@@ -60,22 +64,143 @@ class SyndicatedPostXPathQuery {
 			$path = str_replace('{'.$url.'}', '{#'.$hash.'}', $path);
 		endforeach;
 
-		$path = explode('/', $path);
-		foreach ($path as $index => $node) :
-			if (preg_match('/{#([^}]+)}/', $node, $ref)) :
-				if (isset($this->urlHash[$ref[1]])) :
-					$path[$index] = str_replace(
-						'{#'.$ref[1].'}',
-						'{'.$this->urlHash[$ref[1]].'}',
-						$node
-					);
-				endif;
-			endif;
-		endforeach;
+		$path = $this->parsePath(/*cur=*/ $path, /*orig=*/ $path);
 		
 		$this->parsedPath = $path;
 
 	} /* SyndicatedPostXPathQuery::setPath() */
+	
+	/**
+	 * SyndicatedPostXPathQuery::snipSlug
+	 *
+	 * @return string
+	 */
+	protected function snipSlug ($path, $start, $n) {
+		$slug = substr($path, $start, ($n-$start));
+		if (strlen($slug) > 0) :
+			if (preg_match('/{#([^}]+)}/', $slug, $ref)) :
+				if (isset($this->urlHash[$ref[1]])) :
+					$slug = str_replace(
+						'{#'.$ref[1].'}',
+						'{'.$this->urlHash[$ref[1]].'}',
+						$slug
+					);
+				endif;
+			endif;
+		endif;
+		return $slug;
+	} /* SyndicatedPostXPathQuery::snipSlug () */
+	
+	/**
+	 * SyndicatedPostXPathQuery::parsePath ()
+	 *
+	 * @param mixed $path
+	 * @param mixed $rootPath
+	 * @return array|object
+	 */
+	public function parsePath ($path, $rootPath) {
+		if (is_array($path)) :
+			// This looks like it's already been parsed.
+			$pp = $path;
+		else :
+			$pp = array();
+			
+			// Okay let's parse this thing.
+			$n = 0; $start = 0; $state = 'slug';
+			while ($state != '$') :
+			switch ($state) :
+			case 'slash' :
+				$slug = $this->snipSlug($path, $start, $n);
+				if (strlen($slug) > 0) :
+					$pp[] = $slug;
+				endif;
+
+				$n++;
+				// don't include the slash in our next slug
+				$start = $n;
+				
+				$state = (($n < strlen($path)) ? 'slug' : '$');
+				
+				break;
+			case 'brackets' :
+
+				// first, snip off what we've consumed so far
+				$slug = $this->snipSlug($path, $start, $n);
+				if (strlen($slug) > 0) :
+					$pp[] = $slug;
+				endif;
+
+				// now, chase the ]
+				$depth = 1;
+				$n++; $start = $n;
+				
+				// find the end of the [square-bracketed] expression
+				while ($depth > 0 and $n != '') :
+					$tok = ((strlen($path) > $n) ? $path[$n] : '');
+					switch ($tok) :
+					case '' :
+						// ERROR STATE: syntax error
+						$depth = -1;
+						$state = 'syntax-error';
+						break;
+					case '[' :
+						$depth++;
+						break;
+					case ']' :
+						$depth--;
+						break;
+					default :
+						// NOOP
+					endswitch;
+					$n++;
+				endwhile;
+
+				if ($state != 'syntax-error') :
+					$bracketed = substr($path, $start, ($n-$start)-1);
+
+					// recursive parsing
+					$oFilter = new stdClass;
+					$oFilter->verb = 'has';
+					$oFilter->query = $this->parsePath($bracketed, $rootPath);
+					$pp[] = $oFilter;
+				
+					$start = $n;
+					
+					$state = 'slash-expected';
+				endif;
+				break;
+				
+			case 'slash-expected' :
+				$tok = ((strlen($path) > $n) ? $path[$n] : '');
+				if ($tok == '/' or $tok == '') :
+					$state = 'slash';
+				else :
+					$state = 'syntax-error';
+				endif;
+				break;
+			case 'syntax-error' :
+				$pp = new WP_Error('xpath', __("Syntax error", "feedwordpress"));
+				$state = '$';
+				break;
+			case 'slug' :
+			default :
+				$tok = ((strlen($path) > $n) ? $path[$n] : '');
+				switch ($tok) :
+				case '' :
+				case '/' :
+					$state = 'slash';
+					break;
+				case '[' :
+					$state = 'brackets';
+					break;
+				default :
+					$n++;
+				endswitch;
+			endswitch;
+			endwhile;
+		endif;
+		return $pp;
+	} /* SyndicatedPostXPathQuery::parsePath() */
 	
 	/**
 	 * SyndicatedPostXPathQuery::match
@@ -89,9 +214,10 @@ class SyndicatedPostXPathQuery {
 		$r = wp_parse_args($r, array(
 		"type" => SIMPLEPIE_TYPE_ATOM_10,
 		"xmlns" => array(),
-		"entry" => array(),
-		"feed" => array(),
-		"channel" => array(),
+		"map" => array(),
+		"context" => array(),
+		"parent" => array(),
+		"format" => "string",
 		));
 
 		$this->feed_type = $r['type'];
@@ -103,66 +229,110 @@ class SyndicatedPostXPathQuery {
 			$node = array_shift($path);
 		endwhile;
 
-		switch ($node) :
-		case 'feed' :
-		case 'channel' :
+		if (is_string($node) and isset($r['map'][$node])) :
+			$data = $r['map'][$node];
 			$node = array_shift($path);
-			$data = $r['feed'];
-			$data = array_merge($data, $r['channel']);
-			break;
-		case 'item' :
-			$node = array_shift($path);
-		default :
-			$data = array($r['entry']);
-			$method = NULL;
-		endswitch;
+		else :
+			$data = $r['map']['/'];
+		endif;
 
+		$matches = $data;
 		while (!is_null($node)) :
-			if (strlen($node) > 0) :
-				$matches = array();
-
+			if (is_object($node) OR strlen($node) > 0) :
 				list($axis, $element) = $this->xpath_name_and_axis($node);
+				if ('self'==$axis) :
+					if (is_object($element) and property_exists($element, 'verb')) :
 
-				foreach ($data as $datum) :
-					if (!is_string($datum) and isset($datum[$axis])) :
-						foreach ($datum[$axis] as $ns => $elements) :
-							if (isset($elements[$element])) :
-								// Potential match.
-								// Check namespace.
-								if (is_string($elements[$element])) : // Attribute
-									$addenda = array($elements[$element]);
-									$contexts = array($datum);
-								
-								// Element
-								else :
-									$addenda = $elements[$element];
-									$contexts = $elements[$element];
-								endif;
+						$subq = new self(array("path" => $element->query));
+						$result = $subq->match(array(
+							"type" => $r['type'],
+							"xmlns" => $r['xmlns'],
+							"map" => array(
+								"/" => $matches,
+							),
+							"context" => $matches,
+							"parent" => $r['parent'],
+							"format" => "object",
+						));
+						
+						// when format = 'object' we should get back
+						// a sparse array of arrays, with indices = indices
+						// from the input array, each element = an array of
+						// one or more matching elements
+	
+						if ($element->verb = 'has' and is_array($result)) :
 
-								foreach ($addenda as $index => $addendum) :
-									$context = $contexts[$index];
+							$results = array();
+							foreach (array_keys($result) as $a) :
+								$results[$a] = $matches[$a];
+							endforeach;
+							
+							$matches = $results;
+							$data = $matches;
+						endif;
+												
+					elseif (is_numeric($node)) :
 
-									$namespaces = $this->xpath_possible_namespaces($node, $context);
-									if (in_array($ns, $namespaces)) :
-										$matches[] = $addendum;
-									endif;
-								endforeach;
-							endif;
-						endforeach;
+						// according to W3C, sequence starts at position 1, not 0
+						// so subtract 1 to line up with PHP array starting at 0
+						$idx = intval($element) - 1;
+						if (isset($matches[$idx])) :
+							$data = array($idx => $matches[$idx]);
+						else :
+							$data = array();
+						endif;
+						
+						$matches = array($idx => $data);
 					endif;
-				endforeach;
+					
+				else :
+					$matches = array();
 
-				$data = $matches;
+					foreach ($data as $idx => $datum) :
+						if (!is_string($datum) and isset($datum[$axis])) :
+							foreach ($datum[$axis] as $ns => $elements) :
+								if (isset($elements[$element])) :
+									// Potential match.
+									// Check namespace.
+									if (is_string($elements[$element])) : // Attribute
+										$addenda = array($elements[$element]);
+										$contexts = array($datum);
+									
+									// Element
+									else :
+										$addenda = $elements[$element];
+										$contexts = $elements[$element];
+									endif;
+
+									foreach ($addenda as $index => $addendum) :
+										$context = $contexts[$index];
+
+										$namespaces = $this->xpath_possible_namespaces($node, $context);
+										if (in_array($ns, $namespaces)) :
+											$matches[] = $addendum;
+										endif;
+									endforeach;
+								endif;
+							endforeach;
+						endif;
+					endforeach;
+
+					$data = $matches;
+				endif;
 			endif;
 			$node = array_shift($path);
 		endwhile;
 
 		$matches = array();
-		foreach ($data as $datum) :
-			if (is_string($datum)) :
-				$matches[] = $datum;
-			elseif (isset($datum['data'])) :
-				$matches[] = $datum['data'];
+		foreach ($data as $idx => $datum) :
+			if ($r['format'] == 'string') :
+				if (is_string($datum)) :
+					$matches[] = $datum;
+				elseif (isset($datum['data'])) :
+					$matches[] = $datum['data'];
+				endif;
+			else :
+				$matches[$idx] = $datum;
 			endif;
 		endforeach;
 		
@@ -191,15 +361,31 @@ class SyndicatedPostXPathQuery {
 	public function xpath_name_and_axis ($node) {
 		$ns = NULL; $element = NULL;
 
-		if (substr($node, 0, 1)=='@') :
+		$axis = 'child'; // "In effect, `child` is the default axis."
+		if (is_object($node) and property_exists($node, 'verb')):
+			if ('has'==$node->verb) :
+				$axis = 'self';
+			endif;
+		elseif (strpos($node, '::') !== false) :
+			list($axis, $node) = explode("::", $node, 2);
+			if ($axis=='attribute') :
+				$axis = 'attribs'; // map from W3C to SimplePie's idiosyncratic notation
+			endif;
+		elseif (substr($node, 0, 1)=='@') :
 			$axis = 'attribs'; $node = substr($node, 1);
+		elseif (is_numeric($node)) :
+			$axis = 'self';
+		elseif (substr($node, 0, 1)=='/') :
+			// FIXME: properly, we should check for // and if we have it,
+			// treat that as short for /descendent-or-self::node()/
+			$axis = 'child'; $node = substr($node, 1);
 		else :
-			$axis = 'child';
+			// NOOP
 		endif;
 
-		if (preg_match('/^{([^}]*)}(.*)$/', $node, $ref)) :
+		if (is_string($node) and preg_match('/^{([^}]*)}(.*)$/', $node, $ref)) :
 			$element = $ref[2];
-		elseif (strpos($node, ':') !== FALSE) :
+		elseif (is_string($node) and strpos($node, ':') !== FALSE) :
 			list($xmlns, $element) = explode(':', $node, 2);
 		else :
 			$element = $node;
@@ -253,5 +439,24 @@ class SyndicatedPostXPathQuery {
 if (basename($_SERVER['SCRIPT_FILENAME'])==basename(__FILE__)) :
 	# some day when I am a grown-up developer I might include
 	# some test cases in this here section
-	# we need to implement wp_parse_args()...
+	# we need to implement wp_parse_args(), __(), and class WP_Error ...
+	#function wp_parse_args ($r, $defaults) {
+	#	return array_merge($defaults, $r);
+	#}
+	#function __($text, $domain) {
+	#	return $text;
+	#}
+	#class WP_Error {
+	#	public function __construct ( $slug, $message ) {
+	#		/*DBG*/ echo $slug;
+	#		/*DBG*/ echo ": ";
+	#		/*DBG*/ echo $message;
+	#	}
+	#}
+	#
+	#header("Content-type: text/plain");
+	#
+	#$spxq = new SyndicatedPostXPathQuery(array("path" => $_REQUEST['p']));
+	#
+	#var_dump($spxq);
 endif;

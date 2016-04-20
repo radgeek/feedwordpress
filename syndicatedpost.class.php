@@ -293,14 +293,22 @@ class SyndicatedPost {
 	 function query ($path) {
 		$xq = new SyndicatedPostXPathQuery(array("path" => $path));
 
-		/*DBG*/ //echo "DATA: ".MyPHP::val($this->entry->data);
+		$feedChannel = array_merge(
+			$this->get_feed_root_element(),
+			$this->get_feed_channel_elements()
+		);
 
 		$matches = $xq->match(array(
 		"type" => $this->link->simplepie->get_type(),
 		"xmlns" => $this->xmlns,
-		"entry" => $this->entry->data,
-		"feed" => $this->get_feed_root_element(),
-		"channel" => $this->get_feed_channel_elements(),
+		"map" => array(
+			"/" => array($this->entry->data),
+			"item" => array($this->entry->data),
+			"feed" => $feedChannel,
+			"channel" => $feedChannel
+		),
+		"context" => $this->entry->data,
+		"parent" => $feedChannel,
 		));
 
 		return $matches;
