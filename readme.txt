@@ -3,7 +3,7 @@ Contributors: Charles Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
-Tested up to: 4.4.2
+Tested up to: 4.5
 Stable tag: 2015.0514
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
@@ -20,7 +20,7 @@ appears as a series of special posts in your WordPress posts database. If you
 syndicate several feeds then you can use WordPress's posts database and
 templating engine as the back-end of an aggregation ("planet") website. It was
 developed, originally, because I needed a more flexible replacement for
-[Planet][] to use at [Feminist Blogs][].
+[Planet][] to use at Feminist Blogs, an aggregator site that I used to administer.
 
 [Planet]: http://www.planetplanet.org/
 [Feminist Blogs]: http://feministblogs.org/
@@ -93,6 +93,10 @@ outs, see the documentation at the [FeedWordPress project homepage][].
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
 == Changelog ==
+
+= 2016.0420 =
+
+*	WORDPRESS COMPATIBILITY: Tested with new versions of WordPress up to 4.5.
 
 = 2015.0514 =
 
