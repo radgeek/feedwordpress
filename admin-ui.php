@@ -373,7 +373,7 @@ class FeedWordPressAdminPage {
 	function display_sheet_header ($pagename = 'Syndication', $all = false) {
 		global $fwp_path;
 		?>
-		<div class="icon32"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress.png'); ?>" alt="" /></div>
+		<div class="icon32"><img src="<?php print esc_html( plugins_url( '/'.$fwp_path.'/feedwordpress.png') ); ?>" alt="" /></div>
 		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name(/*from feed=*/ false)); ?><?php endif; ?></h2>
 		<?php
 	}
@@ -976,7 +976,7 @@ class FeedWordPressSettingsUI {
 		wp_enqueue_script('post'); // for magic tag and category boxes
 		wp_enqueue_script('admin-forms'); // for checkbox selection
 
-		wp_register_script('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.js');
+		wp_register_script('feedwordpress-elements', plugins_url('/' . $fwp_path . '/feedwordpress-elements.js') );
 		wp_enqueue_script('feedwordpress-elements');
 	}
 

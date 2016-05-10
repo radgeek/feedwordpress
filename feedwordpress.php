@@ -671,7 +671,7 @@ function fwp_add_pages () {
 		$menu_cap,
 		$syndicationMenu,
 		NULL,
-		WP_PLUGIN_URL.'/'.FeedWordPress::path('feedwordpress-tiny.png')
+		plugins_url( '/'.FeedWordPress::path('feedwordpress-tiny.png') )
 	);
 
 	do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
@@ -1465,7 +1465,7 @@ class FeedWordPress {
 		// If this is a FeedWordPress admin page, queue up scripts for AJAX
 		// functions that FWP uses. If it is a display page or a non-FWP admin
 		// page, don't.
-		wp_register_style('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.css');
+		wp_register_style('feedwordpress-elements', plugins_url( '/'.$fwp_path.'/feedwordpress-elements.css') );
 		if (FeedWordPressSettingsUI::is_admin()) :
 			// For JavaScript that needs to be generated dynamically
 			add_action('admin_print_scripts', array('FeedWordPressSettingsUI', 'admin_scripts'));
