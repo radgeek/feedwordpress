@@ -1206,7 +1206,11 @@ class FeedWordPress {
 		$exact = $hook; // Before munging
 
 		if (!!$hook) :
-			if ($hook != 'init') : // Constrain values.
+			if ($hook == 'init' or $hook == 'wp_loaded') : // Re-map init to wp_loaded
+				$hook = ($params['setting only'] ? 'init' : 'wp_loaded');
+
+			// Constrain possible values. If it's not an init or wp_loaded, it's a shutdown
+			else :
 				$hook = 'shutdown';
 			endif;
 		endif;
