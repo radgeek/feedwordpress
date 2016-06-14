@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2016.0420
+Version: 2016.0614
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2016.0420
+ * @version 2016.0614
  */
 
 # This uses code derived from:
@@ -32,7 +32,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2016.0420');
+define ('FEEDWORDPRESS_VERSION', '2016.0614');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -216,6 +216,8 @@ if (!$feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
 	endif;
 
 	add_action('init', array($feedwordpress, 'init'));
+	add_action('wp_loaded', array($feedwordpress, 'wp_loaded'));
+
 	add_action('shutdown', array($feedwordpress, 'email_diagnostic_log'));
 	add_action('shutdown', array($feedwordpress, 'feedwordpress_cleanup'));
 	add_action('wp_dashboard_setup', array($feedwordpress, 'dashboard_setup'));
@@ -1512,10 +1514,21 @@ class FeedWordPress {
 		add_action('wp_ajax_fwp_feedcontents', array($this, 'fwp_feedcontents'));
 		add_action('wp_ajax_fwp_xpathtest', array($this, 'fwp_xpathtest'));
 
-		$this->clear_cache_magic_url();
-		$this->update_magic_url();
 	} /* FeedWordPress::init() */
 
+	/**
+	 * FeedWordPress::wp_loaded (): Once all plugin and theme modules have been
+	 * loaded and initialized (by actions on the init hook, etc.), check the HTTP
+	 * request to see if we need to perform any special FeedWordPress-related
+	 * actions.
+	 *
+	 * @since 2016.0614
+	 */
+	public function wp_loaded () {
+		$this->clear_cache_magic_url();
+		$this->update_magic_url();
+	} /* FeedWordPress::wp_loaded () */
+	
 	public function fwp_feeds () {
 		$feeds = array();
 		$feed_ids = $this->feeds;
@@ -1769,11 +1782,22 @@ class FeedWordPress {
 
 	} /* FeedWordPress::user_can_richedit () */
 
+	public function clear_cache_magic_url () {
+		if ($this->clear_cache_requested()) :
+			$this->clear_cache();
+		endif;
+	} /* FeedWordPress::clear_cache_magic_url() */
+
+	public function clear_cache_requested () {
+		return MyPHP::request('clear_cache');
+	} /* FeedWordPress::clear_cache_requested() */
+
 	public function update_magic_url () {
 		global $wpdb;
 
 		// Explicit update request in the HTTP request (e.g. from a cron job)
 		if ($this->update_requested()) :
+
 			$this->update_hooked = "Initiating a CRON JOB CHECK-IN ON UPDATE SCHEDULE due to URL parameter = ".trim($this->val($_REQUEST['update_feedwordpress']));
 
 			$this->update($this->update_requested_url());
@@ -1803,27 +1827,17 @@ class FeedWordPress {
 			// when successful.
 			exit;
 		endif;
-	} /* FeedWordPress::magic_update_url () */
-
-	public function clear_cache_magic_url () {
-		if ($this->clear_cache_requested()) :
-			$this->clear_cache();
-		endif;
-	} /* FeedWordPress::clear_cache_magic_url() */
-
-	public function clear_cache_requested () {
-		return MyPHP::request('clear_cache');
-	} /* FeedWordPress::clear_cache_requested() */
+	} /* FeedWordPress::update_magic_url () */
 
 	public function update_requested () {
 		return MyPHP::request('update_feedwordpress');
 	} /* FeedWordPress::update_requested() */
-
+	
 	public function update_requested_url () {
 		$ret = null;
 
 		if (($_REQUEST['update_feedwordpress']=='*')
-		or (preg_match('|^http://.*|i', $_REQUEST['update_feedwordpress']))) :
+		or (preg_match('|^[a-z]+://.*|i', $_REQUEST['update_feedwordpress']))) :
 			$ret = $_REQUEST['update_feedwordpress'];
 		endif;
 
