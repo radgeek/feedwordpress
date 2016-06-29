@@ -2240,6 +2240,10 @@ EOM;
 								// Add a random disambiguator
 								$userdata['user_login'] .= substr(md5(uniqid(microtime())), 0, 6);
 								break;
+							case 'user_nicename_too_long' :
+								// Add a limited 50 caracters user_nicename based on user_login
+                                				$userdata['user_nicename'] = mb_substr( $userdata['user_login'], 0, 50 );
+								break;
 							case 'existing_user_email' :
 								// No disassemble!
 								$parts = explode('@', $userdata['user_email'], 2);
