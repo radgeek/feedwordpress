@@ -2,6 +2,7 @@
 # Subversion Repository for the benefit of the WordPress overlords. #
 #####################################################################
 
+.idea
 .svn
 *(*conflicted copy*)*
 
