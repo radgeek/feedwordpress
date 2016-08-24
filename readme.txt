@@ -3,8 +3,8 @@ Contributors: Charles Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
-Tested up to: 4.2.2
-Stable tag: 2015.0514
+Tested up to: 4.5.2
+Stable tag: 2016.0420
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -20,7 +20,7 @@ appears as a series of special posts in your WordPress posts database. If you
 syndicate several feeds then you can use WordPress's posts database and
 templating engine as the back-end of an aggregation ("planet") website. It was
 developed, originally, because I needed a more flexible replacement for
-[Planet][] to use at [Feminist Blogs][].
+[Planet][] to use at Feminist Blogs, an aggregator site that I used to administer.
 
 [Planet]: http://www.planetplanet.org/
 [Feminist Blogs]: http://feministblogs.org/
@@ -93,6 +93,33 @@ outs, see the documentation at the [FeedWordPress project homepage][].
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
 == Changelog ==
+
+= 2016.0420 =
+
+*	WORDPRESS COMPATIBILITY: Tested with new versions of WordPress up to 4.5.
+
+*	FILTERS AND ADD-ONS: Allow filters and add-ons to filter terms and taxonomy
+	(categories, tags, custom taxonomies, etc.) more thoroughly and more
+	fine-grainedly using syndicated_post_terms_match, syndicated_post_terms_match_{taxonomy},
+	syndicated_post_terms_unfamiliar, syndicated_post_terms_mapping,
+	syndicated_item_feed_terms, and syndicated_item_preset_terms filters.
+
+*	FILTERS AND ADD-ONS: Globals $fwp_channel and $fwp_feedmeta REMOVED.
+	These global variables, originally introduced to allow filters access to
+	information about the source feed in `syndicated_item` filters were
+	deprecated 6+ years ago. If you have any filters or add-ons which still
+	depend on these global variables, you've been using obsolete techniques
+	and you should see about fixing them to access data	about the source feed
+	using the SyndicatedPost::link element instead. For documentation, see
+	the FeedWordPress documentation wiki at
+	<http://feedwordpress.radgeek.com/wiki/syndicatedpost> and
+	<http://feedwordpress.radgeek.com/wiki/syndicatedlink>.
+
+*	BUGFIX: Syndication > Diagnostics HTTP diagnostic test widget was broken due to
+	a dumb error on my part. Now fixed.
+	
+*	SMALL CODING CHANGES: Lots of small changes to code organization, incorporation
+	of some PHP 5.x coding conventions, etc.
 
 = 2015.0514 =
 

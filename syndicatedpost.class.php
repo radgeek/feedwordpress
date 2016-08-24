@@ -1,6 +1,7 @@
 <?php
 require_once(dirname(__FILE__).'/feedtime.class.php');
 require_once(dirname(__FILE__).'/syndicatedpostterm.class.php');
+require_once(dirname(__FILE__).'/syndicatedpostxpathquery.class.php');
 
 /**
  * class SyndicatedPost: FeedWordPress uses to manage the conversion of
@@ -42,7 +43,7 @@ class SyndicatedPost {
 	 * @param array $item The item syndicated from the feed.
 	 * @param SyndicatedLink $source The feed it was syndicated from.
 	 */
-	function SyndicatedPost ($item, &$source) {
+	function __construct ($item, &$source) {
 		global $wpdb;
 
 		if ( empty($item) && empty($source) )
@@ -85,21 +86,6 @@ class SyndicatedPost {
 
 		// Fucking SimplePie.
 		$this->xmlns['reverse']['rss'][] = '';
-
-		# These globals were originally an ugly kludge around a bug in
-		# apply_filters from WordPress 1.5. The bug was fixed in 1.5.1,
-		# and I sure hope at this point that nobody writing filters for
-		# FeedWordPress is still relying on them.
-		#
-		# Anyway, I hereby declare them DEPRECATED as of 8 February
-		# 2010. I'll probably remove the globals within 1-2 releases in
-		# the interests of code hygiene and memory usage. If you
-		# currently use them in your filters, I advise you switch off to
-		# accessing the public members SyndicatedPost::feed and
-		# SyndicatedPost::feedmeta.
-
-		global $fwp_channel, $fwp_feedmeta;
-		$fwp_channel = $this->feed; $fwp_feedmeta = $this->feedmeta;
 
 		// Trigger global syndicated_item filter.
 		$changed = apply_filters('syndicated_item', $this->item, $this);
@@ -265,93 +251,15 @@ class SyndicatedPost {
 			// Store a hash of the post content for checking whether something needs to be updated
 			$this->post['meta']['syndication_item_hash'] = $this->update_hash();
 
-			// Categories: start with default categories, if any.
-			$cats = array();
-			if ('no' != $this->link->setting('add/category', NULL, 'yes')) :
-				$fc = get_option("feedwordpress_syndication_cats");
-				if ($fc) :
-					$cats = array_merge($cats, explode("\n", $fc));
-				endif;
-			endif;
-
-			$fc = $this->link->setting('cats', NULL, array());
-			if (is_array($fc)) :
-				$cats = array_merge($cats, $fc);
-			endif;
-			$this->preset_terms['category'] = $cats;
-
-			// Now add categories from the post, if we have 'em
-			$cats = array();
-			$post_cats = $this->entry->get_categories();
-			if (is_array($post_cats)) : foreach ($post_cats as $cat) :
-				$cat_name = $cat->get_term();
-				if (!$cat_name) : $cat_name = $cat->get_label(); endif;
-
-				if ($this->link->setting('cat_split', NULL, NULL)) :
-					$pcre = "\007".$this->feedmeta['cat_split']."\007";
-					$cats = array_merge(
-						$cats,
-						preg_split(
-							$pcre,
-							$cat_name,
-							-1 /*=no limit*/,
-							PREG_SPLIT_NO_EMPTY
-						)
-					);
-				else :
-					$cats[] = $cat_name;
-				endif;
-			endforeach; endif;
-
-			$this->feed_terms['category'] = apply_filters('syndicated_item_categories', $cats, $this);
-
-			// Tags: start with default tags, if any
-			$tags = array();
-			if ('no' != $this->link->setting('add/post_tag', NULL, 'yes')) :
-				$ft = get_option("feedwordpress_syndication_tags", NULL);
-				$tags = (is_null($ft) ? array() : explode(FEEDWORDPRESS_CAT_SEPARATOR, $ft));
-			endif;
-
-			$ft = $this->link->setting('tags', NULL, array());
-			if (is_array($ft)) :
-				$tags = array_merge($tags, $ft);
-			endif;
-			$this->preset_terms['post_tag'] = $tags;
-
-			// Scan post for /a[@rel='tag'] and use as tags if present
-			$tags = $this->inline_tags();
-			$this->feed_terms['post_tag'] = apply_filters('syndicated_item_tags', $tags, $this);
-
-			$taxonomies = $this->link->taxonomies();
-			$feedTerms = $this->link->setting('terms', NULL, array());
-			$globalTerms = get_option('feedwordpress_syndication_terms', array());
-
-			$specials = array('category' => 'cats', 'post_tag' => 'tags');
-			foreach ($taxonomies as $tax) :
-				if (!isset($specials[$tax])) :
-					$terms = array();
-
-					// See if we should get the globals
-					if ('no' != $this->link->setting("add/$tax", NULL, 'yes')) :
-						if (isset($globalTerms[$tax])) :
-							$terms = $globalTerms[$tax];
-						endif;
-					endif;
-
-					// Now merge in the locals
-					if (isset($feedTerms[$tax])) :
-						$terms = array_merge($terms, $feedTerms[$tax]);
-					endif;
-
-					// That's all, folks.
-					$this->preset_terms[$tax] = $terms;
-				endif;
-			endforeach;
+			// Categories, Tags, and other Terms: from settings assignments (global settings, subscription settings),
+			// and from feed assignments (item metadata, post content)
+			$this->preset_terms = apply_filters('syndicated_item_preset_terms', $this->get_terms_from_settings(), $this);
+			$this->feed_terms = apply_filters('syndicated_item_feed_terms', $this->get_terms_from_feeds(), $this);
 
 			$this->post['post_type'] = apply_filters('syndicated_post_type', $this->link->setting('syndicated post type', 'syndicated_post_type', 'post'), $this);
 		endif;
 		
-	} /* SyndicatedPost::SyndicatedPost() */
+	} /* SyndicatedPost::__construct() */
 
 	#####################################
 	#### EXTRACT DATA FROM FEED ITEM ####
@@ -383,97 +291,26 @@ class SyndicatedPost {
 	 * elements or attributes
 	 */
 	 function query ($path) {
-	 	$urlHash = array();
+		$xq = new SyndicatedPostXPathQuery(array("path" => $path));
 
-	 	// Allow {url} notation for namespaces. URLs will contain : and /, so...
-	 	preg_match_all('/{([^}]+)}/', $path, $match, PREG_SET_ORDER);
-	 	foreach ($match as $ref) :
-	 	 	$urlHash[md5($ref[1])] = $ref[1];
-		endforeach;
+		$feedChannel = array_merge(
+			$this->get_feed_root_element(),
+			$this->get_feed_channel_elements()
+		);
 
-		foreach ($urlHash as $hash => $url) :
-			$path = str_replace('{'.$url.'}', '{#'.$hash.'}', $path);
-		endforeach;
+		$matches = $xq->match(array(
+		"type" => $this->link->simplepie->get_type(),
+		"xmlns" => $this->xmlns,
+		"map" => array(
+			"/" => array($this->entry->data),
+			"item" => array($this->entry->data),
+			"feed" => $feedChannel,
+			"channel" => $feedChannel
+		),
+		"context" => $this->entry->data,
+		"parent" => $feedChannel,
+		));
 
-		$path = explode('/', $path);
-		foreach ($path as $index => $node) :
-			if (preg_match('/{#([^}]+)}/', $node, $ref)) :
-				if (isset($urlHash[$ref[1]])) :
-					$path[$index] = str_replace(
-						'{#'.$ref[1].'}',
-						'{'.$urlHash[$ref[1]].'}',
-						$node
-					);
-				endif;
-			endif;
-		endforeach;
-
-		// Start out with a get_item_tags query.
-		$node = '';
-		while (strlen($node)==0 and !is_null($node)) :
-			$node = array_shift($path);
-		endwhile;
-
-		switch ($node) :
-		case 'feed' :
-		case 'channel' :
-			$node = array_shift($path);
-			$data = $this->get_feed_root_element();
-			$data = array_merge($data, $this->get_feed_channel_elements());
-			break;
-		case 'item' :
-			$node = array_shift($path);
-		default :
-			$data = array($this->entry->data);
-			$method = NULL;
-		endswitch;
-
-		while (!is_null($node)) :
-			if (strlen($node) > 0) :
-				$matches = array();
-
-				list($axis, $element) = $this->xpath_name_and_axis($node);
-
-				foreach ($data as $datum) :
-					if (!is_string($datum) and isset($datum[$axis])) :
-						foreach ($datum[$axis] as $ns => $elements) :
-							if (isset($elements[$element])) :
-								// Potential match.
-								// Check namespace.
-								if (is_string($elements[$element])) : // Attribute
-									$addenda = array($elements[$element]);
-									$contexts = array($datum);
-								else : // Element
-									$addenda = $elements[$element];
-									$contexts = $elements[$element];
-								endif;
-
-								foreach ($addenda as $index => $addendum) :
-									$context = $contexts[$index];
-
-									$namespaces = $this->xpath_possible_namespaces($node, $context);
-									if (in_array($ns, $namespaces)) :
-										$matches[] = $addendum;
-									endif;
-								endforeach;
-							endif;
-						endforeach;
-					endif;
-				endforeach;
-
-				$data = $matches;
-			endif;
-			$node = array_shift($path);
-		endwhile;
-
-		$matches = array();
-		foreach ($data as $datum) :
-			if (is_string($datum)) :
-				$matches[] = $datum;
-			elseif (isset($datum['data'])) :
-				$matches[] = $datum['data'];
-			endif;
-		endforeach;
 		return $matches;
 	} /* SyndicatedPost::query() */
 
@@ -504,84 +341,6 @@ class SyndicatedPost {
 		endforeach;
 		return $matches;
 	} /* SyndicatedPost::get_feed_channel_elements() */
-
-	function xpath_default_namespace () {
-		// Get the default namespace.
-		$type = $this->link->simplepie->get_type();
-		if ($type & SIMPLEPIE_TYPE_ATOM_10) :
-			$defaultNS = SIMPLEPIE_NAMESPACE_ATOM_10;
-		elseif ($type & SIMPLEPIE_TYPE_ATOM_03) :
-			$defaultNS = SIMPLEPIE_NAMESPACE_ATOM_03;
-		elseif ($type & SIMPLEPIE_TYPE_RSS_090) :
-			$defaultNS = SIMPLEPIE_NAMESPACE_RSS_090;
-		elseif ($type & SIMPLEPIE_TYPE_RSS_10) :
-			$defaultNS = SIMPLEPIE_NAMESPACE_RSS_10;
-		elseif ($type & SIMPLEPIE_TYPE_RSS_20) :
-			$defaultNS = SIMPLEPIE_NAMESPACE_RSS_20;
-		else :
-			$defaultNS = SIMPLEPIE_NAMESPACE_RSS_20;
-		endif;
-		return $defaultNS;
-	} /* SyndicatedPost::xpath_default_namespace() */
-
-	function xpath_name_and_axis ($node) {
-		$ns = NULL; $element = NULL;
-
-		if (substr($node, 0, 1)=='@') :
-			$axis = 'attribs'; $node = substr($node, 1);
-		else :
-			$axis = 'child';
-		endif;
-
-		if (preg_match('/^{([^}]*)}(.*)$/', $node, $ref)) :
-			$element = $ref[2];
-		elseif (strpos($node, ':') !== FALSE) :
-			list($xmlns, $element) = explode(':', $node, 2);
-		else :
-			$element = $node;
-		endif;
-		return array($axis, $element);
-	} /* SyndicatedPost::xpath_local_name () */
-
-	function xpath_possible_namespaces ($node, $datum = array()) {
-		$ns = NULL; $element = NULL;
-
-		if (substr($node, 0, 1)=='@') :
-			$attr = '@'; $node = substr($node, 1);
-		else :
-			$attr = '';
-		endif;
-
-		if (preg_match('/^{([^}]*)}(.*)$/', $node, $ref)) :
-			$ns = array($ref[1]);
-		elseif (strpos($node, ':') !== FALSE) :
-			list($xmlns, $element) = explode(':', $node, 2);
-
-			if (isset($this->xmlns['reverse'][$xmlns])) :
-				$ns = $this->xmlns['reverse'][$xmlns];
-			else :
-				$ns = array($xmlns);
-			endif;
-
-			// Fucking SimplePie. For attributes in default xmlns.
-			$defaultNS = $this->xpath_default_namespace();
-			if (isset($this->xmlns['forward'][$defaultNS])
-			and ($xmlns==$this->xmlns['forward'][$defaultNS])) :
-				$ns[] = '';
-			endif;
-
-			if (isset($datum['xmlns'])) :
-				if (isset($datum['xmlns'][$xmlns])) :
-					$ns[] = $datum['xmlns'][$xmlns];
-				endif;
-			endif;
-		else :
-			// Often in SimplePie, the default namespace gets stored
-			// as an empty string rather than a URL.
-			$ns = array($this->xpath_default_namespace(), '');
-		endif;
-		return array_unique($ns);
-	} /* SyndicatedPost::xpath_possible_namespaces() */
 
 	function get_categories ($params = array()) {
 		return $this->entry->get_categories();
@@ -975,6 +734,119 @@ class SyndicatedPost {
 
 		return $author;
 	} /* SyndicatedPost::author() */
+
+	/**
+	 * SyndicatedPost::get_terms_from_settings(): Return an array of terms to associate with the incoming
+	 * post based on the Categories, Tags, and other terms associated with each new post by the user's
+	 * settings (global and feed-specific).
+	 *
+	 * @since 2016.0331
+	 * @return array of lists, each element has the taxonomy for a key ('category', 'post_tag', etc.),
+	 * 		and a list of term codes (either alphanumeric names, or ID numbers encoded in a format that
+	 * 		SyndicatedLink::category_ids() can understand) within that taxonomy
+	 *	 
+	 */
+	public function get_terms_from_settings () {
+		// Categories: start with default categories, if any.
+		$cats = array();
+		if ('no' != $this->link->setting('add/category', NULL, 'yes')) :
+			$fc = get_option("feedwordpress_syndication_cats");
+			if ($fc) :
+				$cats = array_merge($cats, explode("\n", $fc));
+			endif;
+		endif;
+
+		$fc = $this->link->setting('cats',NULL, array());
+		if (is_array($fc)) :
+			$cats = array_merge($cats, $fc);
+		endif;
+		$preset_terms['category'] = $cats;
+
+		// Tags: start with default tags, if any
+		$tags = array();
+		if ('no' != $this->link->setting('add/post_tag', NULL, 'yes')) :
+			$ft = get_option("feedwordpress_syndication_tags", NULL);
+			$tags = (is_null($ft) ? array() : explode(FEEDWORDPRESS_CAT_SEPARATOR, $ft));
+		endif;
+
+		$ft = $this->link->setting('tags', NULL, array());
+		if (is_array($ft)) :
+			$tags = array_merge($tags, $ft);
+		endif;
+		$preset_terms['post_tag'] = $tags;
+
+		$taxonomies = $this->link->taxonomies();
+		$feedTerms = $this->link->setting('terms', NULL, array());
+		$globalTerms = get_option('feedwordpress_syndication_terms', array());
+		$specials = array('category' => 'cats', 'post_tag' => 'tags');
+
+		foreach ($taxonomies as $tax) :
+			// category and tag settings have already previously been handled
+			// but if this is from another taxonomy, then...
+			if (!isset($specials[$tax])) :
+				$terms = array();
+
+				// See if we should get the globals
+				if ('no' != $this->link->setting("add/$tax", NULL, 'yes')) :
+					if (isset($globalTerms[$tax])) :
+						$terms = $globalTerms[$tax];
+					endif;
+				endif;
+
+				// Now merge in the locals
+				if (isset($feedTerms[$tax])) :
+					$terms = array_merge($terms, $feedTerms[$tax]);
+				endif;
+
+				// That's all, folks.
+				$preset_terms[$tax] = $terms;
+			endif;
+		endforeach;
+		
+		return $preset_terms;
+	} /* SyndicatedPost::get_terms_from_settings () */
+		
+	/**
+	 * SyndicatedPost::get_terms_from_feeds(): Return an array of terms to associate with the incoming
+	 * post based on the contents of the subscribed feed (atom:category and rss:category elements, dc:subject
+	 * elements, tags embedded using microformats in the post content, etc.)
+	 *
+	 * @since 2016.0331
+	 * @return array of lists, each element has the taxonomy for a key ('category', 'post_tag', etc.),
+	 * 		and a list of alphanumeric term names
+	 */
+	public function get_terms_from_feeds () {	
+		// Now add categories from the post, if we have 'em
+		$cats = array();
+		$post_cats = $this->entry->get_categories();
+		if (is_array($post_cats)) : foreach ($post_cats as $cat) :
+			$cat_name = $cat->get_term();
+			if (!$cat_name) : $cat_name = $cat->get_label(); endif;
+
+			if ($this->link->setting('cat_split', NULL, NULL)) :
+				$pcre = "\007".$this->feedmeta['cat_split']."\007";
+				$cats = array_merge(
+					$cats,
+					preg_split(
+						$pcre,
+						$cat_name,
+						-1 /*=no limit*/,
+						PREG_SPLIT_NO_EMPTY
+					)
+				);
+			else :
+				$cats[] = $cat_name;
+			endif;
+		endforeach; endif;
+
+		$feed_terms['category'] = apply_filters('syndicated_item_categories', $cats, $this);
+
+		// Scan post for /a[@rel='tag'] and use as tags if present
+		$tags = $this->inline_tags();
+		$feed_terms['post_tag'] = apply_filters('syndicated_item_tags', $tags, $this);
+
+		return $feed_terms;
+	} /* SyndicatedPost::get_terms_from_feeds () */
 
 	/**
 	 * SyndicatedPost::inline_tags: Return a list of all the tags embedded
@@ -1568,13 +1440,17 @@ class SyndicatedPost {
 		// We have to check again in case post has been filtered during
 		// the author_id lookup
 		if ($this->has_fresh_content()) :
-			$consider = array(
-				'category' => array('abbr' => 'cats', 'domain' => array('category', 'post_tag')),
-				'post_tag' => array('abbr' => 'tags', 'domain' => array('post_tag')),
-			);
+			$mapping = apply_filters('syndicated_post_terms_mapping', array(
+				'category' => array('abbr' => 'cats', 'unfamiliar' => 'category', 'domain' => array('category', 'post_tag')),
+				'post_tag' => array('abbr' => 'tags', 'unfamiliar' => 'post_tag', 'domain' => array('post_tag')),
+			), $this);
 
 			$termSet = array(); $valid = null;
-			foreach ($consider as $what => $taxes) :
+			foreach ($this->feed_terms as $what => $anTerms) :
+				// Default to using the inclusive procedures (for cats) rather than exclusive (for inline tags)
+				$taxes = (isset($mapping[$what]) ? $mapping[$what] : $mapping['category']);
+				$unfamiliar = $taxes['unfamiliar'];
+				
 				if (!is_null($this->post)) : // Not filtered out yet
 					# -- Look up, or create, numeric ID for categories
 					$taxonomies = $this->link->setting("match/".$taxes['abbr'], 'match_'.$taxes['abbr'], $taxes['domain']);
@@ -1582,9 +1458,24 @@ class SyndicatedPost {
 					// Eliminate dummy variables
 					$taxonomies = array_filter($taxonomies, 'remove_dummy_zero');
 
+					// Allow FWP add-on filters to control the taxonomies we use to search for a term
+					$taxonomies = apply_filters("syndicated_post_terms_match", $taxonomies, $what, $this);
+					$taxonomies = apply_filters("syndicated_post_terms_match_${what}", $taxonomies, $this);
+
+					// Allow FWP add-on filters to control with greater precision what happens on unmatched
+					$unmatched = apply_filters("syndicated_post_terms_unfamiliar",
+						$this->link->setting(
+							"unfamiliar {$unfamiliar}",
+							"unfamiliar_{$unfamiliar}",
+							'create:'.$unfamiliar
+						),
+						$what,
+						$this
+					);
+
 					$terms = $this->category_ids (
-						$this->feed_terms[$what],
-						$this->link->setting("unfamiliar {$what}", "unfamiliar_{$what}", 'create:'.$what),
+						$anTerms,
+						$unmatched,
 						/*taxonomies=*/ $taxonomies,
 						array(
 						  'singleton' => false, // I don't like surprises
@@ -1727,6 +1618,8 @@ class SyndicatedPost {
 
 		$dbpost = $this->normalize_post(/*new=*/ true);
 
+		$ret = null;
+
 		if (!is_null($dbpost)) :
 			$dbpost['post_pingback'] = false; // Tell WP 2.1 and 2.2 not to process for pingbacks
 
@@ -1791,28 +1684,34 @@ class SyndicatedPost {
 				$dbpost['ID'] = $this->_wp_id;
 			endif;
 			
-			// Now that we've made sure the original exists, insert
-			// this version here as a revision.
-			$revision_id = _wp_put_post_revision($dbpost, /*autosave=*/ false);
+			// Sanity check: if the attempt to insert post
+			// returned an error, then feeding that error
+			// object in to _wp_put_post_revision() would
+			// cause a fatal error. Better to break out.
+			if (!is_wp_error($this->_wp_id)) :
+				// Now that we've made sure the original exists, insert
+				// this version here as a revision.
+				$revision_id = _wp_put_post_revision($dbpost, /*autosave=*/ false);
 
-			if (!$this->this_revision_needs_original_post()) :
+				if (!$this->this_revision_needs_original_post()) :
 			
-				if ($this->this_revision_is_current()) :
+					if ($this->this_revision_is_current()) :
 
-					wp_restore_post_revision($revision_id);
+						wp_restore_post_revision($revision_id);
 
-				else :
+					else :
 
-					// If we do not activate this revision, then the
-					// add_rss_meta will not be called, which is
-					// more or less as it should be, but that means
-					// we have to actively record this revision's
-					// update hash from here.
-					$postId = $this->post['ID'];
-					$key = 'syndication_item_hash';
-					$hash = $this->update_hash();
-					FeedWordPress::diagnostic('syndicated_posts:meta_data', "Adding post meta-datum to post [$postId]: [$key] = ".FeedWordPress::val($hash, /*no newlines=*/ true));
-					add_post_meta(	$postId, $key, $hash, /*unique=*/ false );
+						// If we do not activate this revision, then the
+						// add_rss_meta will not be called, which is
+						// more or less as it should be, but that means
+						// we have to actively record this revision's
+						// update hash from here.
+						$postId = $this->post['ID'];
+						$key = 'syndication_item_hash';
+						$hash = $this->update_hash();
+						FeedWordPress::diagnostic('syndicated_posts:meta_data', "Adding post meta-datum to post [$postId]: [$key] = ".FeedWordPress::val($hash, /*no newlines=*/ true));
+						add_post_meta(	$postId, $key, $hash, /*unique=*/ false );
+					endif;
 				endif;
 			endif;
 
@@ -1837,9 +1736,12 @@ class SyndicatedPost {
 			endforeach;
 
 			$this->validate_post_id($dbpost, $update, array(__CLASS__, __FUNCTION__));
+			
+			$ret = $this->_wp_id;
 
 			do_action('feedwordpress_after_store', $this->_wp_id, $dbpost);
 		endif;
+		return $ret;
 	} /* function SyndicatedPost::insert_post () */
 
 	function insert_new () {
@@ -1886,11 +1788,46 @@ class SyndicatedPost {
 		return $out;
 	}
 
+	public function db_sanitize_post_check_encoding ($out) {
+		// Check encoding recursively: every string field needs to be checked
+		// for character encoding issues. This is a bit problematic because we
+		// *should* be using DB_CHARSET, but DB_CHARSET sometimes has values
+		// that work for MySQL but not for PHP mb_check_encoding. So instead
+		// we must rely on WordPress setting blog_charset and hope that the user
+		// has got their database encoding set up to roughly match
+		$charset = get_option('blog_charset', 'utf8');
+		
+		foreach ($out as $key => $value) :
+			if (is_string($value)) :
+				
+				if (!function_exists('mb_check_encoding') or mb_check_encoding($value, $charset)) :
+					$out[$key] = $value;
+				else :
+					$fromCharset = mb_detect_encoding($value, mb_detect_order(), /*strict=*/ true);
+					$out[$key] = mb_convert_encoding($value, $charset, $fromCharset);
+				endif;
+				
+			elseif (is_array($value)) :
+				$out[$key] = $this->db_sanitize_post_check_encoding($value);
+
+			else :
+				$out[$key] = $value;
+			endif;
+			
+		endforeach;
+		
+		return $out;
+	} /* SyndicatedPost::db_sanitize_post_check_encoding () */
+	
 	function db_sanitize_post ($out) {
-		// < 3.6. Core API, including wp_insert_post(), will expect
-		// properly slashed data. If wp_slash() exists, then this is
-		// after the big change-over, and wp_insert_post() etc. will
-		// expect *un*-slashed data.
+		global $wp_db_version;
+		
+		$out = $this->db_sanitize_post_check_encoding($out);
+				
+		// < 3.6. Core API, including `wp_insert_post()`, expects
+		// properly slashed data. If `wp_slash()` exists, then
+		// this is after the big change-over in how data slashing
+		// was handled.
 		if (!function_exists('wp_slash')) :
 		
 			foreach ($out as $key => $value) :
@@ -1900,7 +1837,21 @@ class SyndicatedPost {
 					$out[$key] = $value;
 				endif;
 			endforeach;
-
+			
+		// For revisions [@23416,@23554), core API expects
+		// unslashed data. Cf. <https://core.trac.wordpress.org/browser/trunk/wp-includes/post.php?rev=23416>
+		// 	NOOP for those revisions.
+		
+		// In revisions @23554 to present, `wp_insert_post()`
+		// expects slashed data once again.
+		// Cf. <https://core.trac.wordpress.org/changeset/23554/trunk/wp-includes/post.php?contextall=1>
+		// But at least now we can use the wp_slash API function to do that.
+		// Hooray.
+		
+		elseif ($wp_db_version >= 23524) :
+		
+			$out = wp_slash($out);
+			
 		endif;
 
 		return $out;
@@ -2340,4 +2291,3 @@ EOM;
 	} /* SyndicatedPost::category_ids () */
 
 } /* class SyndicatedPost */
-

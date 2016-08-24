@@ -59,6 +59,9 @@ class SyndicatedPostTerm {
 	
 	protected function search () {
 		
+		// Initialize
+		$found = null;
+		
 		// Either this is a numbered term code, which supplies the ID
 		// and the taxonomy explicitly (e.g.: {category#2}; in which
 		// case we have set $this->tax to a unit array containing only
@@ -90,7 +93,7 @@ class SyndicatedPostTerm {
 			'CHECKED familiarity of term '
 			  .json_encode($this->term)
 			  .' across '.json_encode($this->tax)
-			  . ' with result: '.json_encode($record) 
+			  . ' with result: '.json_encode($found) 
 		);
 		
 		return $this->exists;

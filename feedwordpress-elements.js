@@ -629,7 +629,7 @@ function fwp_xpathtest_ok (response, result_id, destination) {
 	
 	if (response.results instanceof Array) {
 		for (var i = 0; i < response.results.length; i++) {
-			resultsHtml += '<li>result['+i.toString()+'] = <code>'+response.results[i]+'</code></li>';
+			resultsHtml += '<li>result['+(i+1).toString()+'] = <code>'+response.results[i]+'</code></li>';
 		}
 	} else {
 		resultsHtml += '<li>result = <code>' + response.results + '</code></li>';
