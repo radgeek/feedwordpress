@@ -24,10 +24,14 @@ class FeedTime {
 	var $rep;
 	var $ts;
 
-	function FeedTime ($time) {
+	function __construct( $time ) {
 		$this->set($time);
 	} /* FeedTime constructor */
 	
+	function FeedTime( $time ) {
+		self::__construct( $time );
+	}
+
 	function set ($time, $recurse = false) {
 		$this->rep = $time;
 		$this->ts = NULL;

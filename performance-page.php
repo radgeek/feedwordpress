@@ -2,11 +2,15 @@
 require_once(dirname(__FILE__) . '/admin-ui.php');
 
 class FeedWordPressPerformancePage extends FeedWordPressAdminPage {
-	function FeedWordPressPerformancePage () {
+	function __construct() {
 		// Set meta-box context name
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressperformancepage');
 		$this->dispatch = 'feedwordpress_performance';
 		$this->filename = __FILE__;
+	}
+
+	function FeedWordPressPerformancePage() {
+		self::__construct();
 	}
 
 	function has_link () { return false; }

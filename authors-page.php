@@ -5,7 +5,7 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 	var $authorlist = NULL;
 	var $rule_count = 0;
 	
-	function FeedWordPressAuthorsPage ($link = -1) {
+	function __construct( $link = -1 ) {
 		if (is_numeric($link) and -1 == $link) :
 			$link = FeedWordPressAdminPage::submitted_link();
 		endif;
@@ -20,6 +20,10 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 			'settings-update' => 'Syndicated Authors',
 			'open-sheet' => 'Syndicated Author',
 		);
+	}
+
+	function FeedWordPressAuthorsPage( $link = -1 ) {
+		self::__construct( $link );
 	}
 	
 	function refresh_author_list () {

@@ -2,7 +2,7 @@
 require_once(dirname(__FILE__) . '/admin-ui.php');
 
 class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
-	function FeedWordPressDiagnosticsPage () {
+	function __construct() {
 		// Set meta-box context name
 		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressdiagnosticspage');
 		$this->dispatch = 'feedwordpress_diagnostics';
@@ -10,6 +10,10 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 
 		$this->test_html = array();
 		add_action('feedwordpress_diagnostics_do_http_test', array($this, 'do_http_test'), 10, 1);
+	}
+
+	function FeedWordPressDiagnosticsPage() {
+		self::__construct();
 	}
 
 	function has_link () { return false; }

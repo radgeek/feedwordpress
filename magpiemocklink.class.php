@@ -4,7 +4,7 @@ require_once(dirname(__FILE__) . '/syndicatedlink.class.php');
 class MagpieMockLink extends SyndicatedLink {
 	var $url;
 
-	function MagpieMockLink ($rss, $url) {
+	function __construct( $rss, $url ) {
 		$this->link = $rss;
 
 		if (is_array($rss) and isset($rss['simplepie']) and isset($rss['magpie'])) :
@@ -21,6 +21,10 @@ class MagpieMockLink extends SyndicatedLink {
 
 		);
 	} /* function MagpieMockLink::MagpieMockLink () */
+
+	function MagpieMockLink( $rss, $url ) {
+		self::__construct( $rss, $url );
+	}
 
 	function poll ($crash_ts = NULL) {
 		// Do nothing but update copy of feed

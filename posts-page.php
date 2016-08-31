@@ -11,7 +11,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 *
 	 * @param mixed $link An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings
 	 */
-	function FeedWordPressPostsPage ($link = -1) {
+	function __construct( $link = -1 ) {
 		if (is_numeric($link) and -1 == $link) :
 			$link = FeedWordPressAdminPage::submitted_link();
 		endif;
@@ -27,6 +27,10 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			'open-sheet' => 'Syndicated Posts & Links',
 		);
 	} /* FeedWordPressPostsPage constructor */
+
+	function FeedWordPressPostsPage( $link = -1 ) {
+		self::__construct( $link );
+	}
 
 	function save_settings ($post) {
 		// custom post settings
