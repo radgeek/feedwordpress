@@ -1,9 +1,13 @@
 <?php
 class UpdatedPostsControl {
 	var $page;
-	function UpdatedPostsControl (&$page) {
+	function __construct( &$page ) {
 		$this->page =& $page;
 	} /* UpdatedPostsControl constructor */
+
+	function UpdatedPostsControl( &$page ) {
+		self::__construct( $page );
+	}
 
 	function display () {
 		$settings = array(

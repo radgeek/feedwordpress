@@ -43,7 +43,7 @@ class SyndicatedLink {
 	public $simplepie = null;
 	var $magpie = null;
 
-	function SyndicatedLink ($link) {
+	function __construct( $link ) {
 		global $wpdb;
 
 		if (is_object($link)) :
@@ -60,6 +60,10 @@ class SyndicatedLink {
 
 		add_filter('feedwordpress_update_complete', array($this, 'process_retirements'), 1000, 1);
 	} /* SyndicatedLink::SyndicatedLink () */
+
+	function SyndicatedLink( $link ) {
+		self::__construct( $link );
+	}
 
 	function found () {
 		return is_object($this->link) and !is_wp_error($this->link);

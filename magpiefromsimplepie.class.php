@@ -66,7 +66,7 @@ class MagpieFromSimplePie {
 	 * @uses MagpieFromSimplePie::normalize 
 	 * @uses MagpieFromSimplePie::is_atom
 	 */
-	function MagpieFromSimplePie ($pie, $item = true) {
+	function __construct( $pie, $item = true ) {
 		$this->pie = $pie;
 
 		// item in {NULL, true} = process channel data
@@ -95,6 +95,10 @@ class MagpieFromSimplePie {
 		$this->feed_version = $this->feed_version();
 		$this->encoding = $pie->get_encoding();
 	} /* MagpieFromSimplePie constructor */
+
+	function MagpieFromSimplePie( $pie, $item = true ) {
+		self::__construct( $pie, $item );
+	}
 	
 	/**
 	 * MagpieFromSimplePie::get_items: returns an array of MagpieRSS format arrays

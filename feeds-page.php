@@ -83,7 +83,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	 *
 	 * @param mixed $link An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings
 	 */
-	function FeedWordPressFeedsPage ($link = -1) {
+	function __construct( $link = -1 ) {
 		if (is_numeric($link) and -1 == $link) :
 			$link = FeedWordPressAdminPage::submitted_link();
 		endif;
@@ -101,6 +101,10 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		
 		$this->special_settings = apply_filters('syndicated_feed_special_settings', $this->special_settings, $this);
 	} /* FeedWordPressFeedsPage constructor */
+
+	function FeedWordPressFeedsPage( $link = -1 ) {
+		self::__construct( $link );
+	}
 
 	function display () {
 		global $fwp_post;
