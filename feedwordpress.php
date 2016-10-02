@@ -1800,11 +1800,11 @@ class FeedWordPress {
 		global $wpdb;
 
 		// Explicit update request in the HTTP request (e.g. from a cron job)
-		if ($this->update_requested()) :
+		if (FeedWordPress::update_requested()) :
 
 			$this->update_hooked = "Initiating a CRON JOB CHECK-IN ON UPDATE SCHEDULE due to URL parameter = ".trim($this->val($_REQUEST['update_feedwordpress']));
 
-			$this->update($this->update_requested_url());
+			$this->update(FeedWordPress::update_requested_url());
 
 			if (FEEDWORDPRESS_DEBUG and count($wpdb->queries) > 0) :
 				$mysqlTime = 0.0;
@@ -1833,11 +1833,11 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::update_magic_url () */
 
-	public function update_requested () {
+	public static function update_requested () {
 		return MyPHP::request('update_feedwordpress');
 	} /* FeedWordPress::update_requested() */
 	
-	public function update_requested_url () {
+	public static function update_requested_url () {
 		$ret = null;
 
 		if (($_REQUEST['update_feedwordpress']=='*')
