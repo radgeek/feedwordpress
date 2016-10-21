@@ -268,6 +268,7 @@ class SyndicatedLink {
 				'ignore_sticky_posts' => true,
 				'meta_key' => 'syndication_feed_id',
 				'meta_value' => $this->id,
+				'posts_per_page' => -1
 				));
 				foreach ($q->posts as $p) :
 					update_post_meta($p->ID, '_feedwordpress_retire_me_'.$this->id, '1');
@@ -374,6 +375,7 @@ class SyndicatedLink {
 		'ignore_sticky_posts' => true,
 		'meta_key' => '_feedwordpress_retire_me_'.$this->id,
 		'meta_value' => '1',
+		'posts_per_page' => -1
 		));
 		if ($q->have_posts()) :
 			foreach ($q->posts as $p) :
