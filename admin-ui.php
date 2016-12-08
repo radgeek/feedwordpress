@@ -71,7 +71,7 @@ class FeedWordPressAdminPage {
 		$displayUrl = $uri;
 
 		// check for effects of an effective-url filter
-		$effectiveUrl = $link->uri(array('fetch' => true));
+		$effectiveUrl = $this->link->uri(array('fetch' => true));
 		if ($uri != $effectiveUrl) : $displayUrl .= ' | ' . $effectiveUrl; endif;
 
 		$delta = $feedwordpress->update($uri);
