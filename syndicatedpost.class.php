@@ -1201,7 +1201,9 @@ class SyndicatedPost {
 			$old_post = NULL;
 			if ($q->have_posts()) :
 				while ($q->have_posts()) : $q->the_post();
-					$old_post = $q->post;
+					if (get_post_type($q->post->ID) == $this->post['post_type']):
+						$old_post = $q->post;
+					endif;
 				endwhile;
 			endif;
 

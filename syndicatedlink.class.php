@@ -754,6 +754,8 @@ class SyndicatedLink {
 				// Tack it on
 				$uri .= $sep . implode("&", $q);
 			endif;
+		else:
+			$gp = null;
 		endif;
 
 		// Do we have any filters that apply here?
