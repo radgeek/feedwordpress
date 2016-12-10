@@ -9,7 +9,7 @@ class FeedWordPressHTTPAuthenticator {
 		endforeach;
 		
 		add_filter('pre_http_request', array($this, 'pre_http_request'), 10, 3);
-		add_action('http_api_curl', array($this, 'set_auth_options'), 1000, 1);
+		add_action('http_api_curl', array($this, 'set_auth_options'), 1000, 3);
 	} /* FeedWordPressHTTPAuthenticator::__construct () */
 
 	function methods_available () {
@@ -150,7 +150,7 @@ class FeedWordPressHTTPAuthenticator {
 		return $use;
 	} /* FeedWordPressHTTPAuthenticator::if_curl () */
 	
-	function set_auth_options (&$handle) {
+	function set_auth_options ($handle, $r, $url) {
 		if ('digest'==$this->args['authentication']) :
 			curl_setopt($handle, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
 		endif;
