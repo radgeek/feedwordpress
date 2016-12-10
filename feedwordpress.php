@@ -96,7 +96,11 @@ add_filter('wp_feed_cache_transient_lifetime', array('FeedWordPress', 'cache_lif
 if (!class_exists('SimplePie')) :
 	require_once(ABSPATH . WPINC . '/class-simplepie.php');
 endif;
-require_once(ABSPATH . WPINC . '/class-feed.php');
+
+require_once( ABSPATH . WPINC . '/class-wp-feed-cache.php' );
+require_once( ABSPATH . WPINC . '/class-wp-feed-cache-transient.php' );
+require_once( ABSPATH . WPINC . '/class-wp-simplepie-file.php' );
+require_once( ABSPATH . WPINC . '/class-wp-simplepie-sanitize-kses.php' );
 
 if (!function_exists('wp_insert_user')) :
 	require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
