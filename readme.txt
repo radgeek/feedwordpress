@@ -3,8 +3,8 @@ Contributors: Charles Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 3.0
-Tested up to: 4.5.2
-Stable tag: 2016.0420
+Tested up to: 4.7
+Stable tag: 2016.1211
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -23,7 +23,6 @@ developed, originally, because I needed a more flexible replacement for
 [Planet][] to use at Feminist Blogs, an aggregator site that I used to administer.
 
 [Planet]: http://www.planetplanet.org/
-[Feminist Blogs]: http://feministblogs.org/
 
 FeedWordPress is designed with flexibility, ease of use, and ease of
 configuration in mind. You'll need a working installation of WordPress (version
@@ -93,6 +92,33 @@ outs, see the documentation at the [FeedWordPress project homepage][].
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
 == Changelog ==
+
+= 2016.1211 =
+
+*	WORDPRESS COMPATIBILITY: Tested with new versions of WordPress up to 4.7.
+
+*	PHP WARNINGS UNDER WP 4.7: Eliminated cause of a PHP warning under WP 4.7
+	"Parameter 1 to FeedWordPressHTTPAuthenticator::set_auth_options expected to be reference"
+	Warnings were due to a change in how http_api_curl hook is sometimes called
+	in WP 4.7; so I changed the signature of the event handling method to avoid
+	the notice. Props to @cogdog, @froomkin, @gwynethllewelyn et al. for flagging
+	the issue and @garymarkfuller for suggesting a preliminary fix to the issue
+	that was fairly similar to the solution I ended up adopting.
+
+*	PHP 7 and PHP Strict Standards compatibility changes: @alexiskulash @daidais
+	and @zoul0813 all sent pull requests through Github to fix some issues from
+	a very old code base that has made its way from PHP 3.x through 5.x to the
+	roll-out of PHP 7. Class methods should now fare better under modern versions
+	of PHP and generate fewer "Deprecated" notices.
+
+*	IMPROVEMENTS TO SCHEDULED AND AUTOMATIC UPDATES:  use wp_loaded hook to check
+	for magic URL parameters and to execute updates, to do pageload-based automatic
+	updates, etc. Ensures that anything plugins or themes need to do in init to set
+	up custom post types, taxonomies, etc. will be done before the update_feedwordpress
+	updates are attempted. If you saw posts not getting put into the correct custom
+	post type or custom taxonomies or similar problems when performing scheduled updates,
+	but the problem seemed to go away when you manually performed updates through the
+	wp-admin interface, then you might be able to solve those problems with this update.
 
 = 2016.0420 =
 
