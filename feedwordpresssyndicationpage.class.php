@@ -16,8 +16,8 @@ define('FWP_CANCEL_BUTTON', '× Cancel');
 define('FWP_CHECK_FOR_UPDATES', 'Update');
 
 class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
-	function FeedWordPressSyndicationPage ($filename = NULL) {
-		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpresssyndication', /*link=*/ NULL);
+	public function __construct ($filename = NULL) {
+		parent::__construct('feedwordpresssyndication', /*link=*/ NULL);
 
 		// No over-arching form element
 		$this->dispatch = NULL;

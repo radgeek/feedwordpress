@@ -2,12 +2,12 @@
 require_once(dirname(__FILE__) . '/admin-ui.php');
 
 class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
-	function __construct( $link = -1 ) {
+	public function __construct( $link = -1 ) {
 		if (is_numeric($link) and -1 == $link) :
 			$link = $this->submitted_link();
 		endif;
 
-		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpresscategories', $link);
+		parent::__construct('feedwordpresscategories', $link);
 		$this->dispatch = 'feedwordpress_admin_page_categories';
 		$this->pagenames = array(
 			'default' => 'Categories & Tags',
@@ -15,10 +15,6 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 			'open-sheet' => 'Categories & Tags',
 		);
 		$this->filename = __FILE__;
-	}
-
-	function FeedWordPressCategoriesPage( $link = -1 ) {
-		self::__construct( $link );
 	}
 
 	function unfamiliar_category_label ($name) {

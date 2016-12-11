@@ -8,9 +8,9 @@
 */
 
 class InspectPostMeta {
-	function InspectPostMeta ($in_hook = true) {
+	public function __construct ($in_hook = true) {
 		add_action('add_meta_boxes', array($this, 'add_meta_boxes'), 10, 2);
-	}
+	} /* InspectPostMeta::__construct () */
 	
 	function add_meta_boxes ($post_type, $post) {
 		add_meta_box(
