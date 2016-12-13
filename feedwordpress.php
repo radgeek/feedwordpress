@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2016.1211
+Version: 2016.1213
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2016.1211
+ * @version 2016.1213
  */
 
 # This uses code derived from:
@@ -32,7 +32,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2016.1211');
+define ('FEEDWORDPRESS_VERSION', '2016.1213');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -91,21 +91,39 @@ endif;
 // Use our the cache settings that we want.
 add_filter('wp_feed_cache_transient_lifetime', array('FeedWordPress', 'cache_lifetime'));
 
-// Ensure that we have SimplePie loaded up and ready to go.
-// We no longer need a MagpieRSS upgrade module. Hallelujah!
-if (!class_exists('SimplePie')) :
-	require_once(ABSPATH . WPINC . '/class-simplepie.php');
+// Dependencies: modules packaged with WordPress core
+$wpCoreDependencies = array(
+"class:SimplePie" => "class-simplepie",
+"class:WP_Feed_Cache" => "class-wp-feed-cache",
+"class:WP_Feed_Cache_Transient" => "class-wp-feed-cache-transient",
+"class:WP_SimplePie_File" => "class-wp-simplepie-file",
+"class:WP_SimplePie_Sanitize_KSES" => "class-wp-simplepie-sanitize-kses",
+"function:wp_insert_user" => "registration",
+);
+
+// Ensure that we have SimplePie loaded up and ready to go
+// along with the WordPress auxiliary classes.
+$unmetCoreDependencies = array();
+foreach ($wpCoreDependencies as $unit => $fileSlug) :
+	list($unitType, $unitName) = explode(":", $unit, 2);
+	
+	$dependencyMet = (('class'==$unitType) ? class_exists($unitName) : function_exists($unitName));
+	if (!$dependencyMet) :
+		$phpFileName = ABSPATH . WPINC . "/${fileSlug}.php";
+		if (file_exists($phpFileName)) :
+			require_once($phpFileName);
+		else :
+			$unmetCoreDependencies[] = $className;
+		endif;
+	endif;
+endforeach;
+
+// Fallback garbage-pail module used in WP < 4.7 which may meet our dependencies
+if (count($unmetCoreDependencies) > 0) :
+	require_once(ABSPATH . WPINC . "/class-feed.php");
 endif;
 
-require_once( ABSPATH . WPINC . '/class-wp-feed-cache.php' );
-require_once( ABSPATH . WPINC . '/class-wp-feed-cache-transient.php' );
-require_once( ABSPATH . WPINC . '/class-wp-simplepie-file.php' );
-require_once( ABSPATH . WPINC . '/class-wp-simplepie-sanitize-kses.php' );
-
-if (!function_exists('wp_insert_user')) :
-	require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
-endif;
-
+// Dependences: modules packaged with FeedWordPress plugin
 $dir = dirname(__FILE__);
 require_once("${dir}/externals/myphp/myphp.class.php");
 require_once("${dir}/admin-ui.php");
