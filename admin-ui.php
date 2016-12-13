@@ -793,8 +793,11 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 	if (!is_array($tags)) : $tags = array(); endif;
 
 	$tax_name = $params['taxonomy'];
-	$taxonomy = get_taxonomy($params['taxonomy']);
-	$disabled = (!current_user_can($taxonomy->cap->assign_terms) ? 'disabled="disabled"' : '');
+	
+	$oTax = get_taxonomy($params['taxonomy']);
+	$oTaxLabels = get_taxonomy_labels($oTax);
+	
+	$disabled = (!current_user_can($oTax->cap->assign_terms) ? 'disabled="disabled"' : '');
 
 	$desc = "<p style=\"font-size:smaller;font-style:bold;margin:0\">Tag $object as...</p>";
 
@@ -822,24 +825,24 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 <div class="tagsdiv" id="<?php echo $params['id']; ?>">
 	<div class="jaxtag">
 	<div class="nojs-tags hide-if-js">
-    <p><?php echo $taxonomy->labels->add_or_remove_items; ?></p>
+    <p><?php echo $oTaxLabels->add_or_remove_items; ?></p>
 	<textarea name="<?php echo $params['textarea_name']; ?>" class="the-tags" id="<?php echo $params['textarea_id']; ?>"><?php echo esc_attr(implode(",", $tags)); ?></textarea></div>
 
-	<?php if ( current_user_can($taxonomy->cap->assign_terms) ) :?>
+	<?php if ( current_user_can($oTax->cap->assign_terms) ) :?>
 	<div class="ajaxtag hide-if-no-js">
 		<label class="screen-reader-text" for="<?php echo $params['input_id']; ?>"><?php echo $params['box_title']; ?></label>
-		<div class="taghint"><?php echo $taxonomy->labels->add_new_item; ?></div>
+		<div class="taghint"><?php echo $oTaxLabels->add_new_item; ?></div>
 		<p><input type="text" id="<?php print $params['input_id']; ?>" name="<?php print $params['input_name']; ?>" class="newtag form-input-tip" size="16" autocomplete="off" value="" />
 		<input type="button" class="button tagadd" value="<?php esc_attr_e('Add'); ?>" tabindex="3" /></p>
 	</div>
-	<p class="howto"><?php echo esc_attr( $taxonomy->labels->separate_items_with_commas ); ?></p>
+	<p class="howto"><?php echo esc_attr( $oTaxLabels->separate_items_with_commas ); ?></p>
 	<?php endif; ?>
 	</div>
 
 	<div class="tagchecklist"></div>
 </div>
-<?php if ( current_user_can($taxonomy->cap->assign_terms) ) : ?>
-<p class="hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-<?php echo $tax_name; ?>"><?php echo $taxonomy->labels->choose_from_most_used; ?></a></p>
+<?php if ( current_user_can($oTax->cap->assign_terms) ) : ?>
+<p class="hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-<?php echo $tax_name; ?>"><?php echo $oTaxLabels->choose_from_most_used; ?></a></p>
 <?php endif;
 
 }
@@ -854,7 +857,9 @@ function fwp_category_box ($checked, $object, $tags = array(), $params = array()
 		$prefix = (isset($params['prefix']) ? $params['prefix'] : '');
 		$taxonomy = (isset($params['taxonomy']) ? $params['taxonomy'] : 'category');
 	endif;
-	$tax = get_taxonomy($taxonomy);
+	
+	$oTax = get_taxonomy($taxonomy);
+	$oTaxLabels = get_taxonomy_labels($oTax);
 
 	if (strlen($prefix) > 0) :
 		$idPrefix = $prefix.'-';
@@ -870,7 +875,7 @@ function fwp_category_box ($checked, $object, $tags = array(), $params = array()
 <div id="<?php print $idPrefix; ?>taxonomy-<?php print $taxonomy; ?>" class="feedwordpress-category-div">
   <ul id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-tabs" class="category-tabs">
     <li class="ui-tabs-selected tabs"><a href="#<?php print $idPrefix; ?><?php print $taxonomy; ?>-all" tabindex="3"><?php _e( 'All posts' ); ?></a>
-    <p style="font-size:smaller;font-style:bold;margin:0">Give <?php print $object; ?> these <?php print $tax->labels->name; ?></p>
+    <p style="font-size:smaller;font-style:bold;margin:0">Give <?php print $object; ?> these <?php print $oTaxLabels->name; ?></p>
     </li>
   </ul>
 
