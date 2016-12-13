@@ -1822,7 +1822,7 @@ class FeedWordPress {
 		global $wpdb;
 
 		// Explicit update request in the HTTP request (e.g. from a cron job)
-		if ($this->update_requested()) :
+		if (self::update_requested()) :
 
 			$this->update_hooked = "Initiating a CRON JOB CHECK-IN ON UPDATE SCHEDULE due to URL parameter = ".trim($this->val($_REQUEST['update_feedwordpress']));
 
@@ -1855,7 +1855,7 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::update_magic_url () */
 
-	public function update_requested () {
+	public static function update_requested () {
 		return MyPHP::request('update_feedwordpress');
 	} /* FeedWordPress::update_requested() */
 	
@@ -2328,24 +2328,24 @@ class FeedWordPress {
 
 		$diagnostic_nesting = count(explode(":", $level));
 
-		if (FeedWordPress::diagnostic_on($level)) :
+		if (self::diagnostic_on($level)) :
 			foreach ($output as $method) :
 				switch ($method) :
 				case 'echo' :
-					if (!FeedWordPress::update_requested()) :
+					if (!self::update_requested()) :
 						echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.$out."</pre></div>\n";
 					endif;
 					break;
 				case 'echo_in_cronjob' :
-					if (FeedWordPress::update_requested()) :
-						echo FeedWordPress::log_prefix()." ".$out."\n";
+					if (self::update_requested()) :
+						echo self::log_prefix()." ".$out."\n";
 					endif;
 					break;
 				case 'admin_footer' :
 					$feedwordpress_admin_footer[] = $out;
 					break;
 				case 'error_log' :
-					error_log(FeedWordPress::log_prefix().' '.$out);
+					error_log(self::log_prefix().' '.$out);
 					break;
 				case 'email' :
 
