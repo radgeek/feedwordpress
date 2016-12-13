@@ -54,8 +54,10 @@ class SyndicatedLink {
 			$this->link = get_bookmark($link);
 		endif;
 
-		if (strlen($this->link->link_rss) > 0) :
-			$this->get_settings_from_notes();
+		if (is_object($this->link)) :
+			if (strlen($this->link->link_rss) > 0) :
+				$this->get_settings_from_notes();
+			endif;
 		endif;
 
 		add_filter('feedwordpress_update_complete', array($this, 'process_retirements'), 1000, 1);
