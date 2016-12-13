@@ -43,7 +43,7 @@ class SyndicatedLink {
 	public $simplepie = null;
 	var $magpie = null;
 
-	function __construct( $link ) {
+	public function __construct( $link ) {
 		global $wpdb;
 
 		if (is_object($link)) :
@@ -59,21 +59,17 @@ class SyndicatedLink {
 		endif;
 
 		add_filter('feedwordpress_update_complete', array($this, 'process_retirements'), 1000, 1);
-	} /* SyndicatedLink::SyndicatedLink () */
+	} /* SyndicatedLink::__construct () */
 
-	function SyndicatedLink( $link ) {
-		self::__construct( $link );
-	}
-
-	function found () {
+	public function found () {
 		return is_object($this->link) and !is_wp_error($this->link);
 	} /* SyndicatedLink::found () */
 
-	function id () {
+	public function id () {
 		return (is_object($this->link) ? $this->link->link_id : NULL);
 	}
 
-	function stale () {
+	public function stale () {
 		global $feedwordpress;
 
 		$stale = true;
@@ -96,7 +92,7 @@ class SyndicatedLink {
 		return $stale;
 	} /* SyndicatedLink::stale () */
 
-	function fetch () {
+	public function fetch () {
 		$timeout = $this->setting('fetch timeout', 'feedwordpress_fetch_timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT);
 
 		$this->simplepie = apply_filters(
@@ -111,8 +107,9 @@ class SyndicatedLink {
 		else :
 			$this->magpie = new MagpieFromSimplePie($this->simplepie, NULL);
 		endif;
-	}
-	function live_posts () {
+	} /* SyndicatedLink::fetch () */
+	
+	public function live_posts () {
 		if (!is_object($this->simplepie)) :
 			$this->fetch();
 		endif;
@@ -127,9 +124,9 @@ class SyndicatedLink {
 			$ret = $this->simplepie;
 		endif;
 		return $ret;
-	}
+	} /* SyndicatedLink::live_posts () */
 
-	function poll ($crash_ts = NULL) {
+	public function poll ($crash_ts = NULL) {
 		global $wpdb;
 
 		$url = $this->uri(array('add_params' => true, 'fetch' => true));
@@ -365,7 +362,7 @@ class SyndicatedLink {
 		return $new_count;
 	} /* SyndicatedLink::poll() */
 
-	function process_retirements ($delta) {
+	public function process_retirements ($delta) {
 		global $post;
 
 		$q = new WP_Query(array(
@@ -386,7 +383,7 @@ class SyndicatedLink {
 		endif;
 
 		return $delta;
-	}
+	} /* SyndicatedLink::process_retirements () */
 
 	/**
 	 * Updates the URL for the feed syndicated by this link.
@@ -394,7 +391,7 @@ class SyndicatedLink {
 	 * @param string $url The new feed URL to use for this source.
 	 * @return bool TRUE on success, FALSE on failure.
 	 */
-	function set_uri ($url) {
+	public function set_uri ($url) {
 		global $wpdb;
 
 		if ($this->found()) :
@@ -413,7 +410,7 @@ class SyndicatedLink {
 		return $ret;
 	} /* SyndicatedLink::set_uri () */
 
-	function deactivate () {
+	public function deactivate () {
 		global $wpdb;
 
 		$wpdb->query($wpdb->prepare("
@@ -421,7 +418,18 @@ class SyndicatedLink {
 		", (int) $this->id));
 	} /* SyndicatedLink::deactivate () */
 
-	function delete () {
+	/**
+	 * SyndicatedLink::delete() deletes a subscription from the WordPress links
+	 * table. Any posts that were syndicated through that subscription will still
+	 * be present in the wp_posts table; but postmeta fields that refer to the
+	 * syndication feed's numeric id (which will no longer be valid) will be
+	 * deleted. For most purposes, the posts remaining will be treated as if they
+	 * were locally authored posts rather than syndicated posts.
+	 *
+	 * @global $wpdb
+	 * @uses wpdb::query
+	 */
+	public function delete () {
 		global $wpdb;
 
 		$wpdb->query($wpdb->prepare("
@@ -436,7 +444,16 @@ class SyndicatedLink {
 		$this->id = NULL;
 	} /* SyndicatedLink::delete () */
 
-	function nuke () {
+	/**
+	 * SyndicatedLink::nuke() deletes a subscription AND all of the
+	 * posts syndicated through that subscription.
+	 *
+	 * @global $wpdb
+	 * @uses wpdb::get_col
+	 * @uses wp_delete_post
+	 * @uses SyndicatedLink::delete
+	 */
+	public function nuke () {
 		global $wpdb;
 
 		// Make a list of the items syndicated from this feed...
@@ -461,7 +478,7 @@ class SyndicatedLink {
 		$this->delete();
 	} /* SyndicatedLink::nuke () */
 
-	function map_name_to_new_user ($name, $newuser_name) {
+	public function map_name_to_new_user ($name, $newuser_name) {
 		global $wpdb;
 
 		if (strlen($newuser_name) > 0) :
@@ -482,11 +499,11 @@ class SyndicatedLink {
 		endif;
 	} /* SyndicatedLink::map_name_to_new_user () */
 
-	function imploded_settings () {
+	protected function imploded_settings () {
 		return array('cats', 'tags', 'match/cats', 'match/tags', 'match/filter');
-	}
+	} /* SyndicatedLink::imploded_settings () */
 
-	function get_settings_from_notes () {
+	protected function get_settings_from_notes () {
 		// Read off feed settings from link_notes
 		$notes = explode("\n", $this->link->link_notes);
 		foreach ($notes as $note):
@@ -587,7 +604,7 @@ class SyndicatedLink {
 
 	} /* SyndicatedLink::get_settings_from_notes () */
 
-	function settings_to_notes () {
+	protected function settings_to_notes () {
 		$to_notes = $this->settings;
 
 		unset($to_notes['link/id']); // Magic setting; don't save
@@ -633,7 +650,7 @@ class SyndicatedLink {
 		return $notes;
 	} /* SyndicatedLink::settings_to_notes () */
 
-	function save_settings ($reload = false) {
+	public function save_settings ($reload = false) {
 		global $wpdb;
 
 		// Save channel-level meta-data
@@ -670,7 +687,7 @@ class SyndicatedLink {
 	 * @param mixed $fallback_value If the link setting and the global setting are nonexistent or marked as a use-default value, fall back to this constant value.
 	 * @return bool TRUE on success, FALSE on failure.
 	 */
-	function setting ($name, $fallback_global = NULL, $fallback_value = NULL, $default = 'default') {
+	public function setting ($name, $fallback_global = NULL, $fallback_value = NULL, $default = 'default') {
 		$ret = NULL;
 		if (isset($this->settings[$name])) :
 			$ret = $this->settings[$name];
@@ -704,12 +721,12 @@ class SyndicatedLink {
 		return $ret;
 	} /* SyndicatedLink::setting () */
 
-	function merge_settings ($data, $prefix, $separator = '/') {
+	public function merge_settings ($data, $prefix, $separator = '/') {
 		$dd = $this->flatten_array($data, $prefix, $separator);
 		$this->settings = array_merge($this->settings, $dd);
 	} /* SyndicatedLink::merge_settings () */
 
-	function update_setting ($name, $value, $default = 'default') {
+	public function update_setting ($name, $value, $default = 'default') {
 		if (!is_null($value) and $value != $default) :
 			$this->settings[$name] = $value;
 		else : // Zap it.
@@ -717,11 +734,11 @@ class SyndicatedLink {
 		endif;
 	} /* SyndicatedLink::update_setting () */
 
-	function is_non_incremental () {
+	public function is_non_incremental () {
 		return ('complete'==$this->setting('update_incremental', 'update_incremental', 'incremental'));
 	} /* SyndicatedLink::is_non_incremental () */
 
-	function uri ($params = array()) {
+	public function uri ($params = array()) {
 		$params = wp_parse_args($params, array(
 		'add_params' => false,
 		'fetch' => false,
@@ -763,15 +780,15 @@ class SyndicatedLink {
 		return $uri;
 	} /* SyndicatedLink::uri () */
 
-	function username () {
+	public function username () {
 		return $this->setting('http username', 'http_username', NULL);
 	} /* SyndicatedLink::username () */
 
-	function password () {
+	public function password () {
 		return $this->setting('http password', 'http_password', NULL);
 	} /* SyndicatedLink::password () */
 
-	function authentication_method () {
+	public function authentication_method () {
 		$auth = $this->setting('http auth method', NULL);
 		if (('-' == $auth) or (strlen($auth)==0)) :
 			$auth = NULL;
@@ -780,7 +797,7 @@ class SyndicatedLink {
 	} /* SyndicatedLink::authentication_method () */
 
 	var $postmeta = array();
-	function postmeta ($params = array()) {
+	public function postmeta ($params = array()) {
 		$params = wp_parse_args($params, /*defaults=*/ array(
 		"field" => NULL,
 		"parsed" => false,
@@ -824,7 +841,7 @@ class SyndicatedLink {
 		return $ret;
 	} /* SyndicatedLink::postmeta () */
 
-	function property_cascade ($fromFeed, $link_field, $setting, $method) {
+	public function property_cascade ($fromFeed, $link_field, $setting, $method) {
 		$value = NULL;
 		if ($fromFeed) :
 			$value = $this->setting($setting, NULL, NULL, NULL);
@@ -840,15 +857,15 @@ class SyndicatedLink {
 		return $value;
 	} /* SyndicatedLink::property_cascade () */
 
-	function homepage ($fromFeed = true) {
+	public function homepage ($fromFeed = true) {
 		return $this->property_cascade($fromFeed, 'link_url', 'feed/link', 'get_link');
 	} /* SyndicatedLink::homepage () */
 
-	function name ($fromFeed = true) {
+	public function name ($fromFeed = true) {
 		return $this->property_cascade($fromFeed, 'link_name', 'feed/title', 'get_title');
 	} /* SyndicatedLink::name () */
 
-	function guid () {
+	public function guid () {
 		$ret = $this->setting('feed/id', NULL, $this->uri());
 
 		// If we can get it live from the feed, do so.
@@ -875,7 +892,7 @@ class SyndicatedLink {
 		return $ret;
 	}
 
-	function links ($params = array()) {
+	public function links ($params = array()) {
 		$params = wp_parse_args($params, array(
 		"rel" => NULL,
 		));
@@ -929,7 +946,7 @@ class SyndicatedLink {
 		return $ret;
 	}
 	
-	function ttl ($return_element = false) {
+	public function ttl ($return_element = false) {
 		if (is_object($this->magpie)) :
 			$channel = $this->magpie->channel;
 		else :
@@ -986,7 +1003,7 @@ class SyndicatedLink {
 		return ($return_element ? array($ret, $xml) : $ret);
 	} /* SyndicatedLink::ttl() */
 
-	function automatic_ttl () {
+	public function automatic_ttl () {
 		// spread out over a time interval for staggered updates
 		$updateWindow = $this->setting('update/window', 'update_window', DEFAULT_UPDATE_PERIOD);
 		if (!is_numeric($updateWindow) or ($updateWindow < 1)) :
@@ -999,16 +1016,23 @@ class SyndicatedLink {
 		return apply_filters('syndicated_feed_automatic_ttl', $fudgedInterval, $this);
 	} /* SyndicatedLink::automatic_ttl () */
 
-	// SyndicatedLink::flatten_array (): flatten an array. Useful for
-	// hierarchical and namespaced elements.
-	//
-	// Given an array which may contain array or object elements in it,
-	// return a "flattened" array: a one-dimensional array of scalars
-	// containing each of the scalar elements contained within the array
-	// structure. Thus, for example, if $a['b']['c']['d'] == 'e', then the
-	// returned array for FeedWordPress::flatten_array($a) will contain a key
-	// $a['feed/b/c/d'] with value 'e'.
-	function flatten_array ($arr, $prefix = 'feed/', $separator = '/') {
+	/**
+	 * SyndicatedLink::flatten_array (): flatten an array. Useful for
+	 * hierarchical and namespaced elements.
+	 *
+	 * Given an array which may contain array or object elements in it,
+	 * return a "flattened" array: a one-dimensional array of scalars
+	 * containing each of the scalar elements contained within the array
+	 * structure. Thus, for example, if $a['b']['c']['d'] == 'e', then the
+	 * returned array for FeedWordPress::flatten_array($a) will contain a key
+	 * $a['feed/b/c/d'] with value 'e'.
+	 *
+	 * @param array $arr
+	 * @param string $prefix
+	 * @param string $separator
+	 * @return array
+	 */
+	public function flatten_array ($arr, $prefix = 'feed/', $separator = '/') {
 		$ret = array ();
 		if (is_array($arr)) :
 			foreach ($arr as $key => $value) :
@@ -1022,7 +1046,7 @@ class SyndicatedLink {
 		return $ret;
 	} /* SyndicatedLink::flatten_array () */
 
-	function hardcode ($what) {
+	public function hardcode ($what) {
 
 		$ret = $this->setting('hardcode '.$what, 'hardcode_'.$what, NULL);
 
@@ -1034,7 +1058,7 @@ class SyndicatedLink {
 		return $ret;
 	} /* SyndicatedLink::hardcode () */
 
-	function syndicated_status ($what, $default, $fallback = true) {
+	public function syndicated_status ($what, $default, $fallback = true) {
 		global $wpdb;
 
 		$g_set = ($fallback ? 'syndicated_' . $what . '_status' : NULL);
@@ -1043,7 +1067,7 @@ class SyndicatedLink {
 		return esc_sql(trim(strtolower($ret)));
 	} /* SyndicatedLink:syndicated_status () */
 
-	function taxonomies () {
+	public function taxonomies () {
 		$post_type = $this->setting('syndicated post type', 'syndicated_post_type', 'post');
 		return get_object_taxonomies(array('object_type' => $post_type), 'names');
 	} /* SyndicatedLink::taxonomies () */
@@ -1057,7 +1081,7 @@ class SyndicatedLink {
 	 * @param array|null $taxonomies
 	 * @return array
 	 */
-	function category_ids ($post, $cats, $unfamiliar_category = 'create', $taxonomies = NULL, $params = array()) {
+	public function category_ids ($post, $cats, $unfamiliar_category = 'create', $taxonomies = NULL, $params = array()) {
 		$singleton = (isset($params['singleton']) ? $params['singleton'] : true);
 		$allowFilters = (isset($params['filters']) ? $params['filters'] : false);
 
@@ -1154,5 +1178,5 @@ class SyndicatedLink {
 		);
 		return $terms;
 	} /* SyndicatedLink::category_ids () */
-} // class SyndicatedLink
+} /* class SyndicatedLink */
 
