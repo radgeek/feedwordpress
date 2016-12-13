@@ -113,7 +113,7 @@ foreach ($wpCoreDependencies as $unit => $fileSlug) :
 		if (file_exists($phpFileName)) :
 			require_once($phpFileName);
 		else :
-			$unmetCoreDependencies[] = $className;
+			$unmetCoreDependencies[] = $unitName;
 		endif;
 	endif;
 endforeach;
