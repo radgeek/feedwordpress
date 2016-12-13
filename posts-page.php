@@ -13,7 +13,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 */
 	public function __construct( $link = -1 ) {
 		if (is_numeric($link) and -1 == $link) :
-			$link = parent::submitted_link();
+			$link = $this->submitted_link();
 		endif;
 
 		parent::__construct('feedwordpresspostspage', $link);

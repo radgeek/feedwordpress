@@ -154,7 +154,7 @@ class FeedWordPressAdminPage {
 		return (isset($post['update']) and (strlen($post['update']) > 0));
 	}
 
-	/*static*/ function submitted_link_id () {
+	public function submitted_link_id () {
 		global $fwp_post;
 
 		// Presume global unless we get a specific link ID
@@ -179,8 +179,8 @@ class FeedWordPressAdminPage {
 		return $link_id;
 	} /* FeedWordPressAdminPage::submitted_link_id() */
 
-	/*static*/ function submitted_link () {
-		$link_id = FeedWordPressAdminPage::submitted_link_id();
+	public function submitted_link () {
+		$link_id = $this->submitted_link_id();
 		if (is_numeric($link_id) and $link_id) :
 			$link = new SyndicatedLink($link_id);
 		else :
