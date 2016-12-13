@@ -701,7 +701,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
         var s = document.createElement('script'), t = document.getElementsByTagName('script')[0];
         s.type = 'text/javascript';
         s.async = true;
-        s.src = 'http://api.flattr.com/js/0.6/load.js?mode=auto';
+        s.src = 'https://api.flattr.com/js/0.6/load.js?mode=auto';
         t.parentNode.insertBefore(s, t);
     })();
 /* ]]> */</script>
@@ -723,7 +723,7 @@ support, and documentation.</p>
 <div style="display: inline-block; vertical-align: middle; ">
 <a class="FlattrButton" style="display:none;"   href="http://feedwordpress.radgeek.com/"></a>
 <noscript>
-<a href="http://flattr.com/thing/1380856/FeedWordPress" target="_blank"><img src="http://api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0" /></a>
+<a href="https://flattr.com/thing/1380856/FeedWordPress" target="_blank"><img src="https://api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0" /></a>
 </noscript>
 <div>via Flattr</div>
 
