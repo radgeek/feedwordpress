@@ -634,7 +634,7 @@ function syndication_comments_feed_link ($link) {
 		$source = get_syndication_feed_object();
 		$replacement = NULL;
 
-		if ($source->setting('munge comments feed links', 'munge_comments_feed_links', 'yes') != 'no') :
+		if (is_object($source) && $source->setting('munge comments feed links', 'munge_comments_feed_links', 'yes') != 'no') :
 			$commentFeeds = get_post_custom_values('wfw:commentRSS');
 			if (
 				is_array($commentFeeds)
