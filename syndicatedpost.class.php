@@ -1738,6 +1738,8 @@ class SyndicatedPost {
 			$this->validate_post_id($dbpost, $update, array(__CLASS__, __FUNCTION__));
 			
 			$ret = $this->_wp_id;
+			
+		        do_action('feedwordpress_after_store', $this->_wp_id, $dbpost);
 		endif;
 		return $ret;
 	} /* function SyndicatedPost::insert_post () */
