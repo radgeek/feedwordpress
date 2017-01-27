@@ -1,8 +1,8 @@
 <?php
 class FeedWordPressAdminPage {
-	var $context;
-	var $updated = false;
-	var $mesg = NULL;
+	protected $context;
+	protected $updated = false;
+	protected $mesg = NULL;
 
 	var $link = NULL;
 	var $dispatch = NULL;
@@ -14,7 +14,7 @@ class FeedWordPressAdminPage {
 	 *
 	 * @param mixed $link An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings
 	 */
-	function FeedWordPressAdminPage ($page = 'feedwordpressadmin', $link = NULL) {
+	public function __construct( $page = 'feedwordpressadmin', $link = NULL ) {
 		$this->link = $link;
 
 		// Set meta-box context name
@@ -24,12 +24,12 @@ class FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressAdminPage constructor */
 
-	function pageslug () {
+	public function pageslug () {
 		$slug = preg_replace('/FeedWordPress(.*)Page/', '$1', get_class($this));
 		return strtolower($slug);
 	}
 
-	function pagename ($context = NULL) {
+	public function pagename ($context = NULL) {
 		if (is_null($context)) :
 			$context = 'default';
 		endif;
@@ -44,7 +44,7 @@ class FeedWordPressAdminPage {
 		return __($name);
 	} /* FeedWordPressAdminPage::pagename () */
 
-	function accept_POST ($post) {
+	public function accept_POST ($post) {
 		if ($this->for_feed_settings() and $this->update_requested_in($post)) :
 			$this->update_feed();
 		elseif ($this->save_requested_in($post)) : // User mashed Save Changes
@@ -53,7 +53,7 @@ class FeedWordPressAdminPage {
 		do_action($this->dispatch.'_post', $post, $this);
 	}
 
-	function update_feed () {
+	public function update_feed () {
 		global $feedwordpress;
 
 		add_action('feedwordpress_check_feed', 'update_feeds_mention');
@@ -85,7 +85,7 @@ class FeedWordPressAdminPage {
 		remove_action('feedwordpress_check_feed_complete', 'update_feeds_finish', 10, 3);
 	}
 
-	function save_settings ($post) {
+	public function save_settings ($post) {
 		do_action($this->dispatch.'_save', $post, $this);
 
 		if ($this->for_feed_settings()) :
@@ -102,10 +102,10 @@ class FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressAdminPage::save_settings () */
 
-	function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
-	function for_default_settings () { return !$this->for_feed_settings(); }
+	public function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
+	public function for_default_settings () { return !$this->for_feed_settings(); }
 
-	function setting ($names, $fallback_value = NULL, $params = array()) {
+	public function setting ($names, $fallback_value = NULL, $params = array()) {
 		if (!is_array($params)) :
 			$params = array('default' => $params);
 		endif;
@@ -131,7 +131,7 @@ class FeedWordPressAdminPage {
 		return $ret;
 	}
 
-	function update_setting ($names, $value, $default = 'default') {
+	public function update_setting ($names, $value, $default = 'default') {
 		if (is_string($names)) :
 			$feed_name = $names;
 			$global_name = 'feedwordpress_'.preg_replace('![\s/]+!', '_', $names);
@@ -147,14 +147,14 @@ class FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressAdminPage::update_setting () */
 
-	function save_requested_in ($post) {
+	public function save_requested_in ($post) {
 		return (isset($post['save']) or isset($post['submit']));
 	}
-	function update_requested_in ($post) {
+	public function update_requested_in ($post) {
 		return (isset($post['update']) and (strlen($post['update']) > 0));
 	}
 
-	/*static*/ function submitted_link_id () {
+	public function submitted_link_id () {
 		global $fwp_post;
 
 		// Presume global unless we get a specific link ID
@@ -179,8 +179,8 @@ class FeedWordPressAdminPage {
 		return $link_id;
 	} /* FeedWordPressAdminPage::submitted_link_id() */
 
-	/*static*/ function submitted_link () {
-		$link_id = FeedWordPressAdminPage::submitted_link_id();
+	public function submitted_link () {
+		$link_id = $this->submitted_link_id();
 		if (is_numeric($link_id) and $link_id) :
 			$link = new SyndicatedLink($link_id);
 		else :
@@ -189,14 +189,14 @@ class FeedWordPressAdminPage {
 		return $link;
 	} /* FeedWordPressAdminPage::submitted_link () */
 
-	function stamp_link_id ($field = null) {
+	public function stamp_link_id ($field = null) {
 		if (is_null($field)) : $field = 'save_link_id'; endif;
 		?>
 	<input type="hidden" name="<?php print esc_attr($field); ?>" value="<?php print ($this->for_feed_settings() ? $this->link->id : '*'); ?>" />
 		<?php
 	} /* FeedWordPressAdminPage::stamp_link_id () */
 
-	function these_posts_phrase () {
+	public function these_posts_phrase () {
 		if ($this->for_feed_settings()) :
 			$phrase = __('posts from this feed');
 		else :
@@ -214,7 +214,7 @@ class FeedWordPressAdminPage {
 	 * @see add_meta_box()
 	 * @see do_meta_boxes()
 	 */
-	function meta_box_context () {
+	public function meta_box_context () {
 		return $this->context;
 	} /* FeedWordPressAdminPage::meta_box_context () */
 
@@ -223,11 +223,11 @@ class FeedWordPressAdminPage {
 	 *
 	 * @uses FeedWordPressAdminPage::meta_box_context()
 	 */
-	 function fix_toggles () {
+	 public function fix_toggles () {
 	 	 FeedWordPressSettingsUI::fix_toggles_js($this->meta_box_context());
 	 } /* FeedWordPressAdminPage::fix_toggles() */
 
-	 function ajax_interface_js () {
+	 public function ajax_interface_js () {
 ?>
 	function contextual_appearance (item, appear, disappear, value, visibleStyle, checkbox) {
 		if (typeof(visibleStyle)=='undefined') visibleStyle = 'block';
@@ -246,7 +246,7 @@ class FeedWordPressAdminPage {
 <?php
 	} /* FeedWordPressAdminPage::ajax_interface_js () */
 
-	function admin_page_href ($page, $params = array(), $link = NULL) {
+	public function admin_page_href ($page, $params = array(), $link = NULL) {
 		global $fwp_path;
 
 		// Merge in the page's filename
@@ -278,7 +278,7 @@ class FeedWordPressAdminPage {
 		return MyPHP::url(admin_url('admin.php'), $params);
 	} /* FeedWordPressAdminPage::admin_page_href () */
 
-	function display_feed_settings_page_links ($params = array()) {
+	public function display_feed_settings_page_links ($params = array()) {
 		global $fwp_path;
 
 		$params = wp_parse_args($params, array(
@@ -338,7 +338,7 @@ class FeedWordPressAdminPage {
 		print $params['after'];
 	} /* FeedWordPressAdminPage::display_feed_settings_page_links */
 
-	function display_feed_select_dropdown() {
+	public function display_feed_select_dropdown() {
 		$links = FeedWordPress::syndicated_links();
 
 		?>
@@ -370,15 +370,15 @@ class FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
 
-	function display_sheet_header ($pagename = 'Syndication', $all = false) {
+	public function display_sheet_header ($pagename = 'Syndication', $all = false) {
 		global $fwp_path;
 		?>
-		<div class="icon32"><img src="<?php print esc_html(WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress.png'); ?>" alt="" /></div>
+		<div class="icon32"><img src="<?php print esc_html( plugins_url( '/'.$fwp_path.'/feedwordpress.png') ); ?>" alt="" /></div>
 		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name(/*from feed=*/ false)); ?><?php endif; ?></h2>
 		<?php
 	}
 
-	function display_update_notice_if_updated ($pagename = 'Syndication', $mesg = NULL) {
+	public function display_update_notice_if_updated ($pagename = 'Syndication', $mesg = NULL) {
 		if (!is_null($mesg)) :
 			$this->mesg = $mesg;
 		endif;
@@ -400,7 +400,7 @@ class FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressAdminPage::display_update_notice_if_updated() */
 
-	function display_settings_scope_message () {
+	public function display_settings_scope_message () {
 		if ($this->for_feed_settings()) :
 		?>
 	<p>These settings only affect posts syndicated from
@@ -416,7 +416,7 @@ class FeedWordPressAdminPage {
 
 	/*static*/ function has_link () { return true; }
 
-	function form_action ($filename = NULL) {
+	public function form_action ($filename = NULL) {
 		global $fwp_path;
 
 		if (is_null($filename)) :
@@ -425,11 +425,11 @@ class FeedWordPressAdminPage {
 		return $this->admin_page_href($filename);
 	} /* FeedWordPressAdminPage::form_action () */
 
-	function update_message () {
+	public function update_message () {
 		return $this->mesg;
 	}
 
-	function display () {
+	public function display () {
 		global $fwp_post;
 
 		if (FeedWordPress::needs_upgrade()) :
@@ -490,7 +490,7 @@ class FeedWordPressAdminPage {
 	<?php
 	}
 
-	function open_sheet ($header) {
+	public function open_sheet ($header) {
 		// Set up prepatory AJAX stuff
 		?>
 		<script type="text/javascript">
@@ -545,7 +545,7 @@ class FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressAdminPage::open_sheet () */
 
-	function close_sheet () {
+	public function close_sheet () {
 		?>
 
 		</div> <!-- id="poststuff" -->
@@ -560,7 +560,7 @@ class FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressAdminPage::close_sheet () */
 
-	function setting_radio_control ($localName, $globalName, $options, $params = array()) {
+	public function setting_radio_control ($localName, $globalName, $options, $params = array()) {
 		global $fwp_path;
 
 		if (isset($params['filename'])) : $filename = $params['filename'];
@@ -727,7 +727,7 @@ class FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressAdminPage::setting_radio_control () */
 
-	function save_button ($caption = NULL) {
+	public function save_button ($caption = NULL) {
 		if (is_null($caption)) : $caption = __('Save Changes'); endif;
 		?>
 <p class="submit">
@@ -793,8 +793,11 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 	if (!is_array($tags)) : $tags = array(); endif;
 
 	$tax_name = $params['taxonomy'];
-	$taxonomy = get_taxonomy($params['taxonomy']);
-	$disabled = (!current_user_can($taxonomy->cap->assign_terms) ? 'disabled="disabled"' : '');
+	
+	$oTax = get_taxonomy($params['taxonomy']);
+	$oTaxLabels = get_taxonomy_labels($oTax);
+	
+	$disabled = (!current_user_can($oTax->cap->assign_terms) ? 'disabled="disabled"' : '');
 
 	$desc = "<p style=\"font-size:smaller;font-style:bold;margin:0\">Tag $object as...</p>";
 
@@ -822,24 +825,24 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 <div class="tagsdiv" id="<?php echo $params['id']; ?>">
 	<div class="jaxtag">
 	<div class="nojs-tags hide-if-js">
-    <p><?php echo $taxonomy->labels->add_or_remove_items; ?></p>
+    <p><?php echo $oTaxLabels->add_or_remove_items; ?></p>
 	<textarea name="<?php echo $params['textarea_name']; ?>" class="the-tags" id="<?php echo $params['textarea_id']; ?>"><?php echo esc_attr(implode(",", $tags)); ?></textarea></div>
 
-	<?php if ( current_user_can($taxonomy->cap->assign_terms) ) :?>
+	<?php if ( current_user_can($oTax->cap->assign_terms) ) :?>
 	<div class="ajaxtag hide-if-no-js">
 		<label class="screen-reader-text" for="<?php echo $params['input_id']; ?>"><?php echo $params['box_title']; ?></label>
-		<div class="taghint"><?php echo $taxonomy->labels->add_new_item; ?></div>
+		<div class="taghint"><?php echo $oTaxLabels->add_new_item; ?></div>
 		<p><input type="text" id="<?php print $params['input_id']; ?>" name="<?php print $params['input_name']; ?>" class="newtag form-input-tip" size="16" autocomplete="off" value="" />
 		<input type="button" class="button tagadd" value="<?php esc_attr_e('Add'); ?>" tabindex="3" /></p>
 	</div>
-	<p class="howto"><?php echo esc_attr( $taxonomy->labels->separate_items_with_commas ); ?></p>
+	<p class="howto"><?php echo esc_attr( $oTaxLabels->separate_items_with_commas ); ?></p>
 	<?php endif; ?>
 	</div>
 
 	<div class="tagchecklist"></div>
 </div>
-<?php if ( current_user_can($taxonomy->cap->assign_terms) ) : ?>
-<p class="hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-<?php echo $tax_name; ?>"><?php echo $taxonomy->labels->choose_from_most_used; ?></a></p>
+<?php if ( current_user_can($oTax->cap->assign_terms) ) : ?>
+<p class="hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-<?php echo $tax_name; ?>"><?php echo $oTaxLabels->choose_from_most_used; ?></a></p>
 <?php endif;
 
 }
@@ -854,7 +857,9 @@ function fwp_category_box ($checked, $object, $tags = array(), $params = array()
 		$prefix = (isset($params['prefix']) ? $params['prefix'] : '');
 		$taxonomy = (isset($params['taxonomy']) ? $params['taxonomy'] : 'category');
 	endif;
-	$tax = get_taxonomy($taxonomy);
+	
+	$oTax = get_taxonomy($taxonomy);
+	$oTaxLabels = get_taxonomy_labels($oTax);
 
 	if (strlen($prefix) > 0) :
 		$idPrefix = $prefix.'-';
@@ -870,7 +875,7 @@ function fwp_category_box ($checked, $object, $tags = array(), $params = array()
 <div id="<?php print $idPrefix; ?>taxonomy-<?php print $taxonomy; ?>" class="feedwordpress-category-div">
   <ul id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-tabs" class="category-tabs">
     <li class="ui-tabs-selected tabs"><a href="#<?php print $idPrefix; ?><?php print $taxonomy; ?>-all" tabindex="3"><?php _e( 'All posts' ); ?></a>
-    <p style="font-size:smaller;font-style:bold;margin:0">Give <?php print $object; ?> these <?php print $tax->labels->name; ?></p>
+    <p style="font-size:smaller;font-style:bold;margin:0">Give <?php print $object; ?> these <?php print $oTaxLabels->name; ?></p>
     </li>
   </ul>
 
@@ -976,7 +981,7 @@ class FeedWordPressSettingsUI {
 		wp_enqueue_script('post'); // for magic tag and category boxes
 		wp_enqueue_script('admin-forms'); // for checkbox selection
 
-		wp_register_script('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.js');
+		wp_register_script('feedwordpress-elements', plugins_url('/' . $fwp_path . '/feedwordpress-elements.js') );
 		wp_enqueue_script('feedwordpress-elements');
 	}
 

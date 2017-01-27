@@ -1738,8 +1738,6 @@ class SyndicatedPost {
 			$this->validate_post_id($dbpost, $update, array(__CLASS__, __FUNCTION__));
 			
 			$ret = $this->_wp_id;
-
-			do_action('feedwordpress_after_store', $this->_wp_id, $dbpost);
 		endif;
 		return $ret;
 	} /* function SyndicatedPost::insert_post () */
@@ -2241,6 +2239,10 @@ EOM;
 							case 'existing_user_login' :
 								// Add a random disambiguator
 								$userdata['user_login'] .= substr(md5(uniqid(microtime())), 0, 6);
+								break;
+							case 'user_nicename_too_long' :
+								// Add a limited 50 caracters user_nicename based on user_login
+                                				$userdata['user_nicename'] = mb_substr( $userdata['user_login'], 0, 50 );
 								break;
 							case 'existing_user_email' :
 								// No disassemble!

@@ -2,9 +2,9 @@
 require_once(dirname(__FILE__) . '/admin-ui.php');
 
 class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
-	function FeedWordPressDiagnosticsPage () {
+	public function __construct() {
 		// Set meta-box context name
-		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressdiagnosticspage');
+		parent::__construct('feedwordpressdiagnosticspage');
 		$this->dispatch = 'feedwordpress_diagnostics';
 		$this->filename = __FILE__;
 

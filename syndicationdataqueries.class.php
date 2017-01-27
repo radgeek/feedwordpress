@@ -1,7 +1,7 @@
 <?php
 
 class SyndicationDataQueries {
-	function SyndicationDataQueries () {
+	public function __construct () {
 		add_action('init', array($this, 'init'));
 		add_action('parse_query', array($this, 'parse_query'), 10, 1);
 		add_filter('posts_search', array($this, 'posts_search'), 10, 2);

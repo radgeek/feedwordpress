@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2016.0420
+Version: 2016.1213
 Author: Charles Johnson
 Author URI: http://radgeek.com/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2016.0420
+ * @version 2016.1213
  */
 
 # This uses code derived from:
@@ -32,7 +32,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2016.0420');
+define ('FEEDWORDPRESS_VERSION', '2016.1213');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -91,17 +91,39 @@ endif;
 // Use our the cache settings that we want.
 add_filter('wp_feed_cache_transient_lifetime', array('FeedWordPress', 'cache_lifetime'));
 
-// Ensure that we have SimplePie loaded up and ready to go.
-// We no longer need a MagpieRSS upgrade module. Hallelujah!
-if (!class_exists('SimplePie')) :
-	require_once(ABSPATH . WPINC . '/class-simplepie.php');
-endif;
-require_once(ABSPATH . WPINC . '/class-feed.php');
+// Dependencies: modules packaged with WordPress core
+$wpCoreDependencies = array(
+"class:SimplePie" => "class-simplepie",
+"class:WP_Feed_Cache" => "class-wp-feed-cache",
+"class:WP_Feed_Cache_Transient" => "class-wp-feed-cache-transient",
+"class:WP_SimplePie_File" => "class-wp-simplepie-file",
+"class:WP_SimplePie_Sanitize_KSES" => "class-wp-simplepie-sanitize-kses",
+"function:wp_insert_user" => "registration",
+);
 
-if (!function_exists('wp_insert_user')) :
-	require_once (ABSPATH . WPINC . '/registration.php'); // for wp_insert_user
+// Ensure that we have SimplePie loaded up and ready to go
+// along with the WordPress auxiliary classes.
+$unmetCoreDependencies = array();
+foreach ($wpCoreDependencies as $unit => $fileSlug) :
+	list($unitType, $unitName) = explode(":", $unit, 2);
+	
+	$dependencyMet = (('class'==$unitType) ? class_exists($unitName) : function_exists($unitName));
+	if (!$dependencyMet) :
+		$phpFileName = ABSPATH . WPINC . "/${fileSlug}.php";
+		if (file_exists($phpFileName)) :
+			require_once($phpFileName);
+		else :
+			$unmetCoreDependencies[] = $unitName;
+		endif;
+	endif;
+endforeach;
+
+// Fallback garbage-pail module used in WP < 4.7 which may meet our dependencies
+if (count($unmetCoreDependencies) > 0) :
+	require_once(ABSPATH . WPINC . "/class-feed.php");
 endif;
 
+// Dependences: modules packaged with FeedWordPress plugin
 $dir = dirname(__FILE__);
 require_once("${dir}/externals/myphp/myphp.class.php");
 require_once("${dir}/admin-ui.php");
@@ -216,6 +238,8 @@ if (!$feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
 	endif;
 
 	add_action('init', array($feedwordpress, 'init'));
+	add_action('wp_loaded', array($feedwordpress, 'wp_loaded'));
+
 	add_action('shutdown', array($feedwordpress, 'email_diagnostic_log'));
 	add_action('shutdown', array($feedwordpress, 'feedwordpress_cleanup'));
 	add_action('wp_dashboard_setup', array($feedwordpress, 'dashboard_setup'));
@@ -237,7 +261,7 @@ endif; // if (!FeedWordPress::needs_upgrade())
 ################################################################################
 
 class FeedWordPressDiagnostic {
-	function feed_error ($error, $old, $link) {
+	public static function feed_error ($error, $old, $link) {
 		$wpError = $error['object'];
 		$url = $link->uri();
 		
@@ -671,7 +695,7 @@ function fwp_add_pages () {
 		$menu_cap,
 		$syndicationMenu,
 		NULL,
-		WP_PLUGIN_URL.'/'.FeedWordPress::path('feedwordpress-tiny.png')
+		plugins_url( '/'.FeedWordPress::path('feedwordpress-tiny.png') )
 	);
 
 	do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
@@ -1204,7 +1228,11 @@ class FeedWordPress {
 		$exact = $hook; // Before munging
 
 		if (!!$hook) :
-			if ($hook != 'init') : // Constrain values.
+			if ($hook == 'init' or $hook == 'wp_loaded') : // Re-map init to wp_loaded
+				$hook = ($params['setting only'] ? 'init' : 'wp_loaded');
+
+			// Constrain possible values. If it's not an init or wp_loaded, it's a shutdown
+			else :
 				$hook = 'shutdown';
 			endif;
 		endif;
@@ -1465,7 +1493,7 @@ class FeedWordPress {
 		// If this is a FeedWordPress admin page, queue up scripts for AJAX
 		// functions that FWP uses. If it is a display page or a non-FWP admin
 		// page, don't.
-		wp_register_style('feedwordpress-elements', WP_PLUGIN_URL.'/'.$fwp_path.'/feedwordpress-elements.css');
+		wp_register_style('feedwordpress-elements', plugins_url( '/'.$fwp_path.'/feedwordpress-elements.css') );
 		if (FeedWordPressSettingsUI::is_admin()) :
 			// For JavaScript that needs to be generated dynamically
 			add_action('admin_print_scripts', array('FeedWordPressSettingsUI', 'admin_scripts'));
@@ -1512,10 +1540,21 @@ class FeedWordPress {
 		add_action('wp_ajax_fwp_feedcontents', array($this, 'fwp_feedcontents'));
 		add_action('wp_ajax_fwp_xpathtest', array($this, 'fwp_xpathtest'));
 
-		$this->clear_cache_magic_url();
-		$this->update_magic_url();
 	} /* FeedWordPress::init() */
 
+	/**
+	 * FeedWordPress::wp_loaded (): Once all plugin and theme modules have been
+	 * loaded and initialized (by actions on the init hook, etc.), check the HTTP
+	 * request to see if we need to perform any special FeedWordPress-related
+	 * actions.
+	 *
+	 * @since 2016.0614
+	 */
+	public function wp_loaded () {
+		$this->clear_cache_magic_url();
+		$this->update_magic_url();
+	} /* FeedWordPress::wp_loaded () */
+	
 	public function fwp_feeds () {
 		$feeds = array();
 		$feed_ids = $this->feeds;
@@ -1769,11 +1808,22 @@ class FeedWordPress {
 
 	} /* FeedWordPress::user_can_richedit () */
 
+	public function clear_cache_magic_url () {
+		if ($this->clear_cache_requested()) :
+			$this->clear_cache();
+		endif;
+	} /* FeedWordPress::clear_cache_magic_url() */
+
+	public function clear_cache_requested () {
+		return MyPHP::request('clear_cache');
+	} /* FeedWordPress::clear_cache_requested() */
+
 	public function update_magic_url () {
 		global $wpdb;
 
 		// Explicit update request in the HTTP request (e.g. from a cron job)
-		if ($this->update_requested()) :
+		if (self::update_requested()) :
+
 			$this->update_hooked = "Initiating a CRON JOB CHECK-IN ON UPDATE SCHEDULE due to URL parameter = ".trim($this->val($_REQUEST['update_feedwordpress']));
 
 			$this->update($this->update_requested_url());
@@ -1803,27 +1853,17 @@ class FeedWordPress {
 			// when successful.
 			exit;
 		endif;
-	} /* FeedWordPress::magic_update_url () */
+	} /* FeedWordPress::update_magic_url () */
 
-	public function clear_cache_magic_url () {
-		if ($this->clear_cache_requested()) :
-			$this->clear_cache();
-		endif;
-	} /* FeedWordPress::clear_cache_magic_url() */
-
-	public function clear_cache_requested () {
-		return MyPHP::request('clear_cache');
-	} /* FeedWordPress::clear_cache_requested() */
-
-	public function update_requested () {
+	public static function update_requested () {
 		return MyPHP::request('update_feedwordpress');
 	} /* FeedWordPress::update_requested() */
-
+	
 	public function update_requested_url () {
 		$ret = null;
 
 		if (($_REQUEST['update_feedwordpress']=='*')
-		or (preg_match('|^http://.*|i', $_REQUEST['update_feedwordpress']))) :
+		or (preg_match('|^[a-z]+://.*|i', $_REQUEST['update_feedwordpress']))) :
 			$ret = $_REQUEST['update_feedwordpress'];
 		endif;
 
@@ -2288,24 +2328,24 @@ class FeedWordPress {
 
 		$diagnostic_nesting = count(explode(":", $level));
 
-		if (FeedWordPress::diagnostic_on($level)) :
+		if (self::diagnostic_on($level)) :
 			foreach ($output as $method) :
 				switch ($method) :
 				case 'echo' :
-					if (!FeedWordPress::update_requested()) :
+					if (!self::update_requested()) :
 						echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.$out."</pre></div>\n";
 					endif;
 					break;
 				case 'echo_in_cronjob' :
-					if (FeedWordPress::update_requested()) :
-						echo FeedWordPress::log_prefix()." ".$out."\n";
+					if (self::update_requested()) :
+						echo self::log_prefix()." ".$out."\n";
 					endif;
 					break;
 				case 'admin_footer' :
 					$feedwordpress_admin_footer[] = $out;
 					break;
 				case 'error_log' :
-					error_log(FeedWordPress::log_prefix().' '.$out);
+					error_log(self::log_prefix().' '.$out);
 					break;
 				case 'email' :
 

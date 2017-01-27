@@ -37,7 +37,7 @@ class FeedFinder {
 	var $_obvious_feed_url = array('[./]rss', '[./]rdf', '[./]atom', '[./]feed', '\.xml');
 	var $_maybe_feed_url = array ('rss', 'rdf', 'atom', 'feed', 'xml');
 
-	function FeedFinder ($uri = NULL, $params = array(), $fallbacks = 3) {
+	function __construct( $uri = NULL, $params = array(), $fallbacks = 3 ) {
 		if (is_bool($params)) :
 			$params = array("verify" => $params);
 		endif;
@@ -58,6 +58,10 @@ class FeedFinder {
 		$this->uri = $uri; $this->verify = $verify;
 		$this->fallbacks = $fallbacks;
 	} /* FeedFinder::FeedFinder () */
+
+	function FeedFinder( $uri = NULL, $params = array(), $fallbacks = 3 ) {
+		self::__construct( $uri, $params, $fallbacks );
+	}
 
 	function find ($uri = NULL, $params = array()) {
 		$params = wp_parse_args($params, array( // Defaults

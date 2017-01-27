@@ -4,7 +4,7 @@
 ################################################################################
 
 class FeedWordPressRPC {
-	function FeedWordPressRPC () {
+	public function __construct () {
 		add_filter('xmlrpc_methods', array($this, 'xmlrpc_methods'));
 	}
 	

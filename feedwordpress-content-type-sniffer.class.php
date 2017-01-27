@@ -1,5 +1,7 @@
 <?php
-require_once(ABSPATH . WPINC . '/class-feed.php');
+if (!class_exists('SimplePie_Content_Type_Sniffer')) :
+	require_once(ABSPATH . WPINC . '/class-simplepie.php');
+endif;
 
 class FeedWordPress_Content_Type_Sniffer extends SimplePie_Content_Type_Sniffer {
 	/**

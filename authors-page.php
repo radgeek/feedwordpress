@@ -5,12 +5,12 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 	var $authorlist = NULL;
 	var $rule_count = 0;
 	
-	function FeedWordPressAuthorsPage ($link = -1) {
+	public function __construct( $link = -1 ) {
 		if (is_numeric($link) and -1 == $link) :
-			$link = FeedWordPressAdminPage::submitted_link();
+			$link = $this->submitted_link();
 		endif;
 
-		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressauthors', $link);
+		parent::__construct('feedwordpressauthors', $link);
 		$this->refresh_author_list();
 		$this->dispatch = 'feedwordpress_author_settings';
 		$this->filename = __FILE__;

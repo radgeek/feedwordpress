@@ -83,12 +83,12 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	 *
 	 * @param mixed $link An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings
 	 */
-	function FeedWordPressFeedsPage ($link = -1) {
+	public function __construct( $link = -1 ) {
 		if (is_numeric($link) and -1 == $link) :
-			$link = FeedWordPressAdminPage::submitted_link();
+			$link = $this->submitted_link();
 		endif;
 
-		FeedWordPressAdminPage::FeedWordPressAdminPage('feedwordpressfeeds', $link);
+		parent::__construct('feedwordpressfeeds', $link);
 
 		$this->dispatch = 'feedwordpress_admin_page_feeds';
 		$this->pagenames = array(
@@ -139,7 +139,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressFeedsPage::display() */
 
 	function ajax_interface_js () {
-		FeedWordPressAdminPage::ajax_interface_js();
+		parent::ajax_interface_js();
 		?>
 
 		jQuery(document).ready( function () {
