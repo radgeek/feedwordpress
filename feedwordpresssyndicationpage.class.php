@@ -865,7 +865,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 			foreach ($alter as $sql) :
 				$result = $wpdb->query($sql);
 				if (!$result):
-					$errs[] = mysql_error();
+					$errs[] = $wpdb->last_error;
 				endif;
 			endforeach;
 			
@@ -988,7 +988,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 			foreach ($alter as $sql) :
 				$result = $wpdb->query($sql);
 				if (!$result):
-					$errs[] = mysql_error();
+					$errs[] = $wpdb->last_error;
 				endif;
 			endforeach;
 			
@@ -1218,7 +1218,7 @@ has been added as a contributing site, using the feed at
 &lt;<a href="<?php print $fwp_post['feed']; ?>"><?php print esc_html($fwp_post['feed']); ?></a>&gt;.
 | <a href="admin.php?page=<?php print $fwp_path; ?>/feeds-page.php&amp;link_id=<?php print $link_id; ?>">Configure settings</a>.</p></div>
 <?php			else: ?>
-<div class="updated"><p>There was a problem adding the feed. [SQL: <?php echo esc_html(mysql_error()); ?>]</p></div>
+<div class="updated"><p>There was a problem adding the feed. [SQL: <?php echo esc_html($wpdb->last_error); ?>]</p></div>
 <?php			endif;
 		elseif (isset($fwp_post['save_link_id'])):
 			$existingLink = new SyndicatedLink($fwp_post['save_link_id']);
