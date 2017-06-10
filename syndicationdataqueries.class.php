@@ -55,7 +55,7 @@ class SyndicationDataQueries {
 				if ($guid != $nGuid) :
 					$seek[] = $nGuid;
 				endif;
-
+				
 				// Escape to prevent frak-ups, injections, etc.
 				$seek = array_map('esc_sql', $seek);
 

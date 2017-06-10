@@ -584,9 +584,24 @@ class SyndicatedPost {
 		return $hash;
 	} /* SyndicatedPost::update_hash() */
 
+	/**
+	 * SyndicatedPost::normalize_guid_prefix(): generates a normalized URL
+	 * prefix (including scheme, authority, full path, and the beginning of
+	 * a query string) for creating guids that conform to WordPress's
+	 * internal constraints on the URL space for valid guids. To create a
+	 * normalized guid, just concatenate a valid URL query parameter value
+	 * to the returned URL.
+	 *
+	 * @return string The URL prefix generated.
+	 *
+	 * @uses trailingslashit()
+	 * @uses home_url()
+	 * @uses apply_filters()
+	 */
 	static function normalize_guid_prefix () {
-		return trailingslashit(get_bloginfo('url')).'?guid=';
-	}
+		$url = trailingslashit(home_url(/*path=*/ '', /*scheme=*/ 'http'));
+		return apply_filters('syndicated_item_guid_normalized_prefix', $url . '?guid=');
+	} /* SyndicatedPost::normalize_guid_prefix() */
 
 	static function normalize_guid ($guid) {
 		$guid = trim($guid);
@@ -596,6 +611,7 @@ class SyndicatedPost {
 			$guid = SyndicatedPost::normalize_guid_prefix().md5($guid);
 		endif;
 		$guid = trim($guid);
+		
 		return $guid;
 	} /* SyndicatedPost::normalize_guid() */
 
