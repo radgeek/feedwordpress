@@ -93,7 +93,9 @@ class FeedWordPressLocalPost {
 
 	public function feed () {
 		global $feedwordpress;
-		$this->link = $feedwordpress->subscription($this->feed_id());
+		if (is_object($feedwordpress) and method_exists($feedwordpress, 'subscription')) :
+			$this->link = $feedwordpress->subscription($this->feed_id());
+		endif;
 		return $this->link;
 	}
 	
