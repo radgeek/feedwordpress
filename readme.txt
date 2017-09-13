@@ -3,8 +3,8 @@ Contributors: Charles Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
-Tested up to: 4.7
-Stable tag: 2016.1213
+Tested up to: 4.8.1
+Stable tag: 2017.0913
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -93,9 +93,42 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 == Changelog ==
 
+= 2017.0913 =
+
+*	PARTIAL FIX FOR 2X DUPLICATE POSTS APPEARING ON DUAL HTTP/HTTPS SITES: Some
+	users reported an issue in which their FeedWordPress sites, which are over
+	both insecure HTTP and over HTTPS, would pick up exactly 2 copies of every
+	post or almost every post from certain feeds, and where the guids for each
+	of the pair of duplicate posts would look exactly alike, except for a
+	difference in the protocol, for example:
+
+		http://www.example.com/?guid=c1cd28da39e8d7babcf6499983aca545 
+		https://www.example.com/?guid=c1cd28da39e8d7babcf6499983aca545
+
+	... where www.example.com is the server that your own copy of FeedWordPress
+	is installed. This release of FeedWordPress normalizes post guid prefixes
+	so as to avoid or limit the scope of this problem.
+
+*	PHP 7 Compatibility: eliminate remaining sources of PHP 7 compatibility-check
+	failures -- remove the use of depreciated mysql_error() function, and make
+	sure all classes make use of __construct() convention for constructors.
+
+*	AVOID "PHP Warning: shell_exec() has been disabled for security	reasons in
+	[...]/feedwordpress/feeds-page.php on line 197": FeedWordPress uses the PHP
+	shell_exec() function in a very narrowly limited way for information gathering,
+	trying to find the real path to curl or wget on your system, so that it can
+	give as realistic as possible a recommendation for the sample crontab line
+	displayed in Syndication > Feeds & Updates. Some web hosting environments
+	disable shell_exec for security reasons (since it could in theory be used to
+	do a lot more stuff than the very limited information gathering FWP uses it
+	for); in which case, this part of the code in FeedWordPress could spit out
+	a nasty-looking and potentially worrisome-looking error message. So, now this
+	code is fenced with checks to make sure that shell_exec is available, before
+	FWP attempts to make use of it.
+
 = 2016.1213 =
 
-*	WORDPRSS BACKWARD COMPATIBILITY FOR VERSIONS [4.5, 4.7]: This change fixes
+*	WORDPRESS BACKWARD COMPATIBILITY FOR VERSIONS [4.5, 4.7]: This change fixes
 	a fatal PHP error (on some web server configurations you'd see the message
 	"Fatal error: require_once(): Failed opening required '[...]/wp-includes/class-wp-feed-cache.php'"
 	on others, you might just see an HTTP 500 Internal Server Error or a blank
