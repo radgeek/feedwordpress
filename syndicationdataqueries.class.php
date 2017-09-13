@@ -47,6 +47,7 @@ class SyndicationDataQueries {
 				// MD5 hashes
 				if (preg_match('/^[0-9a-f]{32}$/i', $guid)) :
 					$seek[] = SyndicatedPost::normalize_guid_prefix().$guid;
+					$seek[] = SyndicatedPost::alternative_guid_prefix().$guid;
 				endif;
 
 				// Invalid URIs, URIs that WordPress just doesn't like, and URIs
@@ -54,6 +55,7 @@ class SyndicationDataQueries {
 				$nGuid = SyndicatedPost::normalize_guid($guid);
 				if ($guid != $nGuid) :
 					$seek[] = $nGuid;
+					$seek[] = SyndicatedPost::alternative_guid($guid);
 				endif;
 				
 				// Escape to prevent frak-ups, injections, etc.

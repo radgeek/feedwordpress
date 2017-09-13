@@ -615,6 +615,22 @@ class SyndicatedPost {
 		return $guid;
 	} /* SyndicatedPost::normalize_guid() */
 
+	static function alternative_guid_prefix () {
+		$url = trailingslashit(home_url(/*path=*/ '', /*scheme=*/ 'https'));
+		return apply_filters('syndicated_item_guid_normalized_prefix', $url . '?guid=');
+	}
+	static function alternative_guid ($guid) {
+		$guid = trim($guid);
+		if (preg_match('/^[0-9a-z]{32}$/i', $guid)) : // MD5
+			$guid = SyndicatedPost::alternative_guid_prefix().strtolower($guid);
+		elseif ((strlen(esc_url($guid)) == 0) or (esc_url($guid) != $guid)) :
+			$guid = SyndicatedPost::alternative_guid_prefix().md5($guid);
+		endif;
+		$guid = trim($guid);
+		
+		return $guid;
+	} /* SyndicatedPost::normalize_guid() */
+
 	function guid () {
 		$guid = null;
 		if (isset($this->item['id'])):						// Atom 0.3 / 1.0
