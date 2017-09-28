@@ -15,7 +15,7 @@ class SyndicationDataQueries {
 		$wp->add_query_var('guid');
 	}
 
-	function parse_query (&$q) {
+	function parse_query ($q) {
 		if ($q->get('guid')) :
 			$q->is_single = false;	// Causes nasty side-effects.
 			$q->is_singular = true;	// Doesn't?
@@ -27,7 +27,7 @@ class SyndicationDataQueries {
 		endif;
 	} /* SyndicationDataQueries::parse_query () */
 
-	function pre_get_posts (&$q) {
+	function pre_get_posts ($q) {
 		//
 	}
 
