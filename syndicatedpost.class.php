@@ -129,6 +129,7 @@ class SyndicatedPost {
 			);
 			
 			$excerpt = apply_filters('syndicated_item_excerpt', $this->excerpt(), $this);
+
 			if (!empty($excerpt)):
 				$this->post['post_excerpt'] = $excerpt;
 			endif;
@@ -258,7 +259,6 @@ class SyndicatedPost {
 
 			$this->post['post_type'] = apply_filters('syndicated_post_type', $this->link->setting('syndicated post type', 'syndicated_post_type', 'post'), $this);
 		endif;
-		
 	} /* SyndicatedPost::__construct() */
 
 	#####################################
@@ -413,18 +413,23 @@ class SyndicatedPost {
 		$content = $this->content();
 
 		// Ignore whitespace, case, and tag cruft.
-		$theExcerpt = preg_replace('/\s+/', '', strtolower(strip_tags($excerpt)));
-		$theContent = preg_replace('/\s+/', '', strtolower(strip_tags($content)));
-
+		$theExcerpt = preg_replace('/\s+/', '', strtolower(strip_tags(html_entity_decode($excerpt))));
+		$theContent = preg_replace('/\s+/', '', strtolower(strip_tags(html_entity_decode($content))));
 		if ( empty($excerpt) or $theExcerpt == $theContent ) :
 			# If content is available, generate an excerpt.
 			if ( strlen(trim($content)) > 0 ) :
 				$excerpt = strip_tags($content);
 				if (strlen($excerpt) > 255) :
-					$excerpt = substr($excerpt,0,252).'...';
+					if (is_object($this->link) and is_object($this->link->simplepie)) :
+						$encoding = $this->link->simplepie->get_encoding();
+					else :
+						$encoding = get_option('blog_charset', 'utf8');
+					endif;
+					$excerpt = mb_substr($excerpt,0,252,$encoding).'...';
 				endif;
 			endif;
 		endif;
+
 		return $excerpt;
 	} /* SyndicatedPost::excerpt() */
 
@@ -1449,7 +1454,7 @@ class SyndicatedPost {
 		return $this->_wp_id;
 	}
 
-	function store () {
+	public function store () {
 		global $wpdb;
 
 		if ($this->filtered()) : // This should never happen.
@@ -1711,6 +1716,7 @@ class SyndicatedPost {
 				
 				// Go ahead and insert the first post record to
 				// anchor the revision history.
+
 				$this->_wp_id = wp_insert_post($sdbpost, /*return wp_error=*/ true);
 				
 				$dbpost['ID'] = $this->_wp_id;
