@@ -15,7 +15,7 @@ class SyndicationDataQueries {
 		$wp->add_query_var('guid');
 	}
 
-	function parse_query (&$q) {
+	function parse_query ($q) {
 		if ($q->get('guid')) :
 			$q->is_single = false;	// Causes nasty side-effects.
 			$q->is_singular = true;	// Doesn't?
@@ -27,18 +27,18 @@ class SyndicationDataQueries {
 		endif;
 	} /* SyndicationDataQueries::parse_query () */
 
-	function pre_get_posts (&$q) {
+	function pre_get_posts ($q) {
 		//
 	}
 
-	function posts_request ($sql, &$query) {
+	function posts_request ($sql, $query) {
 		if ($query->get('fields') == '_synfresh') :
 			FeedWordPress::diagnostic('feed_items:freshness:sql', "SQL: ".$sql);
 		endif;
 		return $sql;
 	}
 
-	function posts_search ($search, &$query) {
+	function posts_search ($search, $query) {
 		global $wpdb;
 		if ($guid = $query->get('guid')) :
 			if (strlen(trim($guid)) > 0) :
@@ -77,7 +77,7 @@ class SyndicationDataQueries {
 		return $search;
 	} /* SyndicationDataQueries::posts_search () */
 
-	function posts_where ($where, &$q) {
+	function posts_where ($where, $q) {
 		global $wpdb;
 
 		// Ugly hack to ensure we ONLY check by guid in syndicated freshness
@@ -94,7 +94,7 @@ class SyndicationDataQueries {
 		return $where;
 	} /* SyndicationDataQueries::post_where () */
 
-	function posts_fields ($fields, &$query) {
+	function posts_fields ($fields, $query) {
 		global $wpdb;
 		if ($f = $query->get('fields')) :
 			switch ($f) :
