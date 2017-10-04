@@ -12,7 +12,7 @@ require_once(dirname(__FILE__).'/syndicatedpostxpathquery.class.php');
  * different feed formats, which may be useful to FeedWordPress users
  * who make use of feed data in PHP add-ons and filters.
  *
- * @version 2013.0525
+ * @version 2017.1004
  */
 class SyndicatedPost {
 	var $item = null;	// MagpieRSS representation
