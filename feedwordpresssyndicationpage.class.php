@@ -736,7 +736,7 @@ support, and documentation.</p>
 
 <div style="display: inline-block; vertical-align: bottom">
 <input type="image" name="submit" src="<?php print esc_url(plugins_url('/' . FeedWordPress::path('paypal-donation-64px.png' ) ) ); ?>" alt="Donate through PayPal" />
-<input type="hidden" name="business" value="distro.to.feedback@radgeek.com"  />
+<input type="hidden" name="business" value="<?php print esc_attr(FEEDWORDPRESS_BLEG_PAYPAL); ?>"  />
 <input type="hidden" name="cmd" value="_xclick"  />
 <input type="hidden" name="item_name" value="FeedWordPress donation"  />
 <input type="hidden" name="no_shipping" value="1"  />

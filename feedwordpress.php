@@ -3,15 +3,15 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2017.1004
-Author: Charles Johnson
-Author URI: http://radgeek.com/
+Version: 2017.1007
+Author: C. Johnson
+Author URI: https://feedwordpress.radgeek.com/contact/
 License: GPL
 */
 
 /**
  * @package FeedWordPress
- * @version 2017.1004
+ * @version 2017.1007
  */
 
 # This uses code derived from:
@@ -32,13 +32,14 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2017.1004');
-define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://radgeek.com/contact');
+define ('FEEDWORDPRESS_VERSION', '2017.1007');
+define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
 	define ('FEEDWORDPRESS_BLEG', true);
 endif;
-define('FEEDWORDPRESS_BLEG_BTC', '1FN3Q4VSR4jV7unRjaknVQVe5ky88ktPHS');
+define('FEEDWORDPRESS_BLEG_BTC', '15EsQ9QMZtLytsaVYZUaUCmrkSMaxZBTso');
+define('FEEDWORDPRESS_BLEG_PAYPAL', '22PAJZZCK5Z3W');
 
 // Defaults
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');

@@ -1,5 +1,5 @@
 === FeedWordPress ===
-Contributors: Charles Johnson
+Contributors: C. Johnson
 Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
@@ -10,84 +10,55 @@ FeedWordPress syndicates content from feeds you choose into your WordPress weblo
 
 == Description ==
 
-* Author: [Charles Johnson](http://radgeek.com/contact)
+* Author: [C. Johnson](http://feedback.radgeek.com/contact)
 * Project URI: <http://feedwordpress.radgeek.com/>
 * License: GPL 2. See License below for copyright jots and tittles.
 
-FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content
-from feeds that you choose into your WordPress weblog; the content it syndicates
-appears as a series of special posts in your WordPress posts database. If you
-syndicate several feeds then you can use WordPress's posts database and
-templating engine as the back-end of an aggregation ("planet") website. It was
-developed, originally, because I needed a more flexible replacement for
-[Planet][] to use at Feminist Blogs, an aggregator site that I used to administer.
+FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content from feeds that you choose into your WordPress weblog, and then the content it syndicates appears as a series of special posts in your WordPress posts database. If you syndicate several feeds then you can use WordPress's posts database and templating engine as the back-end of an aggregation ("planet") website. It was developed, originally, as a utility/hobby project, because I needed a more flexible replacement for [Planet][] for aggregator sites that I administered.
 
 [Planet]: http://www.planetplanet.org/
 
-FeedWordPress is designed with flexibility, ease of use, and ease of
-configuration in mind. You'll need a working installation of WordPress (version
-[3.0] or later), and also FTP or SFTP access to your web host. The ability to
-create cron jobs on your web host is helpful but not required. You *don't* need
-to tweak any plain-text configuration files and you *don't* need shell access
-to your web host to make it work. (Although, I should point out, web hosts that
-*don't* offer shell access are *bad web hosts*.)
+FeedWordPress is designed with flexibility, ease of use, and ease of configuration in mind. You'll need a working installation of WordPress (version [4.5][] or later), and also FTP or SFTP access to your web host. The ability to create cron jobs on your web host is helpful but not required.
 
   [WordPress]: http://wordpress.org/
   [WordPress MU]: http://mu.wordpress.org/
-  [3.0]: http://codex.wordpress.org/Version_3.0
+  [4.5]: http://codex.wordpress.org/Version_4.5
 
 == Installation ==
 
 To use FeedWordPress, you will need:
 
-* 	an installed and configured copy of [WordPress][] or [WordPress MU][]
-	(version 3.0 or later).
+* 	an installed and configured copy of [WordPress][] (version 4.5 or later).
 
-*	FTP, SFTP or shell access to your web host
+*	the ability to install new plugins on your site using either WordPress's Plugins Repository, SFTP, FTP or shell access to your web host
 
 = New Installations =
 
-1.	Download the FeedWordPress installation package and extract the files on
-	your computer. 
+1.	Download the FeedWordPress installation package and extract the files on your computer. 
 
-2.	Create a new directory named `feedwordpress` in the `wp-content/plugins`
-	directory of your WordPress installation. Use an FTP or SFTP client to
-	upload the contents of your FeedWordPress archive to the new directory
-	that you just created on your web host.
+2.	Create a new directory named `feedwordpress` in the `wp-content/plugins` directory of your WordPress installation. Use an FTP or SFTP client to upload the contents of your FeedWordPress archive to the new directory that you just created on your web host.
 
 3.	Log in to the WordPress Dashboard and activate the FeedWordPress plugin.
 
-4.	Once the plugin is activated, a new **Syndication** section should
-	appear in your WordPress admin menu. Click here to add new syndicated
-	feeds, set up configuration options, and determine how FeedWordPress
-	will check for updates. For help, see the [FeedWordPress Quick Start][]
-	page.
+4.	Once the plugin is activated, a new **Syndication** section should appear in your WordPress admin menu. Click here to add new syndicated feeds, set up configuration options, and determine how FeedWordPress will check for updates. For help, see the [FeedWordPress Quick Start][] page.
 	
 [FeedWordPress Quick Start]: http://feedwordpress.radgeek.com/wiki/quick-start
 
 = Upgrades =
 
-To *upgrade* an existing installation of FeedWordPress to the most recent
-release:
+To *upgrade* an existing installation of FeedWordPress to the most recent release:
 
-1.	Download the FeedWordPress installation package and extract the files on
-	your computer. 
+1.	Download the FeedWordPress installation package and extract the files on your computer. 
 
-2.	Upload the new PHP files to `wp-content/plugins/feedwordpress`,
-	overwriting any existing FeedWordPress files that are there.
+2.	Upload the new PHP files to `wp-content/plugins/feedwordpress`, overwriting any existing FeedWordPress files that are there.
 	
-3.	Log in to your WordPress administrative interface immediately in order
-	to see whether there are any further tasks that you need to perform
-	to complete the upgrade.
+3.	Log in to your WordPress administrative interface immediately in order to see whether there are any further tasks that you need to perform to complete the upgrade.
 
 4.	Enjoy your newer and hotter installation of FeedWordPress
 
 == Using and Customizing FeedWordPress ==
 
-FeedWordPress has many options which can be accessed through the WordPress
-Dashboard, and a lot of functionality accessible programmatically through
-WordPress templates or plugins. For further documentation of the ins and
-outs, see the documentation at the [FeedWordPress project homepage][].
+FeedWordPress has many options which can be accessed through the WordPress Dashboard, and a lot of functionality accessible programmatically through WordPress templates or plugins. For further documentation of the ins and outs, see the documentation at the [FeedWordPress project homepage][].
 
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
@@ -95,228 +66,98 @@ outs, see the documentation at the [FeedWordPress project homepage][].
 
 = 2017.0913 =
 
-*	PARTIAL FIX FOR 2X DUPLICATE POSTS APPEARING ON DUAL HTTP/HTTPS SITES: Some
-	users reported an issue in which their FeedWordPress sites, which are over
-	both insecure HTTP and over HTTPS, would pick up exactly 2 copies of every
-	post or almost every post from certain feeds, and where the guids for each
-	of the pair of duplicate posts would look exactly alike, except for a
-	difference in the protocol, for example:
+*	PARTIAL FIX FOR 2X DUPLICATE POSTS APPEARING ON DUAL HTTP/HTTPS SITES: Some users reported an issue in which their FeedWordPress sites, which are over both insecure HTTP and over HTTPS, would pick up exactly 2 copies of every post or almost every post from certain feeds, and where the guids for each of the pair of duplicate posts would look exactly alike, except for a difference in the protocol, for example:
 
 		http://www.example.com/?guid=c1cd28da39e8d7babcf6499983aca545 
 		https://www.example.com/?guid=c1cd28da39e8d7babcf6499983aca545
 
-	... where www.example.com is the server that your own copy of FeedWordPress
-	is installed. This release of FeedWordPress normalizes post guid prefixes
-	so as to avoid or limit the scope of this problem.
+	... where www.example.com is the server that your own copy of FeedWordPress is installed. This release of FeedWordPress normalizes post guid prefixes so as to avoid or limit the scope of this problem.
 
-*	PHP 7 Compatibility: eliminate remaining sources of PHP 7 compatibility-check
-	failures -- remove the use of depreciated mysql_error() function, and make
-	sure all classes make use of __construct() convention for constructors.
+*	PHP 7 Compatibility: eliminate remaining sources of PHP 7 compatibility-check failures -- remove the use of depreciated mysql_error() function, and make sure all classes make use of __construct() convention for constructors.
 
-*	AVOID "PHP Warning: shell_exec() has been disabled for security	reasons in
-	[...]/feedwordpress/feeds-page.php on line 197": FeedWordPress uses the PHP
-	shell_exec() function in a very narrowly limited way for information gathering,
-	trying to find the real path to curl or wget on your system, so that it can
-	give as realistic as possible a recommendation for the sample crontab line
-	displayed in Syndication > Feeds & Updates. Some web hosting environments
-	disable shell_exec for security reasons (since it could in theory be used to
-	do a lot more stuff than the very limited information gathering FWP uses it
-	for); in which case, this part of the code in FeedWordPress could spit out
-	a nasty-looking and potentially worrisome-looking error message. So, now this
-	code is fenced with checks to make sure that shell_exec is available, before
-	FWP attempts to make use of it.
+*	AVOID "PHP Warning: shell_exec() has been disabled for security	reasons in [...]/feedwordpress/feeds-page.php on line 197": FeedWordPress uses the PHP shell_exec() function in a very narrowly limited way for information gathering, trying to find the real path to curl or wget on your system, so that it can give as realistic as possible a recommendation for the sample crontab line displayed in Syndication > Feeds & Updates. Some web hosting environments disable shell_exec for security reasons (since it could in theory be used to do a lot more stuff than the very limited information gathering FWP uses it for); in which case, this part of the code in FeedWordPress could spit out a nasty-looking and potentially worrisome-looking error message. So, now this code is fenced with checks to make sure that shell_exec is available, before FWP attempts to make use of it.
 
 = 2016.1213 =
 
-*	WORDPRESS BACKWARD COMPATIBILITY FOR VERSIONS [4.5, 4.7]: This change fixes
-	a fatal PHP error (on some web server configurations you'd see the message
-	"Fatal error: require_once(): Failed opening required '[...]/wp-includes/class-wp-feed-cache.php'"
-	on others, you might just see an HTTP 500 Internal Server Error or a blank
-	page) when using FeedWordPress with versions of WordPress before 4.7. A
-	change that I introduced to avoid a code module that had been deprecated in
-	version 4.7 ended up relying on code modules that were only introduced as
-	of version 4.7; so now, instead, FeedWordPress attempts to detect which
-	modules the current version of the WordPress core makes available, and load
-	the right modules depending on your WordPress version.
+*	WORDPRESS BACKWARD COMPATIBILITY FOR VERSIONS [4.5, 4.7]: This change fixes a fatal PHP error (on some web server configurations you'd see the message "Fatal error: require_once(): Failed opening required '[...]/wp-includes/class-wp-feed-cache.php'" on others, you might just see an HTTP 500 Internal Server Error or a blank page) when using FeedWordPress with versions of WordPress before 4.7. A	change that I introduced to avoid a code module that had been deprecated in version 4.7 ended up relying on code modules that were only introduced as of version 4.7; so now, instead, FeedWordPress attempts to detect which modules the current version of the WordPress core makes available, and load the right modules depending on your WordPress version.
 
-	In theory, up to this point, FeedWordPress supported any version of
-	WordPress from version 3.0 onward. In practice, version 3.0 was released
-	over 6 years ago, and I can realistically commit only to testing out new
-	releases of FeedWordPress with a few prior versions of WordPress; so I've
-	updated the "Requires at least" field to version 4.5, the first major
-	release issued in 2016. If you've really got to use FeedWordPress with
-	older versions of WordPress, it will probably still work with any moderately
-	modern release of WordPress, but I won't promise to keep it working with
-	releases of WordPress that are more than about a year old.
+	In theory, up to this point, FeedWordPress supported any version of WordPress from version 3.0 onward. In practice, version 3.0 was released over 6 years ago, and I can realistically commit only to testing out new	releases of FeedWordPress with a few prior versions of WordPress; so I've updated the "Requires at least" field to version 4.5, the first major release issued in 2016. If you've really got to use FeedWordPress with older versions of WordPress, it will probably still work with any moderately modern release of WordPress, but I won't promise to keep it working with releases of WordPress that are more than about a year old.
 	
 = 2016.1211 =
 
 *	WORDPRESS COMPATIBILITY: Tested with new versions of WordPress up to 4.7.
 
-*	PHP WARNINGS UNDER WP 4.7: Eliminated cause of a PHP warning under WP 4.7
-	"Parameter 1 to FeedWordPressHTTPAuthenticator::set_auth_options expected to be reference"
-	Warnings were due to a change in how http_api_curl hook is sometimes called
-	in WP 4.7; so I changed the signature of the event handling method to avoid
-	the notice. Props to @cogdog, @froomkin, @gwynethllewelyn et al. for flagging
-	the issue and @garymarkfuller for suggesting a preliminary fix to the issue
-	that was fairly similar to the solution I ended up adopting.
+*	PHP WARNINGS UNDER WP 4.7: Eliminated cause of a PHP warning under WP 4.7 "Parameter 1 to FeedWordPressHTTPAuthenticator::set_auth_options expected to be reference" Warnings were due to a change in how http_api_curl hook is sometimes called in WP 4.7; so I changed the signature of the event handling method to avoid the notice. Props to @cogdog, @froomkin, @gwynethllewelyn et al. for flagging the issue and @garymarkfuller for suggesting a preliminary fix to the issue that was fairly similar to the solution I ended up adopting.
 
-*	PHP 7 and PHP Strict Standards compatibility changes: @alexiskulash @daidais
-	and @zoul0813 all sent pull requests through Github to fix some issues from
-	a very old code base that has made its way from PHP 3.x through 5.x to the
-	roll-out of PHP 7. Class methods should now fare better under modern versions
-	of PHP and generate fewer "Deprecated" notices.
+*	PHP 7 and PHP Strict Standards compatibility changes: @alexiskulash @daidais and @zoul0813 all sent pull requests through Github to fix some issues from a very old code base that has made its way from PHP 3.x through 5.x to the roll-out of PHP 7. Class methods should now fare better under modern versions of PHP and generate fewer "Deprecated" notices.
 
-*	IMPROVEMENTS TO SCHEDULED AND AUTOMATIC UPDATES:  use wp_loaded hook to check
-	for magic URL parameters and to execute updates, to do pageload-based automatic
-	updates, etc. Ensures that anything plugins or themes need to do in init to set
-	up custom post types, taxonomies, etc. will be done before the update_feedwordpress
-	updates are attempted. If you saw posts not getting put into the correct custom
-	post type or custom taxonomies or similar problems when performing scheduled updates,
-	but the problem seemed to go away when you manually performed updates through the
-	wp-admin interface, then you might be able to solve those problems with this update.
+*	IMPROVEMENTS TO SCHEDULED AND AUTOMATIC UPDATES:  use wp_loaded hook to check for magic URL parameters and to execute updates, to do pageload-based automatic updates, etc. Ensures that anything plugins or themes need to do in init to set up custom post types, taxonomies, etc. will be done before the update_feedwordpress updates are attempted. If you saw posts not getting put into the correct custom post type or custom taxonomies or similar problems when performing scheduled updates, but the problem seemed to go away when you manually performed updates through the wp-admin interface, then you might be able to solve those problems with this update.
 
 = 2016.0420 =
 
 *	WORDPRESS COMPATIBILITY: Tested with new versions of WordPress up to 4.5.
 
-*	FILTERS AND ADD-ONS: Allow filters and add-ons to filter terms and taxonomy
-	(categories, tags, custom taxonomies, etc.) more thoroughly and more
-	fine-grainedly using syndicated_post_terms_match, syndicated_post_terms_match_{taxonomy},
-	syndicated_post_terms_unfamiliar, syndicated_post_terms_mapping,
-	syndicated_item_feed_terms, and syndicated_item_preset_terms filters.
+*	FILTERS AND ADD-ONS: Allow filters and add-ons to filter terms and taxonomy (categories, tags, custom taxonomies, etc.) more thoroughly and more fine-grainedly using syndicated_post_terms_match, syndicated_post_terms_match_{taxonomy}, 	syndicated_post_terms_unfamiliar, syndicated_post_terms_mapping, syndicated_item_feed_terms, and syndicated_item_preset_terms filters.
 
-*	FILTERS AND ADD-ONS: Globals $fwp_channel and $fwp_feedmeta REMOVED.
-	These global variables, originally introduced to allow filters access to
-	information about the source feed in `syndicated_item` filters were
-	deprecated 6+ years ago. If you have any filters or add-ons which still
-	depend on these global variables, you've been using obsolete techniques
-	and you should see about fixing them to access data	about the source feed
-	using the SyndicatedPost::link element instead. For documentation, see
-	the FeedWordPress documentation wiki at
-	<http://feedwordpress.radgeek.com/wiki/syndicatedpost> and
-	<http://feedwordpress.radgeek.com/wiki/syndicatedlink>.
+*	FILTERS AND ADD-ONS: Globals $fwp_channel and $fwp_feedmeta REMOVED. These global variables, originally introduced to allow filters access to information about the source feed in `syndicated_item` filters were deprecated 6+ years ago. If you have any filters or add-ons which still depend on these global variables, you've been using obsolete techniques and you should see about fixing them to access data about the source feed using the SyndicatedPost::link element instead. For documentation, see	the FeedWordPress documentation wiki at <http://feedwordpress.radgeek.com/wiki/syndicatedpost> and <http://feedwordpress.radgeek.com/wiki/syndicatedlink>.
 
-*	BUGFIX: Syndication > Diagnostics HTTP diagnostic test widget was broken due to
-	a dumb error on my part. Now fixed.
+*	BUGFIX: Syndication > Diagnostics HTTP diagnostic test widget was broken due to a dumb error on my part. Now fixed.
 	
-*	SMALL CODING CHANGES: Lots of small changes to code organization, incorporation
-	of some PHP 5.x coding conventions, etc.
+*	SMALL CODING CHANGES: Lots of small changes to code organization, incorporation of some PHP 5.x coding conventions, etc.
 
 = 2015.0514 =
 
-*	IMPORTANT SECURITY UPDATE: This version includes two important fixes for
-	potential security vulnerabilities reported to me through support channels.
+*	IMPORTANT SECURITY UPDATE: This version includes two important fixes for potential security vulnerabilities reported to me through support channels.
 	
-	The first is a common problem across several plugins due to an ambiguity in
-	the WordPress documentation and a change in	the behavior of WordPress's
-	built-in add_query_arg() and remove_query_arg() functions
-	which could, under certain low-probability conditions, allow for potential
-	XSS attack vectors. This fixes issue # 39
-	reported at <https://github.com/radgeek/feedwordpress/issues/39>
-	Thanks to github.com/quassy
+	The first is a common problem across several plugins due to an ambiguity in the WordPress documentation and a change in the behavior of WordPress's built-in add_query_arg() and remove_query_arg() functions which could, under certain low-probability conditions, allow for potential XSS attack vectors. This fixes issue # 39 reported at <https://github.com/radgeek/feedwordpress/issues/39> Thanks to github.com/quassy
 	
-	The second is a security vulnerability fixes a security vulnerability that
-	was reported to me privately (thanks to Adrián M. F.) which, under other
-	low-probability conditions, could allow for SQL insertion attacks by
-	a malicious user with access to login credentials, which would compromise
-	data security.
+	The second is a security vulnerability fixes a security vulnerability that was reported to me privately (thanks to Adrián M. F.) which, under other low-probability conditions, could allow for SQL insertion attacks by a malicious user with access to login credentials, which would compromise data security.
 
-	It is *IMPORTANT* and worth your while to upgrade FeedWordPress as soon as
-	possible in order to eliminate these vulnerabilities. If you have any
-	questions or if there is something blocking you from making the upgrade
-	which you need my help with, don't hesitate to get in touch.
+	It is *IMPORTANT* and worth your while to upgrade FeedWordPress as soon as possible in order to eliminate these vulnerabilities. If you have any questions or if there is something blocking you from making the upgrade which you need my help with, don't hesitate to get in touch.
 
-*	ADMIN UI BUGFIX: "Update Now" button in feeds setting pages should now work
-	once again instead of causing a PHP fatal error. See
-	<https://github.com/radgeek/feedwordpress/issues/46>
+*	ADMIN UI BUGFIX: "Update Now" button in feeds setting pages should now work once again instead of causing a PHP fatal error. See <https://github.com/radgeek/feedwordpress/issues/46>
 	
-*	SEVERAL OTHER SMALL BUG FIXES. See <https://github.com/radgeek/feedwordpress/issues/32>
-	<https://github.com/radgeek/feedwordpress/issues/30>
-	<https://github.com/radgeek/feedwordpress/issues/29>
-	etc.
+*	SEVERAL OTHER SMALL BUG FIXES. See <https://github.com/radgeek/feedwordpress/issues/32> <https://github.com/radgeek/feedwordpress/issues/30> <https://github.com/radgeek/feedwordpress/issues/29> etc.
 
 = 2014.0805 =
 
-*	FILTERS AND ADD-ONS: A number of new hooks for filters and add-ons to
-	further customize the behavior of FWP have been added.
+*	FILTERS AND ADD-ONS: A number of new hooks for filters and add-ons to further customize the behavior of FWP have been added.
 
-* 	COMPATIBILITY/BUGFIX: Many users saw odd characters, especially "n,"
-	appearing in posts in versions of WordPress from 3.6 on, due to a change
-	in when the API expects HTML data for posts to be slashed and when it
-	does not. This has been fixed, so that the junk characters should no
-	longer appear, regardless of your version of WordPress.
+* 	COMPATIBILITY/BUGFIX: Many users saw odd characters, especially "n," appearing in posts in versions of WordPress from 3.6 on, due to a change in when the API expects HTML data for posts to be slashed and when it does not. This has been fixed, so that the junk characters should no longer appear, regardless of your version of WordPress.
 
-*	BUGFIX: A bug preventing FWP from saving categories assigned under
-	Syndication > Categories & Tags has been fixed.
+*	BUGFIX: A bug preventing FWP from saving categories assigned under Syndication > Categories & Tags has been fixed.
 	
-*	BUGFIX: Post-editing related metaboxes should now show up when you edit
-	items of any post type, including custom types, not only normal WordPress
-	posts.
+*	BUGFIX: Post-editing related metaboxes should now show up when you edit items of any post type, including custom types, not only normal WordPress	posts.
 	
-*	BUGFIX: A bug in the admin UI that caused the "Alternative Feeds" /
-	"Find Feeds" box to throw a permissions error has been fixed.
+*	BUGFIX: A bug in the admin UI that caused the "Alternative Feeds" / "Find Feeds" box to throw a permissions error has been fixed.
 	
-*	BUGFIX: A bug preventing proper mapping of categories and other terms in
-	2013.0504 has been fixed.
+*	BUGFIX: A bug preventing proper mapping of categories and other terms in 2013.0504 has been fixed.
 	
-*	BUGFIX: A number of small fixes contributed through Github by Flynsarmy
-	should eliminate PHP warnings for many users on several methods that are
-	called as static methods within FeedWordPress.
+*	BUGFIX: A number of small fixes contributed through Github by Flynsarmy	should eliminate PHP warnings for many users on several methods that are	called as static methods within FeedWordPress.
 
 = 2013.0504 =
 	
-*	BUGFIX: PHP 5.4 compatibility -- includes some more extensive fixes to
-	compatibility issues with PHP 5.4's handling of global variables
+*	BUGFIX: PHP 5.4 compatibility -- includes some more extensive fixes to compatibility issues with PHP 5.4's handling of global variables
 
-*	DIAGNOSTICS: New diagnostics settings added to help track behavior of
-	terms (categories, post tags, etc.) for syndicated posts.
+*	DIAGNOSTICS: New diagnostics settings added to help track behavior of terms (categories, post tags, etc.) for syndicated posts.
 
 = 2012.0504 =
 
-*	MODULE REORGANIZATION: Should ensure that all needed submodules will be
-	properly included regardless of whether you are installing from github,
-	from SVN, or from the WordPress plugins page. If you've been getting
-	fatal errors about required modules not being found, this release should
-	hopefully resolve the issue.
+*	MODULE REORGANIZATION: Should ensure that all needed submodules will be properly included regardless of whether you are installing from github, from SVN, or from the WordPress plugins page. If you've been getting fatal errors about required modules not being found, this release should hopefully resolve the issue.
 
 = 2012.0503 =
 
-*	BUGFIX: Works properly again with WordPress installations that use a
-	MySQL table name prefix other than the default `wp_` prefix.
+*	BUGFIX: Works properly again with WordPress installations that use a MySQL table name prefix other than the default `wp_` prefix.
 	
-*	BUGFIX: Includes a couple of significant PHP 5.4 compatibility fixes.
-	Now that PHP 5.4 is more widely deployed, Diagnostics will now also
-	show PHP version and some other potentially useful troubleshooting
-	information.
+*	BUGFIX: Includes a couple of significant PHP 5.4 compatibility fixes. Now that PHP 5.4 is more widely deployed, Diagnostics will now also show PHP version and some other potentially useful troubleshooting	information.
 
-*	ADMIN UI: Better indicates your options when deleting a syndicated post
-	so as to let you know whether it will be Trashed (and thus not
-	resyndicated) or Erased (and thus potentially resyndicated)
+*	ADMIN UI: Better indicates your options when deleting a syndicated post	so as to let you know whether it will be Trashed (and thus not resyndicated) or Erased (and thus potentially resyndicated)
 	
-*	ADMIN UI: Adds an AJAXy Test Expression button to allow live testing of
-	sample results from expressions in Custom Post Settings.
+*	ADMIN UI: Adds an AJAXy Test Expression button to allow live testing of sample results from expressions in Custom Post Settings.
 
 = 2012.1218 =
 
-*	WORDPRESS VISUAL EDITOR FIXED. There was an unlisted change in the
-	2012.1212 release which had the effect of disabling the WordPress Visual
-	Editor for all posts syndicated by FeedWordPress. Many users reported
-	this as a bug. It was actually a deliberate decision -- a crappy way to
-	try to deal with a crappy situation. (Many users had previously reported
-	a "bug" in which all the paragraph or line breaks seemed to be stripped
-	out of their syndicated posts; the issue turned out to be that the
-	Visual Editor was stripping out `<p>` and `<br/>` tags on the assumption
-	that the resulting post would be sent through standard WordPress
-	formatting filters. But under default settings, posts syndicated by FWP
-	deliberately bypass WordPress formatting filters.) In any case, this
-	version adopts a more flexible compromise. *If* FeedWordPress is set up
-	to bypass WordPress formatting filters (as it is by default), *then*
-	the Visual Editor will be disabled for syndicated posts (since using it
-	would produce incorrect results). If on the other hand FeedWordPress is
-	set up to expose syndicated posts to WordPress formatting filters (as it
-	usually is for those using the Visual Editor to manually edit posts),
-	then the Visual Editor tab will be re-enabled for syndicated posts.
+*	WORDPRESS VISUAL EDITOR FIXED. There was an unlisted change in the 2012.1212 release which had the effect of disabling the WordPress Visual Editor for all posts syndicated by FeedWordPress. Many users reported this as a bug. It was actually a deliberate decision -- a crappy way to try to deal with a crappy situation. (Many users had previously reported a "bug" in which all the paragraph or line breaks seemed to be stripped out of their syndicated posts; the issue turned out to be that the Visual Editor was stripping out `<p>` and `<br/>` tags on the assumption that the resulting post would be sent through standard WordPress formatting filters. But under default settings, posts syndicated by FWP deliberately bypass WordPress formatting filters.) In any case, this version adopts a more flexible compromise. *If* FeedWordPress is set up to bypass WordPress formatting filters (as it is by default), *then* the Visual Editor will be disabled for syndicated posts (since using it would produce incorrect results). If on the other hand FeedWordPress is set up to expose syndicated posts to WordPress formatting filters (as it usually is for those using the Visual Editor to manually edit posts), then the Visual Editor tab will be re-enabled for syndicated posts.
 	
 * 	BUG FIX: PERMALINKS REWRITTEN FOR CUSTOM POST TYPES AS WELL AS NORMAL
 	WORDPRESS POSTS. If you had WordPress set up to syndicate incoming posts
@@ -2025,116 +1866,38 @@ between version 0.98 of WordPress and the recently released WordPress 2.1.
 
 = From 0.91 to 0.95 =
 
-*	BUG FIX: Fixed an obscure bug in the handling of categories:
-	categories with trailing whitespace could cause categories with
-	duplicate names to be created. This no longer happens. While I was
-	at it I tightened up the operation of
-	FeedWordPress::lookup_categories() a bit in general.
+*	BUG FIX: Fixed an obscure bug in the handling of categories: categories with trailing whitespace could cause categories with duplicate names to be created. This no longer happens. While I was at it I tightened up the operation of FeedWordPress::lookup_categories() a bit in general.
 
-*	FEATURE DEPRECATED: the feed setting `hardcode categories` is now
-	deprecated in favor of `unknown categories` (see below), which
-	allows you to strip off any syndication categories not already in
-	your database using `unknown categories: default` or `unknown
-	categories: filter`. If you have `hardcode categories: yes` set on a
-	feed, this will be treated as `unknown categories: default` (i.e.,
-	no new categories will be added, but if a post doesn't match any of
-	the categories it will be added in the default category--usually
-	"Uncategorized" or "General").
+*	FEATURE DEPRECATED: the feed setting `hardcode categories` is now deprecated in favor of `unknown categories` (see below), which allows you to strip off any syndication categories not already in your database using `unknown categories: default` or `unknown categories: filter`. If you have `hardcode categories: yes` set on a feed, this will be treated as `unknown categories: default` (i.e., no new categories will be added, but if a post doesn't match any of the categories it will be added in the default category--usually "Uncategorized" or "General").
 
-*	FEATURE: You can now set global defaults as to whether or not
-	FeedWordPress will update the Link Name and Link Description
-	settings for feeds automatically from the feed title and feed
-	tagline. (By default, it does, as it has in past versions.) Whether
-	this behavior is turned on or off, you can still override the
-	default behavior using feed settings of `hardcode name: yes`,
-	`hardcode name: no`, `hardcode description: yes`, or `hardcode
-	description: no`.
+*	FEATURE: You can now set global defaults as to whether or not FeedWordPress will update the Link Name and Link Description settings for feeds automatically from the feed title and feed tagline. (By default, it does, as it has in past versions.) Whether this behavior is turned on or off, you can still override the default behavior using feed settings of `hardcode name: yes`, `hardcode name: no`, `hardcode description: yes`, or `hardcode description: no`.
 
-*	FEATURE: Users can now provide one or several "aliases" for an
-	author, just as they can for a category. For example, to make
-	FeedWordPress treat posts by "Joseph Cardinal Ratzinger" and "Pope
-	Benedict XVI" as by the same author, edit the user profile for Pope
-	Benedict XVI and add a line like this to the "User profile" field:
+*	FEATURE: Users can now provide one or several "aliases" for an author, just as they can for a category. For example, to make FeedWordPress treat posts by "Joseph Cardinal Ratzinger" and "Pope Benedict XVI" as by the same author, edit the user profile for Pope Benedict XVI and add a line like this to the "User profile" field:
 	
 		a.k.a.: Joseph Cardinal Ratzinger
 	
-	You can add several aliases, each on a line by itself. You can also
-	add any other text you like to the Profile without interfering with
-	the aliases.
+	You can add several aliases, each on a line by itself. You can also add any other text you like to the Profile without interfering with the aliases.
 	
-*	FEATURE: Users can now choose how to handle syndicated posts that
-	are in unfamiliar categories or by unfamiliar authors (i.e.,
-	categories or authors whose names are not yet in the WordPress
-	database). By default, FeedWordPress will (as before) create a new
-	category (or new author) and use it for the current post and any
-	future posts. This behavior can be changed, either for all feeds or
-	for one or another particular feed.
+*	FEATURE: Users can now choose how to handle syndicated posts that are in unfamiliar categories or by unfamiliar authors (i.e., categories or authors whose names are not yet in the WordPress database). By default, FeedWordPress will (as before) create a new category (or new author) and use it for the current post and any future posts. This behavior can be changed, either for all feeds or for one or another particular feed.
 	
-	There are now three different options for an unfamiliar author: (1)
-	FeedWordPress can create a new author account and attribute the
-	syndicated post to the new account; (2) FeedWordPress can attribute
-	the post to an author if the author's name is familiar, and to a
-	default author (currently, this means the Site Administrator
-	account) if it is not; (3) FeedWordPress can drop posts by
-	unfamiliar authors and syndicate only posts by authors who are
-	already in the database.
+	There are now three different options for an unfamiliar author: (1) FeedWordPress can create a new author account and attribute the syndicated post to the new account; (2) FeedWordPress can attribute the post to an author if the author's name is familiar, and to a 	default author (currently, this means the Site Administrator account) if it is not; (3) FeedWordPress can drop posts by	unfamiliar authors and syndicate only posts by authors who are already in the database.
 	
-	There are, similarly, two different options for an unfamiliar
-	category: (1) FeedWordPress can create new categories and place the
-	syndicated post in them; (2) FeedWordPress can drop the unfamiliar
-	categories and place syndicated posts only in categories that it is
-	already familiar with. In addition, FeedWordPress 0.95 lets you
-	choose whether posts that are in *no* familiar categories should be
-	syndicated (and placed in the default category for the blog) or
-	simply dropped.
+	There are, similarly, two different options for an unfamiliar category: (1) FeedWordPress can create new categories and place the syndicated post in them; (2) FeedWordPress can drop the unfamiliar categories and place syndicated posts only in categories that it is already familiar with. In addition, FeedWordPress 0.95 lets you choose whether posts that are in *no* familiar categories should be syndicated (and placed in the default category for the blog) or simply dropped.
 	
-	You can set the default behavior for both authors and categories
-	using the settings in Options --> Syndication. You can also set
-	different behavior for specific feeds by adding the `unfamiliar
-	author` and / or `unfamiliar categories` settings to the Link Notes
-	section of a feed:
+	You can set the default behavior for both authors and categories using the settings in Options --> Syndication. You can also set different behavior for specific feeds by adding the `unfamiliar author` and / or `unfamiliar categories` settings to the Link Notes section of a feed:
 	
 		unfamiliar author: (create|default|filter)
 		unfamiliar categories: (create|default|filter)
 	
-	A setting of `unfamiliar author: create` will make FeedWordPress
-	create new authors to match unfamiliar author names *for this feed
-	alone*. A setting of `unfamiliar author: default` will make it
-	assign posts from unfamiliar authors to the default user account. A
-	setting of `unfamiliar author: filter` will cause all posts (from
-	this feed alone) to be dropped unless they are by an author already
-	listed in the database. Similiarly, `unfamiliar categories: create`
-	will make FeedWordPress create new categories to match unfamiliar
-	category names *for this feed alone*; `unfamiliar categories:
-	default` will cause it to drop any unfamiliar category names; and
-	`unfamiliar categories: filter` will cause it to *both* drop any
-	unfamiliar category names *and* to only syndicate posts that are
-	placed in one or more familiar categories.
+	A setting of `unfamiliar author: create` will make FeedWordPress create new authors to match unfamiliar author names *for this feed alone*. A setting of `unfamiliar author: default` will make it assign posts from unfamiliar authors to the default user account. A setting of `unfamiliar author: filter` will cause all posts (from this feed alone) to be dropped unless they are by an author already listed in the database. Similiarly, `unfamiliar categories: create` will make FeedWordPress create new categories to match unfamiliar category names *for this feed alone*; `unfamiliar categories:	default` will cause it to drop any unfamiliar category names; and `unfamiliar categories: filter` will cause it to *both* drop any unfamiliar category names *and* to only syndicate posts that are placed in one or more familiar categories.
 	
-	These two new features allow users to do some coarse-grained
-	filtering without having to write a PHP filter. Specifically, they
-	offer an easy way for you to filter feeds by category or by author.
-	Suppose, for example, that you only wanted to syndicate posts that
-	your contributors place in the "Llamas" category. You could do so by
-	setting up your installation of WordPress so that the only category
-	in the database is "Llamas," and then use Options --> Syndication to
-	set "Unfamiliar categories" to "don't create new categories and
-	don't syndicate posts unless they match at least one familiar
-	category". Now, when you update, only posts in the "Llamas" category
-	will be syndicated by FeedWordPress.
+	These two new features allow users to do some coarse-grained filtering without having to write a PHP filter. Specifically, they offer an easy way for you to filter feeds by category or by author. Suppose, for example, that you only wanted to syndicate posts that your contributors place in the "Llamas" category. You could do so by setting up your installation of WordPress so that the only category in the database is "Llamas," and then use Options --> Syndication to set "Unfamiliar categories" to "don't create new categories and don't syndicate posts unless they match at least one familiar category". Now, when you update, only posts in the "Llamas" category will be syndicated by FeedWordPress.
 	
-	Similarly, if you wanted to filter one particular feed so that only
-	posts by (for example) the author "Earl J. Llama" were syndicated to
-	your site, you could do so by creating a user account for Earl J.
-	Llama, then adding the following line to the settings for the feed
-	in Link Notes:
+	Similarly, if you wanted to filter one particular feed so that only posts by (for example) the author "Earl J. Llama" were syndicated to your site, you could do so by creating a user account for Earl J. Llama, then adding the following line to the settings for the feed in Link Notes:
 	
 		unfamiliar author: filter
 	
-	This will cause any posts from this feed that are not authored by
-	Earl J. Llama to be discarded, and only the posts by Earl J. Llama
-	will be syndicated. (If the setting is used on one specific feed, it
-	will not affect how posts from other feeds are syndicated.)
+	This will cause any posts from this feed that are not authored by Earl J. Llama to be discarded, and only the posts by Earl J. Llama will be syndicated. (If the setting is used on one specific feed, it will not affect how posts from other feeds are syndicated.)
 	
 == License ==
 
