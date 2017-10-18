@@ -12,7 +12,7 @@ require_once(dirname(__FILE__).'/syndicatedpostxpathquery.class.php');
  * different feed formats, which may be useful to FeedWordPress users
  * who make use of feed data in PHP add-ons and filters.
  *
- * @version 2017.1004
+ * @version 2017.1018
  */
 class SyndicatedPost {
 	var $item = null;	// MagpieRSS representation
@@ -43,10 +43,10 @@ class SyndicatedPost {
 	 * @param array $item The item syndicated from the feed.
 	 * @param SyndicatedLink $source The feed it was syndicated from.
 	 */
-	function __construct ($item, &$source) {
+	function __construct ($item, $source) {
 		global $wpdb;
 
-		if ( empty($item) && empty($source) )
+		if ( empty($item) and empty($source) )
 			return;
 
 		if (is_array($item)
@@ -68,7 +68,7 @@ class SyndicatedPost {
 			$this->item = $item;
 		endif;
 
-		$this->link =& $source;
+		$this->link = $source;
 		$this->feed = $source->magpie;
 		$this->feedmeta = $source->settings;
 
