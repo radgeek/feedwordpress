@@ -43,7 +43,7 @@ class SyndicatedPost {
 	 * @param array $item The item syndicated from the feed.
 	 * @param SyndicatedLink $source The feed it was syndicated from.
 	 */
-	function __construct ($item, $source) {
+	public function __construct ($item, $source) {
 		global $wpdb;
 
 		if ( empty($item) and empty($source) )
@@ -290,7 +290,7 @@ class SyndicatedPost {
 	 * @returns array of string values representing contents of matching
 	 * elements or attributes
 	 */
-	 function query ($path) {
+	 public function query ($path) {
 		$xq = new SyndicatedPostXPathQuery(array("path" => $path));
 
 		$feedChannel = array_merge(
@@ -342,15 +342,15 @@ class SyndicatedPost {
 		return $matches;
 	} /* SyndicatedPost::get_feed_channel_elements() */
 
-	function get_categories ($params = array()) {
+	public function get_categories ($params = array()) {
 		return $this->entry->get_categories();
 	}
 	
-	function title ($params = array()) {
+	public function title ($params = array()) {
 		return $this->entry->get_title();
 	} /* SyndicatedPost::title () */
 	
-	function content ($params = array()) {
+	public function content ($params = array()) {
 
 		$params = wp_parse_args($params, array(
 		"full only" => false, 
@@ -402,7 +402,7 @@ class SyndicatedPost {
 		return $content;
 	} /* SyndicatedPost::content() */
 
-	function excerpt () {
+	public function excerpt () {
 		# Identify and sanitize excerpt: atom:summary, or rss:description
 		$excerpt = $this->entry->get_description();
 
@@ -433,14 +433,20 @@ class SyndicatedPost {
 		return $excerpt;
 	} /* SyndicatedPost::excerpt() */
 
-	function permalink () {
+	/**
+	 * SyndicatedPost::permalink: returns the permalink for the post, as provided by the
+	 * source feed.
+	 *
+	 * @return string The URL of the original permalink for this syndicated post
+	 */
+	public function permalink () {
 		// Handles explicit <link> elements and also RSS 2.0 cases with
 		// <guid isPermaLink="true">, etc. Hooray!
 		$permalink = $this->entry->get_link();
 		return $permalink;
-	}
+	} /* SyndicatedPost::permalink () */
 
-	function created ($params = array()) {
+	public function created ($params = array()) {
 		$unfiltered = false; $default = NULL;
 		extract($params);
 
@@ -461,7 +467,7 @@ class SyndicatedPost {
 		return $ts;
 	} /* SyndicatedPost::created() */
 
-	function published ($params = array(), $default = NULL) {
+	public function published ($params = array(), $default = NULL) {
 		$fallback = true; $unfiltered = false;
 		if (!is_array($params)) : // Old style
 			$fallback = $params;
@@ -510,7 +516,7 @@ class SyndicatedPost {
 		return $ts;
 	} /* SyndicatedPost::published() */
 
-	function updated ($params = array(), $default = -1) {
+	public function updated ($params = array(), $default = -1) {
 		$fallback = true; $unfiltered = false;
 		if (!is_array($params)) : // Old style
 			$fallback = $params;
@@ -636,7 +642,7 @@ class SyndicatedPost {
 		return $guid;
 	} /* SyndicatedPost::normalize_guid() */
 
-	function guid () {
+	public function guid () {
 		$guid = null;
 		if (isset($this->item['id'])):						// Atom 0.3 / 1.0
 			$guid = $this->item['id'];
@@ -695,7 +701,7 @@ class SyndicatedPost {
 		return $guid;
 	} /* SyndicatedPost::guid() */
 
-	function author () {
+	public function author () {
 		$author = array ();
 
 		$aa = $this->entry->get_authors();

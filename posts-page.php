@@ -119,11 +119,36 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 				update_option('feedwordpress_syndicated_post_type', $post['syndicated_post_type']);
 			endif;
 		endif;
+
+		if (isset($post['save']) or isset($post['submit'])) :
+			if (isset($post['boilerplate'])) :
+				foreach ($post['boilerplate'] as $index => $line) :
+					if (0 == strlen(trim($line['template']))) :
+						unset($post['boilerplate'][$index]);
+					endif;
+				endforeach;
+
+				// Convert indexes to 0..(N-1) to avoid possible collisions
+				$post['boilerplate'] = array_values($post['boilerplate']);
+
+				if ($this->for_feed_settings()) :
+					$this->link->settings['boilerplate rules'] = serialize($post['boilerplate']);
+					$this->link->save_settings(/*reload=*/ true);
+				else :
+					update_option('feedwordpress_boilerplate', $post['boilerplate']);
+				endif;
+			endif;
+		
+			if (isset($post['boilerplate_hook_order'])) :
+				$this->update_setting('boilerplate hook order', intval($post['boilerplate_hook_order']));
+			endif;
+		endif;
+
 		parent::save_settings($post);
 	}
 
 	/**
-	 * Outputs "Publication" settings box.
+	 * publication_box: Outputs "Publication" settings box.
 	 *
 	 * @since 2009.0713
 	 * @param object $page of class FeedWordPressPostsPage tells us whether this is
@@ -498,11 +523,198 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressPostsPage::custom_post_types_box() */
 	
+	public function boilerplate_box ($page, $box = NULL) {
+		if ($page->for_feed_settings()) :
+			$attrib = unserialize($page->link->settings['boilerplate rules']);
+			$syndicatedPosts = 'this feed\'s posts';
+		else :
+			$attrib = get_option('feedwordpress_boilerplate');
+			$syndicatedPosts = 'syndicated posts';
+		endif;
+		$hookOrder = intval($page->setting('boilerplate hook order', BOILERPLATE_DEFAULT_HOOK_ORDER));
+?>
+	<style type="text/css">	
+	.boilerplate-help-box {
+		float: right;
+		width: 300px;
+		border: 1px dotted #777;
+		margin: 3px;
+		padding: 5px;
+		background-color: #f7f7f7;
+	}
+	.boilerplate-help-box dt {
+		font-weight: bold;
+		font-size: 85%;
+	}
+	.boilerplate-help-box dd {
+		font-size: 80%; line-height: 100%; font-style: italic;
+		padding-left: 1.5em;
+	}
+	.boilerplate-help-box code {
+		font-size: inherit;
+		font-style: normal;
+		background-color: inherit;
+	}
+
+	.boilerplate-li {
+		padding-bottom: 5px;
+		margin-bottom: 5px;
+		border-bottom: 1px dotted black;
+	}
+	
+	</style>
+
+	<div class="boilerplate-help-box">
+	<p style="border-bottom: 1px dotted #777;">To remove boilerplate, just blank out the text box and leave it empty.</p>
+
+	<p>Use shortcodes to include information about your source:</p>
+	<dl>
+	<dt><code>[source]</code></dt>
+	<dd>A link to the source you syndicated the post from</dd>
+
+	<dt><code>[source-name]</code></dt>
+	<dd>Name of the source you syndicated the post from</dd>
+
+	<dt><code>[source-url]</code></dt>
+	<dd>URL of the source you syndicated the post from</dd>
+
+	<dt><code>[original-link]text[/original-link]</code></dt>
+	<dd>A link to the <em>original post</em> back on the source website,
+	using <code>text</code> as the link text.</dd>
+	
+	<dt><code>[original-url]</code></dt>
+	<dd>URL of the <em>original post</em> back on the source website</dd>
+
+	<dt><code>[author]</code></dt>
+	<dd>A link with the name of the author who wrote the post, linking to other posts by the same author</dd>
+
+	<dt><code>[author-name]</code></dt>
+	<dd>Name of the author who wrote the post</dd>
+	
+	<dt><code>[feed-setting key="setting-name"]</code></dt>
+	<dd>Value of a custom feed setting (named <code>setting-name</code>) for the feed</dd>
+	</dl>
+	</div>
+
+<?php
+		print "<ul>\n";
+		if (!is_array($attrib)) : $attrib = array(); endif;
+
+		print '<input type="hidden" id="next-boilerplate-rule-index" name="next_boilerplate_rule_index" value="'.count($attrib).'" />';
+
+		// In AJAX environment, this is a dummy rule that stays hidden. In a
+		// non-AJAX environment, this provides a blank rule that we can fill in.
+		$attrib['new'] = array(
+		'class' => array('hide-if-js'),
+		'placement' => 'before',
+		'element' => 'post',
+		'template' => '',
+		);
+
+		foreach ($attrib as $index => $line) :
+			if (isset($line['template'])) :
+				$selected['before'] = (($line['placement']=='before') ? ' selected="selected"' : '');
+				$selected['after'] = (($line['placement']=='after') ? ' selected="selected"' : '');
+				$selected['title'] = (($line['element']=='title') ? ' selected="selected"' : '');
+				$selected['post'] = (($line['element']=='post') ? ' selected="selected"' : '');
+				$selected['excerpt'] = (($line['element']=='excerpt') ? ' selected="selected"' : '');
+
+				if (!isset($line['class'])) : $line['class'] = array(); endif;
+				$line['class'][] = 'boilerplate-li';
+?>
+
+<li id="boilerplate-<?php print $index; ?>-li" class="<?php print implode(' ', $line['class']); ?>">&raquo; <strong>Add</strong> <select id="boilerplate-<?php print $index; ?>-placement" name="boilerplate[<?php print $index; ?>][placement]" style="width: 8.0em">
+<option value="before"<?php print $selected['before']; ?>>before</option>
+<option value="after"<?php print $selected['after']; ?>>after</option>
+</select> the <select style="width: 8.0em" id="boilerplate-<?php print $index; ?>-element" name="boilerplate[<?php print $index; ?>][element]">
+<option value="title"<?php print $selected['title']; ?>>title</option>
+<option value="post"<?php print $selected['post']; ?>>content</option>
+<option value="excerpt"<?php print $selected['excerpt']; ?>>excerpt</option>
+</select> of 
+<?php print $syndicatedPosts; ?>: <textarea style="vertical-align: top; width: 40%;" rows="2" cols="30" class="boilerplate-template" id="boilerplate-<?php print $index; ?>-template" name="boilerplate[<?php print $index; ?>][template]"><?php print htmlspecialchars($line['template']); ?></textarea></li>
+<?php
+			endif;
+		endforeach;
+?>
+	</ul>
+	<br style="clear: both" />
+
+	<script type="text/javascript">
+		jQuery(document).ready( function($) {
+			$('.boilerplate-template').blur( function() {
+				if (this.value.length == 0) {
+					var theLi = $('li:has(#'+this.id+")");
+					theLi.hide('normal')
+				}
+			} );
+
+			var addRuleLi = document.createElement('li');
+			addRuleLi.innerHTML = '<strong style="vertical-align: middle; font-size: 110%">[+]</strong> <a style="font-variant: small-caps" id="add-new-boilerplate-rule" href="#">Add new boilerplate</a> ….';
+			$('#boilerplate-new-li').after(addRuleLi);
+
+			$('#add-new-boilerplate-rule').click( function() {
+				// Get index counter
+				var nextIndex = parseInt($('#next-boilerplate-rule-index').val());
+
+				var newIdPrefix = 'boilerplate-'+nextIndex;
+				var newNamePrefix = 'boilerplate['+nextIndex+']';
+
+				var dummy = {};
+				dummy['li'] = {'el': $('#boilerplate-new-li') }
+				dummy['placement'] = {'el': $('#boilerplate-new-placement') };
+				dummy['element'] = {'el': $('#boilerplate-new-element') };
+				dummy['template'] = {'el': $('#boilerplate-new-template') };
+
+				for (var element in dummy) {
+					dummy[element]['save'] = {
+						'id': dummy[element]['el'].attr('id'),
+						'name': dummy[element]['el'].attr('name')
+					};
+					dummy[element]['el'].attr('id', newIdPrefix+'-'+element);
+					dummy[element]['el'].attr('name', newNamePrefix+'['+element+']');
+				}
+	
+				var newLi = $('#'+newIdPrefix+'-li').clone(/*events=*/ true);
+				//newLi.attr('id', null);
+				newLi.removeClass('hide-if-js');
+				newLi.addClass('boilerplate-li');
+				newLi.css('display', 'none');
+
+				// Switch back
+				for (var element in dummy) {
+					dummy[element]['el'].attr('id', dummy[element]['save']['id']);
+					dummy[element]['el'].attr('name', dummy[element]['save']['name']);
+				}
+
+				$('#boilerplate-new-li').before(newLi);
+				newLi.show('normal');
+
+				$('#next-boilerplate-rule-index').val(nextIndex+1);
+
+				return false;
+			} )
+		} );
+	</script>
+<?php
+		if ($page->for_default_settings()) :
+?>
+	<h3>Advanced Settings</h3>
+	<table class="edit-form narrow">
+	<tbody>
+	<tr><th scope="row"><?php _e("Hook Order:") ?></th>
+	<td><input type="number" name="boilerplate_hook_order" value="<?php print esc_attr($hookOrder); ?>" /></td></tr>
+	</tbody>
+	</table>
+<?php
+		endif;
+	} /* FeedWordPressPostsPage::boilerplate_box() */
+
 	function display () {
 		$this->boxes_by_methods = array(
 		'publication_box' => __('Syndicated Posts'),
 		'links_box' => __('Links'),
 		'formatting_box' => __('Formatting'),
+		'boilerplate_box' => ('Boilerplate / Credits'),
 		'comments_and_pings_box' => __('Comments & Pings'),
 		'custom_post_settings_box' => __('Custom Post Settings (to apply to each syndicated post)'),
 		'custom_post_types_box' => ('Custom Post Types (advanced database settings)'),
@@ -510,6 +722,8 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		
 		parent::display();
 	 } /* FeedWordPressPostsPage::display () */
+
+
 }
 
 	$postsPage = new FeedWordPressPostsPage;

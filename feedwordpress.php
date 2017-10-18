@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2017.1007
+Version: 2017.1018
 Author: C. Johnson
 Author URI: https://feedwordpress.radgeek.com/contact/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2017.1007
+ * @version 2017.1018
  */
 
 # This uses code derived from:
@@ -32,7 +32,7 @@ License: GPL
 
 # -- Don't change these unless you know what you're doing...
 
-define ('FEEDWORDPRESS_VERSION', '2017.1007');
+define ('FEEDWORDPRESS_VERSION', '2017.1018');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -40,6 +40,8 @@ if (!defined('FEEDWORDPRESS_BLEG')) :
 endif;
 define('FEEDWORDPRESS_BLEG_BTC', '15EsQ9QMZtLytsaVYZUaUCmrkSMaxZBTso');
 define('FEEDWORDPRESS_BLEG_PAYPAL', '22PAJZZCK5Z3W');
+
+define('FEEDWORDPRESS_BOILERPLATE_DEFAULT_HOOK_ORDER', 11000); // at the tail end of the filtering process
 
 // Defaults
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
@@ -203,6 +205,33 @@ if (!$feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
 	# happens to fuck up any URI with a & to separate GET parameters.
 	remove_filter('pre_link_rss', 'wp_filter_kses');
 	remove_filter('pre_link_url', 'wp_filter_kses');
+
+	# Boilerplate functionality: hook in to title, excerpt, and content to add boilerplate text
+	$hookOrder = get_option('feedwordpress_boilerplate_hook_order', FEEDWORDPRESS_BOILERPLATE_DEFAULT_HOOK_ORDER);
+	add_filter(
+	/*hook=*/ 'the_title',
+	/*function=*/ 'add_boilerplate_title',
+	/*priority=*/ $hookOrder,
+	/*arguments=*/ 2
+	);
+	add_filter(
+	/*hook=*/ 'get_the_excerpt',
+	/*function=*/ 'add_boilerplate_excerpt',
+	/*priority=*/ $hookOrder,
+	/*arguments=*/ 1
+	);
+	add_filter(
+	/*hook=*/ 'the_content',
+	/*function=*/ 'add_boilerplate_content',
+	/*priority=*/ $hookOrder,
+	/*arguments=*/ 1
+	);
+	add_filter(
+	/*hook=*/ 'the_content_rss',
+	/*function=*/ 'add_boilerplate_content',
+	/*priority=*/ $hookOrder,
+	/*arguments=*/ 1
+	);
 
 	# Admin menu
 	add_action('admin_init', array($feedwordpress, 'admin_init'));
@@ -927,6 +956,186 @@ function fwp_publish_post_hook ($post_id) {
 
 		return $ret;
 	} // function feedwordpress_save_edit_controls
+
+################################################################################
+## class FeedWordPressBoilerplateReformatter ###################################
+################################################################################
+
+class FeedWordPressBoilerplateReformatter {
+	var $id, $element;
+
+	public function __construct ($id = NULL, $element = 'post') {
+		$this->id = $id;
+		$this->element = $element;
+	}
+
+	function shortcode_methods () {
+		return array(
+			'source' => 'source_link',
+			'source-name' => 'source_name',
+			'source-url' => 'source_url',
+			'original-link' => 'original_link',
+			'original-url' => 'original_url',
+			'author' => 'source_author_link',
+			'author-name' => 'source_author',
+			'feed-setting' => 'source_setting',
+		);
+	}
+	function do_shortcode ($template) {
+		$codes = $this->shortcode_methods();
+
+		// Register shortcodes relative to this object/post ID/element.
+		foreach ($codes as $code => $method) :
+			add_shortcode($code, array($this, $method));
+		endforeach;
+
+		$template = do_shortcode($template);
+		
+		// Unregister shortcodes.
+		foreach ($codes as $code => $method) :
+			remove_shortcode($code);
+		endforeach;
+		
+		return $template;
+	}
+	
+	function source_name ($atts) {
+		$param = shortcode_atts(array(
+		'original' => NULL,
+		), $atts);
+		return get_syndication_source($param['original'], $this->id);
+	}
+	function source_url ($atts) {
+		$param = shortcode_atts(array(
+		'original' => NULL,
+		), $atts);
+		return get_syndication_source_link($param['original'], $this->id);
+	}
+	function source_link ($atts) {
+		switch (strtolower($atts[0])) :
+		case '-name' :
+			$ret = $this->source_name($atts);
+			break;
+		case '-url' :
+			$ret = $this->source_url($atts);
+			break;
+		default :
+			$param = shortcode_atts(array(
+			'original' => NULL,
+			), $atts);
+			if ('title' == $this->element) :
+				$ret = $this->source_name($atts);
+			else :
+				$ret = '<a href="'.htmlspecialchars($this->source_url($atts)).'">'.htmlspecialchars($this->source_name($atts)).'</a>';
+			endif;
+		endswitch;
+		return $ret;
+	}
+	function source_setting ($atts) {
+		$param = shortcode_atts(array(
+		'key' => NULL,
+		), $atts);
+		return get_feed_meta($param['key'], $this->id);
+	}
+	function original_link ($atts, $text) {
+		$url = $this->original_url($atts);
+		return '<a href="'.esc_url($url).'">'.do_shortcode($text).'</a>';
+	}
+	function original_url ($atts) {
+		return get_syndication_permalink($this->id);
+	}
+	function source_author ($atts) {
+		return get_the_author();
+	}
+	function source_author_link ($atts) {
+		switch (strtolower($atts[0])) :
+		case '-name' :
+			$ret = $this->source_author($atts);
+			break;
+		default :
+			global $authordata; // Janky.
+			if ('title' == $this->element) :
+				$ret = $this->source_author($atts);
+			else :
+				$ret = get_the_author();
+				$url = get_author_posts_url((int) $authordata->ID, (int) $authordata->user_nicename);
+				if ($url) :
+					$ret = '<a href="'.$url.'" '
+						.'title="Read other posts by '.esc_html($authordata->display_name).'">'
+						.$ret
+						.'</a>';
+				endif;			
+			endif;
+		endswitch;
+		return $ret;
+	}
+}
+
+function add_boilerplate_reformat ($template, $element, $id = NULL) {
+	if ('post' == $element and !preg_match('/< (p|div) ( \s [^>]+ )? >/xi', $template)) :
+		$template = '<p class="syndicated-attribution">'.$template.'</p>';
+	endif;
+
+	$ref = new FeedWordPressBoilerplateReformatter($id, $element);
+	return $ref->do_shortcode($template);
+}
+
+function add_boilerplate_simple ($element, $title, $id = NULL) {
+	if (is_syndicated($id)) :
+		$meta = get_feed_meta('boilerplate rules', $id);
+		if ($meta and !is_array($meta)) : $meta = unserialize($meta); endif;
+
+		if (!is_array($meta) or empty($meta)) :
+			$meta = get_option('feedwordpress_boilerplate');
+		endif;
+
+		if (is_array($meta) and !empty($meta)) :
+			foreach ($meta as $rule) :
+				if ($element==$rule['element']) :
+					$rule['template'] = add_boilerplate_reformat($rule['template'], $element, $id);
+
+					if ('before'==$rule['placement']) :
+						$title = $rule['template'] . ' ' . $title;
+					else :
+						$title = $title . ' ' . $rule['template'];
+					endif;
+				endif;
+			endforeach;
+		endif;
+	endif;
+	return $title;
+}
+function add_boilerplate_title ($title, $id = NULL) {
+	return add_boilerplate_simple('title', $title, $id);
+}
+function add_boilerplate_excerpt ($title, $id = NULL) {
+	return add_boilerplate_simple('excerpt', $title, $id);
+}
+function add_boilerplate_content ($content) {
+	if (is_syndicated()) :
+		$meta = get_feed_meta('boilerplate rules');
+		if ($meta and !is_array($meta)) : $meta = unserialize($meta); endif;
+
+		if (!is_array($meta) or empty($meta)) :
+			$meta = get_option('feedwordpress_boilerplate');
+		endif;
+
+		if (is_array($meta) and !empty($meta)) :
+			foreach ($meta as $rule) :
+				if ('post'==$rule['element']) :
+					$rule['template'] = add_boilerplate_reformat($rule['template'], 'post');
+
+					if ('before'==$rule['placement']) :
+						$content = $rule['template'] . "\n" . $content;
+					else :
+						$content = $content . "\n" . $rule['template'];
+					endif;
+				endif;
+			endforeach;
+		endif;
+	endif;
+	return $content;	
+}
 
 ################################################################################
 ## class FeedWordPress #########################################################
