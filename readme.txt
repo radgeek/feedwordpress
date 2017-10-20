@@ -4,7 +4,7 @@ Donate link: http://feedwordpress.radgeek.com/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
 Tested up to: 4.8.2
-Stable tag: 2017.1004
+Stable tag: 2017.1020
 
 FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
 
@@ -18,7 +18,7 @@ FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content fro
 
 [Planet]: http://www.planetplanet.org/
 
-FeedWordPress is designed with flexibility, ease of use, and ease of configuration in mind. You'll need a working installation of WordPress (version [4.5][] or later), and also FTP or SFTP access to your web host. The ability to create cron jobs on your web host is helpful but not required.
+FeedWordPress is designed with flexibility, ease of use, and ease of configuration in mind. You'll need a working installation of WordPress (version [4.5][] or later), and it helps to have SFTP or FTP access to your web host. The ability to create cron jobs on your web host is helpful but not required.
 
   [WordPress]: http://wordpress.org/
   [WordPress MU]: http://mu.wordpress.org/
@@ -63,6 +63,24 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
 == Changelog ==
+
+= 2017.1020 =
+
+*	ADD BOILERPLATE / CREDITS FEATURE AVAILABLE IN POSTS & LINKS SETTINGS PANEL. I have added a new settings panel to the off-the-shelf features of FeedWordPress, under Syndication > Posts & Links (or under the Posts settings page for any individual feed), which allows you to define boilerplate text that should appear in connection with every syndicated post, or with every post syndicated from a particular feed. So, for example, if you want each syndicated post to include a byline reading "This is a syndicated post, reprinted from (LINK TO ORIGINAL SOURCE WEBSITE).", you could set up this byline from within the FeedWordPress settings interface, by going to the Boilerplate / Credits panel, and adding a line to appear BEFORE the CONTENT of each syndicated post, using the text and shortcode "This is a syndicated post, reprinted from [source]." For those of you who have corresponded with me about this feature before, you may be familiar with it from the long-standing "experimental" add-on, FWP+: Add Attribution; I've decided that it's been enough years, and I've had enough requests, that the Add Attribution feature may as well be included in the main FeedWordPress code.
+
+	Back when FeedWordPress was first created, the assumption was that a well-behaved aggregator would include boilerplate text to indicate the source of syndicated posts, but that the best way to do this was to provide a set of syndication-specific template tags so that the administrator setting up the site could edit their Theme template files with constructs like:
+
+	    <?php if (is_syndicated()) : ?>
+	    <p class="byline">This post by <?php the_author(); ?> originally
+	    appeared at <a href="<?php the_syndication_source_link(); ?>"><?php
+	    the_syndication_source(); ?></a>.</p>
+	    <?php else : ?>
+	    <p class="byline">By <?php the_author(); ?>.</p>
+	    <?php endif; ?>
+
+	You can still do this, of course, and for maximum expressive power and flexibility, it is certainly the best way to do it. Template Tags are documented here: <http://feedwordpress.radgeek.com/wiki/templates/> However, (1) it requires writing PHP code, which not everyone is comfortable doing; and (2) it requires altering template files within your Theme, which is not always possible, especially given the increasing role that prepackaged commercial themes have come to play in the WordPress ecosystem. So, now, you can get some basic features for adding boilerplate text and attribution credits even without touching your template files, and without having to add custom add-ons for FeedWordPress. Enjoy!
+
+*	MINOR CODE MODERNIZATION, PHP 7.1 COMPATIBILITY AND BUG FIXES. This project is now 12+ years old (good lord), and there are still some places where code was written at a time when PHP was a very different language from what it is now. Props to @david-robinson-practiceweb for pointing out and sending a pull request to fix some instances where obsolete PHP reference notation (`&$q` on parameters and so on) created a compatibility problem for PHP 7.1. Props to an email correspondent for pointing out a place in SyndicatedPost where excerpts should be generated from post content using encoding-aware mb_substr(), instead of naively running them through substr(). I've begun making some efforts throughout to begin auditing some of the creakiest old code in the project, to update what needs updating and improve documentation throughout.
 
 = 2017.0913 =
 
@@ -1901,7 +1919,7 @@ between version 0.98 of WordPress and the recently released WordPress 2.1.
 	
 == License ==
 
-The FeedWordPress plugin is copyright © 2005-2010 by Charles Johnson. It uses
+The FeedWordPress plugin is copyright © 2005-2017 by Charles Johnson. It uses
 code derived or translated from:
 
 -	[wp-rss-aggregate.php][] by [Kellan Elliot-McCrea](kellan@protest.net)
