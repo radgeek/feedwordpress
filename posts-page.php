@@ -531,7 +531,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			$attrib = get_option('feedwordpress_boilerplate');
 			$syndicatedPosts = 'syndicated posts';
 		endif;
-		$hookOrder = intval($page->setting('boilerplate hook order', BOILERPLATE_DEFAULT_HOOK_ORDER));
+		$hookOrder = intval($page->setting('boilerplate hook order', FEEDWORDPRESS_BOILERPLATE_DEFAULT_HOOK_ORDER));
 ?>
 	<style type="text/css">	
 	.boilerplate-help-box {
