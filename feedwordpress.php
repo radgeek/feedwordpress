@@ -38,6 +38,7 @@ define('FEEDWORDPRESS_BLEG_PAYPAL', '22PAJZZCK5Z3W');
 // Defaults
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 define ('DEFAULT_UPDATE_PERIOD', 60); // value in minutes
+define ('FEEDWORDPRESS_DEFAULT_CHECKIN_INTERVAL', DEFAULT_UPDATE_PERIOD/10);
 
 if (isset($_REQUEST['feedwordpress_debug'])) :
 	$feedwordpress_debug = $_REQUEST['feedwordpress_debug'];
@@ -1199,6 +1200,7 @@ class FeedWordPress {
 		$this->feeds = array ();
 		$this->feedurls  = array();
 		$links = FeedWordPress::syndicated_links();
+
 		if ($links): foreach ($links as $link):
 			$id = intval($link->link_id);
 			$url = $link->link_rss;
@@ -1210,8 +1212,12 @@ class FeedWordPress {
 			endif;
 		endforeach; endif;
 
-		add_filter('feedwordpress_update_complete', array($this, 'process_retirements'), 1000, 1);
+		// System-related event hooks
+		add_filter('cron_schedules', array($this, 'cron_schedules'), 10, 1);
 
+		// FeedWordPress-related event hooks
+		add_filter('feedwordpress_update_complete', array($this, 'process_retirements'), 1000, 1);
+		
 		$this->httpauth = new FeedWordPressHTTPAuthenticator;
 	} /* FeedWordPress::__construct () */
 
@@ -1777,6 +1783,27 @@ class FeedWordPress {
 		$this->update_magic_url();
 	} /* FeedWordPress::wp_loaded () */
 	
+	/**
+	 * FeedWordPress::cron_schedules(): Filter hook to add WP-Cron schedules
+	 * that plugins like FeedWordPress can use to carry out scheduled events.
+	 *
+	 * @param array $schedules An associative array containing the current set of cron schedules (hourly, daily, etc.)
+	 * @return array The same array, with a new entry ('fwp_checkin_interval') added to the list.
+	 *
+	 * @since 2017.1021
+	 */
+	public function cron_schedules ($schedules) {
+		$interval = FEEDWORDPRESS_DEFAULT_CHECKIN_INTERVAL*60 /*sec/min*/;
+
+		// add 'fwp_checkin_interval' to the existing set
+		$schedules['fwp_checkin_interval'] = array(
+		'interval' => $interval,
+		'display' => 'FeedWordPress update schedule check-in',
+		);
+
+		return $schedules;
+	} /* FeedWordPress::cron_schedules () */
+
 	public function fwp_feeds () {
 		$feeds = array();
 		$feed_ids = $this->feeds;
