@@ -1731,10 +1731,6 @@ class FeedWordPress {
 
 			wp_enqueue_style('dashboard');
 			wp_enqueue_style('feedwordpress-elements');
-
-			/*if (function_exists('wp_admin_css')) :
-				wp_admin_css('css/dashboard');
-			endif;*/
 		endif;
 
 		// These are a special post statuses for hiding posts that have
