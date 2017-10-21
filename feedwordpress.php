@@ -21,16 +21,10 @@ License: GPL
 # -	Ultra-Liberal Feed Finder by Mark Pilgrim <mark@diveintomark.org>
 # -	WordPress Blog Tool and Publishing Platform <http://wordpress.org/>
 # according to the terms of the GNU General Public License.
-#
-# INSTALLATION: see readme.txt or <http://feedwordpress.radgeek.com/install>
-#
-# USAGE: once FeedWordPress is installed, you manage just about everything from
-# the WordPress Dashboard, under the Syndication menu. To keep fresh content
-# coming in as it becomes available, you'll have to either check for updates
-# manually, or set up one of the automatically-scheduled update methods. See
-# <http://feedwordpress.radgeek.com/wiki/quick-start/> for some details.
 
-# -- Don't change these unless you know what you're doing...
+####################################################################################
+## CONSTANTS & DEFAULTS ############################################################
+####################################################################################
 
 define ('FEEDWORDPRESS_VERSION', '2017.1020');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contact');
@@ -40,8 +34,6 @@ if (!defined('FEEDWORDPRESS_BLEG')) :
 endif;
 define('FEEDWORDPRESS_BLEG_BTC', '15EsQ9QMZtLytsaVYZUaUCmrkSMaxZBTso');
 define('FEEDWORDPRESS_BLEG_PAYPAL', '22PAJZZCK5Z3W');
-
-define('FEEDWORDPRESS_BOILERPLATE_DEFAULT_HOOK_ORDER', 11000); // at the tail end of the filtering process
 
 // Defaults
 define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
@@ -65,6 +57,8 @@ define ('FEEDWORDPRESS_CAT_SEPARATOR', "\n");
 define ('FEEDVALIDATOR_URI', 'http://feedvalidator.org/check.cgi');
 
 define ('FEEDWORDPRESS_FRESHNESS_INTERVAL', 10*60); // Every ten minutes
+
+define('FEEDWORDPRESS_BOILERPLATE_DEFAULT_HOOK_ORDER', 11000); // at the tail end of the filtering process
 
 define ('FWP_SCHEMA_HAS_USERMETA', 2966);
 define ('FWP_SCHEMA_USES_ARGS_TAXONOMY', 12694); // Revision # for using $args['taxonomy'] to get link categories
@@ -91,8 +85,9 @@ else :
 	define('FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT', 20);
 endif;
 
-// Use our the cache settings that we want.
-add_filter('wp_feed_cache_transient_lifetime', array('FeedWordPress', 'cache_lifetime'));
+####################################################################################
+## CORE DEPENDENCIES & PLUGIN MODULES ##############################################
+####################################################################################
 
 // Dependencies: modules packaged with WordPress core
 $wpCoreDependencies = array(
@@ -146,12 +141,21 @@ require_once("${dir}/feedwordpressrpc.class.php");
 require_once("${dir}/feedwordpresshttpauthenticator.class.php");
 require_once("${dir}/feedwordpresslocalpost.class.php");
 
-// Magic quotes are just about the stupidest thing ever.
+####################################################################################
+## GLOBAL PARAMETERS ###############################################################
+####################################################################################
+
+// $fwp_post used to be a global variable used to make it easier to cope
+// with the frustrating sometime presence of "Magic Quotes" in earlier
+// versions of PHP (<http://php.net/manual/en/security.magicquotes.php>).
+// Magic quotes were DEPRECATED as of PHP 5.3.0, and REMOVED as of PHP
+// 5.4.0, so for the time being $fwp_post just gets a copy of $_POST.
+global $fwp_post;
+
 if (is_array($_POST)) :
 	$fwp_post = $_POST;
-	if (get_magic_quotes_gpc()) :
-		$fwp_post = stripslashes_deep($fwp_post);
-	endif;
+else:
+	$fwp_post = null;
 endif;
 
 // Get the path relative to the plugins directory in which FWP is stored
@@ -166,6 +170,10 @@ if (isset($ref[1])) :
 else : // Something went wrong. Let's just guess.
 	$fwp_path = 'feedwordpress';
 endif;
+
+####################################################################################
+## FEEDWORDPRSS: INITIALIZE OBJECT AND FILTERS #####################################
+####################################################################################
 
 $feedwordpress = new FeedWordPress;
 if (!$feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
@@ -280,6 +288,10 @@ if (!$feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
 
 	add_action('plugins_loaded', array($feedwordpress, 'admin_api'));
 	add_action('all_admin_notices', array($feedwordpress, 'all_admin_notices'));
+
+	// Use our the cache settings that we want.
+	add_filter('wp_feed_cache_transient_lifetime', array('FeedWordPress', 'cache_lifetime'));
+
 
 else :
 	# Hook in the menus, which will just point to the upgrade interface
