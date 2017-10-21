@@ -20,15 +20,14 @@ FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content fro
 
 FeedWordPress is designed with flexibility, ease of use, and ease of configuration in mind. You'll need a working installation of WordPress (version [4.5][] or later), and it helps to have SFTP or FTP access to your web host. The ability to create cron jobs on your web host is helpful but not required.
 
-  [WordPress]: http://wordpress.org/
-  [WordPress MU]: http://mu.wordpress.org/
+  [WordPress]: https://wordpress.org/
   [4.5]: http://codex.wordpress.org/Version_4.5
 
 == Installation ==
 
 To use FeedWordPress, you will need:
 
-* 	an installed and configured copy of [WordPress][] (version 4.5 or later).
+* 	an installed and configured copy of [WordPress](https://wordpress.org/) (version 4.5 or later).
 
 *	the ability to install new plugins on your site using either WordPress's Plugins Repository, SFTP, FTP or shell access to your web host
 
@@ -1919,8 +1918,7 @@ between version 0.98 of WordPress and the recently released WordPress 2.1.
 	
 == License ==
 
-The FeedWordPress plugin is copyright © 2005-2017 by Charles Johnson. It uses
-code derived or translated from:
+The FeedWordPress plugin is copyright © 2005-2017 by Charles Johnson. It uses code derived or translated from:
 
 -	[wp-rss-aggregate.php][] by [Kellan Elliot-McCrea](kellan@protest.net)
 -	[SimplePie][] feed parser by Ryan Parman, Geoffrey Sneddon, Ryan McCue, et al.
@@ -1930,13 +1928,9 @@ code derived or translated from:
 
 according to the terms of the [GNU General Public License][].
 
-This program is free software; you can redistribute it and/or modify it under
-the terms of the [GNU General Public License][] as published by the Free
-Software Foundation; either version 2 of the License, or (at your option) any
-later version.
+This program is free software; you can redistribute it and/or modify it under the terms of the [GNU General Public License][] as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
   [wp-rss-aggregate.php]: http://laughingmeme.org/archives/002203.html
