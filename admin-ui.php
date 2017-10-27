@@ -1,4 +1,15 @@
 <?php
+/**
+ * admin-ui.php: This is kind of a junk pile of utility functions mostly created to smooth
+ * out interactions to make things show up, or behave correctly, within the WordPress admin
+ * settings interface. Major chunks of this code that deal with making it easy for FWP,
+ * add-on modules, etc. to create new settings panels have since been hived off into class
+ * FeedWordPressAdminPage. Many of the functions that remain here were created to handle
+ * compatibility across multiple, sometimes very old, versions of WordPress, many of which
+ * are no longer supported anymore. It's likely that some of these functions will be
+ * re-evaluated, re-organized, deprecated, or clipped out in the next few versions.
+ * -cj 2017-10-27
+ */
 function fwp_update_set_results_message ($delta, $joiner = ';') {
 	$mesg = array();
 	if (isset($delta['new'])) : $mesg[] = ' '.$delta['new'].' new posts were syndicated'; endif;
