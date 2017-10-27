@@ -2301,6 +2301,14 @@ EOM;
 							endswitch;
 						endif;
 					} while (is_wp_error($id));
+
+					// $id should now contain the numeric ID of a newly minted
+					// user account. Let's mark them as having been generated
+					// by FeedWordPress in the usermeta table, as per the
+					// suggestion of @boonebgorges, in case we need to process,
+					// winnow, filter, or merge syndicated author accounts, &c.
+					add_user_meta($id, 'feedwordpress_generated', 1);
+
 				elseif (is_numeric($unfamiliar_author) and get_userdata((int) $unfamiliar_author)) :
 					$id = (int) $unfamiliar_author;
 				elseif ($unfamiliar_author === 'default') :
