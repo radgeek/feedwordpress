@@ -15,9 +15,6 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 	function has_link () { return false; }
 
 	function display () {
-		global $wpdb, $wp_db_version, $fwp_path;
-		global $fwp_post;
-
 		if (FeedWordPress::needs_upgrade()) :
 			fwp_upgrade_page();
 			return;
@@ -27,8 +24,8 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_diagnostics', /*capability=*/ 'manage_options');
 
 		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
-			$this->accept_POST($fwp_post);
-			do_action('feedwordpress_admin_page_diagnostics_save', $fwp_post, $this);
+			$this->accept_POST($_POST);
+			do_action('feedwordpress_admin_page_diagnostics_save', $_POST, $this);
 		endif;
 
 		////////////////////////////////////////////////
