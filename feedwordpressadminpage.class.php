@@ -380,7 +380,6 @@ class FeedWordPressAdminPage {
 	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
 
 	public function display_sheet_header ($pagename = 'Syndication', $all = false) {
-		global $fwp_path;
 		?>
 		<div class="icon32"><img src="<?php print esc_attr( plugins_url( 'feedwordpress.png', __FILE__ ) ); ?>" alt="" /></div>
 		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name(/*from feed=*/ false)); ?><?php endif; ?></h2>
@@ -426,8 +425,6 @@ class FeedWordPressAdminPage {
 	/*static*/ function has_link () { return true; }
 
 	public function form_action ($filename = NULL) {
-		global $fwp_path;
-
 		if (is_null($filename)) :
 			$filename = basename($this->filename);
 		endif;
