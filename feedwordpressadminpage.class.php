@@ -382,7 +382,7 @@ class FeedWordPressAdminPage {
 	public function display_sheet_header ($pagename = 'Syndication', $all = false) {
 		global $fwp_path;
 		?>
-		<div class="icon32"><img src="<?php print esc_html( plugins_url( '/'.$fwp_path.'/feedwordpress.png') ); ?>" alt="" /></div>
+		<div class="icon32"><img src="<?php print esc_attr( plugins_url( 'feedwordpress.png', __FILE__ ) ); ?>" alt="" /></div>
 		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name(/*from feed=*/ false)); ?><?php endif; ?></h2>
 		<?php
 	}
