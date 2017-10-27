@@ -454,8 +454,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressSyndicationPage::display () */
 
 	function dashboard_box ($page, $box = NULL) {
-		global $fwp_path;
-
 		$links = FeedWordPress::syndicated_links(array("hide_invisible" => false));
 		$sources = $this->sources('*');
 
@@ -477,7 +475,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		
 		// Hey ho, let's go...
 		?>
-		<div style="float: left; background: #F5F5F5; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_html(plugins_url( "/${fwp_path}/feedwordpress.png") ); ?>" alt="" /></a></div>
+		<div style="float: left; background: #F5F5F5; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url(plugins_url( "feedwordpress.png", __FILE__ ) ); ?>" alt="" /></a></div>
 
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;">Managed by <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
 		<?php print FEEDWORDPRESS_VERSION; ?>.</p>
@@ -536,7 +534,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		
 		  <?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
 		  <input type="hidden" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
-		  <input style="vertical-align: middle;" type="image" src="<?php print plugins_url('/'.$fwp_path .'/plus.png' ); ?>" alt="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
+		  <input style="vertical-align: middle;" type="image" src="<?php print esc_url(plugins_url('plus.png', __FILE__)); ?>" alt="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
 		  </form>
 		</div> <!-- id="add-single-uri" -->
 		
@@ -546,7 +544,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressSyndicationPage::dashboard_box () */
 	
 	function syndicated_sources_box ($page, $box = NULL) {
-		global $fwp_path;
 
 		$links = FeedWordPress::syndicated_links(array("hide_invisible" => false));
 		$sources = $this->sources('*');
@@ -602,9 +599,9 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		
 		  <input type="hidden" name="action" value="feedfinder" />
 		  <input type="submit" class="button-secondary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
-		  <div style="text-align: right; margin-right: 2.0em"><a id="turn-on-multiple-sources" href="#add-multiple-uri"><img style="vertical-align: middle" src="<?php print plugins_url('/' . $fwp_path . '/down.png'); ?>" alt="" /> add multiple</a>
+		  <div style="text-align: right; margin-right: 2.0em"><a id="turn-on-multiple-sources" href="#add-multiple-uri"><img style="vertical-align: middle" src="<?php print esc_url(plugins_url('down.png', __FILE__)); ?>" alt="" /> add multiple</a>
 		  <span class="screen-reader-text"> or </span>
-		  <a id="turn-on-opml-upload" href="#upload-opml"><img src="<?php print plugins_url('/' . $fwp_path . '/plus.png'); ?>" alt="" style="vertical-align: middle" /> import source list</a></div>
+		  <a id="turn-on-opml-upload" href="#upload-opml"><img src="<?php print esc_url(plugins_url('plus.png', __FILE__)); ?>" alt="" style="vertical-align: middle" /> import source list</a></div>
 		  </li>
 		  </ul>
 		  </form>
@@ -1198,7 +1195,7 @@ function fwp_feedfinder_page () {
 } /* function fwp_feedfinder_page () */
 
 function fwp_switchfeed_page () {
-	global $wpdb, $wp_db_version;
+	global $wpdb;
 	global $fwp_post, $fwp_path;
 
 	// If this is a POST, validate source and user credentials
