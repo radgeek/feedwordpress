@@ -12,9 +12,6 @@ class FeedWordPressPerformancePage extends FeedWordPressAdminPage {
 	public function has_link () { return false; }
 
 	function display () {
-		global $wpdb, $wp_db_version, $fwp_path;
-		global $fwp_post;
-
 		if (FeedWordPress::needs_upgrade()) :
 			fwp_upgrade_page();
 			return;
@@ -24,8 +21,8 @@ class FeedWordPressPerformancePage extends FeedWordPressAdminPage {
 		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_performance', /*capability=*/ 'manage_options');
 
 		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
-			$this->accept_POST($fwp_post);
-			do_action('feedwordpress_admin_page_performance_save', $fwp_post, $this);
+			$this->accept_POST($_POST);
+			do_action('feedwordpress_admin_page_performance_save', $_POST, $this);
 		endif;
 
 		////////////////////////////////////////////////
