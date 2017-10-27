@@ -439,7 +439,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		?>
 			<div class="metabox-holder">		
 			<?php
-				fwp_do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
+				do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
 			?>
 			</div> <!-- class="metabox-holder" -->
 			</div> <!-- id="post-body" -->
