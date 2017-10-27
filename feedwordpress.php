@@ -125,6 +125,7 @@ endif;
 // Dependences: modules packaged with FeedWordPress plugin
 $dir = dirname(__FILE__);
 require_once("${dir}/externals/myphp/myphp.class.php");
+require_once("${dir}/feedwordpressadminpage.class.php");
 require_once("${dir}/admin-ui.php");
 require_once("${dir}/feedwordpresssyndicationpage.class.php");
 require_once("${dir}/compatability.php"); // Legacy API
