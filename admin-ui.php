@@ -337,33 +337,6 @@ function fwp_insert_new_user ($newuser_name) {
 	return $ret;
 } /* fwp_insert_new_user () */
 
-/**
- * fwp_add_meta_box
- *
- * This function is no longer necessary, since no versions of WordPress that FWP
- * still supports lack add_meta_box(). But I've left it in place for the time
- * being for add-on modules that may have used it in setting up their UI.
- */
-function fwp_add_meta_box ($id, $title, $callback, $page, $context = 'advanced', $priority = 'default', $callback_args = null) {
-	return add_meta_box($id, $title, $callback, $page, $context, $priority, $callback_args);
-} /* function fwp_add_meta_box () */
-
-function fwp_do_meta_boxes($page, $context, $object) {
-	$ret = do_meta_boxes($page, $context, $object);
-
-	// Avoid JavaScript error from WordPress 2.5 bug
-?>
-	<div style="display: none">
-	<div id="tags-input"></div> <!-- avoid JS error from WP 2.5 bug -->
-	</div>
-<?php
-	return $ret;
-} /* function fwp_do_meta_boxes() */
-
-function fwp_remove_meta_box($id, $page, $context) {
-	return remove_meta_box($id, $page, $context);
-} /* function fwp_remove_meta_box() */
-
 function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible = 'Y') {
 
 	$subscribed = ('Y' == strtoupper($visible));
