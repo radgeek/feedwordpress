@@ -26,21 +26,6 @@ function fwp_authors_single_submit ($link = NULL) {
 <?php
 }
 
-function fwp_option_box_opener ($legend, $id, $class = "stuffbox") {
-?>
-<div id="<?php print $id; ?>" class="<?php print $class; ?>">
-<h3><?php print htmlspecialchars($legend); ?></h3>
-<div class="inside">
-<?php
-}
-
-function fwp_option_box_closer () {
-?>
-	</div> <!-- class="inside" -->
-	</div> <!-- class="stuffbox" -->
-<?php
-}
-
 function fwp_tags_box ($tags, $object, $params = array()) {
 	$params = wp_parse_args($params, array( // Default values
 	'taxonomy' => 'post_tag',
