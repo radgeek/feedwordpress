@@ -2289,7 +2289,7 @@ EOM;
                                 				$userdata['user_nicename'] = mb_substr( $userdata['user_login'], 0, 50 );
 								break;
 							case 'existing_user_email' :
-								// No disassemble!
+								// Disassemble
 								$parts = explode('@', $userdata['user_email'], 2);
 
 								// Add a random disambiguator as a gmail-style username extension
