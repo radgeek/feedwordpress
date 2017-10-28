@@ -1465,9 +1465,15 @@ class SyndicatedPost {
 	 * for the author of the incoming post.
 	 *
 	 * side effect: int|NULL stored in $this->post['post_author']
+	 * side effect: IF no valid author is found, NULL stored in $this->post 
 	 * side effect: diagnostic output in case item is rejected with NULL author
 	 *
 	 * @used-by SyndicatedPost::store
+	 *
+	 * @uses SyndicatedPost::post
+	 * @uses SyndicatedPost::author_id
+	 * @uses SyndicatedLink::setting
+	 * @uses FeedWordPress::diagnostic
 	 */
 	protected function secure_author_id () {
 		# -- Look up, or create, numeric ID for author
@@ -1480,6 +1486,117 @@ class SyndicatedPost {
 			$this->post = NULL;
 		endif;
 	} /* SyndicatedPost::secure_author_id() */
+
+	/**
+	 * SyndicatedPost::secure_term_ids(). Look up, or create, numeric IDs
+	 * for the terms (categories, tags, etc.) assigned to the incoming post,
+	 * whether by global settings, feed settings, or by the tags on the feed.
+	 *
+	 * side effect: array of term ids stored in $this->post['tax_input']
+	 * side effect: IF settings or filters determine post should be filtered out,
+	 * 	NULL stored in $this->post
+	 *
+	 * @used-by SyndicatedPost::store
+	 *
+	 * @uses apply_filters
+	 * @uses SyndicatedLink::setting
+	 * @uses SyndicatedPost::category_ids
+	 * @uses SyndicatedPost::preset_terms
+	 * @uses SyndicatedPost::post
+	 */
+	protected function secure_term_ids () {
+		$mapping = apply_filters('syndicated_post_terms_mapping', array(
+			'category' => array('abbr' => 'cats', 'unfamiliar' => 'category', 'domain' => array('category', 'post_tag')),
+			'post_tag' => array('abbr' => 'tags', 'unfamiliar' => 'post_tag', 'domain' => array('post_tag')),
+		), $this);
+
+		$termSet = array(); $valid = null;
+		foreach ($this->feed_terms as $what => $anTerms) :
+			// Default to using the inclusive procedures (for cats) rather than exclusive (for inline tags)
+			$taxes = (isset($mapping[$what]) ? $mapping[$what] : $mapping['category']);
+			$unfamiliar = $taxes['unfamiliar'];
+				
+			if (!is_null($this->post)) : // Not filtered out yet
+				# -- Look up, or create, numeric ID for categories
+				$taxonomies = $this->link->setting("match/".$taxes['abbr'], 'match_'.$taxes['abbr'], $taxes['domain']);
+
+				// Eliminate dummy variables
+				$taxonomies = array_filter($taxonomies, 'remove_dummy_zero');
+
+				// Allow FWP add-on filters to control the taxonomies we use to search for a term
+				$taxonomies = apply_filters("syndicated_post_terms_match", $taxonomies, $what, $this);
+				$taxonomies = apply_filters("syndicated_post_terms_match_${what}", $taxonomies, $this);
+
+				// Allow FWP add-on filters to control with greater precision what happens on unmatched
+				$unmatched = apply_filters("syndicated_post_terms_unfamiliar",
+					$this->link->setting(
+						"unfamiliar {$unfamiliar}",
+						"unfamiliar_{$unfamiliar}",
+						'create:'.$unfamiliar
+					),
+					$what,
+					$this
+				);
+
+				$terms = $this->category_ids (
+					$anTerms,
+					$unmatched,
+					/*taxonomies=*/ $taxonomies,
+					array(
+					  'singleton' => false, // I don't like surprises
+					  'filters' => true,
+					)
+				);
+
+				if (is_null($terms) or is_null($termSet)) :
+					// filtered out -- no matches
+				else :
+					$valid = true;
+
+					// filter mode off, or at least one match
+					foreach ($terms as $tax => $term_ids) :
+						if (!isset($termSet[$tax])) :
+							$termSet[$tax] = array();
+						endif;
+						$termSet[$tax] = array_merge($termSet[$tax], $term_ids);
+					endforeach;
+				endif;
+			endif;
+		endforeach;
+
+		if (is_null($valid)) : // Plonked
+			$this->post = NULL;
+		else : // We can proceed
+			$this->post['tax_input'] = array();
+			foreach ($termSet as $tax => $term_ids) :
+				if (!isset($this->post['tax_input'][$tax])) :
+					$this->post['tax_input'][$tax] = array();
+				endif;
+				$this->post['tax_input'][$tax] = array_merge(
+					$this->post['tax_input'][$tax],
+					$term_ids
+				);
+			endforeach;
+
+			// Now let's add on the feed and global presets
+			foreach ($this->preset_terms as $tax => $term_ids) :
+				if (!isset($this->post['tax_input'][$tax])) :
+					$this->post['tax_input'][$tax] = array();
+				endif;
+
+				$this->post['tax_input'][$tax] = array_merge (
+					$this->post['tax_input'][$tax],
+					$this->category_ids (
+					/*terms=*/ $term_ids,
+					/*unfamiliar=*/ 'create:'.$tax, // These are presets; for those added in a tagbox editor, the tag may not yet exist
+					/*taxonomies=*/ array($tax),
+					array(
+					  'singleton' => true,
+					))
+				);
+			endforeach;
+		endif;
+	} /* SyndicatedPost::secure_term_ids() */
 
 	/**
 	 * SyndicatedPost::store
@@ -1498,100 +1615,8 @@ class SyndicatedPost {
 			$this->secure_author_id();
 		endif;
 
-		// We have to check again in case post has been filtered during
-		// the author_id lookup
-		if ($this->has_fresh_content()) :
-			$mapping = apply_filters('syndicated_post_terms_mapping', array(
-				'category' => array('abbr' => 'cats', 'unfamiliar' => 'category', 'domain' => array('category', 'post_tag')),
-				'post_tag' => array('abbr' => 'tags', 'unfamiliar' => 'post_tag', 'domain' => array('post_tag')),
-			), $this);
-
-			$termSet = array(); $valid = null;
-			foreach ($this->feed_terms as $what => $anTerms) :
-				// Default to using the inclusive procedures (for cats) rather than exclusive (for inline tags)
-				$taxes = (isset($mapping[$what]) ? $mapping[$what] : $mapping['category']);
-				$unfamiliar = $taxes['unfamiliar'];
-				
-				if (!is_null($this->post)) : // Not filtered out yet
-					# -- Look up, or create, numeric ID for categories
-					$taxonomies = $this->link->setting("match/".$taxes['abbr'], 'match_'.$taxes['abbr'], $taxes['domain']);
-
-					// Eliminate dummy variables
-					$taxonomies = array_filter($taxonomies, 'remove_dummy_zero');
-
-					// Allow FWP add-on filters to control the taxonomies we use to search for a term
-					$taxonomies = apply_filters("syndicated_post_terms_match", $taxonomies, $what, $this);
-					$taxonomies = apply_filters("syndicated_post_terms_match_${what}", $taxonomies, $this);
-
-					// Allow FWP add-on filters to control with greater precision what happens on unmatched
-					$unmatched = apply_filters("syndicated_post_terms_unfamiliar",
-						$this->link->setting(
-							"unfamiliar {$unfamiliar}",
-							"unfamiliar_{$unfamiliar}",
-							'create:'.$unfamiliar
-						),
-						$what,
-						$this
-					);
-
-					$terms = $this->category_ids (
-						$anTerms,
-						$unmatched,
-						/*taxonomies=*/ $taxonomies,
-						array(
-						  'singleton' => false, // I don't like surprises
-						  'filters' => true,
-						)
-					);
-
-					if (is_null($terms) or is_null($termSet)) :
-						// filtered out -- no matches
-					else :
-						$valid = true;
-
-						// filter mode off, or at least one match
-						foreach ($terms as $tax => $term_ids) :
-							if (!isset($termSet[$tax])) :
-								$termSet[$tax] = array();
-							endif;
-							$termSet[$tax] = array_merge($termSet[$tax], $term_ids);
-						endforeach;
-					endif;
-				endif;
-			endforeach;
-
-			if (is_null($valid)) : // Plonked
-				$this->post = NULL;
-			else : // We can proceed
-				$this->post['tax_input'] = array();
-				foreach ($termSet as $tax => $term_ids) :
-					if (!isset($this->post['tax_input'][$tax])) :
-						$this->post['tax_input'][$tax] = array();
-					endif;
-					$this->post['tax_input'][$tax] = array_merge(
-						$this->post['tax_input'][$tax],
-						$term_ids
-					);
-				endforeach;
-
-				// Now let's add on the feed and global presets
-				foreach ($this->preset_terms as $tax => $term_ids) :
-					if (!isset($this->post['tax_input'][$tax])) :
-						$this->post['tax_input'][$tax] = array();
-					endif;
-
-					$this->post['tax_input'][$tax] = array_merge (
-						$this->post['tax_input'][$tax],
-						$this->category_ids (
-						/*terms=*/ $term_ids,
-						/*unfamiliar=*/ 'create:'.$tax, // These are presets; for those added in a tagbox editor, the tag may not yet exist
-						/*taxonomies=*/ array($tax),
-						array(
-						  'singleton' => true,
-						))
-					);
-				endforeach;
-			endif;
+		if ($this->has_fresh_content()) : // Was this filtered during author_id lookup?
+			$this->secure_term_ids();
 		endif;
 
 		// We have to check again in case the post has been filtered
