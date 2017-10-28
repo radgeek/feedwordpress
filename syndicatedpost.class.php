@@ -1829,10 +1829,22 @@ class SyndicatedPost {
 		return $ret;
 	} /* function SyndicatedPost::insert_post () */
 
+	/**
+	 * SyndicatedPost::insert_new(). Uses the data collected in this post object to insert
+	 * a new post into the wp_posts table.
+	 *
+	 * @uses SyndicatedPost::insert_post
+	 */
 	function insert_new () {
 		$this->insert_post(/*update=*/ false, 1);
 	} /* SyndicatedPost::insert_new() */
 
+	/**
+	 * SyndicatedPost::insert_new(). Uses the data collected in this post object to update
+	 * an existing post in the wp_posts table.
+	 *
+	 * @uses SyndicatedPost::insert_post
+	 */
 	function update_existing () {
 		$this->insert_post(/*update=*/ true, 2);
 	} /* SyndicatedPost::update_existing() */
