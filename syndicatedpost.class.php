@@ -1460,6 +1460,32 @@ class SyndicatedPost {
 		return $this->_wp_id;
 	}
 
+	/**
+	 * SyndicatedPost::secure_author_id(). Look up, or create, a numeric ID
+	 * for the author of the incoming post.
+	 *
+	 * side effect: int|NULL stored in $this->post['post_author']
+	 * side effect: diagnostic output in case item is rejected with NULL author
+	 *
+	 * @used-by SyndicatedPost::store
+	 */
+	protected function secure_author_id () {
+		# -- Look up, or create, numeric ID for author
+		$this->post['post_author'] = $this->author_id (
+			$this->link->setting('unfamiliar author', 'unfamiliar_author', 'create')
+		);
+
+		if (is_null($this->post['post_author'])) :
+			FeedWordPress::diagnostic('feed_items:rejected', 'Filtered out item ['.$this->guid().'] without syndication: no author available');
+			$this->post = NULL;
+		endif;
+	} /* SyndicatedPost::secure_author_id() */
+
+	/**
+	 * SyndicatedPost::store
+	 *
+	 * @uses SyndicatedPost::secure_author_id
+	 */
 	public function store () {
 		global $wpdb;
 
@@ -1469,15 +1495,7 @@ class SyndicatedPost {
 
 		$freshness = $this->freshness();
 		if ($this->has_fresh_content()) :
-			# -- Look up, or create, numeric ID for author
-			$this->post['post_author'] = $this->author_id (
-				$this->link->setting('unfamiliar author', 'unfamiliar_author', 'create')
-			);
-
-			if (is_null($this->post['post_author'])) :
-				FeedWordPress::diagnostic('feed_items:rejected', 'Filtered out item ['.$this->guid().'] without syndication: no author available');
-				$this->post = NULL;
-			endif;
+			$this->secure_author_id();
 		endif;
 
 		// We have to check again in case post has been filtered during
