@@ -2252,9 +2252,9 @@ EOM;
 				if ($unfamiliar_author === 'create') :
 					$userdata = array();
 
-					// WordPress 3 is going to pitch a fit if we attempt to register
-					// more than one user account with an empty e-mail address, so we
-					// need *something* here. Ugh.
+					#-- we need *something* for the email here or WordPress
+					#-- is liable to pitch a fit. So, make something up if
+					#-- necessary. (Ugh.)
 					if (strlen($email) == 0 or FeedWordPress::is_null_email($email)) :
 						$url = parse_url($hostUrl);
 						$email = $nice_author.'@'.$url['host'];
@@ -2268,13 +2268,17 @@ EOM;
 					$userdata['user_email'] = $email;
 					$userdata['user_url'] = $authorUrl;
 					$userdata['nickname'] = $author;
+
 					$parts = preg_split('/\s+/', trim($author), 2);
 					if (isset($parts[0])) : $userdata['first_name'] = $parts[0]; endif;
 					if (isset($parts[1])) : $userdata['last_name'] = $parts[1]; endif;
+
 					$userdata['display_name'] = $author;
 					$userdata['role'] = 'contributor';
 
-					do { // Keep trying until you get it right. Or until PHP crashes, I guess.
+					#-- loop. Keep trying to add the user until you get it
+					#-- right. Or until PHP crashes, I guess.
+					do {
 						$id = wp_insert_user($userdata);
 						if (is_wp_error($id)) :
 							$codes = $id->get_error_code();
@@ -2285,11 +2289,11 @@ EOM;
 								$userdata['user_login'] .= substr(md5(uniqid(microtime())), 0, 6);
 								break;
 							case 'user_nicename_too_long' :
-								// Add a limited 50 caracters user_nicename based on user_login
+								// Add a limited 50 characters user_nicename based on user_login
                                 				$userdata['user_nicename'] = mb_substr( $userdata['user_login'], 0, 50 );
 								break;
 							case 'existing_user_email' :
-								// Disassemble
+								// Disassemble email for username, host
 								$parts = explode('@', $userdata['user_email'], 2);
 
 								// Add a random disambiguator as a gmail-style username extension
