@@ -128,6 +128,10 @@ class SyndicatedLink {
 		return $ret;
 	} /* SyndicatedLink::live_posts () */
 
+	protected function pause_updates () {
+		return ('yes'==$this->setting("update/pause", "update_pause", 'no'));
+	} /* SyndicatedLink::pause_updates () */
+
 	public function poll ($crash_ts = NULL) {
 		global $wpdb;
 
@@ -275,23 +279,24 @@ class SyndicatedLink {
 
 			if (is_array($posts)) :
 				foreach ($posts as $key => $item) :
-					$post = new SyndicatedPost($item, $this);
+					if (!$this->pause_updates()) :
+						$post = new SyndicatedPost($item, $this);
 
-					if (!$resume or !in_array(trim($post->guid()), $processed)) :
-						$processed[] = $post->guid();
-						if (!$post->filtered()) :
-							$new = $post->store();
-							if ( $new !== false ) $new_count[$new]++;
+						if (!$resume or !in_array(trim($post->guid()), $processed)) :
+							$processed[] = $post->guid();
+							if (!$post->filtered()) :
+								$new = $post->store();
+								if ( $new !== false ) $new_count[$new]++;
+							endif;
+
+							if (!is_null($crash_ts) and (time() > $crash_ts)) :
+								$crashed = true;
+								break;
+							endif;
 						endif;
 
-						if (!is_null($crash_ts) and (time() > $crash_ts)) :
-							$crashed = true;
-							break;
-						endif;
-					endif;
-
-					unset($post);
-					
+						unset($post);
+					endif;					
 				endforeach;
 			endif;
 

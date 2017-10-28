@@ -161,6 +161,17 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 					/*checkbox=*/ true
 				);
 			} /* for */
+			
+			// Let's make the interface for the PAUSE/RESUME a bit better
+			jQuery('<tr id="reveal-pause-resume"><th></th><td><button id="pause-resume-reveal-button">&#8212; PAUSE or RESUME UPDATES &#8212;</button></td></tr>').insertBefore('#pause-resume');
+			jQuery('#pause-resume').hide();
+			jQuery('#pause-resume-reveal-button').click(function(ev) {
+				ev.preventDefault();
+
+				jQuery('#pause-resume').toggle();
+				return false;
+			});
+
 		} );
 
 		<?php
@@ -186,7 +197,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php if ($page->for_default_settings()) : ?>
 
 		<tr>
-		<th scope="row">Updates:</th>
+		<th scope="row">Update Method:</th>
 		<td><select id="automatic-updates-selector" name="automatic_updates" size="1" onchange="contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');">
 		<option value="shutdown"<?php echo ($automatic_updates=='shutdown')?' selected="selected"':''; ?>>automatically check for updates after pages load</option>
 		<option value="init"<?php echo ($automatic_updates=='init')?' selected="selected"':''; ?>>automatically check for updates before pages load</option>
@@ -267,7 +278,25 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		</select></td></tr>
 		
 		<?php endif; ?>
-		
+
+		<tr id="pause-resume">
+		<th scope="row"><?php print __('Pause/Resume:'); ?></th>
+		<td><?php
+		$this->setting_radio_control(
+			'update/pause', 'update_pause',
+			/*options=*/ array(
+				'no' => '<strong>UPDATE:</strong> import new posts as normal',
+				'yes' => '<strong>PAUSE:</strong> do not import new posts until I unpause updates',
+			),
+			/*params=*/ array(
+				'setting-default' => NULL,
+				'global-setting-default' => 'no',
+				'default-input-value' => 'default',
+			)
+		);
+		?></td>
+		</tr>
+
 		<tr>
 		<th scope="row"><?php print __('Update scheduling:') ?></th>
 		<td><p style="margin-top:0px">How long should FeedWordPress wait between updates before it considers this feed ready to be polled for updates again?</p>
@@ -1215,6 +1244,10 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			
 		endif;
 		
+		if (isset($post['update_pause'])) :
+			$this->update_setting('update/pause', $post['update_pause']);
+		endif;
+
 		if (isset($post['fetch_timeout'])) :
 			if (isset($post['fetch_timeout_default']) and $post['fetch_timeout_default']=='yes') :
 				$timeout = NULL;
