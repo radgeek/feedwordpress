@@ -535,11 +535,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$cat_id = FeedWordPress::link_category_id();
 
 			$params = array();
-			if (FeedWordPressCompatibility::test_version(FWP_SCHEMA_USES_ARGS_TAXONOMY)) :
-				$params['taxonomy'] = 'link_category';
-			else :
-				$params['type'] = 'link';
-			endif;
+			$params['taxonomy'] = 'link_category';
 			$params['hide_empty'] = false;
 			$results = get_categories($params);
 				

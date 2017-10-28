@@ -64,10 +64,6 @@ define ('FEEDWORDPRESS_FRESHNESS_INTERVAL', 10*60); // Every ten minutes
 
 define('FEEDWORDPRESS_BOILERPLATE_DEFAULT_HOOK_ORDER', 11000); // at the tail end of the filtering process
 
-define ('FWP_SCHEMA_HAS_USERMETA', 2966);
-define ('FWP_SCHEMA_USES_ARGS_TAXONOMY', 12694); // Revision # for using $args['taxonomy'] to get link categories
-define ('FWP_SCHEMA_30', 12694); // Database schema # for WP 3.0
-
 if (FEEDWORDPRESS_DEBUG) :
 	// Help us to pick out errors, if any.
 	ini_set('error_reporting', E_ALL & ~E_NOTICE);
