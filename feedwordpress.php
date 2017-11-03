@@ -338,7 +338,7 @@ class FeedWordPressDiagnostic {
 		endforeach;
 	}
 
-	function admin_emails ($id = '') {
+	public static function admin_emails ($id = '') {
 		$users = get_users_of_blog($id);
 		$recipients = array();
 		foreach ($users as $user) :
