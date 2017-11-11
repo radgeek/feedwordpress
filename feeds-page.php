@@ -209,23 +209,25 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		// If it's available, use it to execute `which` to try to get a realistic path to curl,
 		// or to wget. If everything fails or shell_exec() isn't available, then just make
 		// up something for the sake of example.
+		$curlOrWgetPath = NULL;
+
 		$shellExecAvailable = (is_callable('shell_exec') && false === stripos(ini_get('disable_functions'), 'shell_exec'));		
 
 		if ($shellExecAvailable) :
-			$path = `which curl`; $opts = '--silent %s';
+			$curlOrWgetPath = `which curl`; $opts = '--silent %s';
 		endif;
 
-		if ($shellExecAvailable and (is_null($path) or strlen(trim($path))==0)) :
-			$path = `which wget`; $opts = '-q -O - %s';
+		if ($shellExecAvailable and (is_null($curlOrWgetPath) or strlen(trim($curlOrWgetPath))==0)) :
+			$curlOrWgetPath = `which wget`; $opts = '-q -O - %s';
 		endif;
 
-		if (is_null($path) or strlen(trim($path))==0) :
-			$path = '/usr/bin/curl'; $opts = '--silent %s';
+		if (is_null($curlOrWgetPath) or strlen(trim($curlOrWgetPath))==0) :
+			$curlOrWgetPath = '/usr/bin/curl'; $opts = '--silent %s';
 		endif;
 
-		$path = preg_replace('/\n+$/', '', $path);
+		$curlOrWgetPath = preg_replace('/\n+$/', '', $curlOrWgetPath);
 		
-		$cmdline = $path . ' ' . sprintf($opts, get_bloginfo('url').'?update_feedwordpress=1');
+		$cmdline = $curlOrWgetPath . ' ' . sprintf($opts, get_bloginfo('url').'?update_feedwordpress=1');
 		
 		?>If you want to use a cron job,
 		you can perform scheduled updates by sending regularly-scheduled
