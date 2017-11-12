@@ -323,7 +323,7 @@ function debug_out_human_readable_bytes ($quantity) {
 }
 
 function debug_out_feedwordpress_footer () {
-	if (FeedWordPress::diagnostic_on('memory_usage')) :
+	if (FeedWordPressDiagnostic::is_on('memory_usage')) :
 		if (function_exists('memory_get_usage')) :
 			FeedWordPress::diagnostic ('memory_usage', "Memory: Current usage: ".debug_out_human_readable_bytes(memory_get_usage()));
 		endif;
@@ -679,7 +679,7 @@ function fwp_publish_post_hook ($post_id) {
 		
 		add_filter('user_can_richedit', array($feedwordpress, 'user_can_richedit'), 1000, 1);
 
-		if (FeedWordPress::diagnostic_on('syndicated_posts:static_meta_data')) :
+		if (FeedWordPressDiagnostic::is_on('syndicated_posts:static_meta_data')) :
 			$inspectPostMeta = new InspectPostMeta;
 		endif;
 	} // function feedwordpress_add_post_edit_controls ()
@@ -1312,7 +1312,7 @@ class FeedWordPress {
 
 			// This should never happen.
 			else :
-				FeedWordPress::critical_bug('FeedWordPress::stale::last', $last, __LINE__, __FILE__);
+				FeedWordPressDiagnostic::critical_bug('FeedWordPress::stale::last', $last, __LINE__, __FILE__);
 			endif;
 
 		else :
@@ -2335,36 +2335,6 @@ class FeedWordPress {
 	} /* FeedWordPress::affirmative () */
 
 	# Internal debugging functions
-	static function critical_bug ($varname, $var, $line, $file = NULL) {
-		global $wp_version;
-
-		if (!is_null($file)) :
-			$location = "line # ${line} of ".basename($file);
-		else :
-			$location = "line # ${line}";
-		endif;
-
-		print '<p><strong>Critical error:</strong> There may be a bug in FeedWordPress. Please <a href="'.FEEDWORDPRESS_AUTHOR_CONTACT.'">contact the author</a> and paste the following information into your e-mail:</p>';
-		print "\n<plaintext>";
-		print "Triggered at ${location}\n";
-		print "FeedWordPress: ".FEEDWORDPRESS_VERSION."\n";
-		print "WordPress:     {$wp_version}\n";
-		print "PHP:           ".phpversion()."\n";
-		print "Error data:    ";
-		print  $varname.": "; var_dump($var); echo "\n";
-		die;
-	} /* FeedWordPress::critical_bug () */
-
-	static function noncritical_bug ($varname, $var, $line, $file = NULL) {
-		if (FEEDWORDPRESS_DEBUG) : // halt only when we are doing debugging
-			FeedWordPress::critical_bug($varname, $var, $line, $file);
-		endif;
-	} /* FeedWordPress::noncritical_bug () */
-
-	static function diagnostic_on ($level) {
-		$show = get_option('feedwordpress_diagnostics_show', array());
-		return (in_array($level, $show));
-	} /* FeedWordPress::diagnostic_on () */
 
 	static function diagnostic ($level, $out, $persist = NULL, $since = NULL, $mostRecent = NULL) {
 		global $feedwordpress_admin_footer;
@@ -2374,7 +2344,7 @@ class FeedWordPress {
 
 		$diagnostic_nesting = count(explode(":", $level));
 
-		if (self::diagnostic_on($level)) :
+		if (FeedWordPressDiagnostic::is_on($level)) :
 			foreach ($output as $method) :
 				switch ($method) :
 				case 'echo' :
@@ -2607,12 +2577,13 @@ EOMAIL;
 		return $path;
 	} /* FeedWordPress::path () */
 
-	// DEPRCATED UTILITY FUNCTIONS
+	// -- DEPRCATED UTILITY FUNCTIONS -------------------------------------
 	// These are superceded by later code re-organization, (for example
-	// MyPHP::param/post/get/request), but for the last several versions
-	// have been kept here for backward compatibility with add-ons, older
-	// code, etc. Maybe someday they will go away.
-
+	// MyPHP::param/post/get/request, or FeedWordPressDiagnostic methods),
+	// but for the last several versions have been kept here for backward
+	// compatibility with add-ons, older code, etc. Maybe someday they
+	// will go away.
+	// -------------------------------------------------------------------
 	static function param ($key, $type = 'REQUEST', $default = NULL) {
 		return MyPHP::param($key, $default, $type);
 	} /* FeedWordPress::param () */
@@ -2625,6 +2596,17 @@ EOMAIL;
 		return MyPHP::val($v, $no_newlines);
 	} /* FeedWordPress::val () */
 
+	static function critical_bug ($varname, $var, $line, $file = NULL) {
+		FeedWordPressDiagnostic::critical_bug($varname, $var, $line, $file);
+	} /* FeedWordPress::critical_bug () */
+
+	static function noncritical_bug ($varname, $var, $line, $file = NULL) {
+		FeedWordPressDiagnostic::noncritical_bug($varname, $var, $line, $file);		
+	} /* FeedWordPress::noncritical_bug () */
+
+	static function diagnostic_on ($level) {
+		return FeedWordPressDiagnostic::is_on($level);
+	} /* FeedWordPress::diagnostic_on () */
 
 } /* class FeedWordPress */
 

@@ -49,4 +49,36 @@ class FeedWordPressDiagnostic {
 		endforeach;
 		return $recipients;
 	}
+
+	public static function noncritical_bug ($varname, $var, $line, $file = NULL) {
+		if (FEEDWORDPRESS_DEBUG) : // halt only when we are doing debugging
+			self::critical_bug($varname, $var, $line, $file);
+		endif;
+	} /* FeedWordPressDiagnostic::noncritical_bug () */
+
+	public static function critical_bug ($varname, $var, $line, $file = NULL) {
+		global $wp_version;
+
+		if (!is_null($file)) :
+			$location = "line # ${line} of ".basename($file);
+		else :
+			$location = "line # ${line}";
+		endif;
+
+		print '<p><strong>Critical error:</strong> There may be a bug in FeedWordPress. Please <a href="'.FEEDWORDPRESS_AUTHOR_CONTACT.'">contact the author</a> and paste the following information into your e-mail:</p>';
+		print "\n<plaintext>";
+		print "Triggered at ${location}\n";
+		print "FeedWordPress: ".FEEDWORDPRESS_VERSION."\n";
+		print "WordPress:     {$wp_version}\n";
+		print "PHP:           ".phpversion()."\n";
+		print "Error data:    ";
+		print  $varname.": "; var_dump($var); echo "\n";
+		die;
+	} /* FeedWordPressDiagnostic::critical_bug () */
+
+	public static function is_on ($level) {
+		$show = get_option('feedwordpress_diagnostics_show', array());
+		return (in_array($level, $show));
+	} /* FeedWordPressDiagnostic::is_on () */
+
 } /* class FeedWordPressDiagnostic */

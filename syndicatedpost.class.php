@@ -1228,7 +1228,7 @@ class SyndicatedPost {
 		global $wpdb;
 
 		if ($this->filtered()) : // This should never happen.
-			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
+			FeedWordPressDiagnostic::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
 		endif;
 
 		if (is_null($this->_freshness)) : // Not yet checked and cached.
@@ -1305,7 +1305,7 @@ class SyndicatedPost {
 						$updated = true; // Can't find syndication meta-data
 					endif;
 
-					if ($updated and FeedWordPress::diagnostic_on('feed_items:freshness:reasons')) :
+					if ($updated and FeedWordPressDiagnostic::is_on('feed_items:freshness:reasons')) :
 						// In the absence of definitive
 						// timestamp information, we
 						// just have to assume that a
@@ -1451,7 +1451,7 @@ class SyndicatedPost {
 
 	function wp_id () {
 		if ($this->filtered()) : // This should never happen.
-			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
+			FeedWordPressDiagnostic::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
 		endif;
 
 		if (is_null($this->_wp_id) and is_null($this->_freshness)) :
@@ -1607,7 +1607,7 @@ class SyndicatedPost {
 		global $wpdb;
 
 		if ($this->filtered()) : // This should never happen.
-			FeedWordPress::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
+			FeedWordPressDiagnostic::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
 		endif;
 
 		$freshness = $this->freshness();
@@ -1989,7 +1989,7 @@ The WordPress API returned an invalid post ID
 
 $ns::_wp_id
 EOM;
-			FeedWordPress::noncritical_bug(
+			FeedWordPressDiagnostic::noncritical_bug(
 				/*message=*/ $mesg,
 				/*var =*/ array(
 					"\$this->_wp_id" => $this->_wp_id,

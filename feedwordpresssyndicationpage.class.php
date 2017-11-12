@@ -139,7 +139,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 						$update_set[] = $target->link_rss;
 					endforeach;
 				else : // This should never happen
-					FeedWordPress::critical_bug('fwp_syndication_manage_page::targets', $targets, __LINE__, __FILE__);
+					FeedWordPressDiagnostic::critical_bug('fwp_syndication_manage_page::targets', $targets, __LINE__, __FILE__);
 				endif;
 			elseif (!is_null(MyPHP::post('update_uri'))) :
 				$targets = MyPHP::post('update_uri');

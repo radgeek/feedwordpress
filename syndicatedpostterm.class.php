@@ -181,7 +181,7 @@ class SyndicatedPostTerm {
 			if (is_wp_error($aTerm)) :
 			
 				// If debug mode is ON, this will halt us here.
-				FeedWordPress::noncritical_bug(
+				FeedWordPressDiagnostic::noncritical_bug(
 					'term insertion problem', array(
 						'term' => $this->term,
 						'result' => $aTerm,
