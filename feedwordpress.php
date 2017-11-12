@@ -126,6 +126,7 @@ $dir = dirname(__FILE__);
 require_once("${dir}/externals/myphp/myphp.class.php");
 require_once("${dir}/feedwordpressadminpage.class.php");
 require_once("${dir}/feedwordpresssettingsui.class.php");
+require_once("${dir}/feedwordpressdiagnostic.class.php");
 require_once("${dir}/admin-ui.php");
 require_once("${dir}/template-functions.php");
 require_once("${dir}/feedwordpresssyndicationpage.class.php");
@@ -175,7 +176,7 @@ else : // Something went wrong. Let's just guess.
 endif;
 
 ####################################################################################
-## FEEDWORDPRSS: INITIALIZE OBJECT AND FILTERS #####################################
+## FEEDWORDPRESS: INITIALIZE OBJECT AND FILTERS ####################################
 ####################################################################################
 
 $feedwordpress = new FeedWordPress;
@@ -301,58 +302,14 @@ else :
 	add_action('admin_menu', 'fwp_add_pages');
 endif; // if (!FeedWordPress::needs_upgrade())
 
+register_deactivation_hook(__FILE__, 'feedwordpress_deactivate');
+function feedwordpress_deactivate () {
+	wp_clear_scheduled_hook('fwp_scheduled_update_checkin');
+} /* feedwordpress_deactivate () */
+
 ################################################################################
 ## LOGGING FUNCTIONS: log status updates to error_log if you want it ###########
 ################################################################################
-
-class FeedWordPressDiagnostic {
-	public static function feed_error ($error, $old, $link) {
-		$wpError = $error['object'];
-		$url = $link->uri();
-		
-		// check for effects of an effective-url filter
-		$effectiveUrl = $link->uri(array('fetch' => true));
-		if ($url != $effectiveUrl) : $url .= ' | ' . $effectiveUrl; endif;
-
-		$mesgs = $wpError->get_error_messages();
-		foreach ($mesgs as $mesg) :
-			$mesg = esc_html($mesg);
-			FeedWordPress::diagnostic(
-				'updated_feeds:errors',
-				"Feed Error: [${url}] update returned error: $mesg"
-			);
-
-			$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
-			$span = ($error['ts'] - $error['since']);
-
-			if ($span >= ($hours * 60 * 60)) :
-				$since = date('r', $error['since']);
-				$mostRecent = date('r', $error['ts']);
-				FeedWordPress::diagnostic(
-					'updated_feeds:errors:persistent',
-					"Feed Update Error: [${url}] returning errors"
-					." since ${since}:<br/><code>$mesg</code>",
-					$url, $error['since'], $error['ts']
-				);
-			endif;
-		endforeach;
-	}
-
-	public static function admin_emails ($id = '') {
-		$users = get_users_of_blog($id);
-		$recipients = array();
-		foreach ($users as $user) :
-			$user_id = (isset($user->user_id) ? $user->user_id : $user->ID);
-			$dude = new WP_User($user_id);
-			if ($dude->has_cap('administrator')) :
-				if ($dude->user_email) :
-					$recipients[] = $dude->user_email;
-				endif;
-			endif;
-		endforeach;
-		return $recipients;
-	}
-} /* class FeedWordPressDiagnostic */
 
 function debug_out_human_readable_bytes ($quantity) {
 	$quantity = (int) $quantity;
@@ -2404,10 +2361,6 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::noncritical_bug () */
 
-	static function val ($v, $no_newlines = false) {
-		return MyPHP::val($v, $no_newlines);
-	} /* FeedWordPress::val () */
-
 	static function diagnostic_on ($level) {
 		$show = get_option('feedwordpress_diagnostics_show', array());
 		return (in_array($level, $show));
@@ -2654,8 +2607,11 @@ EOMAIL;
 		return $path;
 	} /* FeedWordPress::path () */
 
-	// These are superceded by MyPHP::param/post/get/request, but kept
-	// here for backward compatibility.
+	// DEPRCATED UTILITY FUNCTIONS
+	// These are superceded by later code re-organization, (for example
+	// MyPHP::param/post/get/request), but for the last several versions
+	// have been kept here for backward compatibility with add-ons, older
+	// code, etc. Maybe someday they will go away.
 
 	static function param ($key, $type = 'REQUEST', $default = NULL) {
 		return MyPHP::param($key, $default, $type);
@@ -2664,6 +2620,11 @@ EOMAIL;
 	static function post ($key, $default = NULL) {
 		return MyPHP::post($key, $default);
 	} /* FeedWordPress::post () */
+
+	static function val ($v, $no_newlines = false) {
+		return MyPHP::val($v, $no_newlines);
+	} /* FeedWordPress::val () */
+
 
 } /* class FeedWordPress */
 
