@@ -699,7 +699,7 @@ function fwp_publish_post_hook ($post_id) {
 		global $post;
 
 		$frozen_values = get_post_custom_values('_syndication_freeze_updates', $post->ID);
-		$frozen_post = (count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
+		$frozen_post = ($frozen_values !== null and count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
 
 		if (is_syndicated($post->ID)) :
 		?>
