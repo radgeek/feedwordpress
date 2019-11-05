@@ -557,7 +557,7 @@ class SyndicatedPost {
 		endif;
 
 		if (!$unfiltered) :
-			apply_filters('syndicated_item_updated', $ts, $this);
+			$ts = apply_filters('syndicated_item_updated', $ts, $this);
 		endif;
 		return $ts;
 	} /* SyndicatedPost::updated() */
