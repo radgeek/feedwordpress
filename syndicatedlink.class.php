@@ -304,7 +304,7 @@ class SyndicatedLink {
 				// Check for use of Atom tombstones. Spec:
 				// <http://tools.ietf.org/html/draft-snell-atompub-tombstones-18>
 				$tombstones = $this->simplepie->get_feed_tags('http://purl.org/atompub/tombstones/1.0', 'deleted-entry');
-				if (count($tombstones) > 0) :
+				if (!is_null($tombstones) && count($tombstones) > 0) :
 					foreach ($tombstones as $tombstone) :
 						$ref = NULL;
 						foreach (array('', 'http://purl.org/atompub/tombstones/1.0') as $ns) :
