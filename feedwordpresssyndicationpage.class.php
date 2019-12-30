@@ -146,10 +146,11 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 				if (!is_array($targets)) :
 					$targets = array($targets);
 				endif;
-				
-				$first = each($targets);
-				if (!is_numeric($first['key'])) : // URLs in keys
-					$targets = array_keys($targets);
+
+				$targets_keys = array_keys($targets);
+				$first_key = reset($targets_keys);
+				if (!is_numeric($first_key)) : // URLs in keys
+					$targets = $targets_keys;
 				endif;
 				$update_set = $targets;
 			endif;

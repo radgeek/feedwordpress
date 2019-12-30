@@ -2199,13 +2199,14 @@ EOM;
 		// or forbidden names.
 
 		$author = NULL;
-		while (is_null($author) and ($candidate = each($candidates))) :
-			if (!is_null($candidate['value'])
-			and (strlen(trim($candidate['value'])) > 0)
-			and !in_array(strtolower(trim($candidate['value'])), $forbidden)) :
-				$author = $candidate['value'];
+		foreach ($candidates as $candidate) {
+			if (!is_null($candidate)
+				and (strlen(trim($candidate)) > 0)
+				and !in_array(strtolower(trim($candidate)), $forbidden)) :
+					$author = $candidate;
+					break;
 			endif;
-		endwhile;
+		}
 
 		$email = (isset($a['email']) ? $a['email'] : NULL);
 		$authorUrl = (isset($a['uri']) ? $a['uri'] : NULL);
