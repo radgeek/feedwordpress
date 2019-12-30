@@ -163,6 +163,9 @@ class SyndicatedPost {
 			endforeach;
 
 			foreach ($postMetaOut as $key => $values) :
+				if (is_null($values)) { // have chosen to replace value with empty string
+					$values = ['']; 
+				}
 				$this->post['meta'][$key] = array();
 				foreach ($values as $value) :
 					$this->post['meta'][$key][] = apply_filters("syndicated_post_meta_{$key}", $value, $this);
