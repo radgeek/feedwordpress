@@ -189,7 +189,7 @@ class SyndicatedLink {
 			// Success; clear out error setting, if any.
 			$this->update_setting('update/error', NULL);
 
-			$new_count = array('new' => 0, 'updated' => 0);
+			$new_count = array('new' => 0, 'updated' => 0, 'stored' => 0);
 
 			# -- Update Link metadata live from feed
 			$channel = $this->magpie->channel;
