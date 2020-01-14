@@ -185,7 +185,7 @@ class SyndicatedPostTerm {
 					'term insertion problem', array(
 						'term' => $this->term,
 						'result' => $aTerm,
-						'post' => $post, 
+						'post' => $this->post, 
 						'this' => $this
 					), __LINE__, __FILE__
 				);
