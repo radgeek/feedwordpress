@@ -215,6 +215,8 @@ class SyndicatedLink {
 				endif;
 			endif;
 
+			$this->update_setting('link/feed_type', $this->simplepie->get_type());
+
 			$this->merge_settings($channel, 'feed/');
 
 			$this->update_setting('update/last', time());
@@ -745,6 +747,42 @@ class SyndicatedLink {
 		return ('complete'==$this->setting('update_incremental', 'update_incremental', 'incremental'));
 	} /* SyndicatedLink::is_non_incremental () */
 
+	public function get_feed_type () {
+		$type_code = $this->setting('link/feed_type');
+		
+		// list derived from: <http://simplepie.org/api/class-SimplePie.html>, retrieved 2020/01/18
+		$bitmasks = array(
+			SIMPLEPIE_TYPE_RSS_090 => 'RSS 0.90',
+			SIMPLEPIE_TYPE_RSS_091_NETSCAPE => 'RSS 0.91 (Netscape)',
+			SIMPLEPIE_TYPE_RSS_091_USERLAND => 'RSS 0.91 (Userland)',
+			SIMPLEPIE_TYPE_RSS_091 => 'RSS 0.91',
+			SIMPLEPIE_TYPE_RSS_092 => 'RSS 0.92',
+			SIMPLEPIE_TYPE_RSS_093 => 'RSS 0.93',
+			SIMPLEPIE_TYPE_RSS_094 => 'RSS 0.94',
+			SIMPLEPIE_TYPE_RSS_10 => 'RSS 1.0',
+			SIMPLEPIE_TYPE_RSS_20 => 'RSS 2.0.x',
+			SIMPLEPIE_TYPE_RSS_RDF => 'RDF-based RSS',
+			SIMPLEPIE_TYPE_RSS_SYNDICATION => 'Non-RDF-based RSS',
+			SIMPLEPIE_TYPE_RSS_ALL => 'Any version of RSS',
+			SIMPLEPIE_TYPE_ATOM_03 => 'Atom 0.3',
+			SIMPLEPIE_TYPE_ATOM_10 => 'Atom 1.0',
+			SIMPLEPIE_TYPE_ATOM_ALL => 'Atom (any version)',
+			SIMPLEPIE_TYPE_ALL => 'Supported Feed (unspecified format)',
+		);
+
+		$type = "Unknown or unsupported format";
+		foreach ($bitmasks as $format_flag => $format_string) :
+			if (is_numeric($format_flag)) : // Guard against failure of constants to be defined.
+				if ($type_code & $format_flag) :
+					$type = $format_string;
+					break; // foreach
+				endif;
+			endif;
+		endforeach;
+		
+		return $type;
+	} /* SyndicatedLink::get_feed_type () */
+	
 	public function uri ($params = array()) {
 		$params = wp_parse_args($params, array(
 		'add_params' => false,

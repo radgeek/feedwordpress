@@ -249,6 +249,8 @@ function fwp_insert_new_user ($newuser_name) {
 
 function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible = 'Y') {
 
+	$fwp_syndicated_sources_columns = array(__('Name'), __('Feed'), __('Updated'));
+	
 	$subscribed = ('Y' == strtoupper($visible));
 	if ($subscribed or (count($links) > 0)) :
 	?>
@@ -256,14 +258,15 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 	<thead>
 	<tr>
 	<th class="check-column" scope="col"><input type="checkbox" /></th>
-	<th scope="col"><?php _e('Name'); ?></th>
-	<th scope="col"><?php _e('Feed'); ?></th>
-	<th scope="col"><?php _e('Updated'); ?></th>
-	</tr>
-	</thead>
-
-	<tbody>
 <?php
+		foreach ($fwp_syndicated_sources_columns as $col) :
+			print "\t<th scope='col'>${col}</th>\n";
+		endforeach;
+		print "</tr>\n";
+		print "</thead>\n";
+		print "\n";
+		print "<tbody>\n";
+
 		$alt_row = true;
 		if (count($links) > 0):
 			foreach ($links as $link):
@@ -279,11 +282,12 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 
 				// Prep: get last error timestamp, if any
 				$fileSizeLines = array();
+				$feed_type = $sLink->get_feed_type();				
 				if (is_null($sLink->setting('update/error'))) :
 					$errorsSince = '';
 					if (!is_null($sLink->setting('link/item count'))) :
 						$N = $sLink->setting('link/item count');
-						$fileSizeLines[] = sprintf((($N==1) ? __('%d item') : __('%d items')), $N);
+						$fileSizeLines[] = sprintf((($N==1) ? __('%d item') : __('%d items')), $N) . ", " . $feed_type;
 					endif;
 
 					if (!is_null($sLink->setting('link/filesize'))) :
@@ -385,7 +389,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 	</div>
 	</td>
 				<?php if (strlen($link->link_rss) > 0): ?>
-	<td><a href="<?php echo esc_html($link->link_rss); ?>"><?php echo esc_html(feedwordpress_display_url($link->link_rss, 32)); ?></a></td>
+	<td><div><a href="<?php echo esc_html($link->link_rss); ?>"><?php echo esc_html(feedwordpress_display_url($link->link_rss, 32)); ?></a></div></td>
 				<?php else: ?>
 	<td class="feed-missing"><p><strong>no feed assigned</strong></p></td>
 				<?php endif; ?>
@@ -393,10 +397,12 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 	<td><div style="float: right; padding-left: 10px">
 	<input type="submit" class="button" name="update_uri[<?php print esc_html($link->link_rss); ?>]" value="<?php _e('Update Now'); ?>" />
 	</div>
-	<?php print $lastUpdated; ?>
-	<?php print $fileSize; ?>
-	<?php print $errorsSince; ?>
-	<?php print $nextUpdate; ?>
+	<?php
+		print $lastUpdated;
+		print $fileSize;
+		print $errorsSince;
+		print $nextUpdate;
+	?>
 	</td>
 	</tr>
 			<?php
