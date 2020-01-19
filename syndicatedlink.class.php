@@ -220,24 +220,7 @@ class SyndicatedLink {
 			$this->merge_settings($channel, 'feed/');
 
 			$this->update_setting('update/last', time());
-			list($ttl, $xml) = $this->ttl(/*return element=*/ true);
-
-			if (!is_null($ttl)) :
-				$this->update_setting('update/ttl', $ttl);
-				$this->update_setting('update/xml', $xml);
-				$this->update_setting('update/timed', 'feed');
-			else :
-				$ttl = $this->automatic_ttl();
-				$this->update_setting('update/ttl', $ttl);
-				$this->update_setting('update/xml', NULL);
-				$this->update_setting('update/timed', 'automatically');
-			endif;
-			$this->update_setting('update/fudge', rand(0, ($ttl/3))*60);
-			$this->update_setting('update/ttl', apply_filters(
-				'syndicated_feed_ttl',
-				$this->setting('update/ttl'),
-				$this
-			));
+			$this->do_update_ttl();
 
 			if (!$this->setting('update/hold') != 'ping') :
 				$this->update_setting('update/hold', 'scheduled');
@@ -371,6 +354,30 @@ class SyndicatedLink {
 		return $new_count;
 	} /* SyndicatedLink::poll() */
 
+	public function do_update_ttl () {
+		list($ttl, $xml) = $this->ttl(/*return element=*/ true);
+
+		if (!is_null($ttl)) :
+			$this->update_setting('update/ttl', $ttl);
+			$this->update_setting('update/xml', $xml);
+			$this->update_setting('update/timed', 'feed');
+		else :
+			$ttl = $this->automatic_ttl();
+			$this->update_setting('update/ttl', $ttl);
+			$this->update_setting('update/xml', NULL);
+			$this->update_setting('update/timed', 'automatically');
+		endif;
+
+		$this->update_setting('update/fudge', rand(0, ($ttl/3))*60);
+
+		$this->update_setting('update/ttl', apply_filters(
+			'syndicated_feed_ttl',
+			$this->setting('update/ttl'),
+			$this
+		));
+
+	} /* SyndicatedLink::do_update_ttl () */
+	
 	public function process_retirements ($delta) {
 		global $post;
 
