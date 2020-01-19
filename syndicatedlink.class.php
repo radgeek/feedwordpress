@@ -1038,8 +1038,16 @@ class SyndicatedLink {
 			else : $freq = 1;
 			endif;
 
+			// normalize the period name...
+			$period = strtolower(trim($period));
+
+			// do we recognize the alphanumeric period name? if not, then guess
+			// a responsible default, e.g. roughly hourly
+			$mins = (isset($period_minutes[$period]) ? $period_minutes[$period] : 67);
+			
 			$xml = 'sy:updateFrequency';
-			$ret = (int) ($period_minutes[$period] / $freq);
+			$ret = (int) ($mins / $freq);
+
 		else :
 			$xml = NULL;
 			$ret = NULL;
