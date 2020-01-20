@@ -1,4 +1,15 @@
 <?php
+/**
+ * class FeedWordPressBoilerplateReformatter: processes shortcodes in Boilerplate / Credits
+ * settings text from Syndication > Posts & Links > Boilerplate / Credits
+ *
+ * @author C. Johnson <development@fwpplugin.com>
+ *
+ * @see feedwordpressboilerplatereformatter.shortcode.functions.php
+ *
+ * @version 2020.0120
+ */
+ 
 class FeedWordPressBoilerplateReformatter {
 	var $id, $element;
 
