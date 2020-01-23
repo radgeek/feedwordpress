@@ -41,7 +41,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		$boxes_by_methods = array(
 			'info_box' => __('Diagnostic Information'),
 			'diagnostics_box' => __('Display Diagnostics'),
-			'updates_box' => __('Updates'),
+			'updates_box' => __('Diagnostic Messages'),
 			'tests_box' => __('Diagnostic Tests'),
 		);
 
@@ -263,12 +263,14 @@ testing but absolutely inappropriate for a production server.</p>
 			'Update Diagnostics' => array(
 				'update_schedule:check' => 'whenever a FeedWordPress checks in on the update schedule',
 				'updated_feeds' => 'as each feed is checked for updates',
-				'updated_feeds:errors:persistent' => 'when attempts to update a feed have resulted in errors</label> <label>for at least <input type="number" min="1" max="360" step="1" name="diagnostics_persistent_error_hours" value="'.$hours.'" /> hours',
-				'updated_feeds:errors' => 'any time FeedWordPress encounters any errors while checking a feed for updates',
-				'updated_feeds:http' => "displaying the raw HTTP data passed to and from the feed being checked for updates",
 				'syndicated_posts' => 'as each syndicated post is added to the database',
 				'feed_items' => 'as each syndicated item is considered on the feed',
 				'memory_usage' => 'indicating how much memory was used',
+			),
+			'Feed Retrieval' => array(
+				'updated_feeds:errors:persistent' => 'when attempts to update a feed have resulted in errors</label> <label>for at least <input type="number" min="1" max="360" step="1" name="diagnostics_persistent_error_hours" value="'.$hours.'" /> hours',
+				'updated_feeds:errors' => 'any time FeedWordPress encounters any errors while checking a feed for updates',
+				'updated_feeds:http' => "displaying the raw HTTP data passed to and from the feed being checked for updates",
 			),
 			'Syndicated Post Details' => array(
 				'feed_items:freshness' => 'as FeedWordPress decides whether to treat an item as a new post, an update, or a duplicate of an existing post',
