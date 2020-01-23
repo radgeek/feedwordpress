@@ -277,6 +277,7 @@ testing but absolutely inappropriate for a production server.</p>
 				'feed_items:rejected' => 'when FeedWordPress rejects a post without syndicating it',
 				'syndicated_posts:categories' => 'as categories, tags, and other terms are added on the post',
 				'syndicated_posts:meta_data' => 'as syndication meta-data is added on the post',
+				'syndicated_posts:do_pings' => 'when FeedWordPress holds or releases the pings WordPress sends out when new posts are created',
 			),
 			'Advanced Diagnostics' => array(
 				'feed_items:freshness:reasons' => 'explaining the reason that a post was treated as an update to an existing post',
