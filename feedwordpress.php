@@ -426,90 +426,9 @@ function syndication_comments_feed_link ($link) {
 	return $link;
 } /* function syndication_comments_feed_link() */
 
-################################################################################
-## ADMIN MENU ADD-ONS: register Dashboard management pages #####################
-################################################################################
+	require_once("${dir}/feedwordpress.pings.functions.php");
 
-function fwp_check_debug () {
-	// This is a horrible fucking kludge that I have to do because the
-	// admin notice code is triggered before the code that updates the
-	// setting.
-	if (isset($_POST['feedwordpress_debug'])) :
-		$feedwordpress_debug = $_POST['feedwordpress_debug'];
-	else :
-		$feedwordpress_debug = get_option('feedwordpress_debug');
-	endif;
-	if ($feedwordpress_debug==='yes') :
-?>
-		<div class="error">
-<p><strong>FeedWordPress warning.</strong> Debugging mode is <strong>ON</strong>.
-While it remains on, FeedWordPress displays many diagnostic error messages,
-warnings, and notices that are ordinarily suppressed, and also turns off all
-caching of feeds. Use with caution: this setting is absolutely inappropriate
-for a production server.</p>
-		</div>
-<?php
-	endif;
-} /* function fwp_check_debug () */
-
-################################################################################
-## fwp_hold_pings() and fwp_release_pings(): Outbound XML-RPC ping reform   ####
-## ... 'coz it's rude to send 500 pings the first time your aggregator runs ####
-################################################################################
-
-$fwp_held_ping = NULL;		// NULL: not holding pings yet
-
-function fwp_hold_pings () {
-	global $fwp_held_ping;
-	if (is_null($fwp_held_ping)):
-		$fwp_held_ping = 0;	// 0: ready to hold pings; none yet received
-	endif;
-}
-
-function fwp_release_pings () {
-	global $fwp_held_ping;
-	if ($fwp_held_ping):
-		if (function_exists('wp_schedule_single_event')) :
-			wp_schedule_single_event(time(), 'do_pings');
-		else :
-			generic_ping($fwp_held_ping);
-		endif;
-	endif;
-	$fwp_held_ping = NULL;	// NULL: not holding pings anymore
-}
-
-function fwp_do_pings () {
-	if (!is_null($fwp_held_ping) and $post_id) : // Defer until we're done updating
-		$fwp_held_ping = $post_id;
-	elseif (function_exists('do_all_pings')) :
-		do_all_pings();
-	else :
-		generic_ping($fwp_held_ping);
-	endif;
-}
-
-function fwp_publish_post_hook ($post_id) {
-	global $fwp_held_ping;
-
-	if (!is_null($fwp_held_ping)) : // Syndicated post. Don't mark with _pingme
-		if ( defined('XMLRPC_REQUEST') )
-			do_action('xmlrpc_publish_post', $post_id);
-		if ( defined('APP_REQUEST') )
-			do_action('app_publish_post', $post_id);
-
-		if ( defined('WP_IMPORTING') )
-			return;
-
-		// Defer sending out pings until we finish updating
-		$fwp_held_ping = $post_id;
-	else :
-		if (function_exists('_publish_post_hook')) : // WordPress 2.3
-			_publish_post_hook($post_id);
-		endif;
-	endif;
-}
-
-require_once("${dir}/feedwordpress.wp-admin.post-edit.functions.php");
+	require_once("${dir}/feedwordpress.wp-admin.post-edit.functions.php");
 
 ################################################################################
 ## class FeedWordPressBoilerplateReformatter ###################################
@@ -589,6 +508,15 @@ class FeedWordPress {
 		$this->httpauth = new FeedWordPressHTTPAuthenticator;
 	} /* FeedWordPress::__construct () */
 
+	/**
+	 * FeedWordPress::add_filters() connects FeedWordPress to WordPress lifecycle
+	 * events by setting up action and filter hooks.
+	 *
+	 * @uses get_option()
+	 * @uses add_filter()
+	 * @uses add_action()
+	 * @uses remove_filter()
+	 */
 	public function add_filters () {
 		# Syndicated items are generally received in output-ready (X)HTML and
 		# should not be folded, crumpled, mutilated, or spindled by WordPress
@@ -656,7 +584,7 @@ class FeedWordPress {
 		# Admin menu
 		add_action('admin_init', array($this, 'admin_init'));
 		add_action('admin_menu', array($this, 'add_pages'));
-		add_action('admin_notices', 'fwp_check_debug');
+		add_action('admin_notices', array($this, 'check_debug'));
 
 		add_action('admin_menu', 'feedwordpress_add_post_edit_controls');
 		add_action('save_post', 'feedwordpress_save_post_edit_controls');
@@ -693,6 +621,21 @@ class FeedWordPress {
 
 	} /* FeedWordPress::add_filters () */
 
+	################################################################################
+	## ADMIN MENU ADD-ONS: register Dashboard management pages #####################
+	################################################################################
+
+	/**
+	 * FeedWordPress::add_pages(): set up WordPress admin interface pages thru
+	 * hooking in Syndication menu and submenus
+	 *
+	 * @uses FeedWordPress::menu_cap()
+	 * @uses FeedWordPress::path()
+	 * @uses add_menu_page()
+	 * @uses add_submenu_page()
+	 * @uses do_action()
+	 * @uses add_filter()
+	 */
 	public function add_pages () {
 
 		$menu_cap = FeedWordPress::menu_cap();
@@ -752,6 +695,28 @@ class FeedWordPress {
 		add_filter('page_row_actions', array($this, 'row_actions'), 10, 2);
 		add_filter('post_row_actions', array($this, 'row_actions'), 10, 2);
 	} /* function FeedWordPress::add_pages () */
+
+	public function check_debug () {
+		// This is a horrible fucking kludge that I have to do because the
+		// admin notice code is triggered before the code that updates the
+		// setting.
+		if (isset($_POST['feedwordpress_debug'])) :
+			$feedwordpress_debug = $_POST['feedwordpress_debug'];
+		else :
+			$feedwordpress_debug = get_option('feedwordpress_debug');
+		endif;
+		if ($feedwordpress_debug==='yes') :
+?>
+<div class="error">
+<p><strong>FeedWordPress warning.</strong> Debugging mode is <strong>ON</strong>.
+While it remains on, FeedWordPress displays many diagnostic error messages,
+warnings, and notices that are ordinarily suppressed, and also turns off all
+caching of feeds. Use with caution: this setting is absolutely inappropriate
+for a production server.</p>
+</div>
+<?php
+		endif;
+	} /* function FeedWordPress::check_debug () */
 
 	/**
 	 * FeedWordPress::subscribed (): Check whether a feed is currently in the
