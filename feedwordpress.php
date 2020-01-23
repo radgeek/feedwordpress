@@ -182,79 +182,7 @@ endif;
 
 $feedwordpress = new FeedWordPress;
 if (!$feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
-
-	# Syndicated items are generally received in output-ready (X)HTML and
-	# should not be folded, crumpled, mutilated, or spindled by WordPress
-	# formatting filters. But we don't want to interfere with filters for
-	# any locally-authored posts, either.
-	#
-	# What WordPress should really have is a way for upstream filters to
-	# stop downstream filters from running at all. Since it doesn't, and
-	# since a downstream filter can't access the original copy of the text
-	# that is being filtered, what we will do here is (1) save a copy of the
-	# original text upstream, before any other filters run, and then (2)
-	# retrieve that copy downstream, after all the other filters run, *if*
-	# this is a syndicated post
-
-	add_filter('the_content', 'feedwordpress_preserve_syndicated_content', -10000);
-	add_filter('the_content', 'feedwordpress_restore_syndicated_content', 10000);
-
-	add_action('atom_entry', 'feedwordpress_item_feed_data');
-
-	# Filter in original permalinks if the user wants that
-	add_filter('post_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 3);
-	add_filter('post_type_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 4);
-
-	# When foreign URLs are used for permalinks in feeds or display
-	# contexts, they need to be escaped properly.
-	add_filter('the_permalink', 'syndication_permalink_escaped');
-	add_filter('the_permalink_rss', 'syndication_permalink_escaped');
-
-	add_filter('post_comments_feed_link', 'syndication_comments_feed_link');
-
-	# WTF? By default, wp_insert_link runs incoming link_url and link_rss
-	# URIs through default filters that include `wp_kses()`. But `wp_kses()`
-	# just happens to escape any occurrence of & to &amp; -- which just
-	# happens to fuck up any URI with a & to separate GET parameters.
-	remove_filter('pre_link_rss', 'wp_filter_kses');
-	remove_filter('pre_link_url', 'wp_filter_kses');
-
-	# Boilerplate functionality: hook in to title, excerpt, and content to add boilerplate text
-	$hookOrder = get_option('feedwordpress_boilerplate_hook_order', FEEDWORDPRESS_BOILERPLATE_DEFAULT_HOOK_ORDER);
-	add_filter(
-	/*hook=*/ 'the_title',
-	/*function=*/ 'add_boilerplate_title',
-	/*priority=*/ $hookOrder,
-	/*arguments=*/ 2
-	);
-	add_filter(
-	/*hook=*/ 'get_the_excerpt',
-	/*function=*/ 'add_boilerplate_excerpt',
-	/*priority=*/ $hookOrder,
-	/*arguments=*/ 1
-	);
-	add_filter(
-	/*hook=*/ 'the_content',
-	/*function=*/ 'add_boilerplate_content',
-	/*priority=*/ $hookOrder,
-	/*arguments=*/ 1
-	);
-	add_filter(
-	/*hook=*/ 'the_content_rss',
-	/*function=*/ 'add_boilerplate_content',
-	/*priority=*/ $hookOrder,
-	/*arguments=*/ 1
-	);
-
-	# Admin menu
-	add_action('admin_init', array($feedwordpress, 'admin_init'));
-	add_action('admin_menu', 'fwp_add_pages');
-	add_action('admin_notices', 'fwp_check_debug');
-
-	add_action('admin_menu', 'feedwordpress_add_post_edit_controls');
-	add_action('save_post', 'feedwordpress_save_post_edit_controls');
-
-	add_action('admin_footer', array($feedwordpress, 'admin_footer'));
+	$feedwordpress->add_filters();
 
 	# Inbound XML-RPC update methods
 	$feedwordpressRPC = new FeedWordPressRPC;
@@ -269,38 +197,9 @@ if (!$feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
 	add_action('feedwordpress_update', 'fwp_hold_pings');
 	add_action('feedwordpress_update_complete', 'fwp_release_pings');
 
-	add_action('syndicated_feed_error', array('FeedWordPressDiagnostic', 'feed_error'), 100, 3);
-
-	add_action('wp_footer', 'debug_out_feedwordpress_footer', -100);
-	add_action('admin_footer', 'debug_out_feedwordpress_footer', -100);
-
-	# Cron-less auto-update. Hooray!
-	$autoUpdateHook = $feedwordpress->automatic_update_hook();
-	if (!is_null($autoUpdateHook)) :
-		add_action($autoUpdateHook, array($feedwordpress, 'auto_update'));
-	endif;
-
-	add_action('init', array($feedwordpress, 'init'));
-	add_action('wp_loaded', array($feedwordpress, 'wp_loaded'));
-
-	add_action('shutdown', array($feedwordpress, 'email_diagnostic_log'));
-	add_action('shutdown', array($feedwordpress, 'feedwordpress_cleanup'));
-	add_action('wp_dashboard_setup', array($feedwordpress, 'dashboard_setup'));
-
-	# Default sanitizers
-	add_filter('syndicated_item_content', array('SyndicatedPost', 'resolve_relative_uris'), 0, 2);
-	add_filter('syndicated_item_content', array('SyndicatedPost', 'sanitize_content'), 0, 2);
-
-	add_action('plugins_loaded', array($feedwordpress, 'admin_api'));
-	add_action('all_admin_notices', array($feedwordpress, 'all_admin_notices'));
-
-	// Use our the cache settings that we want.
-	add_filter('wp_feed_cache_transient_lifetime', array('FeedWordPress', 'cache_lifetime'));
-
-
 else :
 	# Hook in the menus, which will just point to the upgrade interface
-	add_action('admin_menu', 'fwp_add_pages');
+	add_action('admin_menu', array($feedwordpress, 'add_pages'));
 endif; // if (!FeedWordPress::needs_upgrade())
 
 register_deactivation_hook(__FILE__, 'feedwordpress_deactivate');
@@ -531,67 +430,6 @@ function syndication_comments_feed_link ($link) {
 ## ADMIN MENU ADD-ONS: register Dashboard management pages #####################
 ################################################################################
 
-function fwp_add_pages () {
-	global $feedwordpress;
-
-	$menu_cap = FeedWordPress::menu_cap();
-	$settings_cap = FeedWordPress::menu_cap(/*sub=*/ true);
-	$syndicationMenu = FeedWordPress::path('syndication.php');
-
-	add_menu_page(
-		'Syndicated Sites', 'Syndication',
-		$menu_cap,
-		$syndicationMenu,
-		NULL,
-		plugins_url( '/'.FeedWordPress::path('feedwordpress-tiny.png') )
-	);
-
-	do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
-	add_submenu_page(
-		$syndicationMenu, 'Syndicated Sites', 'Syndicated Sites',
-		$settings_cap, $syndicationMenu
-	);
-
-	do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
-	add_submenu_page(
-		$syndicationMenu, 'Syndicated Feeds & Updates', 'Feeds & Updates',
-		$settings_cap, FeedWordPress::path('feeds-page.php')
-	);
-
-	do_action('feedwordpress_admin_menu_pre_posts', $menu_cap, $settings_cap);
-	add_submenu_page(
-		$syndicationMenu, 'Syndicated Posts & Links', 'Posts & Links',
-		$settings_cap, FeedWordPress::path('posts-page.php')
-	);
-
-	do_action('feedwordpress_admin_menu_pre_authors', $menu_cap, $settings_cap);
-	add_submenu_page(
-		$syndicationMenu, 'Syndicated Authors', 'Authors',
-		$settings_cap, FeedWordPress::path('authors-page.php')
-	);
-
-	do_action('feedwordpress_admin_menu_pre_categories', $menu_cap, $settings_cap);
-	add_submenu_page(
-		$syndicationMenu, 'Categories & Tags', 'Categories & Tags',
-		$settings_cap, FeedWordPress::path('categories-page.php')
-	);
-
-	do_action('feedwordpress_admin_menu_pre_performance', $menu_cap, $settings_cap);
-	add_submenu_page(
-		$syndicationMenu, 'FeedWordPress Performance', 'Performance',
-		$settings_cap, FeedWordPress::path('performance-page.php')
-	);
-
-	do_action('feedwordpress_admin_menu_pre_diagnostics', $menu_cap, $settings_cap);
-	add_submenu_page(
-		$syndicationMenu, 'FeedWordPress Diagnostics', 'Diagnostics',
-		$settings_cap, FeedWordPress::path('diagnostics-page.php')
-	);
-
-	add_filter('page_row_actions', array($feedwordpress, 'row_actions'), 10, 2);
-	add_filter('post_row_actions', array($feedwordpress, 'row_actions'), 10, 2);
-} /* function fwp_add_pages () */
-
 function fwp_check_debug () {
 	// This is a horrible fucking kludge that I have to do because the
 	// admin notice code is triggered before the code that updates the
@@ -750,6 +588,170 @@ class FeedWordPress {
 		
 		$this->httpauth = new FeedWordPressHTTPAuthenticator;
 	} /* FeedWordPress::__construct () */
+
+	public function add_filters () {
+		# Syndicated items are generally received in output-ready (X)HTML and
+		# should not be folded, crumpled, mutilated, or spindled by WordPress
+		# formatting filters. But we don't want to interfere with filters for
+		# any locally-authored posts, either.
+		#
+		# What WordPress should really have is a way for upstream filters to
+		# stop downstream filters from running at all. Since it doesn't, and
+		# since a downstream filter can't access the original copy of the text
+		# that is being filtered, what we will do here is (1) save a copy of the
+		# original text upstream, before any other filters run, and then (2)
+		# retrieve that copy downstream, after all the other filters run, *if*
+		# this is a syndicated post
+
+		add_filter('the_content', 'feedwordpress_preserve_syndicated_content', -10000);
+		add_filter('the_content', 'feedwordpress_restore_syndicated_content', 10000);
+
+		add_action('atom_entry', 'feedwordpress_item_feed_data');
+
+		# Filter in original permalinks if the user wants that
+		add_filter('post_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 3);
+		add_filter('post_type_link', 'syndication_permalink', /*priority=*/ 1, /*arguments=*/ 4);
+
+		# When foreign URLs are used for permalinks in feeds or display
+		# contexts, they need to be escaped properly.
+		add_filter('the_permalink', 'syndication_permalink_escaped');
+		add_filter('the_permalink_rss', 'syndication_permalink_escaped');
+
+		add_filter('post_comments_feed_link', 'syndication_comments_feed_link');
+
+		# WTF? By default, wp_insert_link runs incoming link_url and link_rss
+		# URIs through default filters that include `wp_kses()`. But `wp_kses()`
+		# just happens to escape any occurrence of & to &amp; -- which just
+		# happens to fuck up any URI with a & to separate GET parameters.
+		remove_filter('pre_link_rss', 'wp_filter_kses');
+		remove_filter('pre_link_url', 'wp_filter_kses');
+
+		# Boilerplate functionality: hook in to title, excerpt, and content to add boilerplate text
+		$hookOrder = get_option('feedwordpress_boilerplate_hook_order', FEEDWORDPRESS_BOILERPLATE_DEFAULT_HOOK_ORDER);
+		add_filter(
+		/*hook=*/ 'the_title',
+		/*function=*/ 'add_boilerplate_title',
+		/*priority=*/ $hookOrder,
+		/*arguments=*/ 2
+		);
+		add_filter(
+		/*hook=*/ 'get_the_excerpt',
+		/*function=*/ 'add_boilerplate_excerpt',
+		/*priority=*/ $hookOrder,
+		/*arguments=*/ 1
+		);
+		add_filter(
+		/*hook=*/ 'the_content',
+		/*function=*/ 'add_boilerplate_content',
+		/*priority=*/ $hookOrder,
+		/*arguments=*/ 1
+		);
+		add_filter(
+		/*hook=*/ 'the_content_rss',
+		/*function=*/ 'add_boilerplate_content',
+		/*priority=*/ $hookOrder,
+		/*arguments=*/ 1
+		);
+
+		# Admin menu
+		add_action('admin_init', array($this, 'admin_init'));
+		add_action('admin_menu', array($this, 'add_pages'));
+		add_action('admin_notices', 'fwp_check_debug');
+
+		add_action('admin_menu', 'feedwordpress_add_post_edit_controls');
+		add_action('save_post', 'feedwordpress_save_post_edit_controls');
+
+		add_action('admin_footer', array($this, 'admin_footer'));
+		
+		add_action('syndicated_feed_error', array('FeedWordPressDiagnostic', 'feed_error'), 100, 3);
+
+		add_action('wp_footer', 'debug_out_feedwordpress_footer', -100);
+		add_action('admin_footer', 'debug_out_feedwordpress_footer', -100);
+
+		# Cron-less auto-update. Hooray!
+		$autoUpdateHook = $this->automatic_update_hook();
+		if (!is_null($autoUpdateHook)) :
+			add_action($autoUpdateHook, array($this, 'auto_update'));
+		endif;
+
+		add_action('init', array($this, 'init'));
+		add_action('wp_loaded', array($this, 'wp_loaded'));
+
+		add_action('shutdown', array($this, 'email_diagnostic_log'));
+		add_action('shutdown', array($this, 'feedwordpress_cleanup'));
+		add_action('wp_dashboard_setup', array($this, 'dashboard_setup'));
+
+		# Default sanitizers
+		add_filter('syndicated_item_content', array('SyndicatedPost', 'resolve_relative_uris'), 0, 2);
+		add_filter('syndicated_item_content', array('SyndicatedPost', 'sanitize_content'), 0, 2);
+
+		add_action('plugins_loaded', array($this, 'admin_api'));
+		add_action('all_admin_notices', array($this, 'all_admin_notices'));
+
+		// Use the cache settings that we want, from a static method
+		add_filter('wp_feed_cache_transient_lifetime', array(get_class($this), 'cache_lifetime'));
+
+	} /* FeedWordPress::add_filters () */
+
+	public function add_pages () {
+
+		$menu_cap = FeedWordPress::menu_cap();
+		$settings_cap = FeedWordPress::menu_cap(/*sub=*/ true);
+		$syndicationMenu = FeedWordPress::path('syndication.php');
+
+		add_menu_page(
+			'Syndicated Sites', 'Syndication',
+			$menu_cap,
+			$syndicationMenu,
+			NULL,
+			plugins_url( '/'.FeedWordPress::path('feedwordpress-tiny.png') )
+		);
+
+		do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
+		add_submenu_page(
+			$syndicationMenu, 'Syndicated Sites', 'Syndicated Sites',
+			$settings_cap, $syndicationMenu
+		);
+
+		do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
+		add_submenu_page(
+			$syndicationMenu, 'Syndicated Feeds & Updates', 'Feeds & Updates',
+			$settings_cap, FeedWordPress::path('feeds-page.php')
+		);
+
+		do_action('feedwordpress_admin_menu_pre_posts', $menu_cap, $settings_cap);
+		add_submenu_page(
+			$syndicationMenu, 'Syndicated Posts & Links', 'Posts & Links',
+			$settings_cap, FeedWordPress::path('posts-page.php')
+		);
+
+		do_action('feedwordpress_admin_menu_pre_authors', $menu_cap, $settings_cap);
+		add_submenu_page(
+			$syndicationMenu, 'Syndicated Authors', 'Authors',
+			$settings_cap, FeedWordPress::path('authors-page.php')
+		);
+
+		do_action('feedwordpress_admin_menu_pre_categories', $menu_cap, $settings_cap);
+		add_submenu_page(
+			$syndicationMenu, 'Categories & Tags', 'Categories & Tags',
+			$settings_cap, FeedWordPress::path('categories-page.php')
+		);
+
+		do_action('feedwordpress_admin_menu_pre_performance', $menu_cap, $settings_cap);
+		add_submenu_page(
+			$syndicationMenu, 'FeedWordPress Performance', 'Performance',
+			$settings_cap, FeedWordPress::path('performance-page.php')
+		);
+
+		do_action('feedwordpress_admin_menu_pre_diagnostics', $menu_cap, $settings_cap);
+		add_submenu_page(
+			$syndicationMenu, 'FeedWordPress Diagnostics', 'Diagnostics',
+			$settings_cap, FeedWordPress::path('diagnostics-page.php')
+		);
+
+		add_filter('page_row_actions', array($this, 'row_actions'), 10, 2);
+		add_filter('post_row_actions', array($this, 'row_actions'), 10, 2);
+	} /* function FeedWordPress::add_pages () */
 
 	/**
 	 * FeedWordPress::subscribed (): Check whether a feed is currently in the
