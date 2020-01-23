@@ -17,6 +17,17 @@ function is_syndicated ($id = NULL) {
 	return $p->is_syndicated();
 } /* function is_syndicated() */
 
+/**
+ * feedwordpress_display_url: format a fully-formed URL for display in the
+ * FeedWordPress admin interface, abbreviating it (e.g.: input of
+ * `http://feedwordpress.radgeek.com/feed/` will be shortened to
+ * `feedwordpress.radgeek.com/feed/`)
+ *
+ * @param string $url provides the URL to display
+ * @param int $before a number of characters to preserve from the beginning of the URL if it must be shortened
+ * @param int $after a number of characters to preserve from the end of the URL if it must be shortened
+ * @return string containing an abbreviated display form of the URL (e.g.: `feedwordpress.radgeek.net/feed`) 
+ */
 function feedwordpress_display_url ($url, $before = 60, $after = 0) {
 	$bits = parse_url($url);
 
