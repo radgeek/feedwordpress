@@ -65,6 +65,16 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 
 == Changelog ==
 
+= 2020.0118 =
+
+*	WORDPRESS COMPATIBILITY TESTING. It's been some time since a public release of FeedWordPress; so I have tested the plugin functionality with recent versions of WordPress and incorporated a number of PHP 7-compatibility related tweaks.
+
+*	FEED PARSING FAULT TOLERANCE. If FeedWordPress fails to parse a feed using normal XML functions, it will attempt to convert any named entities that may be causing a problem, and then try to parse again. Props to @inanimatt for utility functions that help make the code go.
+
+*	PAUSING UPDATES. In Syndication > Feeds & Updates, you can now instruct FeedWordPress to temporarily pause or resume updating feeds -- whatever update method you are using, you can put new updates on hold for a while so that you can fiddle with setings, run tests, or do whatever you need to do before allowing updates to resume.
+ 
+*	CODE MODERNIZATION, PHP 7.x COMPATIBILITY AND CLEANUP AND REORGANIZATION. I have been dusting out nooks and crannies in the code and hiving more functionality off into discrete modules. A number of FeedWordPress users have also offered pull requests to eliminate bothersome PHP notices and warnings related to PHP 7.x compatibility -- in particular removing uses of deprecated `each()` functions, and avoiding use of `count()` on null values -- which I have rolled into the main branch release. Props to @manzoorwanijk, @tristanleboss, @martinburchell and @oppiansteve
+
 = 2017.1020 =
 
 *	ADD BOILERPLATE / CREDITS FEATURE AVAILABLE IN POSTS & LINKS SETTINGS PANEL. I have added a new settings panel to the off-the-shelf features of FeedWordPress, under Syndication > Posts & Links (or under the Posts settings page for any individual feed), which allows you to define boilerplate text that should appear in connection with every syndicated post, or with every post syndicated from a particular feed. So, for example, if you want each syndicated post to include a byline reading "This is a syndicated post, reprinted from (LINK TO ORIGINAL SOURCE WEBSITE).", you could set up this byline from within the FeedWordPress settings interface, by going to the Boilerplate / Credits panel, and adding a line to appear BEFORE the CONTENT of each syndicated post, using the text and shortcode "This is a syndicated post, reprinted from [source]." For those of you who have corresponded with me about this feature before, you may be familiar with it from the long-standing "experimental" add-on, FWP+: Add Attribution; I've decided that it's been enough years, and I've had enough requests, that the Add Attribution feature may as well be included in the main FeedWordPress code.
