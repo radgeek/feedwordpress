@@ -135,6 +135,34 @@ if (!function_exists('set_post_field')) {
 
 } /* if */
 
+if (!function_exists('is_countable')) {
+
+	// Copied from WordPress 5.3.2 wp-includes/compat.php pursuant to terms
+	// of GPL. Provide support for is_countable() for versions of PHP < 7.3
+	// and for versions of WordPress < 4.9.6. -C.J. 2020/01/24
+	
+	/**
+	 * Polyfill for is_countable() function added in PHP 7.3.
+	 * 
+	 * Verify that the content of a variable is an array or an object
+	 * implementing the Countable interface.
+	 *
+	 * @since 4.9.6
+	 *
+	 * @param mixed $var The value to check.
+	 *
+	 * @return bool True if `$var` is countable, false otherwise.
+	 */
+	function is_countable( $var ) {
+			return ( is_array( $var )
+					|| $var instanceof Countable
+					|| $var instanceof SimpleXMLElement
+					|| $var instanceof ResourceBundle
+			);
+	}
+
+} /* if */
+
 require_once(dirname(__FILE__).'/feedwordpress-walker-category-checklist.class.php');
 
 function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selected_cats = false, $params = array()) {
