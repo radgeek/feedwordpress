@@ -36,7 +36,10 @@ define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contac
 if (!defined('FEEDWORDPRESS_BLEG')) :
 	define ('FEEDWORDPRESS_BLEG', true);
 endif;
-define('FEEDWORDPRESS_BLEG_BTC', '15EsQ9QMZtLytsaVYZUaUCmrkSMaxZBTso');
+
+define('FEEDWORDPRESS_BLEG_BTC_pre_2020', '15EsQ9QMZtLytsaVYZUaUCmrkSMaxZBTso');
+define('FEEDWORDPRESS_BLEG_BTC', '1NB1ebYVb68Har4WijmE8gKnZ47NptCqtB'); // 2020.0201
+
 define('FEEDWORDPRESS_BLEG_PAYPAL', '22PAJZZCK5Z3W');
 
 // Defaults
