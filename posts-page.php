@@ -525,7 +525,9 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	
 	public function boilerplate_box ($page, $box = NULL) {
 		if ($page->for_feed_settings()) :
-			$attrib = unserialize($page->link->settings['boilerplate rules']);
+			$attrib = isset($page->link->settings['boilerplate rules'])
+				? unserialize($page->link->settings['boilerplate rules'])
+				: [];
 			$syndicatedPosts = 'this feed\'s posts';
 		else :
 			$attrib = get_option('feedwordpress_boilerplate');
