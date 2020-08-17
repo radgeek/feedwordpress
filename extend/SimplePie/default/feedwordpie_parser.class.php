@@ -1,5 +1,5 @@
 <?php
-class FeedWordPress_Parser extends SimplePie_Parser {
+class FeedWordPie_Parser extends SimplePie_Parser {
 	function reset_parser (&$xml) {
 		// reset members
 		$this->namespace = array('');
@@ -219,7 +219,7 @@ class FeedWordPress_Parser extends SimplePie_Parser {
 				return true;
 			}
 		}
-	} /* FeedWordPress_Parser::parse() */
+	} /* FeedWordPie_Parser::parse() */
 	
 	var $xmlns_stack = array();
 	var $xmlns_current = array();
@@ -248,7 +248,7 @@ class FeedWordPress_Parser extends SimplePie_Parser {
 			$this->xmlns_current[$prefix] = $uri;
 		endif;
 		return true;
-	} /* FeedWordPress_Parser::start_xmlns() */
+	} /* FeedWordPie_Parser::start_xmlns() */
 
 	/* html_convert_entities($string) -- convert named HTML entities to 
  	 * XML-compatible numeric entities. Adapted from code by @inanimatt:
@@ -522,8 +522,8 @@ class FeedWordPress_Parser extends SimplePie_Parser {
 		);
 		// Entity not found? Destroy it.
 		return isset($table[$matches[1]]) ? $table[$matches[1]] : '';
-	} /* FeedWordPress_Parser::convert_entity() */
+	} /* FeedWordPie_Parser::convert_entity() */
 
-} /* class FeedWordPress_Parser */
+} /* class FeedWordPie_Parser */
 
 

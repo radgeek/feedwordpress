@@ -144,7 +144,7 @@ require_once("${dir}/syndicationdataqueries.class.php");
 require_once("${dir}/feedwordpie.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie_item.class.php");
 require_once("${dir}/feedwordpress_file.class.php");
-require_once("${dir}/extend/SimplePie/feedwordpress_parser.class.php");
+require_once("${dir}/extend/SimplePie/feedwordpie_parser.class.php");
 require_once("${dir}/feedwordpressrpc.class.php");
 require_once("${dir}/feedwordpresshttpauthenticator.class.php");
 require_once("${dir}/feedwordpresslocalpost.class.php");
@@ -1940,7 +1940,7 @@ for a production server.</p>
 		$pie_class = apply_filters('feedwordpress_simplepie_class', 'FeedWordPie');
 		$cache_class = apply_filters('feedwordpress_cache_class', 'WP_Feed_Cache');
 		$file_class = apply_filters('feedwordpress_file_class', 'FeedWordPress_File');
-		$parser_class = apply_filters('feedwordpress_parser_class', 'FeedWordPress_Parser');
+		$parser_class = apply_filters('feedwordpress_parser_class', 'FeedWordPie_Parser');
 		$item_class = apply_filters('feedwordpress_item_class', 'FeedWordPie_Item');
 		$sniffer_class = apply_filters('feedwordpress_sniffer_class', 'FeedWordPress_Content_Type_Sniffer');
 
