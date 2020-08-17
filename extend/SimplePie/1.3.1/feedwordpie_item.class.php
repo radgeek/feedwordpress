@@ -1,4 +1,5 @@
 <?php
+
 class FeedWordPie_Item extends SimplePie_Item {
 
 	function get_id ($hash = false) {

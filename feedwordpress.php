@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2020.0201
+Version: 2020.0817-1613
 Author: C. Johnson
 Author URI: https://feedwordpress.radgeek.com/contact/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2020.0201
+ * @version 2020.0817-1613
  */
 
 # This plugin uses code derived from:
@@ -30,7 +30,7 @@ License: GPL
 ## CONSTANTS & DEFAULTS ############################################################
 ####################################################################################
 
-define ('FEEDWORDPRESS_VERSION', '2020.0201');
+define ('FEEDWORDPRESS_VERSION', '2020.0817-1613');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -142,7 +142,7 @@ require_once("${dir}/feedwordpress-content-type-sniffer.class.php");
 require_once("${dir}/inspectpostmeta.class.php");
 require_once("${dir}/syndicationdataqueries.class.php");
 require_once("${dir}/feedwordpie.class.php");
-require_once("${dir}/feedwordpie_item.class.php");
+require_once("${dir}/extend/SimplePie/feedwordpie_item.class.php");
 require_once("${dir}/feedwordpress_file.class.php");
 require_once("${dir}/feedwordpress_parser.class.php");
 require_once("${dir}/feedwordpressrpc.class.php");
