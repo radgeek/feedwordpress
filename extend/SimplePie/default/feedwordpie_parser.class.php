@@ -26,7 +26,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 	}
 	
 	public function parse (&$data, $encoding, $url = '') {
-		$data = apply_filters('feedwordpress_parser_parse', $data, $encoding, $this);
+		$data = apply_filters('feedwordpress_parser_parse', $data, $encoding, $this, $url);
 		
 		// Use UTF-8 if we get passed US-ASCII, as every US-ASCII character is a UTF-8 character
 		if (strtoupper($encoding) === 'US-ASCII')
