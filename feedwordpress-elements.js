@@ -736,10 +736,10 @@ jQuery(document).ready(function($){
 		tagBox.init();
 	}
 
-	$('.fwpfs').toggle(
+	/*$('.fwpfs').toggle(
 		function(){$('.fwpfs').removeClass('slideUp').addClass('slideDown'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideDown') ) { $('.fwpfs').addClass('slide-down'); }}, 10) },
 		function(){$('.fwpfs').removeClass('slideDown').addClass('slideUp'); setTimeout(function(){if ( $('.fwpfs').hasClass('slideUp') ) { $('.fwpfs').removeClass('slide-down'); }}, 10) }
-	);
+	);*/
 	$('.fwpfs').bind(
 		'change',
 		function () { this.form.submit(); }
