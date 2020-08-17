@@ -144,7 +144,7 @@ require_once("${dir}/syndicationdataqueries.class.php");
 require_once("${dir}/feedwordpie.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie_item.class.php");
 require_once("${dir}/feedwordpress_file.class.php");
-require_once("${dir}/feedwordpress_parser.class.php");
+require_once("${dir}/extend/SimplePie/feedwordpress_parser.class.php");
 require_once("${dir}/feedwordpressrpc.class.php");
 require_once("${dir}/feedwordpresshttpauthenticator.class.php");
 require_once("${dir}/feedwordpresslocalpost.class.php");
