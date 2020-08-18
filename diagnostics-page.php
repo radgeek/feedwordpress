@@ -341,7 +341,7 @@ function clone_http_test_args_keyvalue_prototype () {
 	<input type="submit" name="feedwordpress_diagnostics_do[http_test]" value="Test &raquo;" /></div>
 	<div><select name="http_test_method" size="1">
 		<option value="wp_remote_request">wp_remote_request</option>
-		<option value="FeedWordPress_File">FeedWordPress_File</option>
+		<option value="FeedWordPie_File">FeedWordPie_File</option>
 	</select></div>
 	<table>
 	<tr>
@@ -418,8 +418,8 @@ function clone_http_test_args_keyvalue_prototype () {
 			case 'wp_remote_request' :
 				$out = wp_remote_request($url, $args);
 				break;
-			case 'FeedWordPress_File' :
-				$out = new FeedWordPress_File($url);
+			case 'FeedWordPie_File' :
+				$out = new FeedWordPie_File($url);
 				break;
 			endswitch;
 			

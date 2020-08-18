@@ -3,7 +3,7 @@ if (!class_exists('SimplePie_Content_Type_Sniffer')) :
 	require_once(ABSPATH . WPINC . '/class-simplepie.php');
 endif;
 
-class FeedWordPress_Content_Type_Sniffer extends SimplePie_Content_Type_Sniffer {
+class FeedWordPie_Content_Type_Sniffer extends SimplePie_Content_Type_Sniffer {
 	/**
 	 * Get the Content-Type of the specified file
 	 *
@@ -55,6 +55,6 @@ class FeedWordPress_Content_Type_Sniffer extends SimplePie_Content_Type_Sniffer 
 			$this->file->headers['content-type'] = 'text/xml'; // Generic
 		endif;
 		return parent::get_type();
-	} /* FeedWordPress_Content_Type_Sniffer::get_type() */
-} /* class FeedWordPress_Content_Type_Sniffer */
+	} /* FeedWordPie_Content_Type_Sniffer::get_type() */
+} /* class FeedWordPie_Content_Type_Sniffer */
 

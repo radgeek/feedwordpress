@@ -138,13 +138,13 @@ require_once("${dir}/compatability.php"); // Legacy API
 require_once("${dir}/syndicatedpost.class.php");
 require_once("${dir}/syndicatedlink.class.php");
 require_once("${dir}/feedwordpresshtml.class.php");
-require_once("${dir}/feedwordpress-content-type-sniffer.class.php");
 require_once("${dir}/inspectpostmeta.class.php");
 require_once("${dir}/syndicationdataqueries.class.php");
-require_once("${dir}/feedwordpie.class.php");
+require_once("${dir}/extend/SimplePie/feedwordpie.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie_item.class.php");
-require_once("${dir}/feedwordpress_file.class.php");
+require_once("${dir}/extend/SimplePie/feedwordpie_file.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie_parser.class.php");
+require_once("${dir}/extend/SimplePie/feedwordpie_content_type_sniffer.class.php");
 require_once("${dir}/feedwordpressrpc.class.php");
 require_once("${dir}/feedwordpresshttpauthenticator.class.php");
 require_once("${dir}/feedwordpresslocalpost.class.php");
@@ -1939,10 +1939,10 @@ for a production server.</p>
 
 		$pie_class = apply_filters('feedwordpress_simplepie_class', 'FeedWordPie');
 		$cache_class = apply_filters('feedwordpress_cache_class', 'WP_Feed_Cache');
-		$file_class = apply_filters('feedwordpress_file_class', 'FeedWordPress_File');
+		$file_class = apply_filters('feedwordpress_file_class', 'FeedWordPie_File');
 		$parser_class = apply_filters('feedwordpress_parser_class', 'FeedWordPie_Parser');
 		$item_class = apply_filters('feedwordpress_item_class', 'FeedWordPie_Item');
-		$sniffer_class = apply_filters('feedwordpress_sniffer_class', 'FeedWordPress_Content_Type_Sniffer');
+		$sniffer_class = apply_filters('feedwordpress_sniffer_class', 'FeedWordPie_Content_Type_Sniffer');
 
 		$feed = new $pie_class;
 		$feed->set_feed_url($url);

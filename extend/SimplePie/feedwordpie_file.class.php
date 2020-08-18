@@ -3,7 +3,7 @@ global $fwp_credentials;
 
 $fwp_credentials = NULL;
 
-class FeedWordPress_File extends WP_SimplePie_File {
+class FeedWordPie_File extends WP_SimplePie_File {
 	public function __construct ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
 		global $feedwordpress;
 		global $wp_version;
@@ -95,6 +95,6 @@ class FeedWordPress_File extends WP_SimplePie_File {
 		// to break and fall on its ass when SimplePie is getting a 304,
 		// but doesn't realize it because this member is "304" instead.
 		$this->status_code = (int) $this->status_code;
-	}
-} /* class FeedWordPress_File () */
+	} /* FeedWordPie_File::__construct () */
+} /* class FeedWordPie_File () */
 
