@@ -1,6 +1,6 @@
 <?php
 $subdir = dirname(__FILE__);
-$ver = SIMPLEPIE_VERSION;;
+$ver = SIMPLEPIE_VERSION;
 $mod = basename(__FILE__);
 
 if ( is_readable("${subdir}/${ver}/${mod}") ) :
