@@ -62,6 +62,8 @@ class FeedWordPressPerformancePage extends FeedWordPressAdminPage {
 	} /* FeedWordPressPerformancePage::display () */
 
 	function accept_POST ($post) {
+		global $feedwordpress;
+		
 		if (isset($post['create_index'])) :
 			FeedWordPress::create_guid_index();
 			$this->updated = __('guid column index created on database table.');
@@ -72,7 +74,7 @@ class FeedWordPressPerformancePage extends FeedWordPressAdminPage {
 		endif;
 
 		if (isset($post['clear_cache'])) :
-			$N = FeedWordPress::clear_cache();
+			$N = $feedwordpress->clear_cache();
 			$feeds = (($N == 1) ? __("feed") : __("feeds"));
 			$this->updated = sprintf(__("Cleared %d cached %s from WordPress database."), $N, $feeds);
 		endif;
