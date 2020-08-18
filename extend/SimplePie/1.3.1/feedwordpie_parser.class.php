@@ -67,7 +67,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 
 		if (substr($data, 0, 5) === '<?xml' && strspn(substr($data, 5, 1), "\x09\x0A\x0D\x20") && ($pos = strpos($data, '?>')) !== false)
 		{
-			$declaration = new SimplePie_XML_Declaration_Parser(substr($data, 5, $pos - 5));
+			$declaration = $this->registry->create('XML_Declaration_Parser', array(substr($data, 5, $pos - 5)));
 			if ($declaration->parse())
 			{
 				$data = substr($data, $pos + 2);
@@ -100,44 +100,21 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 			xml_set_object($xml, $this);
 			xml_set_character_data_handler($xml, 'cdata');
 			xml_set_element_handler($xml, 'tag_open', 'tag_close');
-			xml_set_start_namespace_decl_handler($xml, 'start_xmlns');
-
+			
 			// Parse!
-			$parseResults = xml_parse($xml, $data, true);
-
-			$endOfJunk = strpos($data, '<?xml');
-			if (!$parseResults and $endOfJunk > 0) :
-				// There is some junk before the feed prolog. Try to get rid of it.
-				$data = substr($data, $endOfJunk);
-				$data = trim($data);
-				$this->reset_parser($xml);
+			$results = $this->do_xml_parse_attempt($xml, $data);
+			$parseResults = $results[0];
+			$data = $results[1];
 			
-				$parseResults = xml_parse($xml, $data, true);
-			endif;
-			
-			$badEntity = (xml_get_error_code($xml) == 26);
-			if (!$parseResults and $badEntity) :
-				// There was an entity that libxml couldn't understand.
-				// Chances are, it was a stray HTML entity. So let's try
-				// converting all the named HTML entities to numeric XML
-				// entities and starting over.
-				$data = $this->html_convert_entities($data);
-				$this->reset_parser($xml);
-
-				$parseResults = xml_parse($xml, $data, true);
-			endif;
-
 			if (!$parseResults) {
 				$this->error_code = xml_get_error_code($xml);
 				$this->error_string = xml_error_string($this->error_code);
 				$return = false;
 			}
-
 			$this->current_line = xml_get_current_line_number($xml);
 			$this->current_column = xml_get_current_column_number($xml);
 			$this->current_byte = xml_get_current_byte_index($xml);
 			xml_parser_free($xml);
-
 			return $return;
 		}
 		else
@@ -153,7 +130,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 					case constant('XMLReader::END_ELEMENT'):
 						if ($xml->namespaceURI !== '')
 						{
-							$tagName = "{$xml->namespaceURI}{$this->separator}{$xml->localName}";
+							$tagName = $xml->namespaceURI . $this->separator . $xml->localName;
 						}
 						else
 						{
@@ -165,7 +142,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 						$empty = $xml->isEmptyElement;
 						if ($xml->namespaceURI !== '')
 						{
-							$tagName = "{$xml->namespaceURI}{$this->separator}{$xml->localName}";
+							$tagName = $xml->namespaceURI . $this->separator . $xml->localName;
 						}
 						else
 						{
@@ -176,7 +153,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 						{
 							if ($xml->namespaceURI !== '')
 							{
-								$attrName = "{$xml->namespaceURI}{$this->separator}{$xml->localName}";
+								$attrName = $xml->namespaceURI . $this->separator . $xml->localName;
 							}
 							else
 							{
@@ -184,14 +161,8 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 							}
 							$attributes[$attrName] = $xml->value;
 						}
-						
-						foreach ($attributes as $attr => $value) :
-							list($ns, $local) = $this->split_ns($attr);
-							if ($ns=='http://www.w3.org/2000/xmlns/') :
-								if ('xmlns' == $local) : $local = false; endif;
-								$this->start_xmlns(null, $local, $value);
-							endif;
-						endforeach;
+
+						$this->do_scan_attributes_namespaces($attributes);
 						
 						$this->tag_open(null, $tagName, $attributes);
 						if ($empty)
@@ -221,6 +192,51 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 		}
 	} /* FeedWordPie_Parser::parse() */
 	
+	public function do_xml_parse_attempt ($xml, $data) {
+		xml_set_start_namespace_decl_handler($xml, 'start_xmlns');
+
+		// Parse!
+		$parseResults = xml_parse($xml, $data, true);
+		$endOfJunk = strpos($data, '<?xml');
+		if (!$parseResults and $endOfJunk > 0) :
+			// There is some junk before the feed prolog. Try to get rid of it.
+			$data = substr($data, $endOfJunk);
+			$data = trim($data);
+			$this->reset_parser($xml);
+			
+			$parseResults = xml_parse($xml, $data, true);
+		endif;
+			
+		$badEntity = (xml_get_error_code($xml) == 26);
+		if (!$parseResults and $badEntity) :
+			// There was an entity that libxml couldn't understand.
+			// Chances are, it was a stray HTML entity. So let's try
+			// converting all the named HTML entities to numeric XML
+			// entities and starting over.
+			$data = $this->html_convert_entities($data);
+			$this->reset_parser($xml);
+
+			$parseResults = xml_parse($xml, $data, true);
+		endif;
+
+		$result = array(
+			$parseResults,
+			$data
+		);
+		return $result;
+			
+	}
+
+	public function do_scan_attributes_namespaces ($attributes) {
+		foreach ($attributes as $attr => $value) :
+			list($ns, $local) = $this->split_ns($attr);
+			if ($ns=='http://www.w3.org/2000/xmlns/') :
+				if ('xmlns' == $local) : $local = false; endif;
+				$this->start_xmlns(null, $local, $value);
+			endif;
+		endforeach;
+	}
+	
 	var $xmlns_stack = array();
 	var $xmlns_current = array();
 	function tag_open ($parser, $tag, $attributes) {
@@ -247,6 +263,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 		if ($this->current_xhtml_construct < 0) :
 			$this->xmlns_current[$prefix] = $uri;
 		endif;
+
 		return true;
 	} /* FeedWordPie_Parser::start_xmlns() */
 
