@@ -175,7 +175,7 @@ class SyndicatedLink {
 				$ttl = $this->automatic_ttl();
 				$ttl = apply_filters('syndicated_feed_ttl', $ttl, $this);
 				$ttl = apply_filters('syndicated_feed_ttl_from_error', $ttl, $this);
-				$this->update_setting('update/ttl', $ttl, $this);
+				$this->update_setting('update/ttl', $ttl);
 				$this->update_setting('update/timed', 'automatically');
 			endif;
 
