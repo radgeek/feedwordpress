@@ -30,12 +30,12 @@ if (!class_exists('MyPHP')) :
 			if (isset($GLOBALS[$where]) and is_array($GLOBALS[$where])) :
 				if (isset($GLOBALS[$where][$key])) :
 					$ret = $GLOBALS[$where][$key];
-					
-					// Magic quotes are like the stupidest
-					// thing ever.
-					if (get_magic_quotes_gpc()) :
-						$ret = self::stripslashes_deep($ret);
-					endif;
+
+					// Magic quotes were just like the stupidest
+					// thing ever. (<http://php.net/manual/en/security.magicquotes.php>)
+					// Happily they were DEPRECATED as of PHP 5.3.0,
+					// and REMOVED as of PHP 5.4.0, so we don't need
+					// to worry about them anymore.
 				endif;
 			endif;
 
