@@ -1025,7 +1025,7 @@ class SyndicatedLink {
 			// channel format is updated. Acceptable values are:
 			// hourly, daily, weekly, monthly, yearly. If omitted,
 			// daily is assumed." <http://web.resource.org/rss/1.0/modules/syndication/>
-			if (isset($channel['sy']['updateperiod'])) : $period = $channel['sy']['updateperiod'];
+			if (isset($channel['sy']['updateperiod'])) : $period = trim($channel['sy']['updateperiod']);
 			else : $period = 'daily';
 			endif;
 
