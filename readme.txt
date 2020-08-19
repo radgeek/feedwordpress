@@ -3,8 +3,8 @@ Contributors: C. Johnson
 Donate link: http://feedwordpress.radgeek.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
-Tested up to: 5.3.2
-Stable tag: 2020.0118
+Tested up to: 5.5
+Stable tag: 2020.0818
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,16 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
 == Changelog ==
+
+= 2020.0818 =
+
+*	WORDPRESS 5.5 COMPATIBILITY FIXES, RESOLVES WARNING NOTICES OR WP-ADMIN LOCKOUT. WordPress 5.5 incorporated a newer release of SimplePie, version 1.5.5, which is pretty rad, but FeedWordPress classes that relied on SimplePie 1.3.1's method signatures would then produce PHP warning notices. That should be pretty innocuous, but depending on web server configurations, some users could get locked out of their own wp-admin interface by the display of error notices in the browser at inopportune times. In any case, I have 
+
+*	PHP 7.4 COMPATIBILITY FIX: Magic quotes were deprecated and then removed back in PHP 5.x, and in PHP 7.4 the vestigial `get_magic_quotes_gpc()` function has been deprecated. We don't need to worry about it anymore for versions of PHP still supported by WordPress. The reference to the function in the MyPHP utility class caused PHP warnings in more recent versions of PHP; so it has now been removed.
+
+*	DIVERS BUG FIXES AND PHP WARNING NOTICES RESOLVED, thanks to @oppiansteve's fixes and pull requests. (Thanks!)
+
+*	JQUERY COMPATIBILITY FIXES, RESOLVES MYSTERIOUS VANISHING FEED SELECTOR IN WP-ADMIN. An upgrade to WordPress's packaged jQuery caused the drop-down box for feed settings (in Syndication > Feeds & Updates, Syndication > Posts & Links, etc.) to vanish shortly after pageload. That was awkward, so I disabled the now-incompatible interface chrome that was causing it to vanish.
 
 = 2020.0118 =
 
