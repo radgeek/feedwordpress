@@ -136,6 +136,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		<th scope="row">Hosting Environment:</th>
 		<td><ul style="margin-top: 0; padding-top: 0;">
 		<li><em>WordPress:</em> version <?php print $wp_version; ?></li>
+		<li><em>SimplePie:</em> version <?php print SIMPLEPIE_VERSION; ?></li>
 		<?php if (function_exists('phpversion')) : ?>
 		<li><em>PHP:</em> version <?php print phpversion(); ?></li>
 		<?php endif; ?>
