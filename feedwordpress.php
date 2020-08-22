@@ -650,7 +650,7 @@ class FeedWordPress {
 			$menu_cap,
 			$syndicationMenu,
 			NULL,
-			plugins_url( '/'.FeedWordPress::path('feedwordpress-tiny.png') )
+			$this->plugin_dir_url( 'assets/images/feedwordpress-tiny.png' )
 		);
 
 		do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
@@ -708,17 +708,8 @@ class FeedWordPress {
 		else :
 			$feedwordpress_debug = get_option('feedwordpress_debug');
 		endif;
-		if ($feedwordpress_debug==='yes') :
-?>
-<div class="error">
-<p><strong>FeedWordPress warning.</strong> Debugging mode is <strong>ON</strong>.
-While it remains on, FeedWordPress displays many diagnostic error messages,
-warnings, and notices that are ordinarily suppressed, and also turns off all
-caching of feeds. Use with caution: this setting is absolutely inappropriate
-for a production server.</p>
-</div>
-<?php
-		endif;
+
+		FeedWordPressSettingsUI::get_template_part('notice-debug-mode', $feedwordpress_debug, 'html');
 	} /* function FeedWordPress::check_debug () */
 
 	/**
@@ -1220,7 +1211,7 @@ for a production server.</p>
 		// If this is a FeedWordPress admin page, queue up scripts for AJAX
 		// functions that FWP uses. If it is a display page or a non-FWP admin
 		// page, don't.
-		wp_register_style('feedwordpress-elements', plugins_url( 'assets/css/feedwordpress-elements.css', __FILE__ ) );
+		wp_register_style('feedwordpress-elements', $this->plugin_dir_url( 'assets/css/feedwordpress-elements.css') );
 		if (FeedWordPressSettingsUI::is_admin()) :
 			// For JavaScript that needs to be generated dynamically
 			add_action('admin_print_scripts', array('FeedWordPressSettingsUI', 'admin_scripts'));
@@ -2262,6 +2253,17 @@ EOMAIL;
 		return $cap;
 	} /* FeedWordPress::menu_cap () */
 
+	public function plugin_dir_path ($path = '') {
+		$dir = plugin_dir_path( __FILE__ );
+		$file_path = "${dir}${path}";
+		return apply_filters( "feedwordpress_plugin_dir_path", $file_path );
+	} /* FeedWordPress::plugin_dir_path () */
+	
+	public function plugin_dir_url ($path = '') {
+		$url_path = plugins_url( $path, __FILE__ );
+		return apply_filters( "feedwordpress_plugin_dir_url", $url_path );
+	} /* FeedWordPRess::plugin_dir_url () */
+	
 	static function path ($filename = '') {
 		global $fwp_path;
 
