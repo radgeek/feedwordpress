@@ -1216,12 +1216,11 @@ for a production server.</p>
 	} /* FeedWordPress::feedwordpress_cleanup () */
 	
 	public function init () {
-		global $fwp_path;
 
 		// If this is a FeedWordPress admin page, queue up scripts for AJAX
 		// functions that FWP uses. If it is a display page or a non-FWP admin
 		// page, don't.
-		wp_register_style('feedwordpress-elements', plugins_url( '/'.$fwp_path.'/feedwordpress-elements.css') );
+		wp_register_style('feedwordpress-elements', plugins_url( 'assets/css/feedwordpress-elements.css', __FILE__ ) );
 		if (FeedWordPressSettingsUI::is_admin()) :
 			// For JavaScript that needs to be generated dynamically
 			add_action('admin_print_scripts', array('FeedWordPressSettingsUI', 'admin_scripts'));
@@ -2270,6 +2269,7 @@ EOMAIL;
 		if (strlen($filename) > 0) :
 			$path .= '/'.$filename;
 		endif;
+		
 		return $path;
 	} /* FeedWordPress::path () */
 

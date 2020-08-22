@@ -23,7 +23,7 @@ class FeedWordPressSettingsUI {
 		wp_enqueue_script('post'); // for magic tag and category boxes
 		wp_enqueue_script('admin-forms'); // for checkbox selection
 
-		wp_register_script('feedwordpress-elements', plugins_url('/' . $fwp_path . '/feedwordpress-elements.js') );
+		wp_register_script('feedwordpress-elements', plugins_url( 'assets/js/feedwordpress-elements.js', __FILE__ ) );
 		wp_enqueue_script('feedwordpress-elements');
 	}
 

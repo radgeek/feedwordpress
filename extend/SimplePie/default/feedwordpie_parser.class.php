@@ -27,6 +27,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 	
 	public function parse (&$data, $encoding, $url = '')
 	{
+		
 		$data = apply_filters('feedwordpress_parser_parse', $data, $encoding, $this, $url);
 		
 		if (class_exists('DOMXpath') && function_exists('Mf2\parse')) {
