@@ -44,6 +44,8 @@ function fwp_release_pings () {
 }
 
 function fwp_do_pings () {
+	global $fwp_held_ping;
+
 	if (!is_null($fwp_held_ping) and $post_id) : // Defer until we're done updating
 		$fwp_held_ping = $post_id;
 
