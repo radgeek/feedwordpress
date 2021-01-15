@@ -96,7 +96,6 @@ endif;
 // Dependencies: modules packaged with WordPress core
 $wpCoreDependencies = array(
 "class:SimplePie" => "class-simplepie",
-"class:WP_Feed_Cache" => "class-wp-feed-cache",
 "class:WP_Feed_Cache_Transient" => "class-wp-feed-cache-transient",
 "class:WP_SimplePie_File" => "class-wp-simplepie-file",
 "class:WP_SimplePie_Sanitize_KSES" => "class-wp-simplepie-sanitize-kses",
@@ -143,6 +142,7 @@ require_once("${dir}/syndicationdataqueries.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie_item.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie_file.class.php");
+require_once("${dir}/extend/SimplePie/feedwordpie_cache.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie_parser.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie_content_type_sniffer.class.php");
 require_once("${dir}/feedwordpressrpc.class.php");

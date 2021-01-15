@@ -3,8 +3,14 @@ define('FEEDWORDPIE_TYPE_CUSTOM_XML', ~SIMPLEPIE_TYPE_NONE & ~SIMPLEPIE_TYPE_ALL
 
 class FeedWordPie extends SimplePie {
 	var $subscription = NULL;
-	
-	function set_feed_url ($url) {
+
+	function init()
+    {
+        $this->set_cache_location(sys_get_temp_dir());
+        return parent::init();
+    }
+
+    function set_feed_url ($url) {
 		global $fwp_oLinks;
 		if ($url InstanceOf SyndicatedLink) :
 
