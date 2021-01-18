@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2020.0818
+Version: 2021.0118
 Author: C. Johnson
 Author URI: https://feedwordpress.radgeek.com/contact/
 License: GPL
@@ -96,8 +96,6 @@ endif;
 // Dependencies: modules packaged with WordPress core
 $wpCoreDependencies = array(
 "class:SimplePie" => "class-simplepie",
-"class:WP_Feed_Cache" => "class-wp-feed-cache",
-"class:WP_Feed_Cache_Transient" => "class-wp-feed-cache-transient",
 "class:WP_SimplePie_File" => "class-wp-simplepie-file",
 "class:WP_SimplePie_Sanitize_KSES" => "class-wp-simplepie-sanitize-kses",
 "function:wp_insert_user" => "registration",
@@ -141,6 +139,7 @@ require_once("${dir}/feedwordpresshtml.class.php");
 require_once("${dir}/inspectpostmeta.class.php");
 require_once("${dir}/syndicationdataqueries.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie.class.php");
+require_once("${dir}/extend/SimplePie/feedwordpie_cache.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie_item.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie_file.class.php");
 require_once("${dir}/extend/SimplePie/feedwordpie_parser.class.php");
@@ -1928,7 +1927,7 @@ class FeedWordPress {
 		$timeout = intval($timeout);
 
 		$pie_class = apply_filters('feedwordpress_simplepie_class', 'FeedWordPie');
-		$cache_class = apply_filters('feedwordpress_cache_class', 'WP_Feed_Cache');
+		$cache_class = apply_filters('feedwordpress_cache_class', 'FeedWordPie_Cache');
 		$file_class = apply_filters('feedwordpress_file_class', 'FeedWordPie_File');
 		$parser_class = apply_filters('feedwordpress_parser_class', 'FeedWordPie_Parser');
 		$item_class = apply_filters('feedwordpress_item_class', 'FeedWordPie_Item');
@@ -1936,7 +1935,7 @@ class FeedWordPress {
 
 		$feed = new $pie_class;
 		$feed->set_feed_url($url);
-		$feed->set_cache_class($cache_class);
+		$feed->registry->register('Cache', $cache_class);
 		$feed->set_timeout($timeout);
 
 		$feed->set_content_type_sniffer_class($sniffer_class);
