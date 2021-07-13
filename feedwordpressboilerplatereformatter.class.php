@@ -61,7 +61,8 @@ class FeedWordPressBoilerplateReformatter {
 		return get_syndication_source_link($param['original'], $this->id);
 	}
 	function source_link ($atts) {
-		switch (strtolower($atts[0])) :
+		$arg0 = (( is_array($atts) and isset($atts[0]) ) ? strtolower($atts[0]) : '' );
+		switch ($arg0) :
 		case '-name' :
 			$ret = $this->source_name($atts);
 			break;
@@ -80,6 +81,7 @@ class FeedWordPressBoilerplateReformatter {
 		endswitch;
 		return $ret;
 	}
+
 	function source_setting ($atts) {
 		$param = shortcode_atts(array(
 		'key' => NULL,
@@ -97,7 +99,8 @@ class FeedWordPressBoilerplateReformatter {
 		return get_the_author();
 	}
 	function source_author_link ($atts) {
-		switch (strtolower($atts[0])) :
+		$arg0 = (( is_array($atts) and isset($atts[0]) ) ? strtolower($atts[0]) : '' );
+		switch ($arg0) :
 		case '-name' :
 			$ret = $this->source_author($atts);
 			break;
