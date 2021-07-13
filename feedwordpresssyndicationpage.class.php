@@ -718,22 +718,13 @@ support, and documentation.</p>
 
 <div id="flattr-paypal">
 
-<div style="display: inline-block; vertical-align: middle; ">
-<a class="FlattrButton" style="display:none;"   href="http://feedwordpress.radgeek.com/"></a>
-<noscript>
-<a href="https://flattr.com/thing/1380856/FeedWordPress" target="_blank"><img src="https://api.flattr.com/button/flattr-badge-large.png" alt="Flattr this" title="Flattr this" border="0" /></a>
-</noscript>
-<div>via Flattr</div>
-
-</div> <!-- style="display: inline-block" -->
-
 <div class="hovered-component" style="display: inline-block; vertical-align: bottom">
-<a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>"><img src="<?php print esc_url( plugins_url('/'.FeedWordPress::path('btc-qr-64px.png') ) ); ?>" alt="Donate" /></a>
+<a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>"><img src="<?php print esc_url( plugins_url('/'.FeedWordPress::path('assets/images/btc-qr-128px.png') ) ); ?>" alt="Donate" /></a>
 <div><a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>">via bitcoin<span class="hover-on pop-over" style="background-color: #ddffdd; padding: 5px; color: black; border-radius: 5px;">bitcoin:<?php print esc_html(FEEDWORDPRESS_BLEG_BTC); ?></span></a></div>
 </div>
 
 <div style="display: inline-block; vertical-align: bottom">
-<input type="image" name="submit" src="<?php print esc_url(plugins_url('/' . FeedWordPress::path('paypal-donation-64px.png' ) ) ); ?>" alt="Donate through PayPal" />
+<input type="image" name="submit" src="<?php print esc_url(plugins_url('/' . FeedWordPress::path('assets/images/paypal-donation-64px.png' ) ) ); ?>" style="width: 128px; height: 128px;" alt="Donate via PayPal" />
 <input type="hidden" name="business" value="<?php print esc_attr(FEEDWORDPRESS_BLEG_PAYPAL); ?>"  />
 <input type="hidden" name="cmd" value="_xclick"  />
 <input type="hidden" name="item_name" value="FeedWordPress donation"  />
@@ -1138,6 +1129,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 		or (is_numeric($bleg_box_hidden) and $bleg_box_hidden < time())
 	));
 	
+	$bleg_box_ready = apply_filters( 'feedwordpress_bleg_box_ready', $bleg_box_ready );
 	if (isset($_REQUEST['paid']) and $_REQUEST['paid']) :
 		$object->bleg_thanks($subject, $box);
 	elseif ($bleg_box_ready) :

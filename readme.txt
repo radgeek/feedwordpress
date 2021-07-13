@@ -3,8 +3,8 @@ Contributors: C. Johnson
 Donate link: http://feedwordpress.radgeek.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
-Tested up to: 5.5
-Stable tag: 2020.0818
+Tested up to: 5.7.2
+Stable tag: 2021.0713
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,21 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
 == Changelog ==
+
+= 2021.0713 =
+
+*	WORDPRESS 5.6, 5.7.x COMPATIBILITY FIXES. This release introduces fixes to annoying or worse warnings resulting from
+	the deprecation of WordPress's built-in WP_Feed_Cache class. This should resolve the problem if you are encountering
+	annoying, worrying, or breaking problems related to the PHP warnings: "Deprecated: class-wp-feed-cache.php is
+	<strong>deprecated</strong> since version 5.6.0", and/or "Message: ./cache is not writable. Make sure you've set the
+	correct relative or absolute path, and that the location is server-writable."
+
+*	Fixes PHP warning for "count(): Parameter must be an array or an object that implements Countable in 
+    .../wp-content/plugins/feedwordpress/feedwordpress.php on line 1566"
+	
+*	Miscellaneous fixes for other missing variable and global warnings.
+
+*	Code cleanup and reorganization to allow better modularization of error messages, warning dialogs, and extended text.
 
 = 2020.0818 =
 

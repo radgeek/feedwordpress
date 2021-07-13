@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2021.0118
+Version: 2021.0713
 Author: C. Johnson
 Author URI: https://feedwordpress.radgeek.com/contact/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2020.0818
+ * @version 2021.0713
  */
 
 # This plugin uses code derived from:
@@ -30,7 +30,7 @@ License: GPL
 ## CONSTANTS & DEFAULTS ############################################################
 ####################################################################################
 
-define ('FEEDWORDPRESS_VERSION', '2020.0818');
+define ('FEEDWORDPRESS_VERSION', '2021.0713');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -38,7 +38,8 @@ if (!defined('FEEDWORDPRESS_BLEG')) :
 endif;
 
 define('FEEDWORDPRESS_BLEG_BTC_pre_2020', '15EsQ9QMZtLytsaVYZUaUCmrkSMaxZBTso');
-define('FEEDWORDPRESS_BLEG_BTC', '1NB1ebYVb68Har4WijmE8gKnZ47NptCqtB'); // 2020.0201
+define('FEEDWORDPRESS_BLEG_BTC_2020', '1NB1ebYVb68Har4WijmE8gKnZ47NptCqtB'); // 2020.0201
+define('FEEDWORDPRESS_BLEG_BTC', '1HCDdeGcR66EPxkPT2rbdTd1ezh27pmjPR'); // 2021.0713
 
 define('FEEDWORDPRESS_BLEG_PAYPAL', '22PAJZZCK5Z3W');
 
