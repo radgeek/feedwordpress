@@ -23,7 +23,7 @@ License: GPL
 # -	Github contributors @Flynsarmy, @BandonRandon, @david-robinson-practiceweb,
 # 	@daidais, @thegreatmichael, @stedaniels, @alexiskulash, @quassy, @zoul0813,
 # 	@timmmmyboy, @vobornik, @inanimatt, @tristanleboss, @martinburchell,
-#   @bigalownz, and @oppiansteve 
+#   @bigalownz, and @oppiansteve
 # according to the terms of the GNU General Public License.
 
 ####################################################################################
@@ -107,7 +107,7 @@ $wpCoreDependencies = array(
 $unmetCoreDependencies = array();
 foreach ($wpCoreDependencies as $unit => $fileSlug) :
 	list($unitType, $unitName) = explode(":", $unit, 2);
-	
+
 	$dependencyMet = (('class'==$unitType) ? class_exists($unitName) : function_exists($unitName));
 	if (!$dependencyMet) :
 		$phpFileName = ABSPATH . WPINC . "/${fileSlug}.php";
@@ -507,7 +507,7 @@ class FeedWordPress {
 
 		// FeedWordPress-related event hooks
 		add_filter('feedwordpress_update_complete', array($this, 'process_retirements'), 1000, 1);
-		
+
 		$this->httpauth = new FeedWordPressHTTPAuthenticator;
 	} /* FeedWordPress::__construct () */
 
@@ -593,7 +593,7 @@ class FeedWordPress {
 		add_action('save_post', 'feedwordpress_save_post_edit_controls');
 
 		add_action('admin_footer', array($this, 'admin_footer'));
-		
+
 		add_action('syndicated_feed_error', array('FeedWordPressDiagnostic', 'feed_error'), 100, 3);
 
 		add_action('wp_footer', 'debug_out_feedwordpress_footer', -100);
@@ -1015,7 +1015,7 @@ class FeedWordPress {
 		if (!intval(get_option('link_manager_enabled', false))) :
 			update_option('link_manager_enabled', true);
 		endif;
-		
+
 		if (defined('FEEDWORDPRESS_PREPARE_TO_ZAP') and FEEDWORDPRESS_PREPARE_TO_ZAP) :
 			$post_id = FEEDWORDPRESS_PREPARE_TO_ZAP;
 			$sendback = wp_get_referer();
@@ -1048,21 +1048,21 @@ class FeedWordPress {
 			if ( ! $post ) :
 				wp_die( __( 'The item you are trying to zap no longer exists.' ) );
 			endif;
-			
+
 			if ( ! current_user_can( 'delete_post', $post_id ) ) :
 				wp_die( __( 'You are not allowed to zap this item.' ) );
 			endif;
-			
+
 			if ( $user_id = wp_check_post_lock( $post_id ) ) :
 				$user = get_userdata( $user_id );
 				wp_die( sprintf( __( 'You cannot retire this item. %s is currently editing.' ), $user->display_name ) );
 			endif;
-		
+
 			if (MyPHP::request('fwp_post_delete')=='zap') :
 				FeedWordPress::diagnostic('syndicated_posts', 'Zapping existing post # '.$p->ID.' "'.$p->post_title.'" due to user request.');
-				
+
 				$old_status = $post->post_status;
-				
+
 				set_post_field('post_status', 'fwpzapped', $post_id);
 				wp_transition_post_status('fwpzapped', $old_status, $post);
 
@@ -1070,15 +1070,15 @@ class FeedWordPress {
 				# next update if you do not undo the zapping.
 				add_post_meta($post_id, '_feedwordpress_zapped_blank_me', 1, /*unique=*/ true);
 				add_post_meta($post_id, '_feedwordpress_zapped_blank_old_status', $old_status, /*unique=*/ true);
-				
+
 				wp_redirect( esc_url_raw( add_query_arg( array('zapped' => 1, 'ids' => $post_id), $sendback ) ) );
 
 			else :
 				$old_status = get_post_meta($post_id, '_feedwordpress_zapped_blank_old_status', /*single=*/ true);
-				
+
 				set_post_field('post_status', $old_status, $post_id);
 				wp_transition_post_status($old_status, 'fwpzapped', $post);
-				
+
 				# O.K., make sure this post does not get blanked
 				delete_post_meta($post_id, '_feedwordpress_zapped_blank_me');
 				delete_post_meta($post_id, '_feedwordpress_zapped_blank_old_status');
@@ -1086,7 +1086,7 @@ class FeedWordPress {
 				wp_redirect( esc_url_raw( add_query_arg( array('unzapped' => 1, 'ids' => $post_id), $sendback ) ) );
 
 			endif;
-				
+
 			// Intercept, don't pass on.
 			exit;
 		endif;
@@ -1111,22 +1111,22 @@ class FeedWordPress {
 
 			// If so, disable the trashcan.
 			define('EMPTY_TRASH_DAYS', 0);
-			
+
 		elseif (MyPHP::request('fwp_post_delete')=='zap' OR MyPHP::request('fwp_post_delete') == 'unzap') :
 			// Get post ID #
 			$post_id = MyPHP::request('post');
 			if (!$post_id) :
 				$post_id = MyPHP::request('post_ID');
 			endif;
-			
+
 			// Make sure we've got the right nonce and all that
 			check_admin_referer('delete-post_' . $post_id);
 
 			// If so, get ready to intercept the call a little
 			// further down the line.
-			
+
 			define('FEEDWORDPRESS_PREPARE_TO_ZAP', $post_id);
-			
+
 		endif;
 
 	} /* FeedWordPress::admin_api () */
@@ -1138,7 +1138,7 @@ class FeedWordPress {
 <div id="message" class="updated"><p><?php print $n; ?> syndicated item<?php print ($n!=1?'s':''); ?> zapped. <strong>These items will not be re-syndicated.</strong> If this was a mistake, you must <strong>immediately</strong> Un-Zap them in the Zapped items section to avoid losing the data.</p></div>
 <?php
 		endif;
-		
+
 		if (MyPHP::request('unzapped')) :
 			$n = intval(MyPHP::request('unzapped'));
 ?>
@@ -1146,13 +1146,13 @@ class FeedWordPress {
 <?php
 		endif;
 	} /* FeedWordPress::all_admin_notices () */
-	
+
 	public function process_retirements ($delta) {
 		update_option('feedwordpress_process_zaps', 1);
 
 		return $delta;
 	}
-	
+
 	public function feedwordpress_cleanup () {
 		if (get_option('feedwordpress_process_zaps', null)) :
 			$q = new WP_Query(array(
@@ -1162,32 +1162,32 @@ class FeedWordPress {
 			'meta_key' => '_feedwordpress_zapped_blank_me',
 			'meta_value' => 1,
 			));
-			
+
 			if ($q->have_posts()) :
 				foreach ($q->posts as $p) :
 
 					$post_id = $p->ID;
 					$revisions = wp_get_post_revisions($post_id, array("check_enabled" => false));
-				
+
 					# Now nuke the content of the post & its revisions
 					set_post_field('post_content', '', $post_id);
 					set_post_field('post_excerpt', '', $post_id);
-				
+
 					foreach ($revisions as $rev) :
 						set_post_field('post_content', '', $rev->ID);
 						set_post_field('post_excerpt', '', $rev->ID);
 					endforeach;
-					
+
 					# Un-tag it for blanking.
 					delete_post_meta($p->ID, '_feedwordpress_zapped_blank_me');
-	
+
 					# Don't remove old_status indicator. A later
 					# update from the feed may cause us to once
 					# again have some content so we can un-zap.
-				
+
 				endforeach;
 			endif;
-			
+
 			$q = new WP_Query(array(
 			'fields' => '_synfrom',
 			'post_status' => 'fwpzapped',
@@ -1195,17 +1195,17 @@ class FeedWordPress {
 			'meta_key' => '_feedwordpress_zapped_blank_me',
 			'meta_value' => 2,
 			));
-	
+
 			if ($q->have_posts()) :
 				foreach ($q->posts as $p) :
 					update_post_meta($p->ID, '_feedwordpress_zapped_blank_me', 1);
 				endforeach;
 			endif;
-	
+
 			update_option('feedwordpress_process_zaps', 0);
 		endif;
 	} /* FeedWordPress::feedwordpress_cleanup () */
-	
+
 	public function init () {
 
 		// If this is a FeedWordPress admin page, queue up scripts for AJAX
@@ -1268,7 +1268,7 @@ class FeedWordPress {
 		$this->clear_cache_magic_url();
 		$this->update_magic_url();
 	} /* FeedWordPress::wp_loaded () */
-	
+
 	/**
 	 * FeedWordPress::cron_schedules(): Filter hook to add WP-Cron schedules
 	 * that plugins like FeedWordPress can use to carry out scheduled events.
@@ -1422,7 +1422,7 @@ class FeedWordPress {
 
 			$caption = apply_filters('feedwordpress_ui_erase_link_caption', __('Erase the record of this post (will be re-syndicated if it still appears on the feed).'));
 			$linktext = apply_filters('feedwordpress_ui_erase_link_text', __('Erase/Resyndicate'));
-			
+
 			$retireClass = NULL;
 			if ($post->post_status == 'fwpzapped') :
 				if (count(get_post_meta($post->ID, '_feedwordpress_zapped_blank_me')) > 0) :
@@ -1441,7 +1441,7 @@ class FeedWordPress {
 				$retireLink = MyPHP::url($link, array("fwp_post_delete" => "zap"));
 				$retireClass = 'submitdelete';
 			endif;
-			
+
 			$keys = array_keys($actions);
 			$links = array();
 			foreach ($keys as $key) :
@@ -1559,7 +1559,7 @@ class FeedWordPress {
 		// Explicit update request in the HTTP request (e.g. from a cron job)
 		if (self::update_requested()) :
 			/*DBG*/ header("Content-Type: text/plain");
-			
+
 			$this->update_hooked = "Initiating a CRON JOB CHECK-IN ON UPDATE SCHEDULE due to URL parameter = ".trim($this->val($_REQUEST['update_feedwordpress']));
 
 			$this->update($this->update_requested_url());
@@ -1594,7 +1594,7 @@ class FeedWordPress {
 	public static function update_requested () {
 		return MyPHP::request('update_feedwordpress');
 	} /* FeedWordPress::update_requested() */
-	
+
 	public function update_requested_url () {
 		$ret = null;
 
@@ -2258,12 +2258,12 @@ EOMAIL;
 		$file_path = "${dir}${path}";
 		return apply_filters( "feedwordpress_plugin_dir_path", $file_path );
 	} /* FeedWordPress::plugin_dir_path () */
-	
+
 	public function plugin_dir_url ($path = '') {
 		$url_path = plugins_url( $path, __FILE__ );
 		return apply_filters( "feedwordpress_plugin_dir_url", $url_path );
 	} /* FeedWordPRess::plugin_dir_url () */
-	
+
 	static function path ($filename = '') {
 		global $fwp_path;
 
@@ -2271,7 +2271,7 @@ EOMAIL;
 		if (strlen($filename) > 0) :
 			$path .= '/'.$filename;
 		endif;
-		
+
 		return $path;
 	} /* FeedWordPress::path () */
 
@@ -2299,7 +2299,7 @@ EOMAIL;
 	} /* FeedWordPress::critical_bug () */
 
 	static function noncritical_bug ($varname, $var, $line, $file = NULL) {
-		FeedWordPressDiagnostic::noncritical_bug($varname, $var, $line, $file);		
+		FeedWordPressDiagnostic::noncritical_bug($varname, $var, $line, $file);
 	} /* FeedWordPress::noncritical_bug () */
 
 	static function diagnostic_on ($level) {
@@ -2319,6 +2319,9 @@ define('FWP_REGEX_EMAIL_JUST_ADDY', '/^\s*'.FWP_REGEX_EMAIL_ADDY.'\s*$/');
 define('FWP_REGEX_EMAIL_JUST_NAME', '/^\s*'.FWP_REGEX_EMAIL_NAME.'\s*$/');
 
 function parse_email_with_realname ($email) {
+	$ret = array();	// avoid uninitialized variables for return values, this will generate a notice/warning - and one day, an error! (gwyneth 20210714)
+	$ret['name'] = NULL; $ret['email'] = NULL;	// default: both are null; this will avoid errors below when attempting to match empty values (gwyneth 20210714)
+
 	if (preg_match(FWP_REGEX_EMAIL_POSTFIX_NAME, $email, $matches)) :
 		($ret['name'] = $matches[3]) or ($ret['name'] = $matches[2]);
 		$ret['email'] = $matches[1];
@@ -2330,8 +2333,6 @@ function parse_email_with_realname ($email) {
 	elseif (preg_match(FWP_REGEX_EMAIL_JUST_NAME, $email, $matches)) :
 		$ret['email'] = NULL;
 		($ret['name'] = $matches[2]) or ($ret['name'] = $matches[3]);
-	else :
-		$ret['name'] = NULL; $ret['email'] = NULL;
 	endif;
 	return $ret;
 }
