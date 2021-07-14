@@ -2,7 +2,7 @@
 Contributors: C. Johnson
 Donate link: http://feedwordpress.radgeek.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
-Requires at least: 4.5
+Requires at least: 4.6
 Tested up to: 5.7.2
 Stable tag: 2021.0713
 License: GPLv2 or later
