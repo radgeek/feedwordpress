@@ -127,7 +127,7 @@ class SyndicatedPost {
 				'syndicated_item_content',
 				$this->content(), $this
 			);
-			
+
 			$excerpt = apply_filters('syndicated_item_excerpt', $this->excerpt(), $this);
 
 			if (!empty($excerpt)):
@@ -164,7 +164,7 @@ class SyndicatedPost {
 
 			foreach ($postMetaOut as $key => $values) :
 				if (is_null($values)) { // have chosen to replace value with empty string
-					$values = ['']; 
+					$values = [''];
 				}
 				$this->post['meta'][$key] = array();
 				foreach ($values as $value) :
@@ -348,33 +348,33 @@ class SyndicatedPost {
 	public function get_categories ($params = array()) {
 		return $this->entry->get_categories();
 	}
-	
+
 	public function title ($params = array()) {
 		return $this->entry->get_title();
 	} /* SyndicatedPost::title () */
-	
+
 	public function content ($params = array()) {
 
 		$params = wp_parse_args($params, array(
-		"full only" => false, 
+		"full only" => false,
 		));
-		
+
 		$content = NULL;
-		
+
 		// FIXME: This is one of the main places in the code still using
 		// the outmoded SimplePie - to - Magpie construction. We could
 		// replace using SimplePie_Item::get_tags() here. (Or if really
 		// ambitious we could attempt to just use
 		// SimplePie_Item::get_content() with content-only set to TRUE
 		// and some sanitization in effect. -CJ 1jul14
-		
+
 		// atom:content, standard method of providing full HTML content
 		// in Atom feeds.
 		if (isset($this->item['atom_content'])) :
 			$content = $this->item['atom_content'];
 		elseif (isset($this->item['atom']['atom_content'])) :
 			$content = $this->item['atom']['atom_content'];
-		
+
 		// Some exotics: back in the day, before widespread convergence
 		// on content:encoding, some RSS feeds took advantage of XML
 		// namespaces to use an inline xhtml:body or xhtml:div element
@@ -383,25 +383,25 @@ class SyndicatedPost {
 			$content = $this->item['xhtml']['body'];
 		elseif (isset($this->item['xhtml']['div'])) :
 			$content = $this->item['xhtml']['div'];
-		
+
 		// content:encoded, most common method of providing full HTML in
 		// RSS 2.0 feeds.
 		elseif (isset($this->item['content']['encoded']) and $this->item['content']['encoded']):
 			$content = $this->item['content']['encoded'];
-		
+
 		// Fall back on elements that sometimes may contain full HTML
 		// but sometimes not.
 		elseif (!$params['full only']) :
-		
+
 			// description element is sometimes used for full HTML
 			// sometimes for summary text in RSS. (By the letter of
 			// the standard, it should just be for summary text.)
 			if (isset($this->item['description'])) :
 				$content = $this->item['description'];
 			endif;
-			
+
 		endif;
-		
+
 		return $content;
 	} /* SyndicatedPost::content() */
 
@@ -625,7 +625,7 @@ class SyndicatedPost {
 			$guid = SyndicatedPost::normalize_guid_prefix().md5($guid);
 		endif;
 		$guid = trim($guid);
-		
+
 		return $guid;
 	} /* SyndicatedPost::normalize_guid() */
 
@@ -641,7 +641,7 @@ class SyndicatedPost {
 			$guid = SyndicatedPost::alternative_guid_prefix().md5($guid);
 		endif;
 		$guid = trim($guid);
-		
+
 		return $guid;
 	} /* SyndicatedPost::normalize_guid() */
 
@@ -790,7 +790,7 @@ class SyndicatedPost {
 	 * @return array of lists, each element has the taxonomy for a key ('category', 'post_tag', etc.),
 	 * 		and a list of term codes (either alphanumeric names, or ID numbers encoded in a format that
 	 * 		SyndicatedLink::category_ids() can understand) within that taxonomy
-	 *	 
+	 *
 	 */
 	public function get_terms_from_settings () {
 		// Categories: start with default categories, if any.
@@ -848,10 +848,10 @@ class SyndicatedPost {
 				$preset_terms[$tax] = $terms;
 			endif;
 		endforeach;
-		
+
 		return $preset_terms;
 	} /* SyndicatedPost::get_terms_from_settings () */
-		
+
 	/**
 	 * SyndicatedPost::get_terms_from_feeds(): Return an array of terms to associate with the incoming
 	 * post based on the contents of the subscribed feed (atom:category and rss:category elements, dc:subject
@@ -861,7 +861,7 @@ class SyndicatedPost {
 	 * @return array of lists, each element has the taxonomy for a key ('category', 'post_tag', etc.),
 	 * 		and a list of alphanumeric term names
 	 */
-	public function get_terms_from_feeds () {	
+	public function get_terms_from_feeds () {
 		// Now add categories from the post, if we have 'em
 		$cats = array();
 		$post_cats = $this->entry->get_categories();
@@ -1262,18 +1262,18 @@ class SyndicatedPost {
 				// something new.
 				$updated = false;
 				$live = false;
-				
+
 				// Pull the list of existing revisions to get
 				// timestamps.
 				$revisions = wp_get_post_revisions($old_post->ID);
 				foreach ($revisions as $rev) :
-					$revisions_ts[] = mysql2date('G', $rev->post_modified_gmt); 
+					$revisions_ts[] = mysql2date('G', $rev->post_modified_gmt);
 				endforeach;
 
 				$revisions_ts[] = mysql2date('G', $old_post->post_modified_gmt);
 				$last_rev_ts = end($revisions_ts);
 				$updated_ts = $this->updated(/*fallback=*/ true, /*default=*/ NULL);
-				
+
 				// If we have an explicit updated timestamp,
 				// check that against existing stamps.
 				if (!is_null($updated_ts)) :
@@ -1286,7 +1286,7 @@ class SyndicatedPost {
 				endif;
 
 				// This is a revision we haven't seen before, judging by the date.
-				
+
 				$updatedReason = NULL;
 				if ($updated) :
 					$updatedReason = preg_replace(
@@ -1332,7 +1332,7 @@ class SyndicatedPost {
 					$frozen = ('yes' == $this->link->setting('freeze updates', 'freeze_updates', NULL));
 					if (!$frozen) :
 						$frozen_values = get_post_custom_values('_syndication_freeze_updates', $old_post->ID);
-						$frozen = (count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
+						$frozen = (!is_empty($frozen_values[0]) and 'yes' == $frozen_values[0]);
 
 						if ($frozen) :
 							$updatedReason = ' IS BLOCKED FROM BEING UPDATED BY A UPDATE LOCK ON THIS POST, EVEN THOUGH IT '.$updatedReason;
@@ -1368,7 +1368,7 @@ class SyndicatedPost {
 				endif;
 			endif;
 		endif;
-		
+
 		switch ($format) :
 		case 'status' :
 			switch ($this->_freshness) :
@@ -1391,33 +1391,33 @@ class SyndicatedPost {
 		default :
 			$ret = $this->_freshness;
 		endswitch;
-		
-		
+
+
 		return $ret;
 	} /* SyndicatedPost::freshness () */
-	
+
 	function has_fresh_content () {
 		return ( ! $this->filtered() and $this->freshness() != 0 );
 	} /* SyndicatedPost::has_fresh_content () */
-	
+
 	function this_revision_needs_original_post ($freshness = NULL) {
 		if (is_null($freshness)) :
 			$freshness = $this->freshness();
 		endif;
 		return ( $freshness >= 2 );
 	}
-	
+
 	function this_revision_is_current ($freshness = NULL) {
 		if (is_null($freshness)) :
 			$freshness = $this->freshness();
 		endif;
 		return ( $freshness >= 1 );
 	} /* SyndicatedPost::this_revision_is_current () */
-	
+
 	function fresh_content_is_update () {
 		return ($this->freshness() < 2);
 	} /* SyndicatedPost::fresh_content_is_update () */
-	
+
 	function fresh_storage_diagnostic () {
 		$ret = NULL;
 		switch ($this->freshness()) :
@@ -1430,11 +1430,11 @@ class SyndicatedPost {
 		case 2 :
 		default :
 			$ret = 'Inserting new post "'.$this->post['post_title'].'"';
-			break;			
+			break;
 		endswitch;
 		return $ret;
 	} /* SyndicatedPost::fresh_storage_diagnostic() */
-	
+
 	function fresh_storage_hook () {
 		$ret = NULL;
 		switch ($this->freshness()) :
@@ -1449,7 +1449,7 @@ class SyndicatedPost {
 		endswitch;
 		return $ret;
 	} /* SyndicatedPost::fresh_storage_hook () */
-	
+
 	#################################################
 	#### INTERNAL STORAGE AND MANAGEMENT METHODS ####
 	#################################################
@@ -1470,7 +1470,7 @@ class SyndicatedPost {
 	 * for the author of the incoming post.
 	 *
 	 * side effect: int|NULL stored in $this->post['post_author']
-	 * side effect: IF no valid author is found, NULL stored in $this->post 
+	 * side effect: IF no valid author is found, NULL stored in $this->post
 	 * side effect: diagnostic output in case item is rejected with NULL author
 	 *
 	 * @used-by SyndicatedPost::store
@@ -1520,7 +1520,7 @@ class SyndicatedPost {
 			// Default to using the inclusive procedures (for cats) rather than exclusive (for inline tags)
 			$taxes = (isset($mapping[$what]) ? $mapping[$what] : $mapping['category']);
 			$unfamiliar = $taxes['unfamiliar'];
-				
+
 			if (!is_null($this->post)) : // Not filtered out yet
 				# -- Look up, or create, numeric ID for categories
 				$taxonomies = $this->link->setting("match/".$taxes['abbr'], 'match_'.$taxes['abbr'], $taxes['domain']);
@@ -1657,21 +1657,21 @@ class SyndicatedPost {
 			/*priority=*/ -10000, /* very early */
 			/*arguments=*/ 3
 		);
-		
+
 		$ret = false;
 		if ($this->has_fresh_content()) :
 			$diag = $this->fresh_storage_diagnostic();
 			if (!is_null($diag)) :
 				FeedWordPress::diagnostic('syndicated_posts', $diag);
 			endif;
-			
+
 			$this->insert_post(/*update=*/ $this->fresh_content_is_update(), $this->freshness());
 
 			$hook = $this->fresh_storage_hook();
 			if (!is_null($hook)) :
 				do_action($hook, $this->wp_id(), $this);
 			endif;
-			
+
 			$ret = $this->freshness('status');
 		endif;
 
@@ -1767,15 +1767,15 @@ class SyndicatedPost {
 			if ($this->this_revision_needs_original_post()) :
 				// *sigh*, for handling inconsistent slash expectations < 3.6
 				$sdbpost = $this->db_sanitize_post($dbpost);
-				
+
 				// Go ahead and insert the first post record to
 				// anchor the revision history.
 
 				$this->_wp_id = wp_insert_post($sdbpost, /*return wp_error=*/ true);
-				
+
 				$dbpost['ID'] = $this->_wp_id;
 			endif;
-			
+
 			// Sanity check: if the attempt to insert post
 			// returned an error, then feeding that error
 			// object in to _wp_put_post_revision() would
@@ -1786,7 +1786,7 @@ class SyndicatedPost {
 				$revision_id = _wp_put_post_revision($dbpost, /*autosave=*/ false);
 
 				if (!$this->this_revision_needs_original_post()) :
-			
+
 					if ($this->this_revision_is_current()) :
 
 						wp_restore_post_revision($revision_id);
@@ -1828,7 +1828,7 @@ class SyndicatedPost {
 			endforeach;
 
 			$this->validate_post_id($dbpost, $update, array(__CLASS__, __FUNCTION__));
-			
+
 			$ret = $this->_wp_id;
 		endif;
 		return $ret;
@@ -1898,40 +1898,40 @@ class SyndicatedPost {
 		// we must rely on WordPress setting blog_charset and hope that the user
 		// has got their database encoding set up to roughly match
 		$charset = get_option('blog_charset', 'utf8');
-		
+
 		foreach ($out as $key => $value) :
 			if (is_string($value)) :
-				
+
 				if (!function_exists('mb_check_encoding') or mb_check_encoding($value, $charset)) :
 					$out[$key] = $value;
 				else :
 					$fromCharset = mb_detect_encoding($value, mb_detect_order(), /*strict=*/ true);
 					$out[$key] = mb_convert_encoding($value, $charset, $fromCharset);
 				endif;
-				
+
 			elseif (is_array($value)) :
 				$out[$key] = $this->db_sanitize_post_check_encoding($value);
 
 			else :
 				$out[$key] = $value;
 			endif;
-			
+
 		endforeach;
-		
+
 		return $out;
 	} /* SyndicatedPost::db_sanitize_post_check_encoding () */
-	
+
 	function db_sanitize_post ($out) {
 		global $wp_db_version;
-		
+
 		$out = $this->db_sanitize_post_check_encoding($out);
-				
+
 		// < 3.6. Core API, including `wp_insert_post()`, expects
 		// properly slashed data. If `wp_slash()` exists, then
 		// this is after the big change-over in how data slashing
 		// was handled.
 		if (!function_exists('wp_slash')) :
-		
+
 			foreach ($out as $key => $value) :
 				if (is_string($value)) :
 					$out[$key] = esc_sql($value);
@@ -1939,26 +1939,26 @@ class SyndicatedPost {
 					$out[$key] = $value;
 				endif;
 			endforeach;
-			
+
 		// For revisions [@23416,@23554), core API expects
 		// unslashed data. Cf. <https://core.trac.wordpress.org/browser/trunk/wp-includes/post.php?rev=23416>
 		// 	NOOP for those revisions.
-		
+
 		// In revisions @23554 to present, `wp_insert_post()`
 		// expects slashed data once again.
 		// Cf. <https://core.trac.wordpress.org/changeset/23554/trunk/wp-includes/post.php?contextall=1>
 		// But at least now we can use the wp_slash API function to do that.
 		// Hooray.
-		
+
 		elseif ($wp_db_version >= 23524) :
-		
+
 			$out = wp_slash($out);
-			
+
 		endif;
 
 		return $out;
 	}
-	
+
 	/**
 	 * SyndicatedPost::validate_post_id()
 	 *
@@ -1981,7 +1981,7 @@ class SyndicatedPost {
 			$mesg = "Failed to $verb item [$guid]. WordPress API returned no valid post ID.\n"
 				."\t\tID = ".serialize($this->_wp_id)."\n"
 				."\t\tURL = ".MyPHP::val($url)
-				."\t\tFeed = ".MyPHP::val($feed); 
+				."\t\tFeed = ".MyPHP::val($feed);
 
 			FeedWordPress::diagnostic('updated_feeds:errors', "WordPress API error: $mesg");
 			FeedWordPress::diagnostic('feed_items:rejected', $mesg);
@@ -2028,16 +2028,16 @@ EOM;
 		$post_author = (int) $this->post['post_author'];
 
 		$revision_id = (int) $revision_id;
-		
+
 		// Let's fix the author.
 		set_post_field('post_author', $this->post['post_author'], $revision_id);
-		
+
 		// Let's fix the GUID to a dummy URL with the update hash.
 		set_post_field('guid', 'http://feedwordpress.radgeek.com/?rev='.$this->update_hash(), $revision_id);
 
 		// Let's fire an event for add-ons and filters
 		do_action('syndicated_post_fix_revision_meta', $revision_id, $this);
-		
+
 	} /* SyndicatedPost::fix_revision_meta () */
 
 	/**
