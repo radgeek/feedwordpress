@@ -1254,6 +1254,8 @@ class FeedWordPress {
 		add_action('wp_ajax_fwp_feedcontents', array($this, 'fwp_feedcontents'));
 		add_action('wp_ajax_fwp_xpathtest', array($this, 'fwp_xpathtest'));
 
+		// Prepare for future translations... (gwyneth 20210714)
+		// add_action('init', array($this, 'load_textdomain');
 	} /* FeedWordPress::init() */
 
 	/**
