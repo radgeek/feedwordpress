@@ -81,7 +81,7 @@ class SyndicatedLink {
 			$stale = true; // update on the next timed update
 		elseif ( !$this->setting('update/last') ) :
 			$stale = true; // initial update
-		elseif ($feedwordpress->force_update_all()) :
+		elseif (!empty($feedwordpress) and $feedwordpress->force_update_all()) :
 			$stale = true; // forced general updating
 		else :
 			$after = (
@@ -110,7 +110,7 @@ class SyndicatedLink {
 			$this->magpie = new MagpieFromSimplePie($this->simplepie, NULL);
 		endif;
 	} /* SyndicatedLink::fetch () */
-	
+
 	public function live_posts () {
 		if (!is_object($this->simplepie)) :
 			$this->fetch();
@@ -137,9 +137,9 @@ class SyndicatedLink {
 
 		$url = $this->uri(array('add_params' => true, 'fetch' => true));
 		FeedWordPress::diagnostic('updated_feeds', 'Polling feed ['.$url.']');
-	
+
 		$this->fetch();
-	
+
 		$new_count = NULL;
 
 		$resume = ('yes'==$this->setting('update/unfinished'));
@@ -244,7 +244,7 @@ class SyndicatedLink {
 			$crashed = false;
 
 			$posts = $this->live_posts();
-			
+
 			$this->magpie->originals = $posts;
 
 			// If this is a complete feed, rather than an incremental feed, we
@@ -281,7 +281,7 @@ class SyndicatedLink {
 						endif;
 
 						unset($post);
-					endif;					
+					endif;
 				endforeach;
 			endif;
 
@@ -377,7 +377,7 @@ class SyndicatedLink {
 		));
 
 	} /* SyndicatedLink::do_update_ttl () */
-	
+
 	public function process_retirements ($delta) {
 		global $post;
 
@@ -756,7 +756,7 @@ class SyndicatedLink {
 
 	public function get_feed_type () {
 		$type_code = $this->setting('link/feed_type');
-		
+
 		// list derived from: <http://simplepie.org/api/class-SimplePie.html>, retrieved 2020/01/18
 		$bitmasks = array(
 			SIMPLEPIE_TYPE_RSS_090 => 'RSS 0.90',
@@ -786,10 +786,10 @@ class SyndicatedLink {
 				endif;
 			endif;
 		endforeach;
-		
+
 		return $type;
 	} /* SyndicatedLink::get_feed_type () */
-	
+
 	public function uri ($params = array()) {
 		$params = wp_parse_args($params, array(
 		'add_params' => false,
@@ -798,11 +798,11 @@ class SyndicatedLink {
 
 		// Initialize $qp (= array for added query parameters, if any)
 		$qp = array();
-		
-		$link_rss = (is_object($this->link) ? $this->link->link_rss : NULL); 
-		
+
+		$link_rss = (is_object($this->link) ? $this->link->link_rss : NULL);
+
 		// $link_rss stores the URI for the subscription as stored in the feed's record.
-		// $uri stores the effective URI of the request including any/all added query parameters 
+		// $uri stores the effective URI of the request including any/all added query parameters
 		$uri = $link_rss;
 		if (!is_null($uri) and strlen($uri) > 0 and $params['add_params']) :
 			$qp = maybe_unserialize($this->setting('query parameters', array()));
@@ -828,7 +828,7 @@ class SyndicatedLink {
 		// Do we have any filters that apply here?
 		$uri = apply_filters('syndicated_link_uri', $uri, $link_rss, $qp, $params, $this);
 
-		// Return the filtered link URI.		
+		// Return the filtered link URI.
 		return $uri;
 	} /* SyndicatedLink::uri () */
 
@@ -948,14 +948,14 @@ class SyndicatedLink {
 		$params = wp_parse_args($params, array(
 		"rel" => NULL,
 		));
-		
+
 		$fLinks = array();
 		$search = array(
 			array('', 'link'),
 			array(SIMPLEPIE_NAMESPACE_ATOM_10, 'link'),
 			array(SIMPLEPIE_NAMESPACE_ATOM_03, 'link'),
 		);
-		
+
 		foreach ($search as $pair) :
 			if ($link_tags = $this->simplepie->get_feed_tags($pair[0], $pair[1])) :
 				$fLinks = array_merge($fLinks, $link_tags);
@@ -964,7 +964,7 @@ class SyndicatedLink {
 				$fLinks = array_merge($fLinks, $link_tags);
 			endif;
 		endforeach;
-		
+
 		$ret = array();
 		foreach ($fLinks as $link) :
 			$filter = false;
@@ -975,13 +975,13 @@ class SyndicatedLink {
 					// Get a list of NSes from the search
 					foreach ($search as $pair) :
 						$ns = $pair[0];
-						
+
 						if (isset($link['attribs'][$ns])
 						and isset($link['attribs'][$ns]['rel'])
 						) :
 							$rel = strtolower(trim($link['attribs'][$ns]['rel']));
 							$fRel = strtolower(trim($params['rel']));
-					
+
 							if ($rel == $fRel) :
 								$filter = false;
 							endif;
@@ -989,7 +989,7 @@ class SyndicatedLink {
 					endforeach;
 				endif;
 			endif;
-			
+
 			if (!$filter) :
 				$ret[] = $link;
 			endif;
@@ -997,7 +997,7 @@ class SyndicatedLink {
 
 		return $ret;
 	}
-	
+
 	public function ttl ($return_element = false) {
 		if (is_object($this->magpie)) :
 			$channel = $this->magpie->channel;
@@ -1044,7 +1044,7 @@ class SyndicatedLink {
 			// do we recognize the alphanumeric period name? if not, then guess
 			// a responsible default, e.g. roughly hourly
 			$mins = (isset($period_minutes[$period]) ? $period_minutes[$period] : 67);
-			
+
 			$xml = 'sy:updateFrequency';
 			$ret = (int) ($mins / $freq);
 
