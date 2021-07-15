@@ -491,3 +491,20 @@ table.twofer td.secondary { padding-left: 10px; width: 30%; }
 	background-color: transparent;
 	color: #4CAF50;
 }
+
+.feedwordpress-down-button {
+	color: green;
+	background-color: transparent;
+	border: none;
+	text-align: left;
+	text-decoration: none;
+	display: inline-block;
+	cursor: pointer;
+	vertical-align: middle;
+	transform: rotate(90deg);
+}
+.feedwordpress-down-button:hover {
+	background-color: transparent;
+	color: #4CAF50;
+}
+
