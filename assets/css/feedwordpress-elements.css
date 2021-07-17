@@ -53,7 +53,6 @@
 	border-radius: 12px;
 	-moz-border-radius: 12px;
 	-webkit-border-radius: 12px;
-	-khtml-border-radius: 12px;
 	border-style: solid;
 	border-width: 1px;
 	line-height: 15px;
@@ -69,10 +68,6 @@
 	-webkit-border-top-right-radius: 12px;
 	-webkit-border-bottom-left-radius: 0;
 	-webkit-border-bottom-right-radius: 0;
-	-khtml-border-top-left-radius: 12px;
-	-khtml-border-top-right-radius: 12px;
-	-khtml-border-bottom-left-radius: 0;
-	-khtml-border-bottom-right-radius: 0;
 	-moz-border-radius-topleft: 12px;
 	-moz-border-radius-topright: 12px;
 	-moz-border-radius-bottomleft: 0;
@@ -116,7 +111,6 @@ ul.current-setting {
 	background-color: #fff;
 	border-radius: 5px;
 	-moz-border-radius: 5px;
-	-khtml-border-radius: 5px;
 	-webkit-border-radius: 5px;
 }
 #feed-finder form fieldset.alt {
@@ -135,7 +129,6 @@ ul.current-setting {
 	border-bottom: 1px solid #777;
 	border-radius: 5px;
 	-moz-border-radius: 5px;
-	-khtml-border-radius: 5px;
 	-webkit-border-radius: 5px;
 	background-color: #7ff;
 	padding: 3px 10px;
@@ -245,7 +238,6 @@ table.twofer td.active {
 	border-radius: 5px;
 	-moz-border-radius: 5px;
 	-webkit-border-radius: 5px;
-	-khtml-border-radius: 5px;
 }
 table.twofer td.inactive {
 	color: #333;
@@ -296,11 +288,8 @@ table.twofer td.secondary {
 	font-size: 13px;
 	font-style: italic;
 	font-weight: normal;
-
 	margin: 0px;
-
 	border-bottom: 1px solid #ececec;
-
 	padding-left: 15px;
 	padding-top: 10px;
 	padding-bottom: 5px;
@@ -370,7 +359,6 @@ table.twofer td.secondary {
 	border-radius: 10px;
 	-moz-border-radius: 10px;
 	-webkit-border-radius: 10px;
-	-khtml-border-radius: 10px;
 	opacity: 0.85;
 	top: auto;
 	left: 45%;
@@ -403,6 +391,16 @@ table.twofer td.secondary {
 .feedwordpress-admin .submit {
 	position: relative;
 	z-index: 40;
+}
+
+/*	These icons have been deprecated since 2013 or so;
+	see https://core.trac.wordpress.org/ticket/26119.
+	Nevertheless, we need proper sizing for the 'new' SVG.
+	(gwyneth 20210717) */
+.feedwordpress-admin .icon32,
+.feedwordpress-admin .icon32 img {
+	width: 32px;
+	height: 32px;
 }
 
 #feedwordpress-admin-syndication .heads-up {
@@ -582,37 +580,17 @@ table.twofer td.secondary {
 }
 
 /*
- * Getting rid of the ugly tiny PNG and replacing it with a WP Dashicon plus sign
- * (gwyneth 20210714)
+ * Getting rid of the ugly tiny PNGs and replacing it with WP Dashicons
+ * (gwyneth 20210717)
  */
-
-.feedwordpress-plus-button {
+.feedwordpress-dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+	background-color: transparent;
 	color: green;
-	background-color: transparent;
-	border: none;
-	text-align: left;
-	text-decoration: none;
-	display: inline-block;
-	cursor: pointer;
-	vertical-align: middle;
 }
-.feedwordpress-plus-button:hover {
-	background-color: transparent;
-	color: #4caf50;
-}
-
-.feedwordpress-down-button {
-	color: green;
-	background-color: transparent;
-	border: none;
-	text-align: left;
-	text-decoration: none;
-	display: inline-block;
-	cursor: pointer;
-	vertical-align: middle;
-	transform: rotate(90deg);
-}
-.feedwordpress-down-button:hover {
+.feedwordpress-dashicons:hover {
 	background-color: transparent;
 	color: #4caf50;
 }
