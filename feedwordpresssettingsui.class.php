@@ -5,7 +5,7 @@
  */
 class FeedWordPressSettingsUI {
 	static function is_admin () {
-		
+
 		$admin_page = false; // Innocent until proven guilty
 		if (!is_null(MyPHP::request('page'))) :
 			$fwp = preg_quote(FeedWordPress::path());
@@ -21,38 +21,40 @@ class FeedWordPressSettingsUI {
 		wp_enqueue_script('post'); // for magic tag and category boxes
 		wp_enqueue_script('admin-forms'); // for checkbox selection
 
-		wp_register_script('feedwordpress-elements', plugins_url( 'assets/js/feedwordpress-elements.js', __FILE__ ) );
+		wp_register_script('feedwordpress-elements', plugins_url('assets/js/feedwordpress-elements.js', __FILE__ ) );
 		wp_enqueue_script('feedwordpress-elements');
 	}
 
 	static function admin_styles () {
+		/* TODO: At some point in the future, these ought to be changed to modern designs,
+			i.e. either Dashicons or the upcoming SVG icon fonts (gwyneth 20210717) */
 		?>
 		<style type="text/css">
 		#feedwordpress-admin-feeds .link-rss-params-remove .x, .feedwordpress-admin .remove-it .x {
 			background: url(<?php print admin_url('images/xit.gif') ?>) no-repeat scroll 0 0 transparent;
 		}
-
 		#feedwordpress-admin-feeds .link-rss-params-remove:hover .x, .feedwordpress-admin .remove-it:hover .x {
 			background: url(<?php print admin_url('images/xit.gif') ?>) no-repeat scroll -10px 0 transparent;
 		}
 
+		/* Note: the old images referred here were deprecated around 2009 or so and are *not*
+			part of the WordPress core any more; see https://core.trac.wordpress.org/ticket/20980
+			I have placed these missing images on the images folder instead (gwyneth 20210717) */
 		.fwpfs {
-			background-image: url(<?php print admin_url('images/fav.png'); ?>);
+			background-image: url(<?php /* print admin_url('images/fav.png'); */ echo plugins_url('assets/images/fav.png'); ?>);
 			background-repeat: repeat-x;
 			background-position: left center;
 			background-attachment: scroll;
 		}
 		.fwpfs.slide-down {
-			background-image:url(<?php print admin_url('images/fav-top.png'); ?>);
-			background-position:0 top;
-			background-repeat:repeat-x;
+			background-image: url(<?php /* print admin_url('images/fav-top.png'); */  echo plugins_url('assets/images/fav-top.png'); ?>);
+			background-position: 0 top;
+			background-repeat: repeat-x;
 		}
-
 		.update-results {
 			max-width: 100%;
 			overflow: auto;
 		}
-
 		</style>
 		<?php
 	} /* FeedWordPressSettingsUI::admin_styles () */
@@ -94,25 +96,25 @@ class FeedWordPressSettingsUI {
 	 */
 	static public function get_template_part ( $slug, $name = null, $type = null, $args = array() ) {
 		global $feedwordpress;
-		
+
 		do_action( "feedwordpress_get_template_part_${slug}", $slug, $name, $type, $args );
 
 		$templates = array();
 		$name = (string) $name;
 		$type = (string) $type;
-		
+
 		$ext = ".php";
 		if ( strlen($type) > 0 ):
 			$ext = ".${type}${ext}";
 		endif;
-		
+
 		if ( strlen($name) > 0 ) :
 			$templates[] = "${slug}-${name}${ext}";
 		endif;
 		$templates[] = "${slug}${ext}";
-		
+
 		do_action( "feedwordpress_get_template_part", $slug, $name, $type, $args );
-		
+
 		// locate_template
 		$located = '';
 		foreach ( $templates as $template_name ) :
@@ -124,12 +126,12 @@ class FeedWordPressSettingsUI {
 				endif;
 			endif;
 		endforeach;
-		
+
 		if ( strlen($located) > 0 ) :
 			load_template( $located, /*require_once=*/ false, /*args=*/ $args );
 		endif;
 	} /* FeedWordPressSettingsUI::get_template_part () */
-	
+
 	static function magic_input_tip_js ($id) {
 			if (!preg_match('/^[.#]/', $id)) :
 				$id = '#'.$id;
