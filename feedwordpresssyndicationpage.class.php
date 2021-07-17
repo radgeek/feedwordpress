@@ -602,9 +602,12 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 		  <input type="hidden" name="action" value="feedfinder" />
 		  <input type="submit" class="button-secondary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
-		  <div style="text-align: right; margin-right: 2.0em"><a id="turn-on-multiple-sources" href="#add-multiple-uri"><img style="vertical-align: middle" src="<?php print esc_url(plugins_url('down.png', __FILE__)); ?>" alt="" /> add multiple</a>
-		  <span class="screen-reader-text"> or </span>
-		  <a id="turn-on-opml-upload" href="#upload-opml"><img src="<?php print esc_url(plugins_url('plus.png', __FILE__)); ?>" alt="" style="vertical-align: middle" /> import source list</a></div>
+		  <div style="text-align: right; margin-right: 2.0em">
+			<!-- Using WP Dashicon plus and down-arrow symbols below (gwyneth 20210717) -->
+			<a id="turn-on-multiple-sources" href="#add-multiple-uri"><span class="dashicons feedwordpress-dashicons dashicons-list-view"></span>&nbsp;add multiple</a>
+			<span class="screen-reader-text"> or </span>
+			<a id="turn-on-opml-upload" href="#upload-opml"><span class="dashicons feedwordpress-dashicons dashicons-upload"></span>&nbsp;import source list</a>
+		  </div>
 		  </li>
 		  </ul>
 		  </form>
