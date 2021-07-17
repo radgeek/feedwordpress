@@ -583,7 +583,8 @@ table.twofer td.secondary {
  * Getting rid of the ugly tiny PNGs and replacing it with WP Dashicons
  * (gwyneth 20210717)
  */
-.feedwordpress-dashicons {
+.feedwordpress-dashicons,
+.feedwordpress-dashicons:before {
 	width: 18px;
 	height: 18px;
 	font-size: 18px;
