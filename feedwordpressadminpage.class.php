@@ -69,7 +69,7 @@ class FeedWordPressAdminPage {
 		add_action('feedwordpress_check_feed_complete', 'update_feeds_finish', 10, 3);
 
 		$link = $this->link;
-		
+
 		print '<div class="updated">';
 		print "<ul>";
 		$uri = $this->link->uri();
@@ -380,8 +380,11 @@ class FeedWordPressAdminPage {
 	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
 
 	public function display_sheet_header ($pagename = 'Syndication', $all = false) {
+	/* changed to use a SVG instead, while keeping the correct size.
+		Note that these icons have been deprecated in 2013 or so:
+		 @see https://core.trac.wordpress.org/ticket/26119 */
 		?>
-		<div class="icon32"><img src="<?php print esc_attr( plugins_url( 'feedwordpress.png', __FILE__ ) ); ?>" alt="" /></div>
+		<div class="icon32"><img src="<?php print esc_attr(plugins_url('assets/images/icon.svg', __FILE__)); ?>" alt="FeedWordPress Logo" /></div>
 		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name(/*from feed=*/ false)); ?><?php endif; ?></h2>
 		<?php
 	}
