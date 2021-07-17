@@ -63,7 +63,8 @@ define ('FEEDWORDPRESS_COMPATIBILITY', $feedwordpress_compatibility);
 define ('FEEDWORDPRESS_CAT_SEPARATOR_PATTERN', '/[:\n]/');
 define ('FEEDWORDPRESS_CAT_SEPARATOR', "\n");
 
-define ('FEEDVALIDATOR_URI', 'http://feedvalidator.org/check.cgi');
+// define ('FEEDVALIDATOR_URI', 'http://feedvalidator.org/check.cgi');	// Link dead (gwyneth 20210617)
+define ('FEEDVALIDATOR_URI', 'https://validator.w3.org/feed/check.cgi');	// Falling back to the W3C validator link
 
 define ('FEEDWORDPRESS_FRESHNESS_INTERVAL', 10*60); // Every ten minutes
 
