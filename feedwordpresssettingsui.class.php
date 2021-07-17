@@ -41,13 +41,13 @@ class FeedWordPressSettingsUI {
 			part of the WordPress core any more; see https://core.trac.wordpress.org/ticket/20980
 			I have placed these missing images on the images folder instead (gwyneth 20210717) */
 		.fwpfs {
-			background-image: url(<?php /* print admin_url('images/fav.png'); */ echo plugins_url('assets/images/fav.png'); ?>);
+			background-image: url(<?php /* print admin_url('images/fav.png'); */ echo plugins_url('assets/images/fav.png', __FILE__); ?>);
 			background-repeat: repeat-x;
 			background-position: left center;
 			background-attachment: scroll;
 		}
 		.fwpfs.slide-down {
-			background-image: url(<?php /* print admin_url('images/fav-top.png'); */  echo plugins_url('assets/images/fav-top.png'); ?>);
+			background-image: url(<?php /* print admin_url('images/fav-top.png'); */  echo plugins_url('assets/images/fav-top.png', __FILE__); ?>);
 			background-position: 0 top;
 			background-repeat: repeat-x;
 		}
