@@ -651,7 +651,7 @@ class FeedWordPress {
 			$menu_cap,
 			$syndicationMenu,
 			NULL,
-			$this->plugin_dir_url( 'assets/images/feedwordpress-tiny.png' )
+			$this->plugin_dir_url(/* 'assets/images/feedwordpress-tiny.png' */ 'assets/images/icon.svg')
 		);
 
 		do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);

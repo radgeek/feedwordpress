@@ -476,7 +476,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 		// Hey ho, let's go...
 		?>
-		<div style="float: left; background: #F5F5F5; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url(plugins_url( "feedwordpress.png", __FILE__ ) ); ?>" alt="" /></a></div>
+		<div style="float: left; background: /* #F5F5F5 */ white; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url(plugins_url(/* "feedwordpress.png" */ "assets/images/icon.svg", __FILE__ ) ); ?>" width="36px" height="36px" alt="FeedWordPress Logo" /></a></div>
 
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;">Managed by <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
 		<?php print FEEDWORDPRESS_VERSION; ?>.</p>
@@ -521,24 +521,26 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		<div id="add-single-uri">
 			<?php if (count($sources['Y']) > 0) : ?>
 			<form id="check-for-updates" action="<?php print $this->form_action(); ?>" method="POST">
-			<div class="container"><input type="submit" class="button-primary" name="update" value="<?php print FWP_CHECK_FOR_UPDATES; ?>" />
-			<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
-			<input type="hidden" name="update_uri" value="*" /></div>
+				<div class="container">
+					<input type="submit" class="button-primary" name="update"
+						value="<?php print FWP_CHECK_FOR_UPDATES; ?>" />
+					<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
+					<input type="hidden" name="update_uri" value="*" />
+				</div>
 			</form>
 			<?php endif; ?>
 
-		  <form id="syndicated-links" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
-		  <div class="container"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
-		  <label for="add-uri">Add:
-		  <input type="text" name="lookup" id="add-uri" placeholder="<?php _e('Source URL'); ?>"
-		  value="<?php _e('Source URL'); ?>" style="width: 55%;" /></label>
-
-		  <?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
-		  <input type="hidden" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
-		  <!-- Using WP Dashicon plus symbol below (gwyneth 20210714) -->
-		  <button class="feedwordpress-plus-button" alt="<?php print FWP_SYNDICATE_NEW; ?>" /><span class="dashicons dashicons-plus-alt"></span></button>
-		  </div>
-		  </form>
+			<form id="syndicated-links" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+				<div class="container"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
+					<label for="add-uri">Add:
+					<input type="text" name="lookup" id="add-uri" placeholder="<?php _e('Source URL'); ?>"
+						value="<?php _e('Source URL'); ?>" style="width: 55%;" /></label>
+					<?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
+					<input type="hidden" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
+					<!-- Using WP Dashicon plus symbol below (gwyneth 20210714) -->
+					<button class="feedwordpress-dashicons-button" alt="<?php print FWP_SYNDICATE_NEW; ?>" /><span class="dashicons dashicons-plus-alt feedwordpress-dashicons-button"></span></button>
+				</div>
+			</form>
 		</div> <!-- id="add-single-uri" -->
 
 		<br style="clear: both;" />
