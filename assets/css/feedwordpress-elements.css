@@ -583,15 +583,36 @@ table.twofer td.secondary {
  * Getting rid of the ugly tiny PNGs and replacing it with WP Dashicons
  * (gwyneth 20210717)
  */
-.feedwordpress-dashicons,
-.feedwordpress-dashicons:before {
+.feedwordpress-dashicons /*,
+.feedwordpress-dashicons:before */{
 	width: 18px;
 	height: 18px;
 	font-size: 18px;
 	background-color: transparent;
 	color: green;
 }
-.feedwordpress-dashicons:hover {
-	background-color: transparent;
-	color: #4caf50;
+/* Removes all colouring from a button; used to create a button out of a WP Dashicon.
+(gwyneth 20210717) */
+.feedwordpress-dashicons-button {
+	color: green;
+	background: transparent;
+	border: none !important;
+	box-shadow: none !important;
+	text-shadow: none !important;
+	cursor: pointer;
 }
+.feedwordpress-dashicons:hover,
+.feedwordpress-dashicons-button:hover {
+	background-color: transparent;
+	color: #4caf50 !important;
+	/* text-shadow: 0px 0px 3px lightgrey; */
+	cursor: pointer;
+}
+
+/*
+ * Attempting to change the padding on the SVG (gwyneth 20210718)
+ */
+li#toplevel_page_feedwordpress-syndication .wp-menu-image img {
+	padding: 0;
+}
+
