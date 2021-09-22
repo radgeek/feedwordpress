@@ -1332,6 +1332,7 @@ class SyndicatedPost {
 					$frozen = ('yes' == $this->link->setting('freeze updates', 'freeze_updates', NULL));
 					if (!$frozen) :
 						$frozen_values = get_post_custom_values('_syndication_freeze_updates', $old_post->ID);
+						$frozen_values = is_countable($frozen_values) ? $frozen_values : [];
 						$frozen = (count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
 
 						if ($frozen) :
