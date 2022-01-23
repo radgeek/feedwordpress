@@ -57,13 +57,14 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			$defaultVisibility = 'N';
 		endif;
 		
+		// this may be output into HTML, and it should really only ever be Y or N...
 		$visibility = (
 			isset($_REQUEST['visibility'])
-			? $_REQUEST['visibility']
+			? preg_replace('/[^YyNn]+/', '', strip_tags($_REQUEST['visibility']))
 			: $defaultVisibility
 		);
 		
-		return $visibility;
+		return (strlen($visibility) > 0 ? $visibility : $defaultVisibility);
 	} /* FeedWordPressSyndicationPage::visibility_toggle() */
 
 	function show_inactive () {
@@ -475,6 +476,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		endif;
 		
 		// Hey ho, let's go...
+		$syndicatedLinks_formAction = esc_url( sprintf('%s&amp;visibility=%s', $hrefPrefix, urlencode($visibility)) );
 		?>
 		<div style="float: left; background: #F5F5F5; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url(plugins_url( "feedwordpress.png", __FILE__ ) ); ?>" alt="" /></a></div>
 
@@ -527,7 +529,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			</form>
 			<?php endif; ?>
 		
-		  <form id="syndicated-links" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+		  <form id="syndicated-links" action="<?php print $syndicatedLinks_formAction; ?>" method="post">
 		  <div class="container"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
 		  <label for="add-uri">Add:
 		  <input type="text" name="lookup" id="add-uri" placeholder="Source URL"
@@ -551,14 +553,15 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 		$visibility = $this->visibility_toggle();
 		$showInactive = $this->show_inactive();
-
+		
 		$hrefPrefix = $this->form_action();
+		$formHref = esc_url( sprintf( '%s&amp;visibility=%s', $hrefPrefix, urlencode($visibility) ) );
 		?>
 		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 		<div class="tablenav">
 
 		<div id="add-multiple-uri" class="hide-if-js">
-		<form action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+		<form action="<?php print $formHref; ?>" method="post">
 		  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 		  <h4>Add Multiple Sources</h4>
 		  <div>Enter one feed or website URL per line. If a URL links to a website which provides multiple feeds, FeedWordPress will use the first one listed.</div>
@@ -577,7 +580,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		a URL for the OPML document, or by uploading a copy from your
 		computer.</p>
 		
-		<form enctype="multipart/form-data" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+		<form enctype="multipart/form-data" action="<?php print $formHref; ?>" method="post">
 		  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?><input type="hidden" name="MAX_FILE_SIZE" value="100000" /></div>
 		<div style="clear: both"><label for="opml-lookup" style="float: left; width: 8.0em; margin-top: 5px;">From URL:</label> <input type="text" id="opml-lookup" name="opml_lookup" value="OPML document" /></div>
 		<div style="clear: both"><label for="opml-upload" style="float: left; width: 8.0em; margin-top: 5px;">From file:</label> <input type="file" id="opml-upload" name="opml_upload" /></div>
@@ -590,7 +593,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		</div> <!-- id="upload-opml" -->
 	
 		<div id="add-single-uri" class="alignright">
-		  <form id="syndicated-links" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+		  <form id="syndicated-links" action="<?php print $formHref; ?>" method="post">
 		  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 		  <ul class="subsubsub">
 		  <li><label for="add-uri">New source:</label>
@@ -618,7 +621,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 		</div> <!-- class="tablenav" -->
 		
-		<form id="syndicated-links" action="<?php print $hrefPrefix; ?>&amp;visibility=<?php print $visibility; ?>" method="post">
+		<form id="syndicated-links" action="<?php print $formHref; ?>" method="post">
 		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 		
 		<?php if ($showInactive) : ?>
