@@ -1331,8 +1331,8 @@ class SyndicatedPost {
 				if ($updated) : // Ignore if the post is frozen
 					$frozen = ('yes' == $this->link->setting('freeze updates', 'freeze_updates', NULL));
 					if (!$frozen) :
-						$frozen_values = get_post_custom_values('_syndication_freeze_updates', $old_post->ID);
-						$frozen = (count($frozen_values) > 0 and 'yes' == $frozen_values[0]);
+						$frozen_value = get_post_meta($old_post->ID, '_syndication_freeze_updates', /*single=*/ true);
+						$frozen = (!is_null($frozen_value) and ('yes' == $frozen_value));
 
 						if ($frozen) :
 							$updatedReason = ' IS BLOCKED FROM BEING UPDATED BY A UPDATE LOCK ON THIS POST, EVEN THOUGH IT '.$updatedReason;
