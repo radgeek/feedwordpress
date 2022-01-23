@@ -3,8 +3,8 @@ Contributors: C. Johnson
 Donate link: http://feedwordpress.radgeek.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
-Tested up to: 5.7.2
-Stable tag: 2021.0713
+Tested up to: 5.9
+Stable tag: 2022.0123
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,14 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
 
 == Changelog ==
+
+= 2022.0123 =
+
+*	IMPORTANT SECURITY FIX: This version includes an important fix for a security vulnerability reported to me through WPScan and WordPress support channels.
+
+	Vulnerability CVE-2021-25055 allowed for an XSS (Cross-Site Scripting) attack using a specially crafted URL for a page within the FeedWordPress admin interface. (To be exploited, an existing user with login credentials that allow them to access the FeedWordPress dashboard would have to follow the malicious URL and log in.) This vulnerability has been corrected in the current version; to protect your site's security PLEASE BE SURE TO UPGRADE AS SOON AS POSSIBLE to version 2022.0123 or later, via the WordPress Plugin Repository or via Github.
+
+*	BUG FIXES: Fixes a number of small possible bugs when creating new syndicated posts under unusual conditions -- a sanity check is built in to avoid infinite loops in case of certain unexpected error outcomes when creating new users; some more possible sources of PHP 8 "Countable" warnings are eliminated, etc.
 
 = 2021.0713 =
 
@@ -165,7 +173,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	
 	The first is a common problem across several plugins due to an ambiguity in the WordPress documentation and a change in the behavior of WordPress's built-in add_query_arg() and remove_query_arg() functions which could, under certain low-probability conditions, allow for potential XSS attack vectors. This fixes issue # 39 reported at <https://github.com/radgeek/feedwordpress/issues/39> Thanks to github.com/quassy
 	
-	The second is a security vulnerability fixes a security vulnerability that was reported to me privately (thanks to Adrián M. F.) which, under other low-probability conditions, could allow for SQL insertion attacks by a malicious user with access to login credentials, which would compromise data security.
+	The second fixes a security vulnerability that was reported to me privately (thanks to Adrián M. F.) which, under other low-probability conditions, could allow for SQL insertion attacks by a malicious user with access to login credentials, which would compromise data security.
 
 	It is *IMPORTANT* and worth your while to upgrade FeedWordPress as soon as possible in order to eliminate these vulnerabilities. If you have any questions or if there is something blocking you from making the upgrade which you need my help with, don't hesitate to get in touch.
 
