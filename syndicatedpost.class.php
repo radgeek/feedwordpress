@@ -698,7 +698,7 @@ class SyndicatedPost {
 			else :
 				$link = $this->permalink();
 				if (is_null($link)) : $link = $this->link->uri(); endif;
-				$guid .= '://'.md5($link.'/'.$this->item['title']);
+				$guid .= '://'.md5($link.'/'.$this->title());
 			endif;
 		endif;
 		return $guid;
