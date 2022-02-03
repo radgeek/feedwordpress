@@ -92,10 +92,16 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			endif;
 
 			update_option('feedwordpress_custom_settings', serialize($custom_settings));
-
-			update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
-			update_option('feedwordpress_use_aggregator_source_data', $_REQUEST['use_aggregator_source_data']);
-			update_option('feedwordpress_formatting_filters', $_REQUEST['formatting_filters']);
+			
+			$sMungePermalink = sanitize_text_field($_REQUEST['munge_permalink']);
+			$sUseAggregatorSourceData = sanitize_text_field($_REQUEST['use_aggregator_source_data']);
+			$sFormattingFilters = sanitize_text_field($_REQUEST['formatting_filters']);
+			$sFeedCommentStatus = (isset($_REQUEST['feed_comment_status']) ? sanitize_text_field($_REQUEST['feed_comment_status']) : '');
+			$sFeedPingStatus = (isset($_REQUEST['feed_ping_status']) ? sanitize_text_field($_REQUEST['feed_ping_status']) : '');
+			
+			update_option('feedwordpress_munge_permalink', $sMungePermalink);
+			update_option('feedwordpress_use_aggregator_source_data', $sUseAggregatorSourceData);
+			update_option('feedwordpress_formatting_filters', $sFormattingFilters);
 
 			if (isset($post['resolve_relative'])) :
 				update_option('feedwordpress_resolve_relative', $post['resolve_relative']);
@@ -103,13 +109,14 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			if (isset($post['munge_comments_feed_links'])) :
 				update_option('feedwordpress_munge_comments_feed_links', $post['munge_comments_feed_links']);
 			endif;
-			if (isset($_REQUEST['feed_comment_status']) and ($_REQUEST['feed_comment_status'] == 'open')) :
+			
+			if ( $sFeedCommentStatus == 'open' ) :
 				update_option('feedwordpress_syndicated_comment_status', 'open');
 			else :
 				update_option('feedwordpress_syndicated_comment_status', 'closed');
 			endif;
 
-			if (isset($_REQUEST['feed_ping_status']) and ($_REQUEST['feed_ping_status'] == 'open')) :
+			if ( $sFeedPingStatus == 'open' ) :
 				update_option('feedwordpress_syndicated_ping_status', 'open');
 			else :
 				update_option('feedwordpress_syndicated_ping_status', 'closed');
@@ -235,7 +242,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		<?php endif; ?>
 		
 		<tr><th scope="row">Relative URIs:</th>
-		<td><p>If link or image in a syndicated post from <code><?php print $url; ?></code>
+		<td><p>If link or image in a syndicated post from <code><?php print esc_html($url); ?></code>
 		refers to a partial URI like <code>/about</code>, where should
 		the syndicated copy point to?</p>
 
@@ -374,7 +381,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		<table class="edit-form narrow">
 		<?php foreach ($whatsits as $what => $how) : ?>
 		  
-		  <tr><th scope="row"><?php print $how['label']; ?>:</th>
+		  <tr><th scope="row"><?php print esc_html($how['label']); ?>:</th>
 		  <td><?php
 		  	$this->setting_radio_control(
 		  		"$what status", "syndicated_${what}_status",
@@ -386,7 +393,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		
 		  <tr><th scope="row"><?php _e('Comment feeds'); ?></th>
 		  <td><p>When WordPress feeds and templates link to comments
-		  feeds for <?php print $page->these_posts_phrase(); ?>, the
+		  feeds for <?php print esc_html($page->these_posts_phrase()); ?>, the
 		  URLs for the feeds should...</p>
 		  <?php
 		  	$this->setting_radio_control(
@@ -449,11 +456,11 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		foreach ($custom_settings as $key => $value) : 
 		?>
 		  <tr style="vertical-align:top">
-		    <th width="30%" scope="row"><input type="hidden" name="notes[<?php echo $i; ?>][key0]" value="<?php echo esc_html($key); ?>" />
-		    <input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo $i; ?>][key1]" value="<?php echo esc_html($key); ?>" /></th>
-		    <td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo esc_html($value); ?></textarea>
-		    <?php print sprintf($testerButton, $i); ?></td>
-		    <td width="10%"><select name="notes[<?php echo $i; ?>][action]">
+		    <th width="30%" scope="row"><input type="hidden" name="notes[<?php echo esc_attr($i); ?>][key0]" value="<?php echo esc_html($key); ?>" />
+		    <input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo esc_attr($i); ?>][key1]" value="<?php echo esc_html($key); ?>" /></th>
+		    <td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo esc_attr($i); ?>-value" name="notes[<?php echo esc_attr($i); ?>][value]"><?php echo esc_html($value); ?></textarea>
+		    <?php print sprintf($testerButton, esc_attr($i) ); ?></td>
+		    <td width="10%"><select name="notes[<?php echo esc_attr($i); ?>][action]">
 		    <option value="update">save changes</option>
 		    <option value="delete">delete this setting</option>
 		    </select></td>
@@ -465,15 +472,15 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		?>
 
 		  <tr style="vertical-align: top">
-		    <th scope="row"><input type="text" size="10" name="notes[<?php echo $i; ?>][key1]" value="" /></th>
-		    <td><textarea name="notes[<?php echo $i; ?>][value]" rows="2" cols="40"></textarea><?php print sprintf($testerButton, $i); ?>
+		    <th scope="row"><input type="text" size="10" name="notes[<?php echo esc_attr($i); ?>][key1]" value="" /></th>
+		    <td><textarea name="notes[<?php echo esc_attr($i); ?>][value]" rows="2" cols="40"></textarea><?php print sprintf($testerButton, esc_attr($i)); ?>
 		      <p>Enter a text value, or a path to a data element from the syndicated item.<br/>
 		      For data elements, you can use an XPath-like syntax wrapped in <code>$( ... )</code>.<br/>
 		      <code>hello</code> = the text value <code><span style="background-color: #30FFA0;">hello</span></code><br/>
 		      <code>$(author/email)</code> = the contents of <code>&lt;author&gt;&lt;email&gt;<span style="background-color: #30FFA0">...</span>&lt;/email&gt;&lt;/author&gt;</code><br/>
 		      <code>$(media:content/@url)</code> = the contents of <code>&lt;media:content url="<span style="background-color: #30FFA0">...</span>"&gt;...&lt;/media:content&gt;</code></p>
 		    </td>
-		    <td><em>add new setting...</em><input type="hidden" name="notes[<?php echo $i; ?>][action]" value="update" /></td>
+		    <td><em>add new setting...</em><input type="hidden" name="notes[<?php echo esc_attr($i); ?>][action]" value="update" /></td>
 		  </tr>
 		</table>
 		</div> <!-- id="postcustomstuff" -->
@@ -625,15 +632,15 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 				$line['class'][] = 'boilerplate-li';
 ?>
 
-<li id="boilerplate-<?php print $index; ?>-li" class="<?php print implode(' ', $line['class']); ?>">&raquo; <strong>Add</strong> <select id="boilerplate-<?php print $index; ?>-placement" name="boilerplate[<?php print $index; ?>][placement]" style="width: 8.0em">
+<li id="boilerplate-<?php print esc_attr($index); ?>-li" class="<?php print esc_attr(implode(' ', $line['class'])); ?>">&raquo; <strong>Add</strong> <select id="boilerplate-<?php print esc_attr($index); ?>-placement" name="boilerplate[<?php print esc_attr($index); ?>][placement]" style="width: 8.0em">
 <option value="before"<?php print $selected['before']; ?>>before</option>
 <option value="after"<?php print $selected['after']; ?>>after</option>
-</select> the <select style="width: 8.0em" id="boilerplate-<?php print $index; ?>-element" name="boilerplate[<?php print $index; ?>][element]">
+</select> the <select style="width: 8.0em" id="boilerplate-<?php print esc_attr($index); ?>-element" name="boilerplate[<?php print esc_attr($index); ?>][element]">
 <option value="title"<?php print $selected['title']; ?>>title</option>
 <option value="post"<?php print $selected['post']; ?>>content</option>
 <option value="excerpt"<?php print $selected['excerpt']; ?>>excerpt</option>
 </select> of 
-<?php print $syndicatedPosts; ?>: <textarea style="vertical-align: top; width: 40%;" rows="2" cols="30" class="boilerplate-template" id="boilerplate-<?php print $index; ?>-template" name="boilerplate[<?php print $index; ?>][template]"><?php print htmlspecialchars($line['template']); ?></textarea></li>
+<?php print esc_html($syndicatedPosts); ?>: <textarea style="vertical-align: top; width: 40%;" rows="2" cols="30" class="boilerplate-template" id="boilerplate-<?php print esc_attr($index); ?>-template" name="boilerplate[<?php print esc_attr($index); ?>][template]"><?php print esc_html($line['template']); ?></textarea></li>
 <?php
 			endif;
 		endforeach;

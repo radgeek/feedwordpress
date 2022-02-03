@@ -58,11 +58,8 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		endif;
 		
 		// this may be output into HTML, and it should really only ever be Y or N...
-		$visibility = (
-			isset($_REQUEST['visibility'])
-			? preg_replace('/[^YyNn]+/', '', strip_tags($_REQUEST['visibility']))
-			: $defaultVisibility
-		);
+		$sVisibility = (isset($_REQUEST['visibility']) ? sanitize_text_field($_REQUEST['visibility'])  : $defaultVisibility);
+		$visibility = preg_replace('/[^YyNn]+/', '', $sVisibility);
 		
 		return (strlen($visibility) > 0 ? $visibility : $defaultVisibility);
 	} /* FeedWordPressSyndicationPage::visibility_toggle() */
@@ -99,17 +96,25 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	 * @uses sanitize_ids_sql()
 	 */
 	public function requested_link_ids_sql () {
-		// Multiple link IDs passed in link_ids[]=... . . .
-		$link_ids = (isset($_REQUEST['link_ids']) ? $_REQUEST['link_ids'] : array());
+		// Multiple link IDs passed in link_ids[]=...
+		$aLinkIdParameters = (isset($_REQUEST['link_ids']) ? $_REQUEST['link_ids'] : array());
+		$link_ids = array();
+		foreach ($aLinkIdParameters as $uLinkId) :
+			$sLinkId = sanitize_text_field($uLinkId);
+			array_push($link_ids, $sLinkId);
+		endforeach;
 		
 		// Or single in link_id=...
-		if (isset($_REQUEST['link_id'])) : array_push($link_ids, $_REQUEST['link_id']); endif;
+		if (isset($_REQUEST['link_id'])) :
+			$sLinkId = sanitize_text_field($_REQUEST['link_id']);
+			array_push($link_ids, $sLinkId);
+		endif;
 
-		// Filter for safe use in MySQL queries.
+		// Now use method to sanitize for safe use in MySQL queries.
 		$link_ids = $this->sanitize_ids_sql($link_ids);
 		
 		// Convert to MySQL list literal.
-		return "('".implode("', '", $link_ids)."')";	
+		return "('".implode("', '", $link_ids)."')";
 	} /* FeedWordPressSyndicationPage::requested_link_ids_sql () */
 	
 	function updates_requested () {
@@ -225,23 +230,25 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	}
 	
 	function display_multiadd_line ($line) {
-		$short_feed = esc_html(feedwordpress_display_url($line['feed']));
-		$feed = esc_html($line['feed']);
-		$link = esc_html($line['link']);
-		$title = esc_html($line['title']);
-		$checked = $line['checked'];
-		$i = esc_html($line['i']);
+		$short_feed = feedwordpress_display_url($line['feed']);
+		$feed = $line['feed'];
+		$link = $line['link'];
+		$title = $line['title'];
+		$i = $line['i'];
 		
-		print "<li><label><input type='checkbox' name='multilookup[$i][add]' value='yes' $checked />
-			$title</label> &middot; <a href='$feed'>$short_feed</a>";
+		print "<li><label><input type='checkbox' name='multilookup[".esc_attr($i)."][add]' value='yes'";
+		if (strlen($line['checked']) > 0) :
+			print ' checked="checked" ';
+		endif;
+		print "/> ".esc_html($title)."</label> &middot; <a href='".esc_url($feed)."'>".esc_html($short_feed)."</a>";
 
 		if (isset($line['extra'])) :
 			print " &middot; ".esc_html($line['extra']);
 		endif;
 		
-		print "<input type='hidden' name='multilookup[$i][url]' value='$feed' />
-			<input type='hidden' name='multilookup[$i][link]' value='$link' />
-			<input type='hidden' name='multilookup[$i][title]' value='$title' />
+		print "<input type='hidden' name='multilookup[".esc_attr($i)."][url]' value='".esc_attr($feed)."' />
+			<input type='hidden' name='multilookup[".esc_attr($i)."][link]' value='".esc_attr($link)."' />
+			<input type='hidden' name='multilookup[".esc_attr($i)."][title]' value='".esc_attr($title)."' />
 			</li>\n";
 		
 		flush();
@@ -280,12 +287,12 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 			$i = 0;
 			?>
-			<form id="multiadd-form" action="<?php print $this->form_action(); ?>" method="post">
+			<form id="multiadd-form" action="<?php print esc_attr($this->form_action()); ?>" method="post">
 			<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
-			<input type="hidden" name="multiadd" value="<?php print FWP_SYNDICATE_NEW; ?>" />
+			<input type="hidden" name="multiadd" value="<?php print esc_attr(FWP_SYNDICATE_NEW); ?>" />
 			<input type="hidden" name="confirm" value="multiadd" />
 
-			<input type="hidden" name="multiadd" value="<?php print FWP_SYNDICATE_NEW; ?>" />
+			<input type="hidden" name="multiadd" value="<?php print esc_attr(FWP_SYNDICATE_NEW); ?>" />
 			<input type="hidden" name="confirm" value="multiadd" /></div>
 
 			<div id="multiadd-status">
@@ -326,12 +333,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 							if (!is_wp_error($pie)) :
 								$found = true;
 								
-								$short_feed = esc_html(feedwordpress_display_url($feed));
-								$feed = esc_html($feed); 
-								$title = esc_html($pie->get_title());
-								$checked = ' checked="checked"';
-								$link = esc_html($pie->get_link());
-		
 								$this->display_multiadd_line(array(
 								'feed' => $feed,
 								'title' => $pie->get_title(),
@@ -344,7 +345,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 								
 								if (!$merge_all) : // Break out after first find
 									break;
-								endif;					
+								endif;
 							endif;
 						endforeach;
 					endif;
@@ -475,13 +476,14 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			$update_setting = 'using a cron job or manual check-ins';
 		endif;
 		
+		$syndicatedLinksFormAction = sprintf('%s&amp;visibility=%s', $hrefPrefix, urlencode($visibility));
+		
 		// Hey ho, let's go...
-		$syndicatedLinks_formAction = esc_url( sprintf('%s&amp;visibility=%s', $hrefPrefix, urlencode($visibility)) );
 		?>
-		<div style="float: left; background: #F5F5F5; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url(plugins_url( "feedwordpress.png", __FILE__ ) ); ?>" alt="" /></a></div>
+		<div style="float: left; background: #F5F5F5; padding-top: 5px; padding-right: 5px;"><a href="<?php print esc_url($this->form_action()); ?>"><img src="<?php print esc_url(plugins_url( "feedwordpress.png", __FILE__ ) ); ?>" alt="" /></a></div>
 
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;">Managed by <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
-		<?php print FEEDWORDPRESS_VERSION; ?>.</p>
+		<?php print esc_html(FEEDWORDPRESS_VERSION); ?>.</p>
 		<?php if (FEEDWORDPRESS_BLEG) : ?>
 		<p class="info" style="margin-top: 0px; font-style: italic; font-size: 75%; color: #666;">If you find this tool useful for your daily work, you can
 		contribute to ongoing support and development with
@@ -492,11 +494,11 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		<div class="feedwordpress-actions">
 		<h4>Updates</h4>
 		<ul class="options">
-		<li><strong>Scheduled:</strong> <?php print $update_setting; ?>
-		(<a href="<?php print $this->form_action('feeds-page.php'); ?>">change setting</a>)</li>
+		<li><strong>Scheduled:</strong> <?php print esc_html($update_setting); ?>
+		(<a href="<?php print esc_url($this->form_action('feeds-page.php')); ?>">change setting</a>)</li>
 
 		<li><?php if (!is_null($lastUpdate)) : ?>
-		<strong>Last checked:</strong> <?php print fwp_time_elapsed($lastUpdate); ?>
+		<strong>Last checked:</strong> <?php print esc_html(fwp_time_elapsed($lastUpdate)); ?>
 		<?php else : ?>
 		<strong>Last checked:</strong> none yet
 		<?php endif; ?>	</li>
@@ -509,27 +511,27 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		<table>
 		<tbody>
 		<tr class="first">
-		<td class="first b b-active"><a href="<?php print esc_html($activeHref); ?>"><?php print count($sources['Y']); ?></a></td>
-		<td class="t active"><a href="<?php print esc_html($activeHref); ?>">Active</a></td>
+		<td class="first b b-active"><a href="<?php print esc_url($activeHref); ?>"><?php print esc_html(count($sources['Y'])); ?></a></td>
+		<td class="t active"><a href="<?php print esc_url($activeHref); ?>">Active</a></td>
 		</tr>
 		
 		<tr>
-		<td class="b b-inactive"><a href="<?php print esc_html($inactiveHref); ?>"><?php print count($sources['N']); ?></a></td>
-		<td class="t inactive"><a href="<?php print esc_html($inactiveHref); ?>">Inactive</a></td>
+		<td class="b b-inactive"><a href="<?php print esc_url($inactiveHref); ?>"><?php print esc_html(count($sources['N'])); ?></a></td>
+		<td class="t inactive"><a href="<?php print esc_url($inactiveHref); ?>">Inactive</a></td>
 		</tr>
 		</table>
 		</div>
 
 		<div id="add-single-uri">
 			<?php if (count($sources['Y']) > 0) : ?>
-			<form id="check-for-updates" action="<?php print $this->form_action(); ?>" method="POST">
-			<div class="container"><input type="submit" class="button-primary" name"update" value="<?php print FWP_CHECK_FOR_UPDATES; ?>" />
+			<form id="check-for-updates" action="<?php print esc_url($this->form_action()); ?>" method="POST">
+			<div class="container"><input type="submit" class="button-primary" name"update" value="<?php print esc_attr(FWP_CHECK_FOR_UPDATES); ?>" />
 			<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
 			<input type="hidden" name="update_uri" value="*" /></div>
 			</form>
 			<?php endif; ?>
 		
-		  <form id="syndicated-links" action="<?php print $syndicatedLinks_formAction; ?>" method="post">
+		  <form id="syndicated-links" action="<?php print esc_url( $syndicatedLinksFormAction ); ?>" method="post">
 		  <div class="container"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
 		  <label for="add-uri">Add:
 		  <input type="text" name="lookup" id="add-uri" placeholder="Source URL"
@@ -537,7 +539,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		
 		  <?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
 		  <input type="hidden" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
-		  <input style="vertical-align: middle;" type="image" src="<?php print esc_url(plugins_url('plus.png', __FILE__)); ?>" alt="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
+		  <input style="vertical-align: middle;" type="image" src="<?php print esc_url(plugins_url('plus.png', __FILE__)); ?>" alt="<?php print esc_html(FWP_SYNDICATE_NEW); ?>" /></div>
 		  </form>
 		</div> <!-- id="add-single-uri" -->
 		
@@ -555,21 +557,21 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		$showInactive = $this->show_inactive();
 		
 		$hrefPrefix = $this->form_action();
-		$formHref = esc_url( sprintf( '%s&amp;visibility=%s', $hrefPrefix, urlencode($visibility) ) );
+		$formHref = sprintf( '%s&amp;visibility=%s', $hrefPrefix, urlencode($visibility) );
 		?>
 		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 		<div class="tablenav">
 
 		<div id="add-multiple-uri" class="hide-if-js">
-		<form action="<?php print $formHref; ?>" method="post">
+		<form action="<?php print esc_url( $formHref ); ?>" method="post">
 		  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 		  <h4>Add Multiple Sources</h4>
 		  <div>Enter one feed or website URL per line. If a URL links to a website which provides multiple feeds, FeedWordPress will use the first one listed.</div>
 		  <div><textarea name="multilookup" rows="8" cols="60"
 		  style="vertical-align: top"></textarea></div>
 		  <div style="border-top: 1px dotted black; padding-top: 10px">
-		  <div class="alignright"><input type="submit" class="button-primary" name="multiadd" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
-		  <div class="alignleft"><input type="button" class="button-secondary" name="action" value="<?php print FWP_CANCEL_BUTTON; ?>" id="turn-off-multiple-sources" /></div>
+		  <div class="alignright"><input type="submit" class="button-primary" name="multiadd" value="<?php print esc_attr(FWP_SYNDICATE_NEW); ?>" /></div>
+		  <div class="alignleft"><input type="button" class="button-secondary" name="action" value="<?php print esc_attr(FWP_CANCEL_BUTTON); ?>" id="turn-off-multiple-sources" /></div>
 		  </div>
 		</form>
 		</div> <!-- id="add-multiple-uri" -->
@@ -580,20 +582,20 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		a URL for the OPML document, or by uploading a copy from your
 		computer.</p>
 		
-		<form enctype="multipart/form-data" action="<?php print $formHref; ?>" method="post">
+		<form enctype="multipart/form-data" action="<?php print esc_url( $formHref ); ?>" method="post">
 		  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?><input type="hidden" name="MAX_FILE_SIZE" value="100000" /></div>
 		<div style="clear: both"><label for="opml-lookup" style="float: left; width: 8.0em; margin-top: 5px;">From URL:</label> <input type="text" id="opml-lookup" name="opml_lookup" value="OPML document" /></div>
 		<div style="clear: both"><label for="opml-upload" style="float: left; width: 8.0em; margin-top: 5px;">From file:</label> <input type="file" id="opml-upload" name="opml_upload" /></div>
 		
 		<div style="border-top: 1px dotted black; padding-top: 10px">
-		<div class="alignright"><input type="submit" class="button-primary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" /></div>
-		<div class="alignleft"><input type="button" class="button-secondary" name="action" value="<?php print FWP_CANCEL_BUTTON; ?>" id="turn-off-opml-upload" /></div>
+		<div class="alignright"><input type="submit" class="button-primary" name="action" value="<?php print esc_html(FWP_SYNDICATE_NEW); ?>" /></div>
+		<div class="alignleft"><input type="button" class="button-secondary" name="action" value="<?php print esc_html(FWP_CANCEL_BUTTON); ?>" id="turn-off-opml-upload" /></div>
 		</div>
 		</form>
 		</div> <!-- id="upload-opml" -->
 	
 		<div id="add-single-uri" class="alignright">
-		  <form id="syndicated-links" action="<?php print $formHref; ?>" method="post">
+		  <form id="syndicated-links" action="<?php print esc_url( $formHref ); ?>" method="post">
 		  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 		  <ul class="subsubsub">
 		  <li><label for="add-uri">New source:</label>
@@ -602,7 +604,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		  <?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); FeedWordPressSettingsUI::magic_input_tip_js('opml-lookup'); ?>
 		
 		  <input type="hidden" name="action" value="feedfinder" />
-		  <input type="submit" class="button-secondary" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
+		  <input type="submit" class="button-secondary" name="action" value="<?php print esc_html( FWP_SYNDICATE_NEW ); ?>" />
 		  <div style="text-align: right; margin-right: 2.0em"><a id="turn-on-multiple-sources" href="#add-multiple-uri"><img style="vertical-align: middle" src="<?php print esc_url(plugins_url('down.png', __FILE__)); ?>" alt="" /> add multiple</a>
 		  <span class="screen-reader-text"> or </span>
 		  <a id="turn-on-opml-upload" href="#upload-opml"><img src="<?php print esc_url(plugins_url('plus.png', __FILE__)); ?>" alt="" style="vertical-align: middle" /> import source list</a></div>
@@ -621,7 +623,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 		</div> <!-- class="tablenav" -->
 		
-		<form id="syndicated-links" action="<?php print $formHref; ?>" method="post">
+		<form id="syndicated-links" action="<?php print esc_url( $formHref ); ?>" method="post">
 		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 		
 		<?php if ($showInactive) : ?>
@@ -649,12 +651,14 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 	function manage_page_links_subsubsub ($sources, $showInactive) {
 		$hrefPrefix = $this->admin_page_href("syndication.php");
+		$hrefY = sprintf( "%s&amp;visibility=%s", $hrefPrefix, "Y" );
+		$hrefN = sprintf( "%s&amp;visibility=%s", $hrefPrefix, "N" );
 ?>
 	<ul class="subsubsub">
-	<li><a <?php if (!$showInactive) : ?>class="current" <?php endif; ?>href="<?php print $hrefPrefix; ?>&amp;visibility=Y">Subscribed
+	<li><a <?php if (!$showInactive) : ?>class="current" <?php endif; ?>href="<?php print esc_url( $hrefY ); ?>">Subscribed
 	<span class="count">(<?php print count($sources['Y']); ?>)</span></a></li>
 	<?php if ($showInactive or (count($sources['N']) > 0)) : ?>
-	<li><a <?php if ($showInactive) : ?>class="current" <?php endif; ?>href="<?php print $hrefPrefix; ?>&amp;visibility=N">Inactive</a>
+	<li><a <?php if ($showInactive) : ?>class="current" <?php endif; ?>href="<?php print esc_url( $hrefN ); ?>">Inactive</a>
 	<span class="count">(<?php print count($sources['N']); ?>)</span></a></li>
 	<?php endif; ?>
 
@@ -666,11 +670,11 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		?>
 		<div style="clear: left" class="alignleft">
 		<?php if ($showInactive) : ?>
-		<input class="button-secondary" type="submit" name="action" value="<?php print FWP_RESUB_CHECKED; ?>" />
-		<input class="button-secondary" type="submit" name="action" value="<?php print FWP_DELETE_CHECKED; ?>" />
+		<input class="button-secondary" type="submit" name="action" value="<?php print esc_attr(FWP_RESUB_CHECKED); ?>" />
+		<input class="button-secondary" type="submit" name="action" value="<?php print esc_attr(FWP_DELETE_CHECKED); ?>" />
 		<?php else : ?>
-		<input class="button-secondary" type="submit" name="action" value="<?php print FWP_UPDATE_CHECKED; ?>" />
-		<input class="button-secondary delete" type="submit" name="action" value="<?php print FWP_UNSUB_CHECKED; ?>" />
+		<input class="button-secondary" type="submit" name="action" value="<?php print esc_attr(FWP_UPDATE_CHECKED); ?>" />
+		<input class="button-secondary delete" type="submit" name="action" value="<?php print esc_attr(FWP_UNSUB_CHECKED); ?>" />
 		<?php endif ; ?>
 		</div> <!-- class="alignleft" -->
 		
@@ -750,7 +754,7 @@ support, and documentation.</p>
 regular donation</a>) using an existing PayPal account or any major credit card.</p>
 
 <div class="sod-off">
-<form style="text-align: center" action="<?php print $this->form_action(); ?>" method="POST"><div>
+<form style="text-align: center" action="<?php print esc_url( $this->form_action() ); ?>" method="POST"><div>
 <input class="button" type="submit" name="maybe_later" value="Maybe Later" />
 <input class="button" type="submit" name="go_away" value="Dismiss" />
 </div></form>
@@ -778,7 +782,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 		endif;
 
 		// Get single link ID or multiple link IDs from REQUEST parameters
-		// if available. Sanitize values for MySQL.		
+		// if available. Sanitize values for MySQL.
 		$link_list = $this->requested_link_ids_sql();
 
 		if (MyPHP::post('confirm')=='Delete'):
@@ -880,7 +884,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 				WHERE link_id IN ${link_list}
 				");
 	?>
-	<form action="<?php print $this->form_action(); ?>" method="post">
+	<form action="<?php print esc_url( $this->form_action() ); ?>" method="post">
 	<div class="wrap">
 	<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
 	<input type="hidden" name="action" value="Unsubscribe" />
@@ -889,42 +893,38 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 	<h2>Unsubscribe from Syndicated Links:</h2>
 	<?php	foreach ($targets as $link) :
 			$subscribed = ('Y' == strtoupper($link->link_visible));
-			$link_url = esc_html($link->link_url);
-			$link_name = esc_html($link->link_name);
-			$link_description = esc_html($link->link_description);
-			$link_rss = esc_html($link->link_rss);
 	?>
 	<fieldset>
-	<legend><?php echo $link_name; ?></legend>
+	<legend><?php echo esc_html($link->link_name); ?></legend>
 	<table class="editform" width="100%" cellspacing="2" cellpadding="5">
 	<tr><th scope="row" width="20%"><?php _e('Feed URI:') ?></th>
-	<td width="80%"><a href="<?php echo $link_rss; ?>"><?php echo $link_rss; ?></a></td></tr>
+	<td width="80%"><a href="<?php echo esc_url($link->link_rss); ?>"><?php echo esc_html($link->link_rss); ?></a></td></tr>
 	<tr><th scope="row" width="20%"><?php _e('Short description:') ?></th>
-	<td width="80%"><?php echo $link_description; ?></span></td></tr>
+	<td width="80%"><?php echo esc_html($link->link_description); ?></span></td></tr>
 	<tr><th width="20%" scope="row"><?php _e('Homepage:') ?></th>
-	<td width="80%"><a href="<?php echo $link_url; ?>"><?php echo $link_url; ?></a></td></tr>
+	<td width="80%"><a href="<?php echo esc_url($link->link_url); ?>"><?php echo esc_html($link->link_url); ?></a></td></tr>
 	<tr style="vertical-align:top"><th width="20%" scope="row">Subscription <?php _e('Options') ?>:</th>
 	<td width="80%"><ul style="margin:0; padding: 0; list-style: none">
 	<?php if ($subscribed) : ?>
-	<li><input type="radio" id="hide-<?php echo $link->link_id; ?>"
-	name="link_action[<?php echo $link->link_id; ?>]" value="hide" checked="checked" />
-	<label for="hide-<?php echo $link->link_id; ?>">Turn off the subscription for this
+	<li><input type="radio" id="hide-<?php echo esc_attr($link->link_id); ?>"
+	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="hide" checked="checked" />
+	<label for="hide-<?php echo esc_attr($link->link_id); ?>">Turn off the subscription for this
 	syndicated link<br/><span style="font-size:smaller">(Keep the feed information
 	and all the posts from this feed in the database, but don't syndicate any
 	new posts from the feed.)</span></label></li>
 	<?php endif; ?>
-	<li><input type="radio" id="nuke-<?php echo $link->link_id; ?>"<?php if (!$subscribed) : ?> checked="checked"<?php endif; ?>
-	name="link_action[<?php echo $link->link_id; ?>]" value="nuke" />
-	<label for="nuke-<?php echo $link->link_id; ?>">Delete this syndicated link and all the
+	<li><input type="radio" id="nuke-<?php echo esc_attr($link->link_id); ?>"<?php if (!$subscribed) : ?> checked="checked"<?php endif; ?>
+	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="nuke" />
+	<label for="nuke-<?php echo esc_attr($link->link_id); ?>">Delete this syndicated link and all the
 	posts that were syndicated from it</label></li>
-	<li><input type="radio" id="delete-<?php echo $link->link_id; ?>"
-	name="link_action[<?php echo $link->link_id; ?>]" value="delete" />
-	<label for="delete-<?php echo $link->link_id; ?>">Delete this syndicated link, but
+	<li><input type="radio" id="delete-<?php echo esc_attr($link->link_id); ?>"
+	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="delete" />
+	<label for="delete-<?php echo esc_attr($link->link_id); ?>">Delete this syndicated link, but
 	<em>keep</em> posts that were syndicated from it (as if they were authored
 	locally).</label></li>
-	<li><input type="radio" id="nothing-<?php echo $link->link_id; ?>"
-	name="link_action[<?php echo $link->link_id; ?>]" value="nothing" />
-	<label for="nothing-<?php echo $link->link_id; ?>">Keep this feed as it is. I changed
+	<li><input type="radio" id="nothing-<?php echo esc_attr($link->link_id); ?>"
+	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="nothing" />
+	<label for="nothing-<?php echo esc_attr($link->link_id); ?>">Keep this feed as it is. I changed
 	my mind.</label></li>
 	</ul>
 	</table>
@@ -1003,41 +1003,37 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 				WHERE link_id IN ${link_list}
 				");
 	?>
-	<form action="<?php print $this->form_action(); ?>" method="post">
+	<form action="<?php print esc_url( $this->form_action() ); ?>" method="post">
 	<div class="wrap">
 	<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
-	<input type="hidden" name="action" value="<?php print FWP_RESUB_CHECKED; ?>" />
+	<input type="hidden" name="action" value="<?php print esc_attr( FWP_RESUB_CHECKED ); ?>" />
 	<input type="hidden" name="confirm" value="Undelete" />
 	
 	<h2>Re-subscribe to Syndicated Links:</h2>
 	<?php
 		foreach ($targets as $link) :
 			$subscribed = ('Y' == strtoupper($link->link_visible));
-			$link_url = esc_html($link->link_url);
-			$link_name = esc_html($link->link_name);
-			$link_description = esc_html($link->link_description);
-			$link_rss = esc_html($link->link_rss);
 			
 			if (!$subscribed) :
 	?>
 	<fieldset>
-	<legend><?php echo $link_name; ?></legend>
+	<legend><?php echo esc_html($link->link_name); ?></legend>
 	<table class="editform" width="100%" cellspacing="2" cellpadding="5">
 	<tr><th scope="row" width="20%"><?php _e('Feed URI:') ?></th>
-	<td width="80%"><a href="<?php echo $link_rss; ?>"><?php echo $link_rss; ?></a></td></tr>
+	<td width="80%"><a href="<?php echo esc_url($link->link_rss); ?>"><?php echo esc_html($link->link_rss); ?></a></td></tr>
 	<tr><th scope="row" width="20%"><?php _e('Short description:') ?></th>
-	<td width="80%"><?php echo $link_description; ?></span></td></tr>
+	<td width="80%"><?php echo esc_html($link->link_description); ?></span></td></tr>
 	<tr><th width="20%" scope="row"><?php _e('Homepage:') ?></th>
-	<td width="80%"><a href="<?php echo $link_url; ?>"><?php echo $link_url; ?></a></td></tr>
+	<td width="80%"><a href="<?php echo esc_url($link->link_url); ?>"><?php echo esc_html($link->link_url); ?></a></td></tr>
 	<tr style="vertical-align:top"><th width="20%" scope="row">Subscription <?php _e('Options') ?>:</th>
 	<td width="80%"><ul style="margin:0; padding: 0; list-style: none">
-	<li><input type="radio" id="unhide-<?php echo $link->link_id; ?>"
-	name="link_action[<?php echo $link->link_id; ?>]" value="unhide" checked="checked" />
-	<label for="unhide-<?php echo $link->link_id; ?>">Turn back on the subscription
+	<li><input type="radio" id="unhide-<?php echo esc_attr($link->link_id); ?>"
+	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="unhide" checked="checked" />
+	<label for="unhide-<?php echo esc_attr($link->link_id); ?>">Turn back on the subscription
 	for this syndication source.</label></li>
-	<li><input type="radio" id="nothing-<?php echo $link->link_id; ?>"
-	name="link_action[<?php echo $link->link_id; ?>]" value="nothing" />
-	<label for="nothing-<?php echo $link->link_id; ?>">Leave this feed as it is.
+	<li><input type="radio" id="nothing-<?php echo esc_attr($link->link_id); ?>"
+	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="nothing" />
+	<label for="nothing-<?php echo esc_attr($link->link_id); ?>">Leave this feed as it is.
 	I changed my mind.</label></li>
 	</ul>
 	</table>
@@ -1141,7 +1137,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	?>
 
 	<form
-		action="<?php print $object->form_action(); ?>"
+		action="<?php print esc_url( $object->form_action() ); ?>"
 		method="POST"
 		class="update-form<?php if ($bleg_box_ready) : ?> with-donation<?php endif; ?>"
 	>
@@ -1156,7 +1152,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 		<p class="heads-up"><strong>Note:</strong> Automatic updates are currently turned
 		<strong>off</strong>. New posts from your feeds will not be syndicated
 		until you manually check for them here. You can turn on automatic
-		updates under <a href="<?php print $object->admin_page_href('feeds-page.php'); ?>">Feed &amp; Update Settings<a></a>.</p>
+		updates under <a href="<?php print esc_url( $object->admin_page_href('feeds-page.php') ); ?>">Feed &amp; Update Settings<a></a>.</p>
 	<?php 
 	endif;
 	?>
@@ -1204,12 +1200,12 @@ function fwp_switchfeed_page () {
 			$link_id = FeedWordPress::syndicate_link($fwp_post['feed_title'], $fwp_post['feed_link'], $fwp_post['feed']);
 			if ($link_id):
 				$existingLink = new SyndicatedLink($link_id);
-				
+				$adminPageHref = $this->admin_page_href('feeds-page.php', array( "link_id" => $link_id ));
 			?>
-<div class="updated"><p><a href="<?php print $fwp_post['feed_link']; ?>"><?php print esc_html($fwp_post['feed_title']); ?></a>
+<div class="updated"><p><a href="<?php print esc_url($fwp_post['feed_link']); ?>"><?php print esc_html($fwp_post['feed_title']); ?></a>
 has been added as a contributing site, using the feed at
-&lt;<a href="<?php print $fwp_post['feed']; ?>"><?php print esc_html($fwp_post['feed']); ?></a>&gt;.
-| <a href="admin.php?page=<?php print $fwp_path; ?>/feeds-page.php&amp;link_id=<?php print $link_id; ?>">Configure settings</a>.</p></div>
+&lt;<a href="<?php print esc_url($fwp_post['feed']); ?>"><?php print esc_html($fwp_post['feed']); ?></a>&gt;.
+| <a href="<?php print esc_url( $adminPageHref ); ?>">Configure settings</a>.</p></div>
 <?php			else: ?>
 <div class="updated"><p>There was a problem adding the feed. [SQL: <?php echo esc_html($wpdb->last_error); ?>]</p></div>
 <?php			endif;
