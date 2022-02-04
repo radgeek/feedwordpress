@@ -946,7 +946,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 					$feed_version = '';
 				endif;
 				?>
-					<form<?php print fwp_form_class_attr($form_class); ?> action="<?php print esc_url( $this->form_action( 'syndication.php' ) ); ?>" method="post">
+					<form <?php print fwp_form_class_attr($form_class); ?> action="<?php print esc_url( $this->form_action( 'syndication.php' ) ); ?>" method="post">
 					<div class="inside"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_switchfeed'); ?>
 
 					<?php
