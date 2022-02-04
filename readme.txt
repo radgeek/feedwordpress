@@ -65,7 +65,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 
 == Changelog ==
 
-= 2022.0203 =
+= 2022.0204 =
 
 *	ADDITIONAL CODE CLEANUP: This version does some additional code clean-up to remove some obsolete methods of generating output, and to do a better job of sanitizing input and escaping output in the FeedWordPress administrative dashboard.
 
