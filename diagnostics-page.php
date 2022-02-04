@@ -135,13 +135,13 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		<tr>
 		<th scope="row">Hosting Environment:</th>
 		<td><ul style="margin-top: 0; padding-top: 0;">
-		<li><em>WordPress:</em> version <?php print $wp_version; ?></li>
-		<li><em>SimplePie:</em> version <?php print SIMPLEPIE_VERSION; ?></li>
-		<?php if (function_exists('phpversion')) : ?>
-		<li><em>PHP:</em> version <?php print phpversion(); ?></li>
+		<li><em>WordPress:</em> version <?php print esc_html( $wp_version ); ?></li>
+		<li><em>SimplePie:</em> version <?php print esc_html( SIMPLEPIE_VERSION ); ?></li>
+		<?php if ( function_exists( 'phpversion' ) ) : ?>
+		<li><em>PHP:</em> version <?php print esc_html( phpversion() ); ?></li>
 		<?php endif; ?>
-		<?php if (function_exists('apache_get_version')) : ?>
-		<li><sem>Web Server:</em> <?php print apache_get_version(); ?></li>
+		<?php if (function_exists( 'apache_get_version' )) : ?>
+		<li><sem>Web Server:</em> <?php print esc_html( apache_get_version() ); ?></li>
 		<?php endif; ?>
 		</ul>
 		</td>
@@ -152,7 +152,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		<td><?php if (!is_wp_error($link_category_id)) :
 			$term = get_term($link_category_id, 'link_category');
 		?><p>Syndicated feeds are
-		kept in link category #<?php print $term->term_id; ?>, <strong><?php print $term->name; ?></strong>.</p>
+		kept in link category #<?php print esc_html( $term->term_id ); ?>, <strong><?php print esc_html( $term->name ); ?></strong>.</p>
 		<?php else : ?>
 		<p><strong>FeedWordPress has been unable to set up a valid Link Category
 		for syndicated feeds.</strong> Attempting to set one up returned an
@@ -162,7 +162,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		<tbody>
 		<tr>
 		<th scope="row">Message:</th>
-		<td><?php print $link_category_id->get_error_message(); ?></td>
+		<td><?php print esc_html( $link_category_id->get_error_message() ); ?></td>
 		</tr>
 		<?php $data = $link_category_id->get_error_data(); if (!empty($data)) : ?>
 		<tr>
@@ -233,7 +233,7 @@ testing but absolutely inappropriate for a production server.</p>
 <?php endforeach; ?>
 <option value="mailto"<?php if (!is_null($ded_addy)) : ?> selected="selected"<?php endif; ?>>another e-mail address...</option>
 </select>
-<input type="email" id="diagnostics-email-destination-address" name="diagnostics_email_destination_address" value="<?php print $ded_addy; ?>" placeholder="email address" /></li>
+<input type="email" id="diagnostics-email-destination-address" name="diagnostics_email_destination_address" value="<?php print esc_attr( $ded_addy ); ?>" placeholder="email address" /></li>
 </ul></td>
 </tr>
 </table>
@@ -312,8 +312,8 @@ testing but absolutely inappropriate for a production server.</p>
 	    <li><label><input
 	    	type="checkbox" name="diagnostics_show[]"
 	    	value="<?php print esc_html($key); ?>"
-	    	<?php print $checked[$key]; ?> />
-	    <?php print $label; ?></label></li>
+	    	<?php fwp_selected_flag( $checked, $key, "checked" ); ?> />
+	    <?php print esc_html( $label ); ?></label></li>
 	  <?php endforeach; ?>
 	  </ul></td>
 	  </tr>
@@ -393,7 +393,7 @@ function clone_http_test_args_keyvalue_prototype () {
 	<div>URL: <code><?php print esc_html($page->test_html['url']); ?></code></div>
 	<div style="position: relative">
 	<div style="width: 100%; overflow: scroll; background-color: #eed">
-	<pre style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -o-pre-wrap;"><?php print $page->test_html['http_test']; ?></pre>
+	<pre style="white-space: pre-wrap; white-space: -moz-pre-wrap; white-space: -o-pre-wrap;"><?php print esc_html($page->test_html['http_test']); ?></pre>
 	</div>
 	</div>
 	</td>

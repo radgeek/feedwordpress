@@ -15,6 +15,44 @@ $dir = dirname(__FILE__);
 require_once("${dir}/feedwordpressadminpage.class.php");
 require_once("${dir}/feedwordpresssettingsui.class.php");
 
+function fwp_form_class_attr( $className ) {
+
+	if ( is_string($className) ) :
+		if (strlen($className) > 0 ) :
+			$sClassName = sanitize_html_class( $className );
+			print sprintf( 'class="%s"', esc_attr( $sClassName ) );
+		endif;
+	endif;
+} /* fwp_form_class_attr() */
+
+function fwp_selected_flag( /* mixed */ $arg = null, $key = null, $flag = "selected" ) {
+	
+	$bIsOn = false;
+	
+	$theArg = $arg;
+	if (is_array($arg) and !is_null($key)) :
+		if (array_key_exists($key, $arg)) :
+			$theArg = $arg[$key];
+		else :
+			$theArg = false;
+		endif;
+	endif;
+	
+	if (is_string($theArg)) :
+		$bIsOn = (strlen($theArg) > 0);
+	else :
+		$bIsOn = !!($theArg);
+	endif;
+	
+	if ( $bIsOn ) :
+		print sprintf( '%s="%s"', esc_attr($flag), esc_attr($flag) );
+	endif;
+} /* fwp_selected_flag() */
+
+function fwp_checked_flag( /* mixed */ $arg = null, $key = null ) {
+	fwp_selected_flag( $arg, $key, "checked" );
+} /* fwp_checked_flag() */
+
 function fwp_update_set_results_message ($delta, $joiner = ';') {
 	$mesg = array();
 	if (isset($delta['new'])) : $mesg[] = ' '.$delta['new'].' new posts were syndicated'; endif;
@@ -85,17 +123,17 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 	$helps = __('Separate tags with commas.');
 	$box['title'] = __('Tags');
 	?>
-<div class="tagsdiv" id="<?php echo $params['id']; ?>">
+<div class="tagsdiv" id="<?php echo esc_attr( $params['id'] ); ?>">
 	<div class="jaxtag">
 	<div class="nojs-tags hide-if-js">
-    <p><?php echo $oTaxLabels->add_or_remove_items; ?></p>
-	<textarea name="<?php echo $params['textarea_name']; ?>" class="the-tags" id="<?php echo $params['textarea_id']; ?>"><?php echo esc_attr(implode(",", $tags)); ?></textarea></div>
+    <p><?php echo esc_html( $oTaxLabels->add_or_remove_items ); ?></p>
+	<textarea name="<?php echo esc_attr( $params['textarea_name'] ); ?>" class="the-tags" id="<?php echo esc_attr( $params['textarea_id'] ); ?>"><?php echo esc_attr(implode(",", $tags)); ?></textarea></div>
 
 	<?php if ( current_user_can($oTax->cap->assign_terms) ) :?>
 	<div class="ajaxtag hide-if-no-js">
-		<label class="screen-reader-text" for="<?php echo $params['input_id']; ?>"><?php echo $params['box_title']; ?></label>
-		<div class="taghint"><?php echo $oTaxLabels->add_new_item; ?></div>
-		<p><input type="text" id="<?php print $params['input_id']; ?>" name="<?php print $params['input_name']; ?>" class="newtag form-input-tip" size="16" autocomplete="off" value="" />
+		<label class="screen-reader-text" for="<?php echo esc_attr( $params['input_id'] ); ?>"><?php echo esc_html( $params['box_title'] ); ?></label>
+		<div class="taghint"><?php echo esc_html( $oTaxLabels->add_new_item ); ?></div>
+		<p><input type="text" id="<?php print esc_attr( $params['input_id'] ); ?>" name="<?php print esc_attr( $params['input_name'] ); ?>" class="newtag form-input-tip" size="16" autocomplete="off" value="" />
 		<input type="button" class="button tagadd" value="<?php esc_attr_e('Add'); ?>" tabindex="3" /></p>
 	</div>
 	<p class="howto"><?php echo esc_attr( $oTaxLabels->separate_items_with_commas ); ?></p>
@@ -105,7 +143,7 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 	<div class="tagchecklist"></div>
 </div>
 <?php if ( current_user_can($oTax->cap->assign_terms) ) : ?>
-<p class="hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-<?php echo $tax_name; ?>"><?php echo $oTaxLabels->choose_from_most_used; ?></a></p>
+<p class="hide-if-no-js"><a href="#titlediv" class="tagcloud-link" id="link-<?php echo esc_attr( $tax_name ); ?>"><?php echo esc_html( $oTaxLabels->choose_from_most_used ); ?></a></p>
 <?php endif;
 
 }
@@ -134,54 +172,62 @@ function fwp_category_box ($checked, $object, $tags = array(), $params = array()
 		$namePrefix = 'feedwordpress_';
 	endif;
 
+	$boxDivId = sanitize_html_class( $idPrefix . 'taxonomy-' . $taxonomy );
+	$tabsUlId = sanitize_html_class( $idPrefix . $taxonomy . '-tabs' );
+	$allTabId = sanitize_html_class( $idPrefix . $taxonomy . '-all' );
+	$chkLstId = sanitize_html_class( $idPrefix . $taxonomy . 'checklist' );
+	$addTaxId = sanitize_html_class( $idPrefix . $taxonomy . '-adder' );
+	$addTogId = sanitize_html_class( $idPrefix . $taxonomy . '-add-toggle' );
+	$addCatId = sanitize_html_class( $idPrefix . $taxonomy . '-add' );
+	$newTaxId = sanitize_html_class( $idPrefix . 'new' . $taxonomy ); 
+	$taxIdAddSubmit = sanitize_html_class( $idPrefix . $taxonomy . '-add-sumbit' );
 ?>
-<div id="<?php print $idPrefix; ?>taxonomy-<?php print $taxonomy; ?>" class="feedwordpress-category-div">
-  <ul id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-tabs" class="category-tabs">
-    <li class="ui-tabs-selected tabs"><a href="#<?php print $idPrefix; ?><?php print $taxonomy; ?>-all" tabindex="3"><?php _e( 'All posts' ); ?></a>
-    <p style="font-size:smaller;font-style:bold;margin:0">Give <?php print $object; ?> these <?php print $oTaxLabels->name; ?></p>
+<div id="<?php print esc_attr( $boxDivId ); ?>" class="feedwordpress-category-div">
+  <ul id="<?php print esc_attr( $tabsUlId ); ?>" class="category-tabs">
+    <li class="ui-tabs-selected tabs"><a href="#<?php print esc_attr( $allTabId ); ?>" tabindex="3"><?php _e( 'All posts' ); ?></a>
+    <p style="font-size:smaller;font-style:bold;margin:0">Give <?php print esc_html( $object ); ?> these <?php print esc_html( $oTaxLabels->name ); ?></p>
     </li>
   </ul>
 
-<div id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-all" class="tabs-panel">
-    <input type="hidden" value="0" name="tax_input[<?php print $taxonomy; ?>][]" />
-    <ul id="<?php print $idPrefix; ?><?php print $taxonomy; ?>checklist" class="list:<?php print $taxonomy; ?> categorychecklist form-no-clear">
-	<?php fwp_category_checklist(NULL, false, $checked, $params) ?>
+<div id="<?php print esc_attr( $allTabId); ?>" class="tabs-panel">
+    <input type="hidden" value="0" name="tax_input[<?php print esc_attr( $taxonomy ); ?>][]" />
+    <ul id="<?php print esc_attr($chkLstId); ?>" class="list:<?php print esc_attr( $taxonomy ); ?> categorychecklist form-no-clear">
+	<?php fwp_category_checklist(null, false, $checked, $params) ?>
     </ul>
 </div>
 
-<div id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-adder" class="<?php print $taxonomy; ?>-adder wp-hidden-children">
-    <h4><a id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-add-toggle" class="category-add-toggle" href="#<?php print $idPrefix; ?><?php print $taxonomy; ?>-add" class="hide-if-no-js" tabindex="3"><?php _e( '+ Add New Category' ); ?></a></h4>
-    <p id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-add" class="category-add wp-hidden-child">
-	<?php
-	$newcat = 'new'.$taxonomy;
-
-	?>
-    <label class="screen-reader-text" for="<?php print $idPrefix; ?>new<?php print $taxonomy; ?>"><?php _e('Add New Category'); ?></label>
+<div id="<?php print esc_attr( $addTaxId ); ?>" class="<?php print esc_attr( $taxonomy ); ?>-adder wp-hidden-children">
+    <h4><a id="<?php print esc_attr( $addTogId ); ?>" class="category-add-toggle" href="#<?php print esc_attr( $addCatId ); ?>" class="hide-if-no-js" tabindex="3"><?php _e( '+ Add New Category' ); ?></a></h4>
+    <p id="<?php print esc_attr($addCatId); ?>" class="category-add wp-hidden-child">
+<?php
+	$newcat = 'new' . $taxonomy;
+?>
+    <label class="screen-reader-text" for="<?php print esc_attr($newTaxId); ?>"><?php _e('Add New Category'); ?></label>
     <input
-    	id="<?php print $idPrefix; ?>new<?php print $taxonomy; ?>"
-    	class="new<?php print $taxonomy; ?> form-required form-input-tip"
+    	id="<?php print esc_attr($newTaxId); ?>"
+    	class="<?php print esc_attr( $newcat ); ?> form-required form-input-tip"
     	aria-required="true"
     	tabindex="3"
-    	type="text" name="<?php print $newcat; ?>"
+    	type="text" name="<?php print esc_attr( $newcat ); ?>"
     	value="<?php _e( 'New category name' ); ?>"
     />
-    <label class="screen-reader-text" for="<?php print $idPrefix; ?>new<?php print $taxonomy; ?>-parent"><?php _e('Parent Category:'); ?></label>
+    <label class="screen-reader-text" for="<?php print esc_attr( $newTaxId ); ?>-parent"><?php _e('Parent Category:'); ?></label>
     <?php wp_dropdown_categories( array(
-    	    	'taxonomy' => $taxonomy,
+		'taxonomy' => $taxonomy,
 		'hide_empty' => 0,
-		'id' => $idPrefix.'new'.$taxonomy.'-parent',
-		'class' => 'new'.$taxonomy.'-parent',
-		'name' => $newcat.'_parent',
+		'id' => $newTaxId . '-parent',
+		'class' => $newcat . '-parent',
+		'name' => $newcat . '_parent',
 		'orderby' => 'name',
 		'hierarchical' => 1,
 		'show_option_none' => __('Parent category'),
 		'tab_index' => 3,
     ) ); ?>
-	<input type="button" id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-add-sumbit" class="add:<?php print $idPrefix; ?><?php print $taxonomy; ?>checklist:<?php print $idPrefix.$taxonomy; ?>-add add-categorychecklist-category-add button category-add-submit" value="<?php _e( 'Add' ); ?>" tabindex="3" />
+	<input type="button" id="<?php print esc_attr( $taxIdAddSubmit ); ?>" class="add:<?php print esc_attr( $idPrefix . $taxonomy ); ?>checklist:<?php print esc_attr( $idPrefix . $taxonomy ); ?>-add add-categorychecklist-category-add button category-add-submit" value="<?php _e( 'Add' ); ?>" tabindex="3" />
 	<?php /* wp_nonce_field currently doesn't let us set an id different from name, but we need a non-unique name and a unique id */ ?>
 	<input type="hidden" id="_ajax_nonce<?php print esc_html($idSuffix); ?>" name="_ajax_nonce" value="<?php print wp_create_nonce('add-'.$taxonomy); ?>" />
-	<input type="hidden" id="_ajax_nonce-add-<?php print $taxonomy; ?><?php print esc_html($idSuffix); ?>" name="_ajax_nonce-add-<?php print $taxonomy; ?>" value="<?php print wp_create_nonce('add-'.$taxonomy); ?>" />
-	<span id="<?php print $idPrefix; ?><?php print $taxonomy; ?>-ajax-response" class="<?php print $taxonomy; ?>-ajax-response"></span>
+	<input type="hidden" id="_ajax_nonce-add-<?php print esc_attr( $taxonomy . $idSuffix ); ?>" name="_ajax_nonce-add-<?php print esc_attr( $taxonomy ); ?>" value="<?php print wp_create_nonce('add-'.$taxonomy); ?>" />
+	<span id="<?php print esc_attr( $idPrefix . $taxonomy ); ?>-ajax-response" class="<?php print esc_attr( $taxonomy ); ?>-ajax-response"></span>
     </p>
 </div>
 
@@ -360,7 +406,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 				endif;
 				?>
 	<tr<?php echo ((count($trClass) > 0) ? ' class="'.implode(" ", $trClass).'"':''); ?>>
-	<th class="check-column" scope="row"><input type="checkbox" name="link_ids[]" value="<?php echo $link->link_id; ?>" /></th>
+	<th class="check-column" scope="row"><input type="checkbox" name="link_ids[]" value="<?php echo esc_attr( $link->link_id ); ?>" /></th>
 				<?php
 				$caption = (
 					(strlen($link->link_rss) > 0)
@@ -369,7 +415,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 				);
 				?>
 	<td>
-	<strong><a href="<?php print $page->admin_page_href('feeds-page.php', array(), $link); ?>"><?php print esc_html($link->link_name); ?></a></strong>
+	<strong><a href="<?php print esc_url( $page->admin_page_href('feeds-page.php', array(), $link) ); ?>"><?php print esc_html($link->link_name); ?></a></strong>
 	<div class="row-actions"><?php if ($subscribed) :
 		$page->display_feed_settings_page_links(array(
 			'before' => '<div><strong>Settings &gt;</strong> ',
@@ -380,12 +426,12 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 
 	<div><strong>Actions &gt;</strong>
 	<?php if ($subscribed) : ?>
-	<a href="<?php print $page->admin_page_href('syndication.php', array('action' => 'feedfinder'), $link); ?>"><?php echo $caption; ?></a>
+	<a href="<?php print esc_url( $page->admin_page_href('syndication.php', array('action' => 'feedfinder'), $link) ); ?>"><?php echo esc_html( $caption ); ?></a>
 	<?php else : ?>
-	<a href="<?php print $page->admin_page_href('syndication.php', array('action' => FWP_RESUB_CHECKED), $link); ?>"><?php _e('Re-subscribe'); ?></a>
+	<a href="<?php print esc_url( $page->admin_page_href('syndication.php', array('action' => FWP_RESUB_CHECKED), $link) ); ?>"><?php _e('Re-subscribe'); ?></a>
 	<?php endif; ?>
-	| <a href="<?php print $page->admin_page_href('syndication.php', array('action' => 'Unsubscribe'), $link); ?>"><?php _e(($subscribed ? 'Unsubscribe' : 'Delete permanently')); ?></a>
-	| <a href="<?php print esc_html($link->link_url); ?>"><?php _e('View')?></a></div>
+	| <a href="<?php print esc_url( $page->admin_page_href( 'syndication.php', array('action' => 'Unsubscribe'), $link ) ); ?>"><?php _e( ( $subscribed ? 'Unsubscribe' : 'Delete permanently' ) ); ?></a>
+	| <a href="<?php print esc_url( $link->link_url ); ?>"><?php _e('View')?></a></div>
 	</div>
 	</td>
 				<?php if (strlen($link->link_rss) > 0): ?>

@@ -197,8 +197,8 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 	<tbody>
 	<tr><td class="equals first <?php if ($defaulted['cats']) : ?>active<?php else: ?>inactive<?php endif; ?>"><p><label><input type="radio" name="match_default[cats]"
 value="yes" <?php if ($defaulted['cats']) : ?> checked="checked"<?php endif; ?> />
-Use the <a href="<?php print $href; ?>">site-wide setting</a>
-<span class="current-setting">Currently: <strong><?php print $globalMatchLabels['cats']; ?></strong></span></label></p></td>
+Use the <a href="<?php print esc_url( $href ); ?>">site-wide setting</a>
+<span class="current-setting">Currently: <strong><?php print esc_html( $globalMatchLabels['cats'] ); ?></strong></span></label></p></td>
 	<td class="equals second <?php if ($defaulted['cats']) : ?>inactive<?php else: ?>active<?php endif; ?>"><p><label><input type="radio" name="match_default[cats]"
 value="no" <?php if (!$defaulted['cats']) : ?> checked="checked"<?php endif; ?> />
 Do something different with this feed.</label>
@@ -210,8 +210,8 @@ locally with:</p>
 <ul class="options compact">
 <?php foreach ($matchUl['cats'] as $name => $li) : ?>
 	<li><label><input type="checkbox"
-	name="match_categories[cats][]" value="<?php print $name; ?>"
-	<?php print $li['checked']; ?> /> <?php $l = $li['labels']; print $l->name; ?></label></li>
+	name="match_categories[cats][]" value="<?php print esc_attr( $name ); ?>"
+	<?php fwp_checked_flag($li, 'checked'); ?> /> <?php $l = $li['labels']; print esc_html($l->name); ?></label></li>
 <?php endforeach; ?>
 </ul>
 <?php if ($offerSiteWideSettings) : ?>
@@ -224,7 +224,7 @@ locally with:</p>
 
 <tr>
 <th scope="row">Unmatched categories:</th>
-<td><p>When <?php print $this->these_posts_phrase(); ?> have categories on
+<td><p>When <?php print esc_html( $this->these_posts_phrase() ); ?> have categories on
 the feed that don't have any local matches yet...</p>
 
 <?php	if (count($unmatchedColumns['category']) > 1) : ?>
@@ -237,7 +237,7 @@ the feed that don't have any local matches yet...</p>
 	<?php foreach ($unmatchedColumns['category'] as $index => $column) : ?>
 		<td class="equals <?php print (($index == 0) ? 'first' : 'second'); ?> inactive"><ul class="options">
 		<?php foreach ($column as $name => $li) : ?>
-			<li><label><input type="radio" name="unfamiliar_category" value="<?php print $name; ?>"<?php print $unmatchedRadio['category'][$name]; ?> /> <?php print $li['label']; ?></label></li>
+			<li><label><input type="radio" name="unfamiliar_category" value="<?php print esc_attr( $name ); ?>"<?php fwp_checked_flag($unmatchedRadio['category'][$name]); ?> /> <?php print esc_html( $li['label'] ); ?></label></li>
 		<?php endforeach; ?>
 		</ul></td>
 	<?php endforeach; ?>
@@ -260,8 +260,8 @@ like those handled above.</p>
 	<tbody>
 	<tr><td class="equals first <?php if ($defaulted['tags']) : ?>active<?php else: ?>inactive<?php endif; ?>"><p><label><input type="radio" name="match_default[tags]"
 value="yes" <?php if ($defaulted['tags']) : ?> checked="checked"<?php endif; ?> />
-Use the <a href="<?php print $href; ?>">site-wide setting</a>
-<span class="current-setting">Currently: <strong><?php print $globalMatchLabels['tags']; ?></strong></span></label></p>
+Use the <a href="<?php print esc_url( $href ); ?>">site-wide setting</a>
+<span class="current-setting">Currently: <strong><?php print esc_html( $globalMatchLabels['tags'] ); ?></strong></span></label></p>
 </td>
 	<td class="equals second <?php if ($defaulted['tags']) : ?>inactive<?php else: ?>active<?php endif; ?>"><p><label><input type="radio" name="match_default[tags]"
 value="no" <?php if (!$defaulted['tags']) : ?> checked="checked"<?php endif; ?> />
@@ -274,8 +274,8 @@ locally with:</p>
 <ul class="options compact">
 <?php foreach ($matchUl['tags'] as $name => $li) : ?>
 	<li><label><input type="checkbox"
-	name="match_categories[tags][]" value="<?php print $name; ?>"
-	<?php print $li['checked']; ?> /> <?php $l = $li['labels']; print $l->name; ?></label></li>
+	name="match_categories[tags][]" value="<?php print esc_attr( $name ); ?>"
+	<?php fwp_checked_flag( $li, 'checked' ); ?> /> <?php $l = $li['labels']; print esc_html( $l->name ); ?></label></li>
 <?php endforeach; ?>
 </ul>
 <?php if ($offerSiteWideSettings) : ?>
@@ -288,7 +288,7 @@ locally with:</p>
 
 <tr>
 <th scope="row">Unmatched inline tags:</th>
-<td><p>When the text of <?php print $this->these_posts_phrase(); ?> contains
+<td><p>When the text of <?php print esc_html( $this->these_posts_phrase() ); ?> contains
 inline tags that don't have any local matches yet...</p>
 
 <?php	if (count($unmatchedColumns['post_tag']) > 1) : ?>
@@ -301,7 +301,7 @@ inline tags that don't have any local matches yet...</p>
 	<?php foreach ($unmatchedColumns['post_tag'] as $index => $column) : ?>
 		<td class="equals <?php print (($index == 0) ? 'first' : 'second'); ?> inactive"><ul class="options">
 		<?php foreach ($column as $name => $li) : ?>
-			<li><label><input type="radio" name="unfamiliar_post_tag" value="<?php print $name; ?>"<?php print $unmatchedRadio['post_tag'][$name]; ?> /> <?php print $li['label']; ?></label></li>
+			<li><label><input type="radio" name="unfamiliar_post_tag" value="<?php print esc_attr( $name ); ?>"<?php fwp_checked_flag($unmatchedRadio['post_tag'][$name]); ?> /> <?php print esc_html( $li['label'] ); ?></label></li>
 		<?php endforeach; ?>
 		</ul></td>
 	<?php endforeach; ?>
@@ -321,8 +321,8 @@ inline tags that don't have any local matches yet...</p>
 	<td class="equals first <?php if ($defaulted['filter']) : ?>active<?php else: ?>inactive<?php endif; ?>">
 	<p><label><input type="radio" name="match_default[filter]"
 value="yes" <?php if ($defaulted['filter']) : ?> checked="checked"<?php endif; ?> />
-Use the <a href="<?php print $href; ?>">site-wide setting</a>
-<span class="current-setting">Currently: <strong><?php print $globalMatchLabels['filter']; ?></strong></span></label></p>
+Use the <a href="<?php print esc_url( $href ); ?>">site-wide setting</a>
+<span class="current-setting">Currently: <strong><?php print esc_html( $globalMatchLabels['filter'] ); ?></strong></span></label></p>
 	</td>
 	<td class="equals second <?php if ($defaulted['filter']) : ?>inactive<?php else: ?>active<?php endif; ?>">
 	<p><label><input type="radio" name="match_default[filter]"
@@ -333,9 +333,9 @@ Do something different with this feed:</label></p>
 
 <ul class="options">
 <?php foreach ($matchUl['filter'] as $tax => $li) : ?>
-<li><label><input type="checkbox" name="match_categories[filter][]" value="<?php print $tax; ?>"
-<?php print $li['checked']; ?> /> Don't syndicate posts unless they match at
-least one local <strong><?php $l = $li['labels']; print $l->singular_name; ?></strong></label></li>
+<li><label><input type="checkbox" name="match_categories[filter][]" value="<?php print esc_attr( $tax ); ?>"
+<?php fwp_checked_flag($li, 'checked'); ?> /> Don't syndicate posts unless they match at
+least one local <strong><?php $l = $li['labels']; print esc_html( $l->singular_name ); ?></strong></label></li>
 <?php endforeach; ?>
 </ul>
 
@@ -403,7 +403,7 @@ blank.</p></td>
 		foreach ($taxonomies as $tax) :
 			$taxonomy = get_taxonomy($tax);
 			?>
-			<tr><th><?php print $taxonomy->labels->name; ?></th>
+			<tr><th><?php print esc_html( $taxonomy->labels->name ); ?></th>
 			<td><?php
 			if (isset($option_map[$tax])) :
 				$option = $option_map[$tax];
@@ -458,7 +458,7 @@ blank.</p></td>
 			?>
 			</td>
 			<td class="secondary">
-			<h4>Site-wide <?php print $taxonomy->labels->name; ?></h4>
+			<h4>Site-wide <?php print esc_html( $taxonomy->labels->name ); ?></h4>
 			<?php if (count($globalCats) > 0) : ?>
 			  <ul class="current-setting">
 			  <?php foreach ($globalDogs as $dog) : ?>
@@ -471,13 +471,13 @@ blank.</p></td>
 			  <p>Site-wide settings may also assign categories to syndicated
 			posts.
 			<?php endif; ?>
-			Should <?php print $page->these_posts_phrase(); ?> be assigned
-			these <?php print $taxonomy->labels->name; ?> from the <a href="<?php print esc_html($siteWideHref); ?>">site-wide settings</a>, in
-			addition to the feed-specific <?php print $taxonomy->labels->name; ?> you set up here?</p>
+			Should <?php print esc_html( $page->these_posts_phrase() ); ?> be assigned
+			these <?php print esc_html( $taxonomy->labels->name ); ?> from the <a href="<?php print esc_url( $siteWideHref ); ?>">site-wide settings</a>, in
+			addition to the feed-specific <?php print esc_html( $taxonomy->labels->name ); ?> you set up here?</p>
 
 			<ul class="settings">
-			<li><p><label><input type="radio" name="add_global[<?php print $tax; ?>]" value="yes" <?php print $checked['yes']; ?> /> Yes. Place <?php print $page->these_posts_phrase(); ?> under all these categories.</label></p></li>
-			<li><p><label><input type="radio" name="add_global[<?php print $tax; ?>]" value="no" <?php print $checked['no']; ?> /> No. Only use the categories I set up on the left. Do not use the global defaults for <?php print $page->these_posts_phrase(); ?></label></p></li>
+			<li><p><label><input type="radio" name="add_global[<?php print esc_attr( $tax ); ?>]" value="yes" <?php fwp_checked_flag($checked, 'yes'); ?> /> Yes. Place <?php print esc_html( $page->these_posts_phrase() ); ?> under all these categories.</label></p></li>
+			<li><p><label><input type="radio" name="add_global[<?php print esc_attr( $tax ); ?>]" value="no" <?php fwp_checked_flag($checked, 'no'); ?> /> No. Only use the categories I set up on the left. Do not use the global defaults for <?php print esc_html( $page->these_posts_phrase() ); ?></label></p></li>
 			</ul>
 			</td>
 			</tr>

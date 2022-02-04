@@ -457,7 +457,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		?>
 		  <tr style="vertical-align:top">
 		    <th width="30%" scope="row"><input type="hidden" name="notes[<?php echo esc_attr($i); ?>][key0]" value="<?php echo esc_html($key); ?>" />
-		    <input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo esc_attr($i); ?>][key1]" value="<?php echo esc_html($key); ?>" /></th>
+		    <input id="notes-<?php echo esc_attr( $i ); ?>-key" name="notes[<?php echo esc_attr( $i ); ?>][key1]" value="<?php echo esc_html($key); ?>" /></th>
 		    <td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo esc_attr($i); ?>-value" name="notes[<?php echo esc_attr($i); ?>][value]"><?php echo esc_html($value); ?></textarea>
 		    <?php print sprintf($testerButton, esc_attr($i) ); ?></td>
 		    <td width="10%"><select name="notes[<?php echo esc_attr($i); ?>][action]">
@@ -633,12 +633,12 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 ?>
 
 <li id="boilerplate-<?php print esc_attr($index); ?>-li" class="<?php print esc_attr(implode(' ', $line['class'])); ?>">&raquo; <strong>Add</strong> <select id="boilerplate-<?php print esc_attr($index); ?>-placement" name="boilerplate[<?php print esc_attr($index); ?>][placement]" style="width: 8.0em">
-<option value="before"<?php print $selected['before']; ?>>before</option>
-<option value="after"<?php print $selected['after']; ?>>after</option>
+<option value="before"<?php fwp_selected_flag( $selected, 'before' ); ?>>before</option>
+<option value="after"<?php fwp_selected_flag( $selected, 'after' ); ?>>after</option>
 </select> the <select style="width: 8.0em" id="boilerplate-<?php print esc_attr($index); ?>-element" name="boilerplate[<?php print esc_attr($index); ?>][element]">
-<option value="title"<?php print $selected['title']; ?>>title</option>
-<option value="post"<?php print $selected['post']; ?>>content</option>
-<option value="excerpt"<?php print $selected['excerpt']; ?>>excerpt</option>
+<option value="title"<?php fwp_selected_flag($selected, 'title' ); ?>>title</option>
+<option value="post"<?php fwp_selected_flag( $selected, 'post' ); ?>>content</option>
+<option value="excerpt"<?php fwp_selected_flag( $selected, 'excerpt' ); ?>>excerpt</option>
 </select> of 
 <?php print esc_html($syndicatedPosts); ?>: <textarea style="vertical-align: top; width: 40%;" rows="2" cols="30" class="boilerplate-template" id="boilerplate-<?php print esc_attr($index); ?>-template" name="boilerplate[<?php print esc_attr($index); ?>][template]"><?php print esc_html($line['template']); ?></textarea></li>
 <?php

@@ -514,15 +514,15 @@ class FeedWordPressAdminPage {
 		FeedWordPressSettingsUI::ajax_nonce_fields();
 
 		?>
-		<div class="wrap feedwordpress-admin" id="feedwordpress-admin-<?php print $this->pageslug(); ?>">
+		<div class="wrap feedwordpress-admin" id="feedwordpress-admin-<?php print esc_attr( $this->pageslug() ); ?>">
 		<?php
 		if (!is_null($header)) :
 			$this->display_sheet_header($header);
 		endif;
 
-		if (!is_null($this->dispatch)) :
+		if ( !is_null( $this->dispatch ) ) :
 			?>
-			<form action="<?php print $this->form_action(); ?>" method="post">
+			<form action="<?php print esc_url( $this->form_action() ); ?>" method="post">
 			<div><?php
 				FeedWordPressCompatibility::stamp_nonce($this->dispatch);
 				$this->stamp_link_id();
@@ -671,10 +671,10 @@ class FeedWordPressAdminPage {
 			<tr><td class="equals first inactive">
 			<ul class="options">
 			<li><label><input type="radio"
-				name="<?php print $defaultInputName; ?>"
-				value="<?php print $defaultInputValue; ?>"
-				<?php if (!is_null($defaultInputId)) : ?>id="<?php print $defaultInputId; ?>" <?php endif; ?>
-				<?php print $defaulted['yes']; ?> />
+				name="<?php print esc_attr( $defaultInputName ); ?>"
+				value="<?php print esc_attr( $defaultInputValue ); ?>"
+				<?php if (!is_null($defaultInputId)) : ?>id="<?php print esc_attr( $defaultInputId ); ?>" <?php endif; ?>
+				<?php fwp_checked_flag($defaulted, 'yes'); ?> />
 			Use the site-wide setting</label>
 			<span class="current-setting">Currently:
 			<strong><?php if (is_callable($labels)) :
@@ -683,17 +683,17 @@ class FeedWordPressAdminPage {
 				print $globalSetting;
 			else :
 				print $labels[$globalSetting];
-			endif;  ?></strong> (<a href="<?php print $href; ?>">change</a>)</span></li>
+			endif;  ?></strong> (<a href="<?php print esc_url( $href ); ?>">change</a>)</span></li>
 			</ul></td>
 
 			<td class="equals second inactive">
 			<?php if ($defaultInputName != $inputName) : ?>
 				<ul class="options">
 				<li><label><input type="radio"
-					name="<?php print $defaultInputName; ?>"
+					name="<?php print esc_attr( $defaultInputName ); ?>"
 					value="no"
-					<?php if (!is_null($defaultInputIdNo)) : ?>id="<?php print $defaultInputIdNo; ?>" <?php endif; ?>
-					<?php print $defaulted['no']; ?> />
+					<?php if (!is_null($defaultInputIdNo)) : ?>id="<?php print esc_attr( $defaultInputIdNo ); ?>" <?php endif; ?>
+					<?php fwp_checked_flag($defaulted, 'no'); ?> />
 				<?php _e('Do something different with this feed.'); ?></label>
 			<?php endif;
 		endif;
@@ -706,10 +706,10 @@ class FeedWordPressAdminPage {
 			?>
 			<ul class="options">
 			<?php foreach ($options as $value => $label) : ?>
-			<li><label><input type="radio" name="<?php print $inputName; ?>"
-				value="<?php print $value; ?>"
-				<?php print $checked[$value]; ?> />
-			<?php print $label; ?></label></li>
+			<li><label><input type="radio" name="<?php print esc_attr( $inputName ); ?>"
+				value="<?php print esc_attr( $value ); ?>"
+				<?php print fwp_checked_flag($checked, $value); ?> />
+			<?php print esc_html( $label ); ?></label></li>
 			<?php endforeach; ?>
 			</ul> <!-- class="options" -->
 			<?php
@@ -737,7 +737,7 @@ class FeedWordPressAdminPage {
 		if (is_null($caption)) : $caption = __('Save Changes'); endif;
 		?>
 <p class="submit">
-<input class="button-primary" type="submit" name="save" value="<?php print $caption; ?>" />
+<input class="button-primary" type="submit" name="save" value="<?php print esc_attr( $caption ); ?>" />
 </p>
 		<?php
 	}

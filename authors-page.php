@@ -39,7 +39,7 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 		else :
 			$key = FeedWordPress::on_unfamiliar('author');
 		endif;
-		$unfamiliar[$key] = ' selected="selected"';
+		$unfamiliar[$key] = true;
 
 		$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
 		$null_emails = FeedWordPress::null_email_set();
@@ -53,12 +53,14 @@ if ($page->for_default_settings()) :
 <tr><th>Unmatched authors</th>
 <td><span>Authors who haven&#8217;t been syndicated before</span>
   <select style="max-width: 27.0em" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');">
-    <option value="create"<?php print $unfamiliar['create']; ?>>will have a new author account created for them</option>
-    <?php foreach ($page->authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>"<?php print (isset($unfamiliar[$author_id]) ? $unfamiliar[$author_id] : ''); ?>>will have their posts attributed to <?php echo $author_name; ?></option>
+    <option value="create"<?php fwp_selected_flag($unfamiliar, 'create'); ?>>will have a new author account created for them</option>
+    <?php foreach ($page->authorlist as $author_id => $author_name) :
+		if (!isset($unfamiliar[$author_id])) : $unfamiliar[$author_id] = false; endif;
+	?>
+      <option value="<?php echo esc_attr($author_id); ?>"<?php fwp_selected_flag($unfamiliar, $author_id); ?>>will have their posts attributed to <?php echo esc_html($author_name); ?></option>
     <?php endforeach; ?>
     <option value="newuser">will have their posts attributed to a new user...</option>
-    <option value="filter"<?php print $unfamiliar['filter'] ?>>get filtered out</option>
+    <option value="filter"<?php fwp_selected_flag($unfamiliar, 'filter'); ?>>get filtered out</option>
   </select>
 
   <span id="unfamiliar-author-newuser">named <input type="text" name="unfamiliar_author_newuser" value="" /></span></p>
@@ -86,10 +88,10 @@ authors?</p>
 from this feed <select class="author-rules" id="author-rules-all"
 name="author_rules_action[all]" onchange="contextual_appearance('author-rules-all', 'author-rules-all-newuser', 'author-rules-all-default', 'newuser', 'inline');">
     <?php foreach ($page->authorlist as $local_author_id => $local_author_name) : ?>
-    <option value="<?php echo $local_author_id; ?>"<?php if ($local_author_id==$author_action) : echo ' selected="selected"'; endif; ?>>are assigned to <?php echo $local_author_name; ?></option>
+    <option value="<?php echo esc_attr($local_author_id); ?>"<?php fwp_selected_flag($local_author_id==$author_action); ?>>are assigned to <?php echo esc_html($local_author_name); ?></option>
     <?php endforeach; ?>
     <option value="newuser">will be assigned to a new user...</option>
-    <option value="filter"<?php if ('filter'==$author_action) : echo ' selected="selected"'; endif; ?>>get filtered out</option>
+    <option value="filter"<?php fwp_selected_flag('filter'==$author_action); ?>>get filtered out</option>
   </select>
   <span class="author-rules-newuser" id="author-rules-all-newuser">named
   <input type="text" name="author_rules_newuser[all]" value="" /></span></p></li>
@@ -109,20 +111,21 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 		foreach ($this->link->settings['map authors'] as $author_rules) :
 			foreach ($author_rules as $author_name => $author_action) :
 				if ($author_name != '*') :
-					$page->rule_count++; 
+					$page->rule_count++;
+					$authorRulesId = sanitize_html_class(sprintf("author-rules-%d", $page->rule_count));
 ?>
 <tr>
-<th style="text-align: left; width: 15.0em">Posts by <input type="text" name="author_rules_name[]" value="<?php echo htmlspecialchars($author_name); ?>" size="11" /></th>
+<th style="text-align: left; width: 15.0em">Posts by <input type="text" name="author_rules_name[]" value="<?php echo esc_attr($author_name); ?>" size="11" /></th>
   <td>
-  <select class="author-rules" id="author-rules-<?php echo $page->rule_count; ?>" name="author_rules_action[]" onchange="contextual_appearance('author-rules-<?php echo $page->rule_count; ?>', 'author-rules-<?php echo $page->rule_count; ?>-newuser', 'author-rules-<?php echo $page->rule_count; ?>-default', 'newuser', 'inline');">
+  <select class="author-rules" id="<?php echo esc_attr($authorRulesId); ?>" name="author_rules_action[]" onchange="contextual_appearance('<?php echo esc_attr($authorRulesId); ?>', '<?php echo esc_attr($authorRulesId); ?>-newuser', '<?php echo esc_attr($authorRulesId); ?>-default', 'newuser', 'inline');">
     <?php foreach ($page->authorlist as $local_author_id => $local_author_name) : ?>
-    <option value="<?php echo $local_author_id; ?>"<?php if ($local_author_id==$author_action) : echo ' selected="selected"'; endif; ?>>are assigned to <?php echo $local_author_name; ?></option>
+    <option value="<?php echo esc_attr($local_author_id); ?>"<?php fwp_selected_flag($local_author_id==$author_action); ?>>are assigned to <?php echo esc_attr($local_author_name); ?></option>
     <?php endforeach; ?>
     <option value="newuser">will be assigned to a new user...</option>
-    <option value="filter"<?php if ('filter'==$author_action) : echo ' selected="selected"'; endif; ?>>get filtered out</option>
+    <option value="filter"<?php fwp_selected_flag('filter'==$author_action); ?>>get filtered out</option>
   </select>
   
-  <span class="author-rules-newuser" id="author-rules-<?php echo $page->rule_count; ?>-newuser">named <input type="text" name="author_rules_newuser[]" value="" /></span>
+  <span class="author-rules-newuser" id="<?php echo esc_attr($authorRulesId); ?>-newuser">named <input type="text" name="author_rules_newuser[]" value="" /></span>
   </td>
 </tr>
 <?php
@@ -137,7 +140,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
   <td>
     <select id="add-author-rule" name="add_author_rule_action" onchange="contextual_appearance('add-author-rule', 'add-author-rule-newuser', 'add-author-rule-default', 'newuser', 'inline');">
       <?php foreach ($page->authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>">are assigned to <?php echo $author_name; ?></option>
+      <option value="<?php echo esc_attr($author_id); ?>">are assigned to <?php echo esc_html($author_name); ?></option>
       <?php endforeach; ?>
       <option value="newuser">will be assigned to a new user...</option>
       <option value="filter">get filtered out</option>
@@ -153,14 +156,14 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 <span>Authors who haven't been syndicated before</span>
   <select style="max-width: 27.0em" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');">
 <?php if ($page->for_feed_settings()) : ?>
-    <option value="site-default"<?php print $unfamiliar['site-default']; ?>>are handled according to the default for all feeds</option>
+    <option value="site-default"<?php fwp_selected_flag($unfamiliar, 'site-default'); ?>>are handled according to the default for all feeds</option>
 <?php endif; ?>
-    <option value="create"<?php print $unfamiliar['create']; ?>>will have a new author account created for them</option>
+    <option value="create"<?php fwp_selected_flag($unfamiliar, 'create'); ?>>will have a new author account created for them</option>
     <?php foreach ($page->authorlist as $author_id => $author_name) : ?>
-      <option value="<?php echo $author_id; ?>"<?php print (isset($unfamiliar[$author_id]) ? $unfamiliar[$author_id] : ''); ?>>will have their posts attributed to <?php echo $author_name; ?></option>
+      <option value="<?php echo esc_attr($author_id); ?>"<?php fwp_selected_flag($unfamiliar, $author_id); ?>>will have their posts attributed to <?php echo esc_html($author_name); ?></option>
     <?php endforeach; ?>
     <option value="newuser">will have their posts attributed to a user named ...</option>
-    <option value="filter"<?php print $unfamiliar['filter'] ?>>get filtered out</option>
+    <option value="filter"<?php fwp_selected_flag($unfamiliar, 'filter'); ?>>get filtered out</option>
   </select>
 
   <span id="unfamiliar-author-newuser"><input type="text" name="unfamiliar_author_newuser" value="" /></span></p>
@@ -177,11 +180,11 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 <tr>
 <th scope="row">Matching Authors</th>
 <td><ul style="list-style: none; margin: 0; padding: 0;">
-<li><div><label><input id="match-author-by-email" type="checkbox" name="match_author_by_email" value="yes" <?php if ($match_author_by_email) : ?>checked="checked" <?php endif; ?>onchange="contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', 'block', /*checkbox=*/ true);" /> Treat syndicated authors with the same e-mail address as the same author.</label></div>
+<li><div><label><input id="match-author-by-email" type="checkbox" name="match_author_by_email" value="yes" <?php fwp_selected_flag($match_author_by_email, null, "checked"); ?> onchange="contextual_appearance('match-author-by-email', 'unless-null-email', null, 'yes', 'block', /*checkbox=*/ true);" /> Treat syndicated authors with the same e-mail address as the same author.</label></div>
 <div id="unless-null-email">
 <p>Unless the e-mail address is one of the following anonymous e-mail addresses:</p>
 <textarea name="null_emails" rows="3" style="width: 100%">
-<?php print implode("\n", $null_emails); ?>
+<?php print esc_html(implode("\n", $null_emails)); ?>
 </textarea>
 </div></li>
 </ul></td>
@@ -201,13 +204,13 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 		<td><p style="margin: 0.5em 0px">Take all the posts from this feed attributed to
 		<select name="fix_mismatch_from">
 		<?php foreach ($page->authorlist as $author_id => $author_name) : ?>
-		      <option value="<?php echo $author_id; ?>"><?php echo $author_name; ?></option>
+		      <option value="<?php echo esc_attr($author_id); ?>"><?php echo esc_html($author_name); ?></option>
 		<?php endforeach; ?>
 		</select>
 		and instead
 		<select id="fix-mismatch-to" name="fix_mismatch_to" onchange="contextual_appearance('fix-mismatch-to', 'fix-mismatch-to-newuser', null, 'newuser', 'inline');">
 		<?php foreach ($page->authorlist as $author_id => $author_name) : ?>
-		      <option value="<?php echo $author_id; ?>">re-assign them to <?php echo $author_name; ?></option>
+		      <option value="<?php echo esc_attr($author_id); ?>">re-assign them to <?php echo esc_html($author_name); ?></option>
 		<?php endforeach; ?>
 		      <option value="newuser">re-assign them to a new user...</option>
 		      <option value="filter">delete them</option>

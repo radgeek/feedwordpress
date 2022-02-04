@@ -77,7 +77,7 @@ class FeedWordPressSettingsUI {
 			$('.columns-prefs input[type="radio"]').unbind('click');
 			$('.meta-box-sortables').sortable('destroy');
 
-			postboxes.add_postbox_toggles('<?php print $context; ?>');
+			postboxes.add_postbox_toggles('<?php print esc_attr( $context ); ?>');
 			} );
 		</script>
 	<?php
@@ -137,7 +137,7 @@ class FeedWordPressSettingsUI {
 		?>
 			<script type="text/javascript">
 			jQuery(document).ready( function () {
-				var inputBox = jQuery("<?php print $id; ?>");
+				var inputBox = jQuery("<?php print esc_attr( $id ); ?>");
 				var boxEl = inputBox.get(0);
 				if (boxEl.value==boxEl.defaultValue) { inputBox.addClass('form-input-tip'); }
 				inputBox.focus(function() {

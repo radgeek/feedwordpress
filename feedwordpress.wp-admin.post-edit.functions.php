@@ -84,9 +84,9 @@ function feedwordpress_save_post_edit_controls ( $post_id ) {
 	
 	// OK, we're golden. Now let's save some data.
 	if (isset($_POST['freeze_updates'])) :
-
-		update_post_meta($post_id, '_syndication_freeze_updates', $_POST['freeze_updates']);
-		$ret = $_POST['freeze_updates'];
+		$sFreezeUpdates = sanitize_text_field($_POST['freeze_updates']);
+		update_post_meta($post_id, '_syndication_freeze_updates', sanitize_meta('_syndication_freeze_updates', $sFreezeUpdates, 'post'));
+		$ret = $sFreezeUpdates;
 		
 		// If you make manual edits through the WordPress editing
 		// UI then they should be run through normal WP formatting
