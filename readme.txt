@@ -4,7 +4,7 @@ Donate link: http://feedwordpress.radgeek.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
 Tested up to: 5.9
-Stable tag: 2022.0204
+Stable tag: 2022.0208
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
