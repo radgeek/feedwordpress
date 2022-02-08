@@ -995,7 +995,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 						<li><strong>Date:</strong> <?php print date('d-M-y g:i:s a', $post->published()); ?></li>
 						</ul>
 						<div class="entry">
-						<?php print wp_kses( $post->post['post_content'] ); ?>
+						<?php print wp_kses( $post->post['post_content'], 'post' ); ?>
 						</div>
 						<?php
 						do_action('feedwordpress_feed_finder_sample_item', $f, $post, $link);
