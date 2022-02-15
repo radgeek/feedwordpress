@@ -100,8 +100,6 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 	
 	$disabled = (!current_user_can($oTax->cap->assign_terms) ? 'disabled="disabled"' : '');
 
-	$desc = "<p style=\"font-size:smaller;font-style:bold;margin:0\">Tag $object as...</p>";
-
 	if (is_null($params['textarea_name'])) :
 		$params['textarea_name'] = "tax_input[$tax_name]";
 	endif;
@@ -119,7 +117,7 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 		$params['id'] = $tax_name;
 	endif;
 
-	print $desc;
+	printf( /* $desc = */ '<p style="font-size:smaller;font-style:bold;margin:0\">Tag %s as...</p>', esc_html($object) );
 	$helps = __('Separate tags with commas.');
 	$box['title'] = __('Tags');
 	?>
@@ -235,20 +233,22 @@ function fwp_category_box ($checked, $object, $tags = array(), $params = array()
 <?php
 }
 
-function update_feeds_mention ($feed) {
-	echo "<li>Updating <cite>".$feed['link/name']."</cite> from &lt;<a href=\""
-		.$feed['link/uri']."\">".$feed['link/uri']."</a>&gt; ...";
+function update_feeds_mention( $feed ) {
+	printf(
+		'<li>Updating <cite>%s</cite> from &lt;<a href="%s">%s</a>&gt; ...',
+		esc_html( $feed['link/name'] ), esc_url( $feed['link/uri'] ), esc_html( $feed['link/uri'] )
+	);
 	flush();
 }
 function update_feeds_finish ($feed, $added, $dt) {
 	if (is_wp_error($added)) :
 		$mesgs = $added->get_error_messages();
 		foreach ($mesgs as $mesg) :
-			echo "<br/><strong>Feed error:</strong> <code>$mesg</code>";
+			printf( '<br/><strong>Feed error:</strong> <code>%s</code>', esc_html( $mesg ) );
 		endforeach;
 		echo "</li>\n";
 	else :
-		echo " completed in $dt second".(($dt==1)?'':'s')."</li>\n";
+		printf( " completed in %d second%s</li>\n", esc_html( $dt ), (($dt==1)?'':'s') );
 	endif;
 	flush();
 }
@@ -306,7 +306,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 	<th class="check-column" scope="col"><input type="checkbox" /></th>
 <?php
 		foreach ($fwp_syndicated_sources_columns as $col) :
-			print "\t<th scope='col'>${col}</th>\n";
+			printf( "\t<th scope='col'>%s</th>\n", esc_html( $col ) );
 		endforeach;
 		print "</tr>\n";
 		print "</thead>\n";
@@ -405,7 +405,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 					$trClass[] = 'alternate';
 				endif;
 				?>
-	<tr<?php echo ((count($trClass) > 0) ? ' class="'.implode(" ", $trClass).'"':''); ?>>
+	<tr<?php echo ((count($trClass) > 0) ? ' class="'.esc_attr( implode(" ", $trClass) ).'"':''); ?>>
 	<th class="check-column" scope="row"><input type="checkbox" name="link_ids[]" value="<?php echo esc_attr( $link->link_id ); ?>" /></th>
 				<?php
 				$caption = (
