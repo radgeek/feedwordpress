@@ -483,30 +483,10 @@ function fwp_syndication_manage_page_links_table_rows( $links, $page, $visible =
 			foreach ( $links as $link ) :
 				$tr_class = array();
 
-				// Prep: Get last updated timestamp.
 				$o_s_link = new SyndicatedLink( $link->link_id );
-				if ( ! is_null( $o_s_link->setting( 'update/last' ) ) ) :
-					$mesg_last_updated = 'Last checked ' . fwp_time_elapsed( $o_s_link->setting( 'update/last' ) );
-				else :
-					$mesg_last_updated = __( 'None yet' );
-				endif;
 
-				// Prep: get last error timestamp, if any.
-				$mesg_file_size_lines = array();
-
-				$feed_type = $o_s_link->get_feed_type();
 				if ( is_null( $o_s_link->setting( 'update/error' ) ) ) :
-					if ( ! is_null( $o_s_link->setting( 'link/item count' ) ) ) :
-						$n = $o_s_link->setting( 'link/item count' );
 
-						// translators: %d is the item count; %s is the plural marker (if any) for item.
-						$mesg_file_size_lines[] = sprintf( __( '%1$d item%2$s' ), $n, _s( $n ) ) . ', ' . $feed_type;
-
-					endif;
-
-					if ( ! is_null( $o_s_link->setting( 'link/filesize' ) ) ) :
-						$mesg_file_size_lines[] = size_format( $o_s_link->setting( 'link/filesize' ) ) . ' total';
-					endif;
 					$the_error = null;
 
 				else :
@@ -514,40 +494,7 @@ function fwp_syndication_manage_page_links_table_rows( $links, $page, $visible =
 					$the_error  = unserialize( $o_s_link->setting( 'update/error' ) );
 				endif;
 
-				$mesg_next_update = "<div style='max-width: 30.0em; font-size: 0.9em;'><div style='font-style:italic;'>";
-
 				$ttl = $o_s_link->setting( 'update/ttl' );
-				if ( is_numeric( $ttl ) ) :
-					$next = $o_s_link->setting( 'update/last' ) + $o_s_link->setting( 'update/fudge' ) + ( (int) $ttl * 60 );
-					if ( 'automatically' === $o_s_link->setting( 'update/timed' ) ) :
-						if ( $next < time() ) :
-							$mesg_next_update .= 'Ready and waiting to be updated since ';
-						else :
-							$mesg_next_update .= 'Scheduled for next update ';
-						endif;
-						$mesg_next_update .= fwp_time_elapsed( $next );
-						if ( FEEDWORDPRESS_DEBUG ) :
-							$mesg_next_update .= ' [' . ( ( $next - time() ) / 60 ) . ' minutes]';
-						endif;
-					else :
-						$mesg_last_updated .= ' &middot; Next ';
-						$mesg_last_updated .= fwp_relative_time_string( $next );
-
-						$mesg_next_update .= 'Scheduled to be checked for updates every ' . $ttl . ' minute' . _s( $ttl ) . '</div><div style="size:0.9em; margin-top: 0.5em">This update schedule was requested by the feed provider';
-						if ( $o_s_link->setting( 'update/xml' ) ) :
-							$mesg_next_update .= ' using a standard <code style="font-size: inherit; padding: 0; background: transparent">&lt;' . $o_s_link->setting( 'update/xml' ) . '&gt;</code> element';
-						endif;
-						$mesg_next_update .= '.';
-					endif;
-				else :
-					$mesg_next_update .= 'Scheduled for update as soon as possible';
-				endif;
-				$mesg_next_update .= '</div></div>';
-
-				$mesg_file_size = '';
-				if ( count( $mesg_file_size_lines ) > 0 ) :
-					$mesg_file_size = '<div>' . implode( ' / ', $mesg_file_size_lines ) . '</div>';
-				endif;
 
 				$alt_row = ! $alt_row;
 
@@ -607,10 +554,10 @@ function fwp_syndication_manage_page_links_table_rows( $links, $page, $visible =
 	<input type="submit" class="button" name="update_uri[<?php print esc_html( $link->link_rss ); ?>]" value="<?php esc_html_e( 'Update Now' ); ?>" />
 	</div>
 				<?php
-				print $mesg_last_updated;
-				print $mesg_file_size;
+				fwp_links_table_rows_last_updated( $o_s_link );
+				fwp_links_table_rows_file_size( $o_s_link );
 				fwp_links_table_rows_errors_since( $the_error );
-				print $mesg_next_update;
+				fwp_links_table_rows_next_update( $o_s_link );
 				?>
 	</td>
 	</tr>
@@ -663,9 +610,35 @@ function fwp_links_table_rows_errors_since( $the_error ) {
 }
 
 /**
+ * Output the "Last checked..." status message in Syndicated Sites table.
+ *
+ * @param SyndicatedLink $o_s_link The SyndicatedLink object representing the feed displayed on this row.
+ */
+function fwp_links_table_rows_last_updated( $o_s_link ) {
+	if ( ! is_null( $o_s_link->setting( 'update/last' ) ) ) :
+		print esc_html( 'Last checked ' . fwp_time_elapsed( $o_s_link->setting( 'update/last' ) ) );
+	else :
+		esc_html_e( 'None yet' );
+	endif;
+
+	$ttl = $o_s_link->setting( 'update/ttl' );
+	if ( is_numeric( $ttl ) ) :
+		$next = $o_s_link->setting( 'update/last' ) + $o_s_link->setting( 'update/fudge' ) + ( (int) $ttl * 60 );
+
+		if ( 'automatically' !== $o_s_link->setting( 'update/timed' ) ) :
+
+			print ' &middot; Next ';
+			print esc_html( fwp_relative_time_string( $next ) );
+
+		endif;
+	endif;
+
+}
+
+/**
  * Return a status message indicating when a feed will next be polled, based on a next-update timestamp.
  *
- * @param int  $ts  Timestamp for next update.
+ * @param int  $ts  Timestamp for next updrate.
  * @param bool $ago Display "[relative time] ago", or "ASAP", if the timestamp is in the past.
  */
 function fwp_relative_time_string( $ts, $ago = false ) {
@@ -682,4 +655,92 @@ function fwp_relative_time_string( $ts, $ago = false ) {
 		$ret = wp_date( 'F j', $ts );
 	endif;
 	return $ret;
+}
+
+/**
+ * Output the File Size / Format status message in Syndicated Sites table.
+ *
+ * @param SyndicatedLink $o_s_link Object representing the feed displayed on this row.
+ */
+function fwp_links_table_rows_file_size( $o_s_link ) {
+
+	$mesg_file_size_lines = array();
+
+	$feed_type = $o_s_link->get_feed_type();
+
+	if ( ! is_null( $o_s_link->setting( 'link/item count' ) ) ) :
+		$n = $o_s_link->setting( 'link/item count' );
+
+		// translators: %1$d is the item count; %2$s is the plural marker (if any) for item.
+		$mesg_file_size_lines[] = sprintf( __( '%1$d item%2$s' ), $n, _s( $n ) ) . ', ' . $feed_type;
+
+	endif;
+
+	if ( is_null( $o_s_link->setting( 'update/error' ) ) ) :
+
+		if ( ! is_null( $o_s_link->setting( 'link/filesize' ) ) ) :
+			$mesg_file_size_lines[] = size_format( $o_s_link->setting( 'link/filesize' ) ) . ' total';
+		endif;
+
+	endif;
+
+	if ( count( $mesg_file_size_lines ) > 0 ) :
+
+		print '<div>';
+		$sep = '';
+		foreach ( $mesg_file_size_lines as $line ) :
+			print esc_html( $sep );
+			print esc_html( $line );
+			$sep = ' / ';
+		endforeach;
+		print '</div>';
+
+	endif;
+
+}
+
+/**
+ * Output the Scheduled For Next Update status message in Syndicated Sites table.
+ *
+ * @param SyndicatedLink $o_s_link Object representing the feed displayed on this row.
+ */
+function fwp_links_table_rows_next_update( $o_s_link ) {
+	$ttl = $o_s_link->setting( 'update/ttl' );
+	?>
+	<div style="max-width: 30.0em; font-size: 0.9em;"><div style="font-style:italic;">
+	<?php
+	if ( is_numeric( $ttl ) ) :
+		$next = $o_s_link->setting( 'update/last' ) + $o_s_link->setting( 'update/fudge' ) + ( (int) $ttl * 60 );
+		if ( 'automatically' === $o_s_link->setting( 'update/timed' ) ) :
+			if ( $next < time() ) :
+				print 'Ready and waiting to be updated since ';
+			else :
+				print 'Scheduled for next update ';
+			endif;
+
+			print esc_html( fwp_time_elapsed( $next ) );
+			if ( FEEDWORDPRESS_DEBUG ) :
+				$interval = ( ( $next - time() ) / 60 );
+				printf( ' [%d minute%s]', intval( $interval ), esc_html( _s( $interval ) ) );
+			endif;
+		else :
+			printf( '. Scheduled to be checked for updates every %d minute%s', intval( $ttl ), esc_html( _s( $ttl ) ) );
+			?>
+			</div>
+
+			<div style="size:0.9em; margin-top: 0.5em">This update schedule was requested by the feed provider
+			<?php
+			if ( $o_s_link->setting( 'update/xml' ) ) :
+				?>
+				 using a standard <code style="font-size: inherit; padding: 0; background: transparent">&lt;<?php print esc_html( $o_s_link->setting( 'update/xml' ) ); ?>&gt;</code> element
+				<?php
+			endif;
+		endif;
+	else :
+		print 'Scheduled for update as soon as possible';
+	endif;
+	print '.';
+	?>
+	</div></div>
+	<?php
 }
