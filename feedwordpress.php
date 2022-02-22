@@ -48,11 +48,11 @@ define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 define ('DEFAULT_UPDATE_PERIOD', 60); // value in minutes
 define ('FEEDWORDPRESS_DEFAULT_CHECKIN_INTERVAL', DEFAULT_UPDATE_PERIOD/10);
 
-if (isset($_REQUEST['feedwordpress_debug'])) :
-	$feedwordpress_debug = sanitize_text_field($_REQUEST['feedwordpress_debug']);
-else :
-	$feedwordpress_debug = get_option('feedwordpress_debug');
-endif;
+// Dependencies: modules packaged with FeedWordPress plugin
+$dir = dirname( __FILE__ );
+require_once("${dir}/externals/myphp/myphp.class.php");
+
+$feedwordpress_debug = FeedWordPress::param( 'feedwordpress_debug', get_option('feedwordpress_debug') );
 
 if (is_string($feedwordpress_debug)) :
 	$feedwordpress_debug = ($feedwordpress_debug == 'yes');
@@ -126,9 +126,8 @@ if (count($unmetCoreDependencies) > 0) :
 	require_once(ABSPATH . WPINC . "/class-feed.php");
 endif;
 
-// Dependences: modules packaged with FeedWordPress plugin
-$dir = dirname(__FILE__);
-require_once("${dir}/externals/myphp/myphp.class.php");
+// Dependencies: modules packaged with FeedWordPress plugin
+$dir = dirname( __FILE__ );
 require_once("${dir}/feedwordpressadminpage.class.php");
 require_once("${dir}/feedwordpresssettingsui.class.php");
 require_once("${dir}/feedwordpressdiagnostic.class.php");
@@ -692,11 +691,7 @@ class FeedWordPress {
 		// This is a horrible fucking kludge that I have to do because the
 		// admin notice code is triggered before the code that updates the
 		// setting.
-		if (isset($_REQUEST['feedwordpress_debug'])) :
-			$feedwordpress_debug = sanitize_text_field($_REQUEST['feedwordpress_debug']);
-		else :
-			$feedwordpress_debug = get_option('feedwordpress_debug');
-		endif;
+		$feedwordpress_debug = FeedWordPress::param(  'feedwordpress_debug', get_option( 'feedwordpress_debug' ) );
 
 		FeedWordPressSettingsUI::get_template_part('notice-debug-mode', $feedwordpress_debug, 'html');
 	} /* function FeedWordPress::check_debug () */
@@ -954,16 +949,16 @@ class FeedWordPress {
 
 	public function last_update_all () {
 		$last = get_option('feedwordpress_last_update_all');
-		if ($this->has_secret() and MyPHP::request('automatic_update')) :
+		if ( $this->has_secret() and FeedWordPress::param('automatic_update') ) :
 			$last = 1; // A long, long time ago.
-		elseif ($this->has_secret() and MyPHP::request('last_update_all')) :
-			$last = MyPHP::request('last_update_all');
+		elseif ( $this->has_secret() and FeedWordPress::param('last_update_all') ) :
+			$last = FeedWordPress::param( 'last_update_all' );
 		endif;
 		return $last;
 	} /* FeedWordPress::last_update_all () */
 
 	public function force_update_all () {
-		return ($this->has_secret() and MyPHP::request('force_update_feeds'));
+		return ($this->has_secret() and FeedWordPress::param( 'force_update_feeds' ));
 	} /* FeedWordPress::force_update_all () */
 
 	public function stale () {
@@ -1047,7 +1042,7 @@ class FeedWordPress {
 				wp_die( sprintf( __( 'You cannot retire this item. %s is currently editing.' ), $user->display_name ) );
 			endif;
 		
-			if (MyPHP::request('fwp_post_delete')=='zap') :
+			if (FeedWordPress::param( 'fwp_post_delete' ) == 'zap') :
 				FeedWordPress::diagnostic('syndicated_posts', 'Zapping existing post # '.$p->ID.' "'.$p->post_title.'" due to user request.');
 				
 				$old_status = $post->post_status;
@@ -1088,11 +1083,11 @@ class FeedWordPress {
 		// magic parameter is activated, the WordPress trashcan is
 		// temporarily de-activated.
 
-		if (MyPHP::request('fwp_post_delete')=='nuke') :
+		if (FeedWordPress::param( 'fwp_post_delete' ) == 'nuke') :
 			// Get post ID #
-			$post_id = MyPHP::request('post');
+			$post_id = FeedWordPress::param( 'post' );
 			if (!$post_id) :
-				$post_id = MyPHP::request('post_ID');
+				$post_id = FeedWordPress::param( 'post_ID' );
 			endif;
 
 			// Make sure we've got the right nonce and all that.
@@ -1101,11 +1096,11 @@ class FeedWordPress {
 			// If so, disable the trashcan.
 			define('EMPTY_TRASH_DAYS', 0);
 			
-		elseif (MyPHP::request('fwp_post_delete')=='zap' OR MyPHP::request('fwp_post_delete') == 'unzap') :
+		elseif ( FeedWordPress::param( 'fwp_post_delete' ) == 'zap' || FeedWordPress::param( 'fwp_post_delete' ) == 'unzap' ) :
 			// Get post ID #
-			$post_id = MyPHP::request('post');
+			$post_id = FeedWordPress::param( 'post' );
 			if (!$post_id) :
-				$post_id = MyPHP::request('post_ID');
+				$post_id = FeedWordPress::param( 'post_ID' );
 			endif;
 			
 			// Make sure we've got the right nonce and all that
@@ -1121,15 +1116,15 @@ class FeedWordPress {
 	} /* FeedWordPress::admin_api () */
 
 	public function all_admin_notices () {
-		if (MyPHP::request('zapped')) :
-			$n = intval(MyPHP::request('zapped'));
+		if (FeedWordPress::param( 'zapped' )) :
+			$n = intval( FeedWordPress::param( 'zapped' ) );
 ?>
 <div id="message" class="updated"><p><?php print esc_html( $n ); ?> syndicated item<?php print esc_html( $n != 1 ? 's' : '' ); ?> zapped. <strong>These items will not be re-syndicated.</strong> If this was a mistake, you must <strong>immediately</strong> Un-Zap them in the Zapped items section to avoid losing the data.</p></div>
 <?php
 		endif;
 		
-		if (MyPHP::request('unzapped')) :
-			$n = intval(MyPHP::request('unzapped'));
+		if ( FeedWordPress::param( 'unzapped' ) ) :
+			$n = intval( FeedWordPress::param( 'unzapped' ) );
 ?>
 <div id="message" class="updated"><p><?php print esc-html( $n ); ?> syndicated item<?php print esc_html( $n != 1 ? 's' : '' ) ?> un-zapped and restored to normal.</p></div>
 <?php
@@ -1298,7 +1293,7 @@ class FeedWordPress {
 	} /* FeedWordPress::fwp_feeds () */
 
 	public function fwp_feedcontents () {
-		$feed_id = MyPHP::request('feed_id');
+		$feed_id = FeedWordPress::param( 'feed_id' );
 
 		// Let's load up some data from the feed . . .
 		$feed = $this->subscription($feed_id);
@@ -1331,9 +1326,9 @@ class FeedWordPress {
 	} /* FeedWordPress::fwp_feedcontents () */
 
 	public function fwp_xpathtest () {
-		$xpath = MyPHP::request('xpath');
-		$feed_id = MyPHP::request('feed_id');
-		$post_id = MyPHP::request('post_id');
+		$xpath   = FeedWordPress::param( 'xpath' );
+		$feed_id = FeedWordPress::param( 'feed_id' );
+		$post_id = FeedWordPress::param( 'post_id' );
 
 		$expr = new FeedWordPressParsedPostMeta($xpath);
 
@@ -1539,7 +1534,7 @@ class FeedWordPress {
 	} /* FeedWordPress::clear_cache_magic_url() */
 
 	public function clear_cache_requested () {
-		return MyPHP::request('clear_cache');
+		return FeedWordPress::param( 'clear_cache' );
 	} /* FeedWordPress::clear_cache_requested() */
 
 	public function update_magic_url () {
@@ -1549,7 +1544,7 @@ class FeedWordPress {
 		if (self::update_requested()) :
 			/*DBG*/ header("Content-Type: text/plain");
 			
-			$this->update_hooked = "Initiating a CRON JOB CHECK-IN ON UPDATE SCHEDULE due to URL parameter = ".trim($this->val($_REQUEST['update_feedwordpress']));
+			$this->update_hooked = "Initiating a CRON JOB CHECK-IN ON UPDATE SCHEDULE due to URL parameter = " . trim( $this->val( FeedWordPress::param('update_feedwordpress' ) ) );
 
 			$this->update($this->update_requested_url());
 
@@ -1581,15 +1576,18 @@ class FeedWordPress {
 	} /* FeedWordPress::update_magic_url () */
 
 	public static function update_requested () {
-		return MyPHP::request('update_feedwordpress');
+		return FeedWordPress::param( 'update_feedwordpress' );
 	} /* FeedWordPress::update_requested() */
 	
 	public function update_requested_url () {
 		$ret = null;
 
-		if (($_REQUEST['update_feedwordpress']=='*')
-		or (preg_match('|^[a-z]+://.*|i', $_REQUEST['update_feedwordpress']))) :
-			$ret = $_REQUEST['update_feedwordpress'];
+		$uf = FeedWordPress::update_requested();
+		if (
+			( '*' == $uf )
+			|| ( preg_match( '|^[a-z]+://.*|i', $uf ) )
+		) :
+			$ret = $uf;
 		endif;
 
 		return $ret;
@@ -2032,7 +2030,7 @@ class FeedWordPress {
 		$output = get_option('feedwordpress_diagnostics_output', array());
 		$dlog = get_option('feedwordpress_diagnostics_log', array());
 
-		$diagnostic_nesting = count(explode(":", $level));
+		$diagnostic_nesting = count( explode( ":", $level ) );
 
 		if (FeedWordPressDiagnostic::is_on($level)) :
 			foreach ($output as $method) :
@@ -2044,14 +2042,14 @@ class FeedWordPress {
 					break;
 				case 'echo_in_cronjob' :
 					if (self::update_requested()) :
-						echo self::log_prefix()." ".$out."\n";
+						echo self::log_prefix() . ' ' . esc_html( $out ) . "\n";
 					endif;
 					break;
 				case 'admin_footer' :
 					$feedwordpress_admin_footer[] = $out;
 					break;
 				case 'error_log' :
-					error_log(self::log_prefix().' '.$out);
+					error_log(self::log_prefix() . ' ' . $out);
 					break;
 				case 'email' :
 
@@ -2077,7 +2075,7 @@ class FeedWordPress {
 	} /* FeedWordPress::diagnostic () */
 
 	public function email_diagnostics_override () {
-		return ($this->has_secret() and isset($_REQUEST['feedwordpress_email_diagnostics']) and !!$_REQUEST['feedwordpress_email_diagnostics']);
+		return ( $this->has_secret() and ! ! FeedWordPress::param( 'feedwordpress_email_diagnostics' ) );
 	} /* FeedWordPress::email_diagnostics_override () */
 
 	public function has_emailed_diagnostics ($dlog) {
@@ -2235,7 +2233,7 @@ EOMAIL;
 	static function admin_footer () {
 		global $feedwordpress_admin_footer;
 		foreach ($feedwordpress_admin_footer as $line) :
-			echo '<div><pre>'.$line.'</pre></div>';
+			echo '<div><pre>' . esc_html( $line ) . '</pre></div>';
 		endforeach;
 	} /* FeedWordPress::admin_footer () */
 

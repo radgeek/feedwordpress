@@ -882,8 +882,14 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 			if (count($alter) > 0) :
 				echo "<div class=\"updated\">\n";
 				if (count($errs) > 0) :
-					echo "There were some problems processing your ";
-					echo "unsubscribe request. [SQL: ".implode('; ', $errs)."]";
+					echo "There were some problems processing your unsubscribe request. [SQL: ";
+					$sep = '';
+					foreach ( $errs as $err ) :
+						print esc_html($sep);
+						print esc_html($err);
+						$sep = '; ';
+					endforeach;
+					echo "]";
 				else :
 					echo "Your unsubscribe request(s) have been processed.";
 				endif;
