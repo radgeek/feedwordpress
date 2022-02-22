@@ -155,19 +155,6 @@ require_once("${dir}/feedwordpresslocalpost.class.php");
 ## GLOBAL PARAMETERS ###############################################################
 ####################################################################################
 
-// $fwp_post used to be a global variable used to make it easier to cope
-// with the frustrating sometime presence of "Magic Quotes" in earlier
-// versions of PHP (<http://php.net/manual/en/security.magicquotes.php>).
-// Magic quotes were DEPRECATED as of PHP 5.3.0, and REMOVED as of PHP
-// 5.4.0, so for the time being $fwp_post just gets a copy of $_POST.
-global $fwp_post;
-
-if (is_array($_POST)) :
-	$fwp_post = $_POST;
-else:
-	$fwp_post = null;
-endif;
-
 // Get the path relative to the plugins directory in which FWP is stored
 preg_match (
 	'|'.preg_quote(WP_PLUGIN_DIR).'/(.+)$|',
@@ -2012,14 +1999,29 @@ class FeedWordPress {
 	} /* FeedWordPress::cache_lifetime () */
 
 	# Utility functions for handling text settings
-	static function negative ($f, $setting) {
+	static function get_field( $f, $setting = null ) {
+
+		$ret = $f;
+		if ( ! is_null( $setting ) ) :
+			$ret = null;
+			if ( array_key_exists( $setting, $f ) ) :
+				$ret = $f[ $setting ];
+			endif;
+		endif;
+		return $ret;
+
+	} /* FeedWordPress::get_field () */
+
+	static function negative ($f, $setting = null) {
 		$nego = array ('n', 'no', 'f', 'false');
-		return (isset($f[$setting]) and in_array(strtolower($f[$setting]), $nego));
+		$q = self::get_field( $f, $setting );
+		return in_array( strtolower( trim( $q ) ), $nego );
 	} /* FeedWordPress::negative () */
 
-	static function affirmative ($f, $setting) {
+	static function affirmative ($f, $setting = null) {
 		$affirmo = array ('y', 'yes', 't', 'true', 1);
-		return (isset($f[$setting]) and in_array(strtolower($f[$setting]), $affirmo));
+		$q = self::get_field( $f, $setting );
+		return in_array( strtolower( trim( $q ) ), $affirmo );
 	} /* FeedWordPress::affirmative () */
 
 	# Internal debugging functions
@@ -2284,14 +2286,39 @@ EOMAIL;
 	// compatibility with add-ons, older code, etc. Maybe someday they
 	// will go away.
 	// -------------------------------------------------------------------
-	static function param ($key, $type = 'REQUEST', $default = null) {
-		return MyPHP::param($key, $default, $type);
+	static function param( $key, $type = 'REQUEST', $default = null, $sanitizer = null ) {
+		return self::sanitized_parameter( MyPHP::param( $key, $default, $type ), $sanitizer );
 	} /* FeedWordPress::param () */
 
-	static function post ($key, $default = null) {
-		return MyPHP::post($key, $default);
+	static function post( $key, $default = null, $sanitizer = null ) {
+		return self::sanitized_parameter( MyPHP::post( $key, $default, $type ), $sanitizer );
 	} /* FeedWordPress::post () */
 
+	static function shallow_sanitize( $item, $sanitizer = null ) {
+		if ( $sanitizer == 'raw' ) :
+			$value = $item;
+		elseif ( $sanitizer == 'textarea' ) :
+			$value = sanitize_textarea_field( $item );
+		else :
+			$value = sanitize_text_field( $item );
+		endif;
+		return $value;
+	}
+
+	static function sanitized_parameter( $value, $sanitizer = null ) {
+		if ( $sanitizer === 'raw' || is_scalar( $value ) ) :
+			$ret = self::shallow_sanitize( $value, $sanitizer );
+		elseif ( is_array( $value ) ) :
+			$ret = array();
+			foreach ( $value as $key => $item ) :
+				$ret[ $key ] = self::sanitized_parameter( $item, $sanitizer );
+			endforeach;
+		else :
+			$ret = null; // "Sanitized" objects or resources currently get nothing.
+		endif;
+		return $ret;
+	}
+	
 	static function val ($v, $no_newlines = false) {
 		return MyPHP::val($v, $no_newlines);
 	} /* FeedWordPress::val () */

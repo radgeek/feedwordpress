@@ -58,7 +58,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		endif;
 		
 		// this may be output into HTML, and it should really only ever be Y or N...
-		$sVisibility = (isset($_REQUEST['visibility']) ? sanitize_text_field($_REQUEST['visibility'])  : $defaultVisibility);
+		$sVisibility = FeedWordPress::param( 'visibility', $defaultVisibility );
 		$visibility = preg_replace('/[^YyNn]+/', '', $sVisibility);
 		
 		return (strlen($visibility) > 0 ? $visibility : $defaultVisibility);
@@ -91,23 +91,21 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	 * requested_link_ids_sql ()
 	 *
 	 * @return string An SQL list literal containing the link IDs, sanitized
-	 * 		and escaped for direct use in MySQL queries.
+	 *                and escaped for direct use in MySQL queries.
 	 *
 	 * @uses sanitize_ids_sql()
 	 */
 	public function requested_link_ids_sql () {
 		// Multiple link IDs passed in link_ids[]=...
-		$aLinkIdParameters = (isset($_REQUEST['link_ids']) ? $_REQUEST['link_ids'] : array());
-		$link_ids = array();
-		foreach ($aLinkIdParameters as $uLinkId) :
-			$sLinkId = sanitize_text_field($uLinkId);
-			array_push($link_ids, $sLinkId);
-		endforeach;
 		
+		$link_ids = array_map(
+			'sanitize_text_field',
+			(array) MyPHP::request( 'link_ids', array() )
+		);
+
 		// Or single in link_id=...
-		if (isset($_REQUEST['link_id'])) :
-			$sLinkId = sanitize_text_field($_REQUEST['link_id']);
-			array_push($link_ids, $sLinkId);
+		if ( ! is_null(MyPHP::request( 'link_id' ) ) ) :
+			array_push( $link_ids, sanitize_text_field( MyPHP::request( 'link_id' ) ) );
 		endif;
 
 		// Now use method to sanitize for safe use in MySQL queries.
@@ -120,7 +118,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	function updates_requested () {
 		global $wpdb;
 
-		if (isset($_POST['update']) or isset($_POST['action']) or isset($_POST['update_uri'])) :
+		if ( FeedWordPress::post( 'update' ) || FeedWordPress::post( 'action' ) || FeedWordPress::post( 'update_uri' ) ) :
 			// Only do things with side-effects for HTTP POST or command line
 			$fwp_update_invoke = 'post';
 		else :
@@ -147,8 +145,8 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 				else : // This should never happen
 					FeedWordPressDiagnostic::critical_bug('fwp_syndication_manage_page::targets', $targets, __LINE__, __FILE__);
 				endif;
-			elseif (!is_null(MyPHP::post('update_uri'))) :
-				$targets = MyPHP::post('update_uri');
+			elseif (!is_null(FeedWordPress::post('update_uri'))) :
+				$targets = FeedWordPress::post('update_uri');
 				if (!is_array($targets)) :
 					$targets = array($targets);
 				endif;
@@ -164,20 +162,32 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		return $update_set;
 	}
 
+	public function cancel_requested () {
+		$cancel = FeedWordPress::post( 'cancel' );
+		return ( $cancel === __( FWP_CANCEL_BUTTON ) );
+	}
+	public function multiadd_requested () {
+		$multiadd = FeedWordPress::post( 'multiadd' );
+		return ( $multiadd === FWP_SYNDICATE_NEW );
+	}
+	public function multiadd_confirm_requested () {
+		$confirm = FeedWordPress::post( 'confirm' );
+		return ( $confirm === 'multiadd' );
+	}
+	
 	function accept_multiadd () {
-		global $fwp_post;
 
-		if (isset($fwp_post['cancel']) and $fwp_post['cancel']==__(FWP_CANCEL_BUTTON)) :
+		if ( $this->cancel_requested() ) :
 			return true; // Continue ....
 		endif;
 		
 		// If this is a POST, validate source and user credentials
 		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_feeds', /*capability=*/ 'manage_links');
 
-		$in = (isset($fwp_post['multilookup']) ? $fwp_post['multilookup'] : '')
-			.(isset($fwp_post['opml_lookup']) ? $fwp_post['opml_lookup'] : '');
-		if (isset($fwp_post['confirm']) and $fwp_post['confirm']=='multiadd') :
-			$chex = $fwp_post['multilookup'];
+		$in = FeedWordPress::post( 'multilookup', '' )
+			. FeedWordPress::post( 'opml_lookup', '' );
+		if ( $this->multiadd_confirm_requested() ) :
+			$chex = FeedWordPress::post( 'multilookup' );
 			$added = array(); $errors = array();
 			foreach ($chex as $feed) :
 				if (isset($feed['add']) and $feed['add']=='yes') :
@@ -196,22 +206,28 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			endforeach;
 			
 			print "<div class='updated'>\n";
-			print "<p>Added ".count($added)." new syndicated sources.</p>";
+			print "<p>Added " . count($added) . " new syndicated sources.</p>";
+
 			if (count($errors) > 0) :
 				print "<p>FeedWordPress encountered errors trying to add the following sources:</p>
 				<ul>\n";
 				foreach ($errors as $err) :
 					$url = $err[0];
-					$short = esc_html(feedwordpress_display_url($url));
-					$url = esc_html($url);
-					$wp = $err[1];
-					if (is_wp_error($err[1])) :
+					$short = feedwordpress_display_url($url);
+
+					printf(
+						'<li><a href="%s">%s</a>',
+						esc_url( $url ),
+						esc_html( $short )
+					);
+
+					if ( is_wp_error( $err[1] ) ) :
 						$error = $err[1];
-						$mesg = " (<code>".$error->get_error_messages()."</code>)";
-					else :
-						$mesg = '';
+						printf( ' (<code>%s</code>)', esc_html( $error->get_error_messages() ) );
 					endif;
-					print "<li><a href='$url'>$short</a>$mesg</li>\n";
+
+					print "</li>\n";
+
 				endforeach;
 				print "</ul>\n";
 			endif;
@@ -255,7 +271,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	}
 
 	function multiadd_box ($page, $box = NULL) {
-		global $fwp_post;
 
 		$localData = NULL;
 
@@ -266,11 +281,11 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			/*FIXME: check whether $_FILES['opml_upload']['error'] === UPLOAD_ERR_OK or not...*/ 
 			$localData = file_get_contents($_FILES['opml_upload']['tmp_name']);
 			$merge_all = true;
-		elseif (isset($fwp_post['multilookup'])) :
-			$in = $fwp_post['multilookup'];
+		elseif ( ! is_null( FeedWordPress::post( 'multilookup' ) ) ) :
+			$in = FeedWordPress::post( 'multilookup' );
 			$merge_all = false;
-		elseif (isset($fwp_post['opml_lookup'])) :
-			$in = $fwp_post['opml_lookup'];
+		elseif ( ! is_null( FeedWordPress::post( 'opml_lookup' ) ) ) :
+			$in = FeedWordPress::post( 'opml_lookup' );
 			$merge_all = true;
 		else :
 			$in = '';
@@ -382,7 +397,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 	function display () {
 		global $wpdb;
-		global $fwp_post;
 		
 		if (FeedWordPress::needs_upgrade()) :
 			fwp_upgrade_page();
@@ -391,28 +405,28 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		
 		$cont = true;
 		$dispatcher = array(
-			"feedfinder" => 'fwp_feedfinder_page',
-			FWP_SYNDICATE_NEW => 'fwp_feedfinder_page',
-			"switchfeed" => 'fwp_switchfeed_page',
+			"feedfinder" => 'feedfinder_page',
+			FWP_SYNDICATE_NEW => 'feedfinder_page',
+			"switchfeed" => 'switchfeed_page',
 			FWP_UNSUB_CHECKED => 'multidelete_page',
 			FWP_DELETE_CHECKED => 'multidelete_page',
 			'Unsubscribe' => 'multidelete_page',
 			FWP_RESUB_CHECKED => 'multiundelete_page',
 		);
-		
-		$act = MyPHP::request('action');
-		if (isset($dispatcher[$act])) :
-			$method = $dispatcher[$act];
-			if (method_exists($this, $method)) :
+
+		$act = FeedWordPress::param( 'action' );
+		if ( isset( $dispatcher[ $act ] ) ) :
+			$method = $dispatcher[ $act ];
+			if ( method_exists( $this, $method ) ) :
 				$cont = $this->{$method}();
 			else :
 				$cont = call_user_func($method);
 			endif;
-		elseif (isset($fwp_post['multiadd']) and $fwp_post['multiadd']==FWP_SYNDICATE_NEW) :
-			$cont = $this->accept_multiadd($fwp_post);
+		elseif ( $this->multiadd_requested() ) :
+			$cont = $this->accept_multiadd();
 		endif;
 		
-		if ($cont):
+		if ( $cont ):
 			$links = $this->sources('Y');
 			$potential_updates = (!$this->show_inactive() and (count($this->sources('Y')) > 0));
 
@@ -1052,7 +1066,97 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 		endif;
 	} /* FeedWordPressSyndicationPage::multiundelete_page() */
 
+	public function switchfeed_page () {
+		global $wpdb;
+		global $fwp_path;
 
+		// If this is a POST, validate source and user credentials
+		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_switchfeed', /*capability=*/ 'manage_links');
+
+		$changed = false;
+		if ( is_null( FeedWordPress::post( 'Cancel' ) ) ):
+			$save_link_id = FeedWordPress::post( 'save_link_id' );
+
+			if ( $save_link_id == '*' ) :
+				$changed = true;
+				
+				$feed_title = FeedWordPress::post( 'feed_title' );
+				$feed_link  = FeedWordPress::post( 'feed_link' );
+				$feed       = FeedWordPress::post( 'feed' );
+				
+				$link_id = FeedWordPress::syndicate_link( $feed_title, $feed_link, $feed );
+				if ($link_id):
+					$existingLink = new SyndicatedLink($link_id);
+					$adminPageHref = $this->admin_page_href( 'feeds-page.php', array( "link_id" => $link_id ) );
+					?>
+<div class="updated"><p><a href="<?php print esc_url($feed_link); ?>"><?php print esc_html($feed_title); ?></a>
+has been added as a contributing site, using the feed at
+&lt;<a href="<?php print esc_url( $feed ); ?>"><?php print esc_html( $feed ); ?></a>&gt;.
+| <a href="<?php print esc_url( $adminPageHref ); ?>">Configure settings</a>.</p></div>
+					<?php
+				else:
+					?>
+<div class="updated"><p>There was a problem adding the feed. [SQL: <?php echo esc_html($wpdb->last_error); ?>]</p></div>
+					<?php
+				endif;
+			elseif ( ! is_null( $save_link_id ) ):
+				$feed         = FeedWordPress::post( 'feed' );
+				$existingLink = new SyndicatedLink( $save_link_id );
+
+				$changed = $existingLink->set_uri($feed);
+
+				if ($changed):
+					$home = $existingLink->homepage(/*from feed=*/ false);
+					$name = $existingLink->name(/*from feed=*/ false);
+					?> 
+<div class="updated"><p>Feed for <a href="<?php echo esc_html($home); ?>"><?php echo esc_html($name); ?></a>
+updated to &lt;<a href="<?php echo esc_html( $feed ); ?>"><?php echo esc_html( $feed ); ?></a>&gt;.</p></div>
+					<?php
+				endif;
+			endif;
+		endif;
+
+		if (isset($existingLink)) :
+			$auth = FeedWordPress::post('link_rss_auth_method');
+			if (!is_null($auth) and (strlen($auth) > 0) and ($auth != '-')) :
+				$existingLink->update_setting('http auth method', $auth);
+				$existingLink->update_setting('http username',
+					FeedWordPress::post('link_rss_username')
+				);
+				$existingLink->update_setting('http password',
+					FeedWordPress::post('link_rss_password')
+				);
+			else :
+				$existingLink->update_setting('http auth method', NULL);
+				$existingLink->update_setting('http username', NULL);
+				$existingLink->update_setting('http password', NULL);
+			endif;
+			do_action('feedwordpress_admin_switchfeed', FeedWordPress::post( 'feed' ), $existingLink); 
+			$existingLink->save_settings(/*reload=*/ true);
+		endif;
+
+		if (!$changed) :
+			?>
+	<div class="updated"><p>Nothing was changed.</p></div>
+			<?php
+		endif;
+		return true; // Continue.
+	}
+
+	function feedfinder_page () {
+		global $post_source;
+
+		if ( FeedWordPress::post( 'opml_lookup' ) or isset( $_FILES['opml_upload'] ) ) :
+			$this->accept_multiadd();
+			return true;
+		else :
+			$post_source = 'feedwordpress_feeds';
+		
+			// With action=feedfinder, this goes directly to the feedfinder page
+			include_once(dirname(__FILE__) . '/feeds-page.php');
+			return false;
+		endif;
+	} /* function feedfinder_page () */
 
 } /* class FeedWordPressSyndicationPage */
 
@@ -1108,11 +1212,11 @@ define('FEEDWORDPRESS_BLEG_MAYBE_LATER_OFFSET', (60 /*sec/min*/ * 60 /*min/hour*
 define('FEEDWORDPRESS_BLEG_ALREADY_PAID_OFFSET', (60 /*sec/min*/ * 60 /*min/hour*/ * 24 /*hour/day*/ * 183 /*days*/));
 function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	$bleg_box_hidden = null;
-	if (isset($_POST['maybe_later'])) :
+	if ( FeedWordPress::post( 'maybe_later' ) ) :
 		$bleg_box_hidden = time() + FEEDWORDPRESS_BLEG_MAYBE_LATER_OFFSET; 
-	elseif (isset($_REQUEST['paid']) and $_REQUEST['paid'])  :
+	elseif ( FeedWordPress::post( 'paid' ) )  :
 		$bleg_box_hidden = time() + FEEDWORDPRESS_BLEG_ALREADY_PAID_OFFSET; 
-	elseif (isset($_POST['go_away'])) :
+	elseif ( FeedWordPress::post( 'go_away' ) ) :
 		$bleg_box_hidden = 'permanent';
 	endif;
 
@@ -1129,7 +1233,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	));
 	
 	$bleg_box_ready = apply_filters( 'feedwordpress_bleg_box_ready', $bleg_box_ready );
-	if (isset($_REQUEST['paid']) and $_REQUEST['paid']) :
+	if ( FeedWordPress::post( 'paid' ) ) :
 		$object->bleg_thanks($subject, $box);
 	elseif ($bleg_box_ready) :
 		$object->bleg_box($object, $box);
@@ -1170,84 +1274,3 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	</form>
 <?php
 } /* function fwp_syndication_manage_page_update_box () */
-
-function fwp_feedfinder_page () {
-	global $post_source, $fwp_post, $syndicationPage;
-
-	if (isset($fwp_post['opml_lookup']) or isset($_FILES['opml_upload'])) :
-		$syndicationPage->accept_multiadd();
-		return true;
-	else :
-		$post_source = 'feedwordpress_feeds';
-		
-		// With action=feedfinder, this goes directly to the feedfinder page
-		include_once(dirname(__FILE__) . '/feeds-page.php');
-		return false;
-	endif;
-} /* function fwp_feedfinder_page () */
-
-function fwp_switchfeed_page () {
-	global $wpdb;
-	global $fwp_post, $fwp_path;
-
-	// If this is a POST, validate source and user credentials
-	FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_switchfeed', /*capability=*/ 'manage_links');
-
-	$changed = false;
-	if (!isset($fwp_post['Cancel'])):
-		if (isset($fwp_post['save_link_id']) and ($fwp_post['save_link_id']=='*')) :
-			$changed = true;
-			$link_id = FeedWordPress::syndicate_link($fwp_post['feed_title'], $fwp_post['feed_link'], $fwp_post['feed']);
-			if ($link_id):
-				$existingLink = new SyndicatedLink($link_id);
-				$adminPageHref = $this->admin_page_href('feeds-page.php', array( "link_id" => $link_id ));
-			?>
-<div class="updated"><p><a href="<?php print esc_url($fwp_post['feed_link']); ?>"><?php print esc_html($fwp_post['feed_title']); ?></a>
-has been added as a contributing site, using the feed at
-&lt;<a href="<?php print esc_url($fwp_post['feed']); ?>"><?php print esc_html($fwp_post['feed']); ?></a>&gt;.
-| <a href="<?php print esc_url( $adminPageHref ); ?>">Configure settings</a>.</p></div>
-<?php			else: ?>
-<div class="updated"><p>There was a problem adding the feed. [SQL: <?php echo esc_html($wpdb->last_error); ?>]</p></div>
-<?php			endif;
-		elseif (isset($fwp_post['save_link_id'])):
-			$existingLink = new SyndicatedLink($fwp_post['save_link_id']);
-			$changed = $existingLink->set_uri($fwp_post['feed']);
-
-			if ($changed):
-				$home = $existingLink->homepage(/*from feed=*/ false);
-				$name = $existingLink->name(/*from feed=*/ false);
-				?> 
-<div class="updated"><p>Feed for <a href="<?php echo esc_html($home); ?>"><?php echo esc_html($name); ?></a>
-updated to &lt;<a href="<?php echo esc_html($fwp_post['feed']); ?>"><?php echo esc_html($fwp_post['feed']); ?></a>&gt;.</p></div>
-				<?php
-			endif;
-		endif;
-	endif;
-
-	if (isset($existingLink)) :
-		$auth = MyPHP::post('link_rss_auth_method');
-		if (!is_null($auth) and (strlen($auth) > 0) and ($auth != '-')) :
-			$existingLink->update_setting('http auth method', $auth);
-			$existingLink->update_setting('http username',
-				MyPHP::post('link_rss_username')
-			);
-			$existingLink->update_setting('http password',
-				MyPHP::post('link_rss_password')
-			);
-		else :
-			$existingLink->update_setting('http auth method', NULL);
-			$existingLink->update_setting('http username', NULL);
-			$existingLink->update_setting('http password', NULL);
-		endif;
-		do_action('feedwordpress_admin_switchfeed', $fwp_post['feed'], $existingLink); 
-		$existingLink->save_settings(/*reload=*/ true);
-	endif;
-	
-	if (!$changed) :
-		?>
-<div class="updated"><p>Nothing was changed.</p></div>
-		<?php
-	endif;
-	return true; // Continue
-}
-

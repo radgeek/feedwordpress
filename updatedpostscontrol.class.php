@@ -49,15 +49,15 @@ class UpdatedPostsControl {
 	<?php		
 	} /* UpdatedPostsControl::display() */
 	
-	function accept_POST ($post) {
+	function accept_POST () {
 		if ($this->page->for_feed_settings()) :
-			if (isset($post['freeze_updates'])) :
-				$this->page->link->settings['freeze updates'] = $post['freeze_updates'];
+			if ( ! is_null( FeedWordPress::post( 'freeze_updates' ) ) ) :
+				$this->page->link->settings['freeze updates'] = FeedWordPress::post( 'freeze_updates' );
 			endif;
 		else :
 			// Updated posts
-			if (isset($post['freeze_updates'])) :
-				update_option('feedwordpress_freeze_updates', $post['freeze_updates']);
+			if ( ! is_null( FeedWordPress::post( 'freeze_updates' ) ) ) :
+				update_option('feedwordpress_freeze_updates', FeedWordPress::post( 'freeze_updates' ));
 			endif;
 		endif;
 	} /* UpdatedPostsControl::accept_POST() */

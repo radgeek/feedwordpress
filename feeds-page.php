@@ -103,7 +103,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressFeedsPage constructor */
 
 	function display () {
-		global $fwp_post;
+
 		global $post_source;
 
 		$this->boxes_by_methods = array(
@@ -125,9 +125,10 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$source = $this->dispatch;
 		endif;
 
-		if (isset($_REQUEST['feedfinder'])
-		or (isset($_REQUEST['action']) and $_REQUEST['action']=='feedfinder')
-		or (isset($_REQUEST['action']) and $_REQUEST['action']==FWP_SYNDICATE_NEW)) :
+		$feedfinder = FeedWordPress::param( 'feedfinder' );
+		$action = FeedWordPress::param( 'action' );
+		if ( $feedfinder || in_array( $action, array( 'feedfinder', FWP_SYNDICATE_NEW ) ) ) :
+
 			// If this is a POST, validate source and user credentials
 			FeedWordPressCompatibility::validate_http_request(/*action=*/ $source, /*capability=*/ 'manage_links');
 
@@ -429,8 +430,8 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<td><?php
 		$this->setting_radio_control('update_incremental', 'update_incremental',
 			/*options=*/ array(
-				'incremental' => '<strong>Incremental.</strong> When items no longer appear on the feed, keep them in the WordPress posts table.',
-				'complete' => '<strong>Complete.</strong> When items no longer appear on the feed, they are obsolete; retire them from the WordPress posts table.',
+				'incremental' => '**Incremental.** When items no longer appear on the feed, keep them in the WordPress posts table.',
+				'complete' => '**Complete.** When items no longer appear on the feed, they are obsolete; retire them from the WordPress posts table.',
 			),
 			/*params=*/ array(
 				'setting-default' => NULL,
@@ -819,11 +820,11 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	function display_feedfinder () {
 		global $wpdb;
 	
-		$lookup = (isset($_REQUEST['lookup']) ? $_REQUEST['lookup'] : NULL);
+		$lookup = FeedWordPress::param( 'lookup' );
 		
-		$auth = MyPHP::request('link_rss_auth_method');
-		$username = MyPHP::request('link_rss_username');
-		$password = MyPHP::request('link_rss_password');
+		$auth = FeedWordPress::param( 'link_rss_auth_method' );
+		$username = FeedWordPress::param( 'link_rss_username' );
+		$password = FeedWordPress::param( 'link_rss_password' );
 		$credentials = array(
 				"authentication" => $auth,
 				"username" => $username,
@@ -1098,8 +1099,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressFeedsPage::display_feedfinder() */
 
 	function display_alt_feed_box ($lookup, $params = false) {
-		global $fwp_post;
-		
+
 		if (is_bool($params)) :
 			$params = array("alt" => $params);
 		endif;
@@ -1162,26 +1162,36 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressFeedsPage::display_alt_feed_box() */
 	
-	function save_settings ($post) {
+	function save_settings () {
 		if ($this->for_feed_settings()) :
-			
-			if (isset($post['link_rss_params_key'])) :
+
+			$params_key = FeedWordPress::post( 'link_rss_params_key', array() );
+
+			if ( is_array( $params_key ) && count($params_key) > 0 ) :
+
+				$params_values = FeedWordPress::post( 'link_rss_params_value', array() );
+
 				$qp = array();
-				foreach ($post['link_rss_params_key'] as $index => $key) :
+				foreach ( $params_key as $index => $key ) :
 					if (strlen($key) > 0) :
-						if (isset($post['link_rss_params_value'][$index])
-						and strlen($post['link_rss_params_value'][$index])) :
-							$value = $post['link_rss_params_value'][$index];
-							$qp[] = array($key, $value);
+
+						if ( isset( $params_values[ $index ] ) ) :
+
+							$params_value = $params_values[ $index ];
+							if ( strlen($params_value) > 0 ) :
+								$qp[] = array( $key, $params_value );
+							endif;
 						endif;
 					endif;
 				endforeach;
 				$this->update_setting('query parameters', serialize($qp));
+
 			endif;
 			
 			// custom feed settings first
-			foreach ($post['notes'] as $mn) :
-				$mn['key0'] = (isset($mn['key0']) ? trim($mn['key0']) : NULL);
+			$param_notes = FeedWordPress::post( 'notes', array() );
+			foreach ( $param_notes as $mn ) :
+				$mn['key0'] = ( isset($mn['key0']) ? trim($mn['key0']) : null );
 				$mn['key1'] = trim($mn['key1']);
 				if (preg_match("\007^(("
 						.implode(')|(',$this->special_settings)
@@ -1204,114 +1214,125 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			
 			foreach (array('name', 'description', 'url') as $what) :
 				// We have a checkbox for "No," so if it's unchecked, mark as "Yes."
-				$this->link->settings["hardcode {$what}"] = (isset($post["hardcode_{$what}"]) ? $post["hardcode_{$what}"] : 'yes');
+				$this->link->settings["hardcode {$what}"] = FeedWordPress::post( "hardcode_{$what}", 'yes' );
 				if (FeedWordPress::affirmative($this->link->settings, "hardcode {$what}")) :
-					$this->link->link->{'link_'.$what} = $post['link'.$what];
+					$this->link->link->{'link_'.$what} = FeedWordPress::post( 'link' . $what );
 				endif;
 			endforeach;
-			
+
 			// Update scheduling
-			if (isset($post['update_schedule'])) :
-				$this->link->settings['update/hold'] = $post['update_schedule'];
+			$update_schedule = FeedWordPress::post( 'update_schedule' );
+			if ( ! is_null( $update_schedule ) ) :
+				$this->link->settings['update/hold'] = $update_schedule;
 			endif;
 
-			if (isset($post['use_default_update_window']) and strtolower($post['use_default_update_window'])=='yes') :
+			$use_default_update_window = FeedWordPress::post( 'use_default_update_window' );
+			$update_window = FeedWordPress::post( 'update_window' );
+			if ( FeedWordPress::affirmative( $use_default_update_window ) ) :
 				unset($this->link->settings['update/window']);
-			elseif (isset($post['update_window'])):
-				if ((int) $post['update_window'] > 0) :
-					$this->link->settings['update/window'] = (int) $post['update_window'];
+			elseif ( ! is_null( $update_window ) ) :
+				$update_window = intval( $update_window );
+				if ( $update_window > 0 ) :
+					$this->link->settings['update/window'] = $update_window;
 				endif;
 			endif;
 			
 		else :
 			// Global
-			update_option('feedwordpress_cat_id', $post['syndication_category']);
+			update_option('feedwordpress_cat_id', FeedWordPress::post( 'syndication_category' ) );
 			
-			if (!isset($post['automatic_updates']) or !in_array($post['automatic_updates'], array('init', 'shutdown'))) :
-				$automatic_updates = NULL;
-			else :
-				$automatic_updates = $post['automatic_updates'];
+			$automatic_updates = FeedWordPress::post( 'automatic_updates' );
+			if ( ! in_array( $automatic_updates, array( 'init', 'shutdown' ) ) ) :
+				$automatic_updates = null;
 			endif;
 			update_option('feedwordpress_automatic_updates', $automatic_updates);
 
-			if (isset($post['update_window'])):
-				if ((int) $post['update_window'] > 0) :
-					update_option('feedwordpress_update_window', (int) $post['update_window']);
+			$update_window = FeedWordPress::post( 'update_window' );
+			if ( ! is_null( $update_window ) ) :
+				$update_window = intval( $update_window );
+				if ( $update_window > 0 ) :
+					update_option( 'feedwordpress_update_window', $update_window );
 				endif;
 			endif;
 
-			update_option('feedwordpress_update_time_limit', ($post['update_time_limit']=='yes')?(int) $post['time_limit_seconds']:0);
+			$update_time_limit = FeedWordPress::post( 'update_time_limit' );
+			$time_limit_seconds = 0;
+			if ( FeedWordPress::affirmative( $update_time_limit ) ) :
+				$time_limit_seconds = intval( FeedWordPress::post( 'time_limit_seconds' ) );
+			endif;
+			update_option( 'feedwordpress_update_time_limit', $time_limit_seconds );
 
 			foreach (array('name', 'description', 'url') as $what) :
 				// We have a checkbox for "No," so if it's unchecked, mark as "Yes."
-				$hardcode = (isset($post["hardcode_{$what}"]) ? $post["hardcode_{$what}"] : 'yes');
-				update_option("feedwordpress_hardcode_{$what}", $hardcode);
+				$hardcode = FeedWordPress::post( "hardcode_{$what}", 'yes' );
+				update_option( "feedwordpress_hardcode_{$what}", $hardcode );
 			endforeach;
 			
 		endif;
-		
-		if (isset($post['update_pause'])) :
-			$this->update_setting('update/pause', $post['update_pause']);
+
+		$update_pause = FeedWordPress::post( 'update_pause' );
+		if ( ! is_null( $update_pause ) ) :
+			$this->update_setting( 'update/pause', $update_pause );
 		endif;
 
-		if (isset($post['fetch_timeout'])) :
-			if (isset($post['fetch_timeout_default']) and $post['fetch_timeout_default']=='yes') :
-				$timeout = NULL;
-			else :
-				$timeout = $post['fetch_timeout'];
+		$fetch_timeout = FeedWordPress::post( 'fetch_timeout' );
+		if ( ! is_null( $fetch_timeout ) ) :
+			$fetch_timeout_default = FeedWordPress::post( 'fetch_timeout_default' );
+			if ( FeedWordPress::affirmative( $fetch_timeout_default ) ) :
+				$fetch_timeout = null;
 			endif;
 
-			if (is_int($timeout)) :
-				$timeout = intval($timeout);
+			if ( is_int( $fetch_timeout ) ) :
+				$fetch_timeout = intval( $fetch_timeout );
 			endif;
-			$this->update_setting('fetch timeout', $timeout);
-		endif;
-		
-		if (isset($post['update_incremental'])) :
-			$this->update_setting('update_incremental', $post['update_incremental']);
+			$this->update_setting( 'fetch timeout', $fetch_timeout );
 		endif;
 
-		if (isset($post['tombstones'])) :
-			$this->update_setting('tombstones', $post['tombstones']);
+		$update_incremental = FeedWordPress::post( 'update_incremental' );
+		if ( ! is_null( $update_incremental ) ) :
+			$this->update_setting( 'update_incremental', $update_incremental );
 		endif;
 
-		if (isset($post['update_minimum'])) :
-			$this->update_setting('update/minimum', $post['update_minimum']);
+		$tombstones = FeedWordPress::post( 'tombstones' );
+		if ( ! is_null( $tombstones ) ) :
+			$this->update_setting('tombstones', $tombstones );
 		endif;
 
+		$update_minimum = FeedWordPress::post( 'update_minimum' );
+		if ( ! is_null( $update_minimum ) ) :
+			$this->update_setting( 'update/minimum', $update_minimum );
+		endif;
+
+		$link_rss_auth_method = FeedWordPress::post( 'link_rss_auth_method' );
 		if (
-			isset($post['link_rss_auth_method'])
-			and $post['link_rss_auth_method']
-			and ('-' != $post['link_rss_auth_method'])
+			! $link_rss_auth_method
+			|| '-' == $link_rss_auth_method
 		) :
-			$this->update_setting('http auth method', $post['link_rss_auth_method']);
-		else :
-			$this->update_setting('http auth method', NULL);				
+			$link_rss_auth_method = null;
 		endif;
-		
-		if (
-			isset($post['link_rss_username'])
-			and (strlen($post['link_rss_username']) > 0)
-			and ('-' != $post['link_rss_auth_method'])
-		) :
-			$this->update_setting('http username', $post['link_rss_username']);
-		else :
-			$this->update_setting('http username', NULL);				
-		endif;
+		$this->update_setting( 'http auth method', $link_rss_auth_method );
 
+		$link_rss_username = FeedWordPress::post( 'link_rss_username' );
 		if (
-			isset($post['link_rss_password'])
-			and (strlen($post['link_rss_password']) > 0)
-			and ('-' != $post['link_rss_auth_method'])
+			! $link_rss_username
+			|| is_null( $link_rss_auth_method )
 		) :
-			$this->update_setting('http password', $post['link_rss_password']);
-		else :
-			$this->update_setting('http password', NULL);				
+			$link_rss_username = null;
 		endif;
-		
-		$this->updatedPosts->accept_POST($post);
+		$this->update_setting( 'http username', $link_rss_username );
 
-		parent::save_settings($post);
+		$link_rss_password = FeedWordPress::post( 'link_rss_password' );
+		if (
+			strlen( $link_rss_password ) == 0
+			|| is_null( $link_rss_auth_method )
+		) :
+			$link_rss_password = null;
+		endif;
+		$this->update_setting( 'http password', $link_rss_password );
+		
+		$this->updatedPosts->accept_POST();
+
+		parent::save_settings();
 	} /* FeedWordPressFeedsPage::save_settings() */
 
 } /* class FeedWordPressFeedsPage */

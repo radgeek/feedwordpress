@@ -25,8 +25,8 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_diagnostics', /*capability=*/ 'manage_options');
 
 		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
-			$this->accept_POST($_POST);
-			do_action('feedwordpress_admin_page_diagnostics_save', $_POST, $this);
+			$this->accept_POST();
+			do_action('feedwordpress_admin_page_diagnostics_save', null, $this);
 		endif;
 
 		////////////////////////////////////////////////
@@ -68,46 +68,44 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		$this->close_sheet();
 	} /* FeedWordPressDiagnosticsPage::display () */
 
-	function accept_POST ($post) {
-		if (isset($post['submit'])
-		or isset($post['save'])
-		or isset($post['feedwordpress_diagnostics_do'])) :
-			update_option('feedwordpress_debug', $post['feedwordpress_debug']);
-			update_option('feedwordpress_secret_key', $post['feedwordpress_secret_key']);
+	public function do_requested () {
+		return ( ! is_null( self::what_requested() ) );
+	}
 
-			if (!isset($post['diagnostics_output'])
-			or !is_array($post['diagnostics_output'])) :
-				$post['diagnostics_output'] = array();
-			endif;
-			update_option('feedwordpress_diagnostics_output', $post['diagnostics_output']);
+	public function what_requested () {
+		return FeedWordPress::post( 'feedwordpress_diagnostics_do' );
+	}
+	
+	function accept_POST () {
+		if ( self::save_requested() || self::do_requested() ) :
 
-			if (!isset($post['diagnostics_show'])
-			or !is_array($post['diagnostics_show'])) :
-				$post['diagnostics_show'] = array();
-			endif;
-			update_option('feedwordpress_diagnostics_show', $post['diagnostics_show']);
+			update_option( 'feedwordpress_debug', FeedWordPress::post( 'feedwordpress_debug' ) );
+			update_option( 'feedwordpress_secret_key', FeedWordPress::post( 'feedwordpress_secret_key' ) );
 
-			if ($post['diagnostics_show']
-			and in_array('updated_feeds:errors:persistent', $post['diagnostics_show'])) :
-				update_option('feedwordpress_diagnostics_persistent_errors_hours', (int) $post['diagnostics_persistent_error_hours']);
+			update_option( 'feedwordpress_diagnostics_output', FeedWordPress::post( 'diagnostics_output' ) );
+			update_option( 'feedwordpress_diagnostics_show', FeedWordPress::post( 'diagnostics_show' ) );
+
+			if ( FeedWordPress::post( 'diagnostics_show' )
+			and in_array( 'updated_feeds:errors:persistent', FeedWordPress::post( 'diagnostics_show' ) ) ) :
+				update_option('feedwordpress_diagnostics_persistent_errors_hours', (int) FeedWordPress::post( 'diagnostics_persistent_error_hours' ) );
 			else :
-				delete_option('feedwordpress_diagnostics_persistent_errors_hours');
+				delete_option( 'feedwordpress_diagnostics_persistent_errors_hours' );
 			endif;
 
-			if (in_array('email', $post['diagnostics_output'])) :
-				$ded = $post['diagnostics_email_destination'];
-				if ('mailto'==$ded) :
-					$ded .= ':'.$post['diagnostics_email_destination_address'];
+			if ( in_array( 'email', FeedWordPress::post( 'diagnostics_output' ) ) ) :
+				$ded = FeedWordPress::post('diagnostics_email_destination' );
+				if ( 'mailto' == $ded ) :
+					$ded .= ':' . FeedWordPress::post('diagnostics_email_destination_address' );
 				endif;
 
-				update_option('feedwordpress_diagnostics_email_destination', $ded);
+				update_option( 'feedwordpress_diagnostics_email_destination', $ded );
 			else :
-				delete_option('feedwordpress_diagnostics_email_destination');
+				delete_option( 'feedwordpress_diagnostics_email_destination' );
 			endif;
 
-			if (isset($post['feedwordpress_diagnostics_do'])) :
-				foreach ($post['feedwordpress_diagnostics_do'] as $do => $value) :
-					do_action('feedwordpress_diagnostics_do_'.$do, $post);
+			if ( self::do_requested() ) :
+				foreach ( self::what_requested() as $do => $value) :
+					do_action( 'feedwordpress_diagnostics_do_'.$do );
 				endforeach;
 			endif;
 
@@ -323,9 +321,9 @@ testing but absolutely inappropriate for a production server.</p>
 	} /* FeedWordPressDiagnosticsPage::updates_box () */
 
 	static function tests_box ($page, $box = NULL) {
-		$url = MyPHP::request('http_test_url');
-		$method = MyPHP::request('http_test_method');
-		$xpath = MyPHP::request('http_test_xpath');
+		$url = FeedWordPress::param( 'http_test_url' );
+		$method = FeedWordPress::param( 'http_test_method' );
+		$xpath = FeedWordPress::param( 'http_test_xpath' );
 		
 		$aMethods = array(
 			'wp_remote_request',
@@ -405,38 +403,42 @@ function clone_http_test_args_keyvalue_prototype () {
 	} /* FeedWordPressDiagnosticsPage::tests_box () */
 
 	private $test_html;
-	public function do_http_test ($post) {
-		if (isset($post['http_test_url']) and isset($post['http_test_method'])) :
-			$url = $post['http_test_url'];
+	public function do_http_test () {
+		$url = FeedWordPress::post( 'http_test_url' );
+		$method = FeedWordPress::post( 'http_test_method' );
+		if ( ! ( is_null( $url ) || is_null( $method ) ) ) :
 
 			$args = array();
-			if (isset($post['http_test_args_key'])) :
-				foreach ($post['http_test_args_key'] as $idx => $name) :
+			$keys = FeedWordPress::post( 'http_test_args_key' );
+			if ( ! is_null( $keys ) ) :
+				foreach ( $keys as $idx => $name ) :
 					$name = trim($name);
 					if (strlen($name) > 0) :
-						$value = NULL;
-						if (isset($post['http_test_args_value'])
-						and isset($post['http_test_args_value'][$idx])) :
-							$value = $post['http_test_args_value'][$idx];
+						$values = FeedWordPress::post('http_test_args_value', array() );
+
+						$value = null;
+						if ( isset( $values[ $idx ] ) ) :
+							$value = $values[$idx];
 						endif;
 
-						if (preg_match('/^javascript:(.*)$/i', $value, $refs)) :
-							if (function_exists('json_decode')) :
-								$json_value = json_decode($refs[1]);
-								if (!is_null($json_value)) :
+						if ( preg_match('/^javascript:(.*)$/i', $value, $refs) ) :
+							if ( function_exists('json_decode') ) :
+								$json_value = json_decode( $refs[1] );
+								if ( ! is_null($json_value) ) :
 									$value = $json_value;
 								endif;
 							endif;
 						endif;
 
-						$args[$name] = $value;
+						$args[ $name ] = $value;
 					endif;
 				endforeach;
 			endif;
 
-			switch ($post['http_test_method']) :
+			switch ( $method ) :
 			case 'wp_remote_request' :
 				$out = wp_remote_request($url, $args);
+				unset( $out[ 'http_response' ] );
 				break;
 			case 'FeedWordPie_File' :
 				$out = new FeedWordPie_File($url);
@@ -444,36 +446,35 @@ function clone_http_test_args_keyvalue_prototype () {
 			case 'FeedWordPress::fetch' :
 				$out = FeedWordPress::fetch($url);
 
-				if (isset($post['http_test_xpath'])) :
-					if (strlen($post['http_test_xpath']) > 0) :
+				$s_xpath = FeedWordPress::post( 'http_test_xpath', '' );
+				if ( strlen( $s_xpath ) > 0 ) :
 
-						$xpath = $post['http_test_xpath'];
+					$xpath = FeedWordPress::post( 'http_test_xpath' );
 
-						if ( !is_wp_error($out) ) :
-							$expr = new FeedWordPressParsedPostMeta($xpath);
+					if ( !is_wp_error($out) ) :
+						$expr = new FeedWordPressParsedPostMeta($xpath);
 
-							$feed = new MagpieMockLink( $out, $url );
-							$posts = $feed->live_posts();
-							
-							$post = new SyndicatedPost($posts[0], $feed);
-							$meta = $expr->do_substitutions($post);
-							
-							$out = array(
-							"post_title" => $post->entry->get_title(),
-							"post_link" => $post->permalink(),
-							"guid" => $post->guid(),
-							"expression" => $xpath,
-							"results" => $meta,
-							"pie" => $out,
-							);
-						endif;
+						$feed = new MagpieMockLink( $out, $url );
+						$posts = $feed->live_posts();
+
+						$post = new SyndicatedPost($posts[0], $feed);
+						$meta = $expr->do_substitutions($post);
+
+						$out = array(
+						"post_title" => $post->entry->get_title(),
+						"post_link" => $post->permalink(),
+						"guid" => $post->guid(),
+						"expression" => $xpath,
+						"results" => $meta,
+						"pie" => $out,
+						);
 					endif;
 				endif;
 				break;
 			endswitch;
 			
-			$this->test_html['url'] = $url;
-			$this->test_html['http_test'] = esc_html(MyPHP::val($out));
+			$this->test_html['url']       = $url;
+			$this->test_html['http_test'] = esc_html( MyPHP::val($out) );
 		endif;
 	} /* FeedWordPressDiagnosticsPage::do_http_test () */
 

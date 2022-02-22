@@ -256,26 +256,31 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 <?php 		endif;
 	} /* FeedWordPressAuthorsPage::display () */
 
-	function accept_POST ($post) {
-		if (isset($post['fix_mismatch']) and (strlen($post['fix_mismatch']) > 0)) :
-			$this->fix_mismatch($post);
+	public function fix_mismatch_requested () {
+		$fix = FeedWordPress::post( 'fix_mismatch' );
+		return ( ! is_null( $fix ) && strlen( $fix ) > 0 );
+	}
+	
+	function accept_POST () {
+		if ( self::fix_mismatch_requested() ) :
+			$this->fix_mismatch();
 		else :
-			parent::accept_POST($post);
+			parent::accept_POST();
 		endif;
 	}
 
-	function fix_mismatch ($post) {
+	function fix_mismatch () {
 		global $wpdb;
 
-		if ('newuser'==$post['fix_mismatch_to']) :
-			$newuser_name = trim($post['fix_mismatch_to_newuser']);
-			$to = fwp_insert_new_user($newuser_name);
-		else :
-			$to = $post['fix_mismatch_to'];
+		$to = FeedWordPress::post( 'fix_mismatch_to' );
+		if ( 'newuser' === $fix_to ) :
+			$newuser_name = trim( FeedWordPress::post('fix_mismatch_to_newuser', '' ) );
+			$to = fwp_insert_new_user( $newuser_name );
 		endif;
 
-		$from = (int) $post['fix_mismatch_from'];
-		if (is_numeric($from)) :
+		$from = (int) FeedWordPress::post( 'fix_mismatch_from' );
+		if ( is_numeric( $from ) ) :
+
 			// Make a list of all the items by this author
 			// syndicated from this feed...
 			$post_ids = $wpdb->get_col("
@@ -321,32 +326,34 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 		$this->updated = false;
 	}
 
-	function save_settings ($post) {
+	function save_settings () {
 
 		if ($this->for_feed_settings()) :
 			$alter = array ();
 
 			// Unfamiliar author rule
-			if (isset($post["unfamiliar_author"])) :
-				if ('newuser'==$post['unfamiliar_author']) :
-					$new_name = trim($post["unfamiliar_author_newuser"]);
-					$this->link->map_name_to_new_user(/*name=*/ NULL, $new_name);
+			$unfamiliar_author = FeedWordPress::post( 'unfamiliar_author' );
+			if ( ! is_null( $unfamiliar_author ) ) :
+				if ( 'newuser' == $unfamiliar_author ) :
+					$new_name = trim( FeedWordPress::post( "unfamiliar_author_newuser" ) );
+					$this->link->map_name_to_new_user(/*name=*/ null, $new_name);
 				else :
 					$this->link->update_setting(
 						"unfamiliar author",
-						$post['unfamiliar_author'],
+						$unfamiliar_author,
 						'site-default'
 					);
 				endif;
 			endif;
 			
 			// Handle author mapping rules
-			if (isset($post['author_rules_name'])
-			and isset($post['author_rules_action'])) :
-				if (isset($post['author_rules_name']['all'])) :
-					if (strlen($post['author_rules_name']['all']) > 0) :
-						$post['author_rules_name'] = array(
-							'all' => $post['author_rules_name']['all'],
+			$author_rules_name = FeedWordPress::post( 'author_rules_name' );
+			$author_rules_action = FeedWordPress::post('author_rules_action' );
+			if ( ! ( is_null( $author_rules_name ) || is_null( $author_rules_action ) ) ) :
+				if ( isset( $author_rules_name['all'] ) ) :
+					if ( strlen( $author_rules_name['all']) > 0 ) :
+						$author_rules_name = array(
+							'all' => $author_rules_name['all'],
 						);
 						
 						// Erase all the rest.
@@ -354,14 +361,15 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 				endif;
 				
 				unset($this->link->settings['map authors']);
-				foreach ($post['author_rules_name'] as $key => $name) :
+				foreach ($author_rules_name as $key => $name) :
 					// Normalize for case and whitespace
-					$name = strtolower(trim($name));
-					$author_action = strtolower(trim($post['author_rules_action'][$key]));
-					
-					if (strlen($name) > 0) :
-						if ('newuser' == $author_action) :
-							$new_name = trim($post['author_rules_newuser'][$key]);
+					$name = strtolower( trim( $name ) );
+					$author_action = strtolower( trim( $author_rules_action[$key] ) );
+
+					$author_rules_newuser = FeedWordPress::post('author_rules_newuser' );
+					if ( strlen($name) > 0 ) :
+						if ( 'newuser' == $author_action ) :
+							$new_name = trim( $author_rules_newuser[ $key ] );
 							$this->link->map_name_to_new_user($name, $new_name);
 						else :
 							$this->link->settings['map authors']['name'][$name] = $author_action;
@@ -370,47 +378,51 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 				endforeach;
 			endif;
 
-			if (isset($post['add_author_rule_name'])
-			and isset($post['add_author_rule_action'])) :
-				$name = strtolower(trim($post['add_author_rule_name']));
-				$author_action = strtolower(trim($post['add_author_rule_action']));
-				
+			$name = FeedWordPress::post( 'add_author_rule_name');
+			$author_action = FeedWordPress::post( 'add_author_rule_action' );
+			if ( ! ( is_null( $name ) || is_null( $author_action ) ) ) :
+				$name = strtolower( trim( $name ) );
+				$author_action = strtolower( trim( $author_action ) );
+
 				if (strlen($name) > 0) :
 					if ('newuser' == $author_action) :
-						$new_name = trim($post['add_author_rule_newuser']);
+						$new_name = trim( FeedWordPress::post( 'add_author_rule_newuser' ));
 						$this->link->map_name_to_new_user($name, $new_name);
 					else :
 						$this->link->settings['map authors']['name'][$name] = $author_action;
 					endif;
 				endif;
 			endif;
+
 		else :
-			if ('newuser'==$post['unfamiliar_author']) :
-				$new_name = trim($post['unfamiliar_author_newuser']);
-				$new_id = fwp_insert_new_user($new_name);
-				if (is_numeric($new_id)) :
-					update_option('feedwordpress_unfamiliar_author', $new_id);
+
+			$unfamiliar_author = FeedWordPress::post( 'unfamiliar_author' );
+			if ( 'newuser' === $unfamiliar_author ) :
+				$new_name = FeedWordPress::post( 'unfamiliar_author_newuser' );
+				$new_id = fwp_insert_new_user( trim( $new_name ) );
+				if ( is_numeric( $new_id ) ) :
+					update_option( 'feedwordpress_unfamiliar_author', $new_id );
 				else :
 					// TODO: Add some error detection and reporting
 					// Put WP_Error stuff into $this->mesg ?
 				endif;
 			else :
-				update_option('feedwordpress_unfamiliar_author', $post['unfamiliar_author']);
+				update_option( 'feedwordpress_unfamiliar_author', $unfamiliar_author );
 			endif;
 
-			update_option('feedwordpress_do_not_match_author_by_email',
-				(isset($post['match_author_by_email'])
-				 and 'yes'==$post['match_author_by_email'])
-				? 'no'
-				: 'yes'
+			$by_email = FeedWordPress::post( 'match_author_by_email' );
+			update_option(
+				'feedwordpress_do_not_match_author_by_email',
+				( isset( $by_email ) && 'yes' == $by_email ) ? 'no' : 'yes'
 			);
 
-			if (isset($post['null_emails'])) :
-				update_option('feedwordpress_null_email_set', $post['null_emails']);
+			$null_emails = FeedWordPress::post( 'null_emails', null, 'textarea' );
+			if ( ! is_null( $null_emails ) ) :
+				update_option( 'feedwordpress_null_email_set', $null_emails );
 			endif;
 		endif;
 
-		parent::save_settings($post);
+		parent::save_settings();
 		$this->refresh_author_list();
 	}
 } /* class FeedWordPressAuthorsPage */

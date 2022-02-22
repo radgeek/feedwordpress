@@ -28,86 +28,93 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		);
 	} /* FeedWordPressPostsPage constructor */
 
-	function save_settings ($post) {
+	function save_settings () {
 		// custom post settings
 		$custom_settings = $this->custom_post_settings();
 
-		foreach ($post['notes'] as $mn) :
-			if (isset($mn['key0'])) :
-				$mn['key0'] = trim($mn['key0']);
-				if (strlen($mn['key0']) > 0) :
-					unset($custom_settings[$mn['key0']]); // out with the old
+		$posted_notes = FeedWordPress::post( 'notes', array(), 'text' );
+		foreach ( $posted_notes as $mn ) :
+			if ( isset( $mn['key0'] ) ) :
+				$mn['key0'] = trim( $mn['key0'] );
+				if ( strlen( $mn['key0'] ) > 0 ) :
+					unset( $custom_settings[ $mn['key0'] ] ); // out with the old
 				endif;
 			endif;
-				
-			if (isset($mn['key1'])) :
-				$mn['key1'] = trim($mn['key1']);
 
-				if (($mn['action']=='update') and (strlen($mn['key1']) > 0)) :
-					$custom_settings[$mn['key1']] = $mn['value']; // in with the new
+			if ( isset( $mn['key1'] ) ) :
+				$mn['key1'] = trim( $mn['key1'] );
+
+				if ( ( $mn['action']=='update' ) and ( strlen( $mn['key1'] ) > 0 ) ) :
+					$custom_settings[ $mn['key1'] ] = $mn['value']; // in with the new
 				endif;
 			endif;
 		endforeach;
 
-		$this->updatedPosts->accept_POST($post);
+		$this->updatedPosts->accept_POST();
 		if ($this->for_feed_settings()) :
 			$alter = array ();
 
 			$this->link->settings['postmeta'] = serialize($custom_settings);
 
-			if (isset($post['resolve_relative'])) :
-				$this->link->settings['resolve relative'] = $post['resolve_relative'];
+			if ( ! is_null( FeedWordPress::post( 'resolve_relative', null ) ) ) :
+				$this->link->settings['resolve relative'] = FeedWordPress::post( 'resolve_relative', null, 'text' );
 			endif;
-			if (isset($post['munge_permalink'])) :
-				$this->link->settings['munge permalink'] = $post['munge_permalink'];
+			if ( ! is_null( FeedWordPress::post('munge_permalink', null, 'text' ) ) ) :
+				$this->link->settings['munge permalink'] = FeedWordPress::post( 'munge_permalink', null, 'text' );
 			endif;
-			if (isset($post['munge_comments_feed_links'])) :
-				$this->link->settings['munge comments feed links'] = $post['munge_comments_feed_links'];
+			if ( ! is_null( FeedWordPress::post('munge_comments_feed_links', null, 'text' ) ) ) :
+				$this->link->settings['munge comments feed links'] = FeedWordPress::post( 'munge_comments_feed_links', null, 'text' );
 			endif;
 
 			// Post status, comment status, ping status
 			foreach (array('post', 'comment', 'ping') as $what) :
 				$sfield = "feed_{$what}_status";
-				if (isset($post[$sfield])) :
-					if ($post[$sfield]=='site-default') :
-						unset($this->link->settings["{$what} status"]);
+				if ( ! is_null( FeedWordPress::post( $sfield, null, 'text' ) ) ) :
+					$afield = sprintf( '%s status', $what );
+					if ( FeedWordPress::post( $sfield, null, 'text' ) == 'site-default' ) :
+						unset($this->link->settings[ $afield ]);
 					else :
-						$this->link->settings["{$what} status"] = $post[$sfield];
+						$this->link->settings[ $afield ] = FeedWordPress::post( $sfield, null, 'text' );
 					endif;
 				endif;
 			endforeach;
 			
-			if (isset($post['syndicated_post_type'])) :
-				if ($post['syndicated_post_type']=='default') :
+			if ( ! is_null( FeedWordPress::post('syndicated_post_type', null, 'text' ) ) ) :
+				if ( FeedWordPress::post( 'syndicated_post_type', null, 'text' ) == 'default' ) :
 					unset($this->link->settings['syndicated post type']);
 				else :
-					$this->link->settings['syndicated post type'] = $post['syndicated_post_type'];
+					$this->link->settings['syndicated post type'] = FeedWordPress::post( 'syndicated_post_type', null, 'text' );
 				endif;
 			endif;
 
 		else :
 			// update_option ...
-			if (isset($post['feed_post_status'])) :
-				update_option('feedwordpress_syndicated_post_status', $post['feed_post_status']);
+			if ( ! is_null( FeedWordPress::post( 'feed_post_status', null ) ) ) :
+
+				update_option('feedwordpress_syndicated_post_status', FeedWordPress::post( 'feed_post_status', null, 'text' ) );
+				
 			endif;
 
 			update_option('feedwordpress_custom_settings', serialize($custom_settings));
 			
-			$sMungePermalink = sanitize_text_field($_REQUEST['munge_permalink']);
-			$sUseAggregatorSourceData = sanitize_text_field($_REQUEST['use_aggregator_source_data']);
-			$sFormattingFilters = sanitize_text_field($_REQUEST['formatting_filters']);
-			$sFeedCommentStatus = (isset($_REQUEST['feed_comment_status']) ? sanitize_text_field($_REQUEST['feed_comment_status']) : '');
-			$sFeedPingStatus = (isset($_REQUEST['feed_ping_status']) ? sanitize_text_field($_REQUEST['feed_ping_status']) : '');
-			
+			$sMungePermalink = FeedWordPress::post('munge_permalink', null, 'text' );
+			$sUseAggregatorSourceData = FeedWordPress::post( 'use_aggregator_source_data', null, 'text' );
+			$sFormattingFilters = FeedWordPress::post('formatting_filters', null, 'text' );
+			$sFeedCommentStatus = FeedWordPress::post( 'feed_comment_status', '', 'text' );
+			$sFeedPingStatus = FeedWordPress::post( 'feed_ping_status', '', 'text' );
+			$sResolveRelative = FeedWordPress::post( 'resolve_relative', null, 'text' );
+			$sMungeCommentsFeedLinks = FeedWordPress::post( 'munge_comments_feed_links', null, 'text' );
+			$sSyndicatedPostType = FeedWordPress::post( 'syndicated_post_type', null, 'text' );
+
 			update_option('feedwordpress_munge_permalink', $sMungePermalink);
 			update_option('feedwordpress_use_aggregator_source_data', $sUseAggregatorSourceData);
 			update_option('feedwordpress_formatting_filters', $sFormattingFilters);
 
-			if (isset($post['resolve_relative'])) :
-				update_option('feedwordpress_resolve_relative', $post['resolve_relative']);
+			if ( ! is_null( $sResolveRelative ) ) :
+				update_option('feedwordpress_resolve_relative', $sResolveRelative );
 			endif;
-			if (isset($post['munge_comments_feed_links'])) :
-				update_option('feedwordpress_munge_comments_feed_links', $post['munge_comments_feed_links']);
+			if ( ! is_null( $sMungeCommentsFeedLinks ) ) :
+				update_option('feedwordpress_munge_comments_feed_links', $sMungeCommentsFeedLinks );
 			endif;
 			
 			if ( $sFeedCommentStatus == 'open' ) :
@@ -121,37 +128,35 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			else :
 				update_option('feedwordpress_syndicated_ping_status', 'closed');
 			endif;
-			
-			if (isset($post['syndicated_post_type'])) :
-				update_option('feedwordpress_syndicated_post_type', $post['syndicated_post_type']);
+
+			if ( ! is_null( $sSyndicatedPostType ) ) :
+				update_option('feedwordpress_syndicated_post_type', $sSyndicatedPostType );
 			endif;
 		endif;
 
-		if (isset($post['save']) or isset($post['submit'])) :
-			if (isset($post['boilerplate'])) :
-				foreach ($post['boilerplate'] as $index => $line) :
-					if (0 == strlen(trim($line['template']))) :
-						unset($post['boilerplate'][$index]);
-					endif;
-				endforeach;
-
-				// Convert indexes to 0..(N-1) to avoid possible collisions
-				$post['boilerplate'] = array_values($post['boilerplate']);
-
-				if ($this->for_feed_settings()) :
-					$this->link->settings['boilerplate rules'] = serialize($post['boilerplate']);
-					$this->link->save_settings(/*reload=*/ true);
-				else :
-					update_option('feedwordpress_boilerplate', $post['boilerplate']);
+		$boilerplate = FeedWordPress::post( 'boilerplate', array(), 'raw' );
+		if ( count($boilerplate) > 0 ) :
+			foreach ( $boilerplate as $index => $line) :
+				if ( 0 == strlen( trim( $line['template'] ) ) ) :
+					unset( $boilerplate[$index] );
 				endif;
-			endif;
-		
-			if (isset($post['boilerplate_hook_order'])) :
-				$this->update_setting('boilerplate hook order', intval($post['boilerplate_hook_order']));
+			endforeach;
+
+			// Convert indexes to 0..(N-1) to avoid possible collisions
+			$boilerplate = array_values( $boilerplate );
+
+			if ($this->for_feed_settings()) :
+				$this->link->settings['boilerplate rules'] = serialize( $boilerplate );
+				$this->link->save_settings(/*reload=*/ true);
+			else :
+				update_option( 'feedwordpress_boilerplate', $boilerplate );
 			endif;
 		endif;
 
-		parent::save_settings($post);
+		$boilerplate_hook_order = FeedWordPress::post( 'boilerplate_hook_order', 10, 'text' );
+		$this->update_setting('boilerplate hook order', intval( $boilerplate_hook_order ) );
+
+		parent::save_settings();
 	}
 
 	/**
