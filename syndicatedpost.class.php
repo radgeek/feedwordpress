@@ -698,7 +698,7 @@ class SyndicatedPost {
 			else :
 				$link = $this->permalink();
 				if (is_null($link)) : $link = $this->link->uri(); endif;
-				$guid .= '://'.md5($link.'/'.$this->item['title']);
+				$guid .= '://'.md5($link.'/'.$this->title());
 			endif;
 		endif;
 		return $guid;
@@ -1331,8 +1331,8 @@ class SyndicatedPost {
 				if ($updated) : // Ignore if the post is frozen
 					$frozen = ('yes' == $this->link->setting('freeze updates', 'freeze_updates', NULL));
 					if (!$frozen) :
-						$frozen_values = get_post_custom_values('_syndication_freeze_updates', $old_post->ID);
-						$frozen = (!empty($frozen_values[0]) and 'yes' == $frozen_values[0]);
+						$frozen_value = get_post_meta($old_post->ID, '_syndication_freeze_updates', /*single=*/ true);
+						$frozen = (!is_null($frozen_value) and ('yes' == $frozen_value));
 
 						if ($frozen) :
 							$updatedReason = ' IS BLOCKED FROM BEING UPDATED BY A UPDATE LOCK ON THIS POST, EVEN THOUGH IT '.$updatedReason;
@@ -2270,7 +2270,9 @@ EOM;
 		endif;
 
 		// User name is mapped to a particular author. If that author ID exists, use it.
-		if (is_numeric($author_rule) and get_userdata((int) $author_rule)) :
+		// Note: get_userdata() is a pluggable function, so it might not be available yet;
+		// check if it exists before using it, or WP will throw a fatal error. (gwyneth 20220223)
+		if (is_numeric($author_rule) and function_exists('get_userdata') and get_userdata((int) $author_rule)) :
 			$id = (int) $author_rule;
 
 		// User name is filtered out
@@ -2339,6 +2341,7 @@ EOM;
 
 					#-- loop. Keep trying to add the user until you get it
 					#-- right. Or until PHP crashes, I guess.
+					$insanity = 0;
 					do {
 						$id = wp_insert_user($userdata);
 						if (is_wp_error($id)) :
@@ -2346,8 +2349,14 @@ EOM;
 							switch ($codes) :
 							case 'empty_user_login' :
 							case 'existing_user_login' :
+							case 'invalid_username' :
 								// Add a random disambiguator
 								$userdata['user_login'] .= substr(md5(uniqid(microtime())), 0, 6);
+								break;
+							case 'user_login_too_long' :
+								// Limit length to 53 characters; if we end up needing a random disambiguator,
+								// we should still have space to add it.
+								$userdata['user_login'] = mb_substr( $userdata['user_login'], 0, 53 );
 								break;
 							case 'user_nicename_too_long' :
 								// Add a limited 50 characters user_nicename based on user_login
@@ -2363,8 +2372,21 @@ EOM;
 								// Reassemble
 								$userdata['user_email'] = $parts[0].'@'.$parts[1];
 								break;
+							default :
+								if ( $insanity > 10 ) :
+									// Try some settings that are unlikely to cause complaint...
+									$url = parse_url($hostUrl);
+
+									$userdata['user_login'] = substr(md5(uniqid(microtime())), 0, 6);
+									$userdata['user_nicename'] = $userdata['user_login'];
+									$userdata['user_email'] = 'noreply@' . $url['host'];
+								elseif ( $insanity > 50 ) :
+									// Stop doing the same thing and expecting a different result
+									break;
+								endif;
 							endswitch;
 						endif;
+						$insanity = $insanity + 1;
 					} while (is_wp_error($id));
 
 					// $id should now contain the numeric ID of a newly minted
@@ -2372,9 +2394,13 @@ EOM;
 					// by FeedWordPress in the usermeta table, as per the
 					// suggestion of @boonebgorges, in case we need to process,
 					// winnow, filter, or merge syndicated author accounts, &c.
-					add_user_meta($id, 'feedwordpress_generated', 1);
-
-				elseif (is_numeric($unfamiliar_author) and get_userdata((int) $unfamiliar_author)) :
+					if (!is_wp_error($id)) :
+						add_user_meta($id, 'feedwordpress_generated', 1);
+					else :
+						$id = null;
+					endif;
+				// also see comment above regarding get_userdata(). (gwyneth 20220223)
+				elseif (is_numeric($unfamiliar_author) and function_exists('get_userdata') and get_userdata((int) $unfamiliar_author)) :
 					$id = (int) $unfamiliar_author;
 				elseif ($unfamiliar_author === 'default') :
 					$id = 1;
