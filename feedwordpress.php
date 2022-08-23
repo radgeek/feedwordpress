@@ -2289,7 +2289,7 @@ EOMAIL;
 	} /* FeedWordPress::param () */
 
 	static function post( $key, $default = null, $sanitizer = null ) {
-		return self::sanitized_parameter( MyPHP::post( $key, $default, $type ), $sanitizer );
+		return self::sanitized_parameter( MyPHP::post( $key, $default ), $sanitizer );
 	} /* FeedWordPress::post () */
 
 	static function shallow_sanitize( $item, $sanitizer = null ) {
