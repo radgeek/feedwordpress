@@ -541,6 +541,8 @@ class SyndicatedPost {
 			$date = $this->item['modified'];
 		elseif (isset($this->item['updated'])):			// Atom 1.0
 			$date = $this->item['updated'];
+		elseif (isset($this->item['lastbuilddate'])):				// RSS 2.0
+			$date = $this->item['lastbuilddate'];
 		endif;
 
 		if (strlen($date) > 0) :
