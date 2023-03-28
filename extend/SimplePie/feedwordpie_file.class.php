@@ -9,7 +9,7 @@ class FeedWordPie_File extends WP_SimplePie_File {
 		global $wp_version;
 
 		$source = NULL;
-		if ($feedwordpress->subscribed($url)) :
+		if (!empty($feedwordpress) and $feedwordpress->subscribed($url)) :
 			$source = $feedwordpress->subscription($url);
 		endif;
 
