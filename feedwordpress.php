@@ -1055,8 +1055,12 @@ class FeedWordPress {
 			endif;
 
 			if ( $user_id = wp_check_post_lock( $post_id ) ) :
-				$user = get_userdata( $user_id );
-				wp_die( sprintf( __( 'You cannot retire this item. %s is currently editing.' ), $user->display_name ) );
+				if ( is_numeric( $user_id ) and function_exists( 'get_userdata' ) ) :
+					$user = get_userdata( (int) $user_id );
+					wp_die( sprintf( __( 'You cannot retire this item. %s is currently editing.' ), $user->display_name ) );
+				else :
+					wp_die( __( 'You cannot retire this item. Someone is currently editing.' ) );
+				endif;
 			endif;
 
 			if (MyPHP::request('fwp_post_delete')=='zap') :
@@ -2178,8 +2182,14 @@ EOMAIL;
 
 					// userid
 					elseif (preg_match('/^user:(.*)$/', $ded, $ref)) :
-						$userdata = get_userdata((int) $ref[1]);
-						$recipients = array($userdata->user_email);
+						if ( is_numeric( $ref[1] ) and function_exists( 'get_userdata' ) ) :
+							$userdata = get_userdata( (int) $ref[1]) ;
+							$recipients = array( $userdata->user_email );
+						else :
+							// get_userdata() might not have been loaded yet, so send
+							// to admins instead. (gwyneth 20230901)
+							$recipients = FeedWordPressDiagnostic::admin_emails();
+						endif;
 
 					// admins
 					else :
