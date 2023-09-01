@@ -173,35 +173,35 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		if (isset($fwp_post['confirm']) and $fwp_post['confirm']=='multiadd') :
 			$chex = $fwp_post['multilookup'];
 			$added = array(); $errors = array();
-			foreach ($chex as $feed) :
-				if (isset($feed['add']) and $feed['add']=='yes') :
+			foreach ( $chex as $feed ) :
+				if ( isset( $feed['add'] ) and $feed['add'] == 'yes' ) :
 					// Then, add in the URL.
 					$link_id = FeedWordPress::syndicate_link(
 						$feed['title'],
 						$feed['link'],
 						$feed['url']
 					);
-					if ($link_id and !is_wp_error($link_id)):
+					if ( !empty( $link_id ) and !is_wp_error( $link_id ) ):
 						$added[] = $link_id;
 					else :
-						$errors[] = array($feed['url'], $link_id);
+						$errors[] = array( $feed['url'], $link_id );
 					endif;
 				endif;
 			endforeach;
 
 			print "<div class='updated'>\n";
-			print "<p>Added ".count($added)." new syndicated sources.</p>";
-			if (count($errors) > 0) :
+			print "<p>Added " . count( $added ) . " new syndicated sources.</p>";
+			if ( count( $errors ) > 0 ) :
 				print "<p>FeedWordPress encountered errors trying to add the following sources:</p>
 				<ul>\n";
 				foreach ($errors as $err) :
 					$url = $err[0];
-					$short = esc_html(feedwordpress_display_url($url));
-					$url = esc_html($url);
-					$wp = $err[1];
-					if (is_wp_error($err[1])) :
-						$error = $err[1];
-						$mesg = " (<code>".$error->get_error_messages()."</code>)";
+					$short = esc_html( feedwordpress_display_url( $url ) );
+					$url = esc_html( $url );
+					$wperr = $err[1];
+					if ( is_wp_error( $wperr ) ) :
+						$error = $wperr;
+						$mesg = " (<code>" . $error->get_error_messages() . "</code>)";
 					else :
 						$mesg = '';
 					endif;
