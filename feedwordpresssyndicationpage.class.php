@@ -324,13 +324,16 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 							$pie = FeedWordPress::fetch($feed);
 							if (!is_wp_error($pie)) :
 								$found = true;
-
+/*
+								// Why are the following variables declared on each iteration,
+								// if they are never used? (note: display_multiadd_line() already
+								// sanitizes everything anyway) (gwyneth 20230901)
 								$short_feed = esc_html(feedwordpress_display_url($feed));
 								$feed = esc_html($feed);
 								$title = esc_html($pie->get_title());
 								$checked = ' checked="checked"';
 								$link = esc_html($pie->get_link());
-
+ */
 								$this->display_multiadd_line(array(
 								'feed' => $feed,
 								'title' => $pie->get_title(),
