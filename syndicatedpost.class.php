@@ -2254,7 +2254,7 @@ EOM;
 		$nice_author = sanitize_title($author);
 		$nice_author = apply_filters('pre_user_nicename', $nice_author);
 
-		$reg_author = esc_sql(preg_quote($author));
+		$reg_author = esc_sql(preg_quote($author ?: "(unknown)"));
 		$author = esc_sql($author);
 		$email = esc_sql($email);
 		$test_email = esc_sql($test_email);
