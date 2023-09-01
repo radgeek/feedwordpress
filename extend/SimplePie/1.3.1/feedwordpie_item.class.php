@@ -44,7 +44,7 @@ class FeedWordPie_Item extends SimplePie_Item {
 		return apply_filters('feedwordpie_item_get_enclosures', parent::get_enclosures(), $this);
 	}
 	function get_latitude () {
-		return apply_filters('feedwordpie_item_get_lattitude', parent::get_latitude(), $this);
+		return apply_filters('feedwordpie_item_get_latitude', parent::get_latitude(), $this);
 	}
 	function get_longitude () {
 		return apply_filters('feedwordpie_item_get_longitude', parent::get_longitude(), $this);
