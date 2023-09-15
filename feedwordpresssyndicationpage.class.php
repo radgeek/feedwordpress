@@ -699,6 +699,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 	function bleg_thanks ($page, $box = NULL) {
 		?>
+		<!-- Page: <?=$page?> Box: <?=$box?:'(empty)'?> -->
 		<div class="donation-thanks">
 		<h4>Thank you!</h4>
 		<p><strong>Thank you</strong> for your contribution to <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a> development.
@@ -801,10 +802,9 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 		$link_list = $this->requested_link_ids_sql();
 
 		if (MyPHP::post('confirm')=='Delete'):
+			$actions = array();	// avoids "else" complaint _and_ guarantees that we don't have any scoping issues (gwyneth 20230916)
 			if ( is_array(MyPHP::post('link_action')) ) :
 				$actions = MyPHP::post('link_action');
-			else :
-				$actions = array();
 			endif;
 
 			$do_it = array(

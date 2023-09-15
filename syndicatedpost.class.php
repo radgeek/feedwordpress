@@ -2157,6 +2157,11 @@ EOM;
 						add_post_meta($postId, $key, $value, /*unique=*/ false);
 					endforeach;
 				endforeach;
+
+				if ( $result === false)
+				{
+					error_log( "delete query failed: " . $wpdb->last_error );
+				}
 			endif;
 		endif;
 	} /* SyndicatedPost::add_rss_meta () */
