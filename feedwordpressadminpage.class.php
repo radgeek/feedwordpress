@@ -8,6 +8,9 @@
  * settings on particular feeds.
  *
  */
+ 
+define( 'FWP_BOLD_PREFIX_REGEX', '/^[*][*] ([^*]+) [*][*] \s+ (\S.*)$/x');
+ 
 class FeedWordPressAdminPage {
 	protected $context;
 	protected $updated = false;
@@ -53,13 +56,13 @@ class FeedWordPressAdminPage {
 		return __($name);
 	} /* FeedWordPressAdminPage::pagename () */
 
-	public function accept_POST ($post) {
-		if ($this->for_feed_settings() and $this->update_requested_in($post)) :
+	public function accept_POST () {
+		if ( $this->for_feed_settings() and $this->update_requested() ) :
 			$this->update_feed();
-		elseif ($this->save_requested_in($post)) : // User mashed Save Changes
-			$this->save_settings($post);
+		elseif ($this->save_requested()) : // User mashed Save Changes
+			$this->save_settings();
 		endif;
-		do_action($this->dispatch.'_post', $post, $this);
+		do_action($this->dispatch.'_post', null, $this);
 	}
 
 	public function update_feed () {
@@ -94,8 +97,8 @@ class FeedWordPressAdminPage {
 		remove_action('feedwordpress_check_feed_complete', 'update_feeds_finish', 10, 3);
 	}
 
-	public function save_settings ($post) {
-		do_action($this->dispatch.'_save', $post, $this);
+	public function save_settings () {
+		do_action($this->dispatch.'_save', null, $this);
 
 		if ($this->for_feed_settings()) :
 			// Save settings
@@ -156,15 +159,14 @@ class FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressAdminPage::update_setting () */
 
-	public function save_requested_in ($post) {
-		return (isset($post['save']) or isset($post['submit']));
+	public function save_requested () {
+		return ! ( is_null( MyPHP::post('save') ) && is_null( MyPHP::post('submit') ) );
 	}
-	public function update_requested_in ($post) {
-		return (isset($post['update']) and (strlen($post['update']) > 0));
+	public function update_requested () {
+		return ( strlen( MyPHP::post('update', '') ) > 0 );
 	}
 
 	public function submitted_link_id () {
-		global $fwp_post;
 
 		// Presume global unless we get a specific link ID
 		$link_id = NULL;
@@ -176,13 +178,13 @@ class FeedWordPressAdminPage {
 			'feedfinder',
 		);
 		foreach ($submit_buttons as $field) :
-			if (isset($fwp_post[$field])) :
-				$link_id = MyPHP::request('save_link_id');
+			if ( ! is_null( MyPHP::request($field) ) ) :
+				$link_id = sanitize_text_field( MyPHP::request('save_link_id') );
 			endif;
 		endforeach;
 
-		if (is_null($link_id) and isset($_REQUEST['link_id'])) :
-			$link_id = MyPHP::request('link_id');
+		if ( is_null($link_id) ) :
+			$link_id = sanitize_text_field( MyPHP::request( 'link_id' ) );
 		endif;
 
 		return $link_id;
@@ -439,7 +441,6 @@ class FeedWordPressAdminPage {
 	}
 
 	public function display () {
-		global $fwp_post;
 
 		if (FeedWordPress::needs_upgrade()) :
 			fwp_upgrade_page();
@@ -452,7 +453,7 @@ class FeedWordPressAdminPage {
 		// Process POST request, if any ////////////////
 		////////////////////////////////////////////////
 		if (strtoupper($_SERVER['REQUEST_METHOD'])=='POST') :
-			$this->accept_POST($fwp_post);
+			$this->accept_POST();
 		else :
 			$this->updated = false;
 		endif;
@@ -517,15 +518,15 @@ class FeedWordPressAdminPage {
 		FeedWordPressSettingsUI::ajax_nonce_fields();
 
 		?>
-		<div class="wrap feedwordpress-admin" id="feedwordpress-admin-<?php print $this->pageslug(); ?>">
+		<div class="wrap feedwordpress-admin" id="feedwordpress-admin-<?php print esc_attr( $this->pageslug() ); ?>">
 		<?php
 		if (!is_null($header)) :
 			$this->display_sheet_header($header);
 		endif;
 
-		if (!is_null($this->dispatch)) :
+		if ( !is_null( $this->dispatch ) ) :
 			?>
-			<form action="<?php print $this->form_action(); ?>" method="post">
+			<form action="<?php print esc_url( $this->form_action() ); ?>" method="post">
 			<div><?php
 				FeedWordPressCompatibility::stamp_nonce($this->dispatch);
 				$this->stamp_link_id();
@@ -572,31 +573,39 @@ class FeedWordPressAdminPage {
 	public function setting_radio_control ($localName, $globalName, $options, $params = array()) {
 		global $fwp_path;
 
-		if (isset($params['filename'])) : $filename = $params['filename'];
-		else : $filename = basename($this->filename);
+		$params = wp_parse_args(
+			$params,
+			array(
+				'filename' => basename($this->filename),
+				'site-wide-url' => null,
+				'setting-default' => null,
+				'global-setting-default' => null,
+				'offer-site-wide' => null,
+			)
+		);
+
+		$filename = $params['filename'];
+		$href = $params['site-wide-url'];
+		if ( is_null( $href ) ) :
+			$href = $this->admin_page_href( $filename );
 		endif;
 
-		if (isset($params['site-wide-url'])) : $href = $params['site-wide-url'];
-		else : 	$href = $this->admin_page_href($filename);
-		endif;
-
-		if (isset($params['setting-default'])) : $settingDefault = $params['setting-default'];
-		else : $settingDefault = NULL;
-		endif;
-
-		if (isset($params['global-setting-default'])) : $globalSettingDefault = $params['global-setting-default'];
-		else : $globalSettingDefault = $settingDefault;
+		$settingDefault = $params['setting-default'];
+		$globalSettingDefault = $params['global-setting-default'];
+		if ( is_null( $globalSettingDefault ) ) :
+			$globalSettingDefault = $settingDefault;
 		endif;
 
 		$globalSetting = get_option('feedwordpress_'.$globalName, $globalSettingDefault);
-		if ($this->for_feed_settings()) :
+		if ( $this->for_feed_settings() ) :
 			$setting = $this->link->setting($localName, NULL, $settingDefault);
 		else :
 			$setting = $globalSetting;
 		endif;
 
-		if (isset($params['offer-site-wide'])) : $offerSiteWide = $params['offer-site-wide'];
-		else : $offerSiteWide = $this->for_feed_settings();
+		$offerSiteWide = $params['offer-site-wide'];
+		if ( is_null( $offerSiteWide ) ) :
+			$offerSiteWide = $this->for_feed_settings();
 		endif;
 
 		// This allows us to provide an alternative set of human-readable
@@ -674,10 +683,10 @@ class FeedWordPressAdminPage {
 			<tr><td class="equals first inactive">
 			<ul class="options">
 			<li><label><input type="radio"
-				name="<?php print $defaultInputName; ?>"
-				value="<?php print $defaultInputValue; ?>"
-				<?php if (!is_null($defaultInputId)) : ?>id="<?php print $defaultInputId; ?>" <?php endif; ?>
-				<?php print $defaulted['yes']; ?> />
+				name="<?php print esc_attr( $defaultInputName ); ?>"
+				value="<?php print esc_attr( $defaultInputValue ); ?>"
+				<?php if (!is_null($defaultInputId)) : ?>id="<?php print esc_attr( $defaultInputId ); ?>" <?php endif; ?>
+				<?php fwp_checked_flag($defaulted, 'yes'); ?> />
 			Use the site-wide setting</label>
 			<span class="current-setting">Currently:
 			<strong><?php if (is_callable($labels)) :
@@ -685,18 +694,23 @@ class FeedWordPressAdminPage {
 			elseif (is_null($labels)) :
 				print $globalSetting;
 			else :
-				print $labels[$globalSetting];
-			endif;  ?></strong> (<a href="<?php print $href; ?>">change</a>)</span></li>
+				$label = $labels[ $globalSetting ];
+				if ( preg_match( FWP_BOLD_PREFIX_REGEX, $label, $ref ) ) :
+					$label = $ref[1] . ' ' . $ref[2];
+				endif;
+
+				print esc_html( $label );
+			endif;  ?></strong> (<a href="<?php print esc_url( $href ); ?>">change</a>)</span></li>
 			</ul></td>
 
 			<td class="equals second inactive">
 			<?php if ($defaultInputName != $inputName) : ?>
 				<ul class="options">
 				<li><label><input type="radio"
-					name="<?php print $defaultInputName; ?>"
+					name="<?php print esc_attr( $defaultInputName ); ?>"
 					value="no"
-					<?php if (!is_null($defaultInputIdNo)) : ?>id="<?php print $defaultInputIdNo; ?>" <?php endif; ?>
-					<?php print $defaulted['no']; ?> />
+					<?php if (!is_null($defaultInputIdNo)) : ?>id="<?php print esc_attr( $defaultInputIdNo ); ?>" <?php endif; ?>
+					<?php fwp_checked_flag($defaulted, 'no'); ?> />
 				<?php _e('Do something different with this feed.'); ?></label>
 			<?php endif;
 		endif;
@@ -708,11 +722,25 @@ class FeedWordPressAdminPage {
 		else :
 			?>
 			<ul class="options">
-			<?php foreach ($options as $value => $label) : ?>
-			<li><label><input type="radio" name="<?php print $inputName; ?>"
-				value="<?php print $value; ?>"
-				<?php print $checked[$value]; ?> />
-			<?php print $label; ?></label></li>
+			<?php
+			foreach ($options as $value => $label) :
+				if ( preg_match( FWP_BOLD_PREFIX_REGEX, $label, $ref ) ) :
+					$prefix = $ref[1];
+					$label = $ref[2];
+				else :
+					$prefix = null;
+				endif;
+				?>
+			<li><label><input type="radio" name="<?php print esc_attr( $inputName ); ?>"
+				value="<?php print esc_attr( $value ); ?>"
+				<?php print fwp_checked_flag($checked, $value); ?> />
+				<?php
+					if ( !is_null($prefix) ) :
+						printf( '<strong>%s</strong> ', esc_html( $prefix ) );
+					endif;
+					printf( '%s', esc_html( $label ) );
+				?>
+				</label></li>
 			<?php endforeach; ?>
 			</ul> <!-- class="options" -->
 			<?php
@@ -740,7 +768,7 @@ class FeedWordPressAdminPage {
 		if (is_null($caption)) : $caption = __('Save Changes'); endif;
 		?>
 <p class="submit">
-<input class="button-primary" type="submit" name="save" value="<?php print $caption; ?>" />
+<input class="button-primary" type="submit" name="save" value="<?php print esc_attr( $caption ); ?>" />
 </p>
 		<?php
 	}

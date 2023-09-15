@@ -103,7 +103,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressFeedsPage constructor */
 
 	function display () {
-		global $fwp_post;
+
 		global $post_source;
 
 		$this->boxes_by_methods = array(
@@ -125,9 +125,10 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$source = $this->dispatch;
 		endif;
 
-		if (isset($_REQUEST['feedfinder'])
-		or (isset($_REQUEST['action']) and $_REQUEST['action']=='feedfinder')
-		or (isset($_REQUEST['action']) and $_REQUEST['action']==FWP_SYNDICATE_NEW)) :
+		$feedfinder = FeedWordPress::param( 'feedfinder' );
+		$action = FeedWordPress::param( 'action' );
+		if ( $feedfinder || in_array( $action, array( 'feedfinder', FWP_SYNDICATE_NEW ) ) ) :
+
 			// If this is a POST, validate source and user credentials
 			FeedWordPressCompatibility::validate_http_request(/*action=*/ $source, /*capability=*/ 'manage_links');
 
@@ -199,9 +200,9 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<tr>
 		<th scope="row">Update Method:</th>
 		<td><select id="automatic-updates-selector" name="automatic_updates" size="1" onchange="contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');">
-		<option value="shutdown"<?php echo ($automatic_updates=='shutdown')?' selected="selected"':''; ?>>automatically check for updates after pages load</option>
-		<option value="init"<?php echo ($automatic_updates=='init')?' selected="selected"':''; ?>>automatically check for updates before pages load</option>
-		<option value="no"<?php echo (!$automatic_updates)?' selected="selected"':''; ?>>cron job or manual updates</option>
+		<option value="shutdown"<?php fwp_selected_flag( $automatic_updates=='shutdown' ); ?>>automatically check for updates after pages load</option>
+		<option value="init"<?php fwp_selected_flag( $automatic_updates=='init' ); ?>>automatically check for updates before pages load</option>
+		<option value="no"<?php fwp_selected_flag( !$automatic_updates ); ?>>cron job or manual updates</option>
 		</select>
 		<div id="cron-job-explanation" class="setting-description">
 		<p><?php
@@ -231,7 +232,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 		?>If you want to use a cron job,
 		you can perform scheduled updates by sending regularly-scheduled
-		requests to <a href="<?php bloginfo('url'); ?>?update_feedwordpress=1"><code><?php bloginfo('url') ?>?update_feedwordpress=1</code></a>
+		requests to <a href="<?php bloginfo('url'); ?>?update_feedwordpress=1"><code><?php bloginfo('url'); ?>?update_feedwordpress=1</code></a>
 		For example, inserting the following line in your crontab:</p>
 		<pre style="font-size: 0.80em"><code>*/10 * * * * <?php print esc_html($cmdline); ?></code></pre>
 		<p class="setting-description">will check in every 10 minutes
@@ -347,10 +348,10 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<tr>
 		<th scope="row"><?php print __('Time limit on updates'); ?>:</th>
 		<td><select id="time-limit" name="update_time_limit" size="1" onchange="contextual_appearance('time-limit', 'time-limit-box', null, 'yes');">
-		<option value="no"<?php echo ($update_time_limit>0)?'':' selected="selected"'; ?>>no time limit on updates</option>
-		<option value="yes"<?php echo ($update_time_limit>0)?' selected="selected"':''; ?>>limit updates to no more than...</option>
+		<option value="no"<?php fwp_selected_flag($update_time_limit<=0); ?>>no time limit on updates</option>
+		<option value="yes"<?php fwp_selected_flag($update_time_limit>0); ?>>limit updates to no more than...</option>
 		</select>
-		<span id="time-limit-box"><label><input type="text" name="time_limit_seconds" value="<?php print $update_time_limit; ?>" size="5" /> seconds</label></span>
+		<span id="time-limit-box"><label><input type="text" name="time_limit_seconds" value="<?php print esc_attr($update_time_limit); ?>" size="5" /> seconds</label></span>
 		</tr>
 
 		<?php endif; ?>
@@ -365,7 +366,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				$updateWindow = DEFAULT_UPDATE_PERIOD;
 			endif;
 		?>
-		<p>Wait <input type="text" name="update_window" value="<?php print $updateWindow; ?>" size="4" /> minutes between polling.</p>
+		<p>Wait <input type="text" name="update_window" value="<?php print esc_attr($updateWindow); ?>" size="4" /> minutes between polling.</p>
 		<div class="setting-description" id="update-scheduling-note">
 		<p<?php if ($updateWindow<50) : ?> style="color: white; background-color: #703030; padding: 1.0em;"<?php endif; ?>><strong>Recommendation.</strong> Unless you are positive that you have the webmaster's permission, you generally should not set FeedWordPress to poll feeds more frequently than once every 60 minutes. Many webmasters consider more frequent automated polling to be abusive, and may complain to your web host, or ban your IP address, as retaliation for hammering their servers too hard.</p>
 		<p><strong>Note.</strong> This is a default setting that FeedWordPress uses to schedule updates when the feed does not provide any scheduling requests. If this feed does provide update scheduling information (through elements such as <code>&lt;rss:ttl&gt;</code> or <code>&lt;sy:updateFrequency&gt;</code>), FeedWordPress will respect the feed's request.</p>
@@ -393,9 +394,9 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		endif;
 		?>
 		<p>Wait no more than
-		than <input name="fetch_timeout" type="number" min="0" size="3" value="<?php print $timeout; ?>" />
-		second(s) when trying to fetch <?php print $article; ?> feed to check for updates.</p>
-		<p>If <?php print $article; ?> source's web server does not respond before time runs
+		than <input name="fetch_timeout" type="number" min="0" size="3" value="<?php print esc_attr($timeout); ?>" />
+		second(s) when trying to fetch <?php print esc_html($article); ?> feed to check for updates.</p>
+		<p>If <?php print esc_html($article); ?> source's web server does not respond before time runs
 		out, FeedWordPress will skip over the source and try again during
 		the next update cycle.</p>
 		<?php
@@ -429,8 +430,8 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<td><?php
 		$this->setting_radio_control('update_incremental', 'update_incremental',
 			/*options=*/ array(
-				'incremental' => '<strong>Incremental.</strong> When items no longer appear on the feed, keep them in the WordPress posts table.',
-				'complete' => '<strong>Complete.</strong> When items no longer appear on the feed, they are obsolete; retire them from the WordPress posts table.',
+				'incremental' => '**Incremental.** When items no longer appear on the feed, keep them in the WordPress posts table.',
+				'complete' => '**Complete.** When items no longer appear on the feed, they are obsolete; retire them from the WordPress posts table.',
 			),
 			/*params=*/ array(
 				'setting-default' => NULL,
@@ -479,23 +480,27 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$feedwordpress->httpauth->methods_available()
 		);
 
+		$linkRssAuthId = sanitize_html_class('link-rss-authentication' . $slug);
+		$linkRssCredentialsId = sanitize_html_class('link-rss-authentication-credentials' . $slug);
+		$linkRssAuthMethodId = sanitize_html_class('link-rss-authentication-method' . $slug );
+
 		if (count($authMethods) > 1) : /* More than '-' */
 		?>
-		<div class="link-rss-authentication" id="link-rss-authentication<?php print $slug; ?>">
+		<div class="link-rss-authentication" id="<?php print esc_attr($linkRssAuthId); ?>">
 		<table>
 		<tbody>
-		<tr class="link-rss-authentication-credentials" id="link-rss-authentication-credentials<?php print $slug; ?>">
+		<tr class="link-rss-authentication-credentials" id="<?php print esc_attr($linkRssCredentialsId); ?>">
 		<td><label>user: <input type="text" name="link_rss_username"
 			value="<?php print esc_attr($params['username']); ?>" size="16"
 			placeholder="username to access this feed" /></label></td>
 		<td><label>pass: <input type="text" name="link_rss_password"
 			value="<?php print esc_attr($params['password']); ?>" size="16"
 			placeholder="password to access this feed" /></label></td>
-		<td class="link-rss-authentication-method" id="link-rss-authentication-method<?php print $slug; ?>"><label>method: <select class="link-rss-auth-method" id="link-rss-auth-method" name="link_rss_auth_method" size="1">
+		<td class="link-rss-authentication-method" id="<?php print esc_attr($linkRssAuthMethodId); ?>"><label>method: <select class="link-rss-auth-method" id="link-rss-auth-method" name="link_rss_auth_method" size="1">
 <?php foreach ($authMethods as $value => $label) : ?>
 		  <option value="<?php print esc_attr($value); ?>"<?php
-		  if ($value == $params['method']) : ?> selected="selected"<?php
-		  endif; ?>><?php print esc_html($label); ?></option>
+			fwp_selected_flag($value == $params['method']);
+		  ?>><?php print esc_html($label); ?></option>
 <?php endforeach; ?>
 		</select></label></td>
 		</tr>
@@ -504,13 +509,13 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		</div>
 
 		<script type="text/javascript">
-		jQuery('<td><a class="add-remove remove-it" id="link-rss-userpass-remove<?php print $slug; ?>" href="#"><span class="x">(X)</span> Remove</a></td>')
-			.appendTo('#link-rss-authentication-credentials<?php print $slug; ?>')
+		jQuery('<td><a class="add-remove remove-it" id="link-rss-userpass-remove<?php print esc_attr($slug); ?>" href="#"><span class="x">(X)</span> Remove</a></td>')
+			.appendTo('#<?php print esc_attr($linkRssCredentialsId); ?>')
 			.click( feedAuthenticationMethodUnPress );
-		jQuery('#link-rss-auth-method<?php print $slug; ?>').change( feedAuthenticationMethod );
+		jQuery('#link-rss-auth-method<?php print esc_attr($slug); ?>').change( feedAuthenticationMethod );
 		feedAuthenticationMethod({
 		init: true,
-		node: jQuery('#link-rss-authentication<?php print $slug; ?>') });
+		node: jQuery('#<?php print esc_attr($linkRssAuthId); ?>') });
 		</script>
 
 		<?php
@@ -518,7 +523,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	}
 
 	function feed_information_box ($page, $box = NULL) {
-		global $wpdb;
 		$link_rss_params = maybe_unserialize($page->setting('query parameters', ''));
 		if (!is_array($link_rss_params)) :
 			$link_rss_params = array();
@@ -578,8 +582,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 		$auth = $this->setting('http auth method', NULL);
 
-		global $feedwordpress;
-
 		if (is_null($auth) or (strlen($auth)==0)) :
 			$auth = '-';
 			$hideAuth = true;
@@ -612,12 +614,12 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		$i = 0;
 		foreach ($link_rss_params as $index => $pair) :
 		?>
-		<tr class="link-rss-params-row" id="link-rss-params-<?php print $index; ?>">
+		<tr class="link-rss-params-row" id="link-rss-params-<?php print esc_attr($index); ?>">
 		<td><label>Parameter: <input type="text" class="link_params_key"
-		name="link_rss_params_key[<?php print $index; ?>]" value="<?php print esc_html($pair[0]); ?>"
+		name="link_rss_params_key[<?php print esc_attr($index); ?>]" value="<?php print esc_html($pair[0]); ?>"
 		size="5" style="width: 5em" placeholder="name" /></label></td>
 		<td class="link-rss-params-value-cell"><label class="link_params_value_label">= <input type="text" class="link_params_value"
-		name="link_rss_params_value[<?php print $index; ?>]" value="<?php print esc_html($pair[1]); ?>"
+		name="link_rss_params_value[<?php print esc_attr($index); ?>]" value="<?php print esc_html($pair[1]); ?>"
 		size="8" placeholder="value" /></label></td>
 		</tr>
 		<?php
@@ -627,7 +629,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		</tbody>
 		</table>
 
-		<div><input type="hidden" id="link-rss-params-num" name="link_rss_params_num" value="<?php print $i; ?>" /></div>
+		<div><input type="hidden" id="link-rss-params-num" name="link_rss_params_num" value="<?php print esc_attr($i); ?>" /></div>
 
 		<script type="text/javascript">
 		function linkParamsRowRemove (element) {
@@ -675,26 +677,30 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			"url" => __('Homepage'),
 		);
 		foreach ($rows as $what => $label) :
+			$hardcode_name = sanitize_html_class( sprintf( 'hardcode_%s', $what ) );
+			$hardcode_id = sanitize_html_class( sprintf( 'basics-hardcode-%s', $what ) );
+			$hardcode_view_id = sanitize_html_class( sprintf( 'basics-%s-view', $what ) );
+			$hardcode_edit_id = sanitize_html_class( sprintf( 'basics-%s-edit', $what ) );
 			?>
 			<tr>
-			<th scope="row"><?php print $label ?></th>
+			<th scope="row"><?php print esc_html( $label ); ?></th>
 			<td>
-			<div id="basics-<?php print $what; ?>-edit"><input type="text" name="link<?php print $what; ?>"
-			value="<?php echo $info[$what]; ?>" style="width: 95%" /></div>
-			<div id="basics-<?php print $what; ?>-view">
-			<?php if ($what=='url') : ?><a href="<?php print $info[$what]; ?>"><?php else : ?><strong><?php endif; ?>
-			<?php print (strlen(trim($info[$what])) > 0) ? $info[$what] : '(none provided)'; ?>
+			<div id="<?php print esc_attr( $hardcode_edit_id ); ?>"><input type="text" name="link<?php print esc_attr($what); ?>"
+			value="<?php echo esc_attr($info[$what]); ?>" style="width: 95%" /></div>
+			<div id="<?php print esc_attr( $hardcode_view_id ); ?>">
+			<?php if ($what=='url') : ?><a href="<?php print esc_url( $info[$what] ); ?>"><?php else : ?><strong><?php endif; ?>
+			<?php print ( strlen( trim( $info[$what] ) ) > 0 ) ? esc_attr( $info[$what] ) : '(none provided)'; ?>
 			<?php if ($what=='url') : ?></a><?php else : ?></strong><?php endif; ?></div>
 
 			<div>
-			<label><input id="basics-hardcode-<?php print $what; ?>"
-				type="radio" name="hardcode_<?php print $what; ?>" value="no"
+			<label><input id="<?php print esc_attr($hardcode_id); ?>"
+				type="radio" name="<?php print esc_attr($hardcode_name); ?>" value="no"
 				<?php echo (($hardcode[$what]=='yes')?'':' checked="checked"');?>
-				onchange="contextual_appearance('basics-hardcode-<?php print $what; ?>', 'basics-<?php print $what; ?>-view', 'basics-<?php print $what; ?>-edit', 'no', 'block', /*checkbox=*/ true)"
+				onchange="contextual_appearance('basics-hardcode-<?php print esc_attr($what); ?>', '<?php print esc_attr($hardcode_view_id ); ?>', '<?php print esc_attr( $hardcode_edit_id ); ?>', 'no', 'block', /*checkbox=*/ true)"
 			/> Update automatically from feed</label>
-			<label><input type="radio" name="hardcode_<?php print $what; ?>" value="yes"
+			<label><input type="radio" name="<?php print esc_attr($hardcode_name); ?>" value="yes"
 			<?php echo (($hardcode[$what]!='yes')?'':' checked="checked"');?>
-			onchange="contextual_appearance('basics-hardcode-<?php print $what; ?>', 'basics-<?php print $what; ?>-view', 'basics-<?php print $what; ?>-edit', 'no', 'block', /*checkbox=*/ true)"
+			onchange="contextual_appearance('<?php print esc_attr($hardcode_id); ?>', '<?php print esc_attr($hardcode_view_id); ?>', '<?php print esc_attr($hardcode_edit_id); ?>', 'no', 'block', /*checkbox=*/ true)"
 			/> Edit manually</label>
 			</div>
 			</td>
@@ -753,8 +759,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	<p class="setting-description">These custom settings are special fields for the <strong>feed</strong> you are
 	syndicating, to be retrieved in templates using the <code>get_feed_meta()</code> function. They do not create
 	custom fields on syndicated <strong>posts</strong>. If you want to create custom fields that are applied to each
-	individual post from this feed, set up the settings in <a href="<?php print $postsSettings; ?>">Syndicated Posts</a>.</p>
-
+	individual post from this feed, set up the settings in <a href="<?php print esc_url($postsSettings); ?>">Syndicated Posts</a>.</p>
 	<div id="postcustomstuff">
 	<table id="meta-list" cellpadding="3">
 		<tr>
@@ -769,10 +774,10 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			if (!preg_match("\007^((".implode(')|(', $page->special_settings)."))$\007i", $key)) :
 	?>
 				<tr style="vertical-align:top">
-				<th width="30%" scope="row"><input type="hidden" name="notes[<?php echo $i; ?>][key0]" value="<?php echo esc_html($key); ?>" />
-				<input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo $i; ?>][key1]" value="<?php echo esc_html($key); ?>" /></th>
-				<td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo esc_html($value); ?></textarea></td>
-				<td width="10%"><select name="notes[<?php echo $i; ?>][action]">
+				<th width="30%" scope="row"><input type="hidden" name="notes[<?php echo esc_attr($i); ?>][key0]" value="<?php echo esc_html($key); ?>" />
+				<input id="notes-<?php echo esc_attr($i); ?>-key" name="notes[<?php echo esc_attr($i); ?>][key1]" value="<?php echo esc_html($key); ?>" /></th>
+				<td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo esc_attr($i); ?>-value" name="notes[<?php echo esc_attr($i); ?>][value]"><?php echo esc_html($value); ?></textarea></td>
+				<td width="10%"><select name="notes[<?php echo esc_attr($i); ?>][action]">
 				<option value="update">save changes</option>
 				<option value="delete">delete this setting</option>
 				</select></td>
@@ -783,9 +788,9 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		endforeach;
 	?>
 		<tr>
-		<th scope="row"><input type="text" size="10" name="notes[<?php echo $i; ?>][key1]" value="" /></th>
-		<td><textarea name="notes[<?php echo $i; ?>][value]" rows="2" cols="40"></textarea></td>
-		<td><em>add new setting...</em><input type="hidden" name="notes[<?php echo $i; ?>][action]" value="update" /></td>
+		<th scope="row"><input type="text" size="10" name="notes[<?php echo esc_attr( $i ); ?>][key1]" value="" /></th>
+		<td><textarea name="notes[<?php echo esc_attr( $i ); ?>][value]" rows="2" cols="40"></textarea></td>
+		<td><em>add new setting...</em><input type="hidden" name="notes[<?php echo esc_attr( $i ); ?>][action]" value="update" /></td>
 		</tr>
 	</table>
 	</div> <!-- id="postcustomstuff" -->
@@ -810,12 +815,11 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 	function display_feedfinder () {
 		global $wpdb;
+		$lookup = FeedWordPress::param( 'lookup' );
 
-		$lookup = (isset($_REQUEST['lookup']) ? $_REQUEST['lookup'] : NULL);
-
-		$auth = MyPHP::request('link_rss_auth_method');
-		$username = MyPHP::request('link_rss_username');
-		$password = MyPHP::request('link_rss_password');
+		$auth = FeedWordPress::param( 'link_rss_auth_method' );
+		$username = FeedWordPress::param( 'link_rss_username' );
+		$password = FeedWordPress::param( 'link_rss_password' );
 		$credentials = array(
 				"authentication" => $auth,
 				"username" => $username,
@@ -840,13 +844,13 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				$current = $this->link->link->link_rss;
 				$feeds[] = $current;
 			endif;
-			$name = esc_html($this->link->link->link_name);
+			$name = $this->link->link->link_name;
 		else: // Or a new subscription to add?
-			$name = "Subscribe to <code>".esc_html(feedwordpress_display_url($lookup))."</code>";
+			$name = "Subscribe to ".feedwordpress_display_url($lookup);
 		endif;
 		?>
 		<div class="wrap" id="feed-finder">
-		<h2>Feed Finder: <?php echo $name; ?></h2>
+		<h2>Feed Finder: <?php echo esc_html($name); ?></h2>
 
 		<?php
 		if ($feedSwitch) :
@@ -892,7 +896,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 			if (count($feeds) > 1) :
 				$option_template = 'Option %d: ';
-				$form_class = ' class="multi"';
+				$form_class = 'multi';
 				?>
 				<p><strong>This web page provides at least <?php print count($feeds); ?> different feeds.</strong> These feeds may provide the same information
 				in different formats, or may track different items. (You can check the Feed Information and the
@@ -938,7 +942,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 					$feed_version = '';
 				endif;
 				?>
-					<form<?php print $form_class; ?> action="<?php print $this->form_action('syndication.php'); ?>" method="post">
+					<form <?php print fwp_form_class_attr($form_class); ?> action="<?php print esc_url( $this->form_action( 'syndication.php' ) ); ?>" method="post">
 					<div class="inside"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_switchfeed'); ?>
 
 					<?php
@@ -952,7 +956,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 					endif;
 					?>
 					<fieldset class="<?php print implode(" ", $classes); ?>">
-					<legend><?php printf($option_template, ($key+1)); print $feed_type." "; printf($feed_version_template, $feed_version); ?> feed<?php print $currentFeed; ?></legend>
+					<legend><?php print esc_html( sprintf( $option_template, ( $key + 1 ) ) ); print esc_html($feed_type) . " "; print esc_html( sprintf( $feed_version_template, $feed_version ) ); ?> feed<?php print esc_html( $currentFeed ); ?></legend>
 
 					<?php
 					$this->stamp_link_id();
@@ -974,8 +978,8 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 					<div>
 					<div class="feed-sample">
 					<?php
-					$link = NULL;
-					$post = NULL;
+					$link = null;
+					$post = null;
 					if (!is_wp_error($rss) and count($rss->items) > 0):
 						// Prepare to display Sample Item
 						$link = new MagpieMockLink(array('simplepie' => $pie, 'magpie' => $rss), $f);
@@ -983,11 +987,11 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 						?>
 						<h3>Sample Item</h3>
 						<ul>
-						<li><strong>Title:</strong> <a href="<?php echo $post->post['meta']['syndication_permalink']; ?>"><?php echo $post->post['post_title']; ?></a></li>
+						<li><strong>Title:</strong> <a href="<?php echo esc_url( $post->post['meta']['syndication_permalink'] ); ?>"><?php echo esc_html( $post->post['post_title'] ); ?></a></li>
 						<li><strong>Date:</strong> <?php print date('d-M-y g:i:s a', $post->published()); ?></li>
 						</ul>
 						<div class="entry">
-						<?php print $post->post['post_content']; ?>
+						<?php print wp_kses( $post->post['post_content'], 'post' ); ?>
 						</div>
 						<?php
 						do_action('feedwordpress_feed_finder_sample_item', $f, $post, $link);
@@ -1012,10 +1016,10 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 					<div>
 					<h3>Feed Information</h3>
 					<ul>
-					<li><strong>Homepage:</strong> <a href="<?php echo $feed_link; ?>"><?php echo is_null($feed_title)?'<em>Unknown</em>':$feed_title; ?></a></li>
-					<li><strong>Feed URL:</strong> <a title="<?php echo esc_html($f); ?>" href="<?php echo esc_html($f); ?>"><?php echo esc_html(feedwordpress_display_url($f, 40, 10)); ?></a> (<a title="Check feed &lt;<?php echo esc_html($f); ?>&gt; for validity" href="<?php echo FEEDVALIDATOR_URI; ?>?url=<?php echo urlencode($f); ?>" target="_blank" rel="noopener">validate</a>)</li>
-					<li><strong>Encoding:</strong> <?php echo isset($rss->encoding)?esc_html($rss->encoding):"<em>Unknown</em>"; ?></li>
-					<li><strong>Description:</strong> <?php echo isset($rss->channel['description'])?esc_html($rss->channel['description']):"<em>Unknown</em>"; ?></li>
+					<li><strong>Homepage:</strong> <a href="<?php echo esc_url( $feed_link ); ?>"><?php echo is_null( $feed_title )?'<em>Unknown</em>': esc_html( $feed_title ); ?></a></li>
+					<li><strong>Feed URL:</strong> <a title="<?php echo esc_html( $f ); ?>" href="<?php echo esc_url( $f ); ?>"><?php echo esc_html( feedwordpress_display_url($f, 40, 10) ); ?></a> (<a title="Check feed &lt;<?php echo esc_html( $f ); ?>&gt; for validity" href="http://feedvalidator.org/check.cgi?url=<?php echo urlencode( $f ); ?>">validate</a>)</li>
+					<li><strong>Encoding:</strong> <?php echo isset($rss->encoding) ? esc_html($rss->encoding) : "<em>Unknown</em>"; ?></li>
+					<li><strong>Description:</strong> <?php echo isset($rss->channel['description']) ? esc_html($rss->channel['description']) : "<em>Unknown</em>"; ?></li>
 					</ul>
 					<?php $this->display_authentication_credentials_box(array(
 					'username' => $username,
@@ -1089,9 +1093,8 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		return false; // Don't continue
 	} /* FeedWordPressFeedsPage::display_feedfinder() */
 
-	function display_alt_feed_box ($lookup, $params = false) {
-		global $fwp_post;
-
+	function display_alt_feed_box ($lookup, $params = false)
+	{
 		if (is_bool($params)) :
 			$params = array("alt" => $params);
 		endif;
@@ -1106,7 +1109,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		$alt = $params['alt'];
 
 		?>
-		<form action="<?php print $this->form_action('syndication.php'); ?>" method="post">
+		<form action="<?php print esc_url( $this->form_action('syndication.php') ); ?>" method="post">
 		<div class="inside"><?php
 			FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds');
 		?>
@@ -1154,26 +1157,33 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressFeedsPage::display_alt_feed_box() */
 
-	function save_settings ($post) {
+	function save_settings () {
 		if ($this->for_feed_settings()) :
+			$params_key = FeedWordPress::post( 'link_rss_params_key', array() );
 
-			if (isset($post['link_rss_params_key'])) :
+			if ( is_array( $params_key ) && count($params_key) > 0 ) :
+				$params_values = FeedWordPress::post( 'link_rss_params_value', array() );
 				$qp = array();
-				foreach ($post['link_rss_params_key'] as $index => $key) :
+				foreach ( $params_key as $index => $key ) :
 					if (strlen($key) > 0) :
-						if (isset($post['link_rss_params_value'][$index])
-						and strlen($post['link_rss_params_value'][$index])) :
-							$value = $post['link_rss_params_value'][$index];
-							$qp[] = array($key, $value);
+
+						if ( isset( $params_values[ $index ] ) ) :
+
+							$params_value = $params_values[ $index ];
+							if ( strlen($params_value) > 0 ) :
+								$qp[] = array( $key, $params_value );
+							endif;
 						endif;
 					endif;
 				endforeach;
 				$this->update_setting('query parameters', serialize($qp));
+
 			endif;
 
 			// custom feed settings first
-			foreach ($post['notes'] as $mn) :
-				$mn['key0'] = (isset($mn['key0']) ? trim($mn['key0']) : NULL);
+			$param_notes = FeedWordPress::post( 'notes', array() );
+			foreach ( $param_notes as $mn ) :
+				$mn['key0'] = ( isset($mn['key0']) ? trim($mn['key0']) : null );
 				$mn['key1'] = trim($mn['key1']);
 				if (preg_match("\007^(("
 						.implode(')|(',$this->special_settings)
@@ -1196,114 +1206,125 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 			foreach (array('name', 'description', 'url') as $what) :
 				// We have a checkbox for "No," so if it's unchecked, mark as "Yes."
-				$this->link->settings["hardcode {$what}"] = (isset($post["hardcode_{$what}"]) ? $post["hardcode_{$what}"] : 'yes');
+				$this->link->settings["hardcode {$what}"] = FeedWordPress::post( "hardcode_{$what}", 'yes' );
 				if (FeedWordPress::affirmative($this->link->settings, "hardcode {$what}")) :
-					$this->link->link->{'link_'.$what} = $post['link'.$what];
+					$this->link->link->{'link_'.$what} = FeedWordPress::post( 'link' . $what );
 				endif;
 			endforeach;
 
 			// Update scheduling
-			if (isset($post['update_schedule'])) :
-				$this->link->settings['update/hold'] = $post['update_schedule'];
+			$update_schedule = FeedWordPress::post( 'update_schedule' );
+			if ( ! is_null( $update_schedule ) ) :
+				$this->link->settings['update/hold'] = $update_schedule;
 			endif;
 
-			if (isset($post['use_default_update_window']) and strtolower($post['use_default_update_window'])=='yes') :
+			$use_default_update_window = FeedWordPress::post( 'use_default_update_window' );
+			$update_window = FeedWordPress::post( 'update_window' );
+			if ( FeedWordPress::affirmative( $use_default_update_window ) ) :
 				unset($this->link->settings['update/window']);
-			elseif (isset($post['update_window'])):
-				if ((int) $post['update_window'] > 0) :
-					$this->link->settings['update/window'] = (int) $post['update_window'];
+			elseif ( ! is_null( $update_window ) ) :
+				$update_window = intval( $update_window );
+				if ( $update_window > 0 ) :
+					$this->link->settings['update/window'] = $update_window;
 				endif;
 			endif;
 
 		else :
 			// Global
-			update_option('feedwordpress_cat_id', $post['syndication_category']);
+			update_option('feedwordpress_cat_id', FeedWordPress::post( 'syndication_category' ) );
 
-			if (!isset($post['automatic_updates']) or !in_array($post['automatic_updates'], array('init', 'shutdown'))) :
-				$automatic_updates = NULL;
-			else :
-				$automatic_updates = $post['automatic_updates'];
+			$automatic_updates = FeedWordPress::post( 'automatic_updates' );
+			if ( ! in_array( $automatic_updates, array( 'init', 'shutdown' ) ) ) :
+				$automatic_updates = null;
 			endif;
 			update_option('feedwordpress_automatic_updates', $automatic_updates);
 
-			if (isset($post['update_window'])):
-				if ((int) $post['update_window'] > 0) :
-					update_option('feedwordpress_update_window', (int) $post['update_window']);
+			$update_window = FeedWordPress::post( 'update_window' );
+			if ( ! is_null( $update_window ) ) :
+				$update_window = intval( $update_window );
+				if ( $update_window > 0 ) :
+					update_option( 'feedwordpress_update_window', $update_window );
 				endif;
 			endif;
 
-			update_option('feedwordpress_update_time_limit', ($post['update_time_limit']=='yes')?(int) $post['time_limit_seconds']:0);
+			$update_time_limit = FeedWordPress::post( 'update_time_limit' );
+			$time_limit_seconds = 0;
+			if ( FeedWordPress::affirmative( $update_time_limit ) ) :
+				$time_limit_seconds = intval( FeedWordPress::post( 'time_limit_seconds' ) );
+			endif;
+			update_option( 'feedwordpress_update_time_limit', $time_limit_seconds );
 
 			foreach (array('name', 'description', 'url') as $what) :
 				// We have a checkbox for "No," so if it's unchecked, mark as "Yes."
-				$hardcode = (isset($post["hardcode_{$what}"]) ? $post["hardcode_{$what}"] : 'yes');
-				update_option("feedwordpress_hardcode_{$what}", $hardcode);
+				$hardcode = FeedWordPress::post( "hardcode_{$what}", 'yes' );
+				update_option( "feedwordpress_hardcode_{$what}", $hardcode );
 			endforeach;
 
 		endif;
 
-		if (isset($post['update_pause'])) :
-			$this->update_setting('update/pause', $post['update_pause']);
+		$update_pause = FeedWordPress::post( 'update_pause' );
+		if ( ! is_null( $update_pause ) ) :
+			$this->update_setting( 'update/pause', $update_pause );
 		endif;
 
-		if (isset($post['fetch_timeout'])) :
-			if (isset($post['fetch_timeout_default']) and $post['fetch_timeout_default']=='yes') :
-				$timeout = NULL;
-			else :
-				$timeout = $post['fetch_timeout'];
+		$fetch_timeout = FeedWordPress::post( 'fetch_timeout' );
+		if ( ! is_null( $fetch_timeout ) ) :
+			$fetch_timeout_default = FeedWordPress::post( 'fetch_timeout_default' );
+			if ( FeedWordPress::affirmative( $fetch_timeout_default ) ) :
+				$fetch_timeout = null;
 			endif;
 
-			if (is_int($timeout)) :
-				$timeout = intval($timeout);
+			if ( is_int( $fetch_timeout ) ) :
+				$fetch_timeout = intval( $fetch_timeout );
 			endif;
-			$this->update_setting('fetch timeout', $timeout);
+			$this->update_setting( 'fetch timeout', $fetch_timeout );
 		endif;
 
-		if (isset($post['update_incremental'])) :
-			$this->update_setting('update_incremental', $post['update_incremental']);
+		$update_incremental = FeedWordPress::post( 'update_incremental' );
+		if ( ! is_null( $update_incremental ) ) :
+			$this->update_setting( 'update_incremental', $update_incremental );
 		endif;
 
-		if (isset($post['tombstones'])) :
-			$this->update_setting('tombstones', $post['tombstones']);
+		$tombstones = FeedWordPress::post( 'tombstones' );
+		if ( ! is_null( $tombstones ) ) :
+			$this->update_setting('tombstones', $tombstones );
 		endif;
 
-		if (isset($post['update_minimum'])) :
-			$this->update_setting('update/minimum', $post['update_minimum']);
+		$update_minimum = FeedWordPress::post( 'update_minimum' );
+		if ( ! is_null( $update_minimum ) ) :
+			$this->update_setting( 'update/minimum', $update_minimum );
 		endif;
 
+		$link_rss_auth_method = FeedWordPress::post( 'link_rss_auth_method' );
 		if (
-			isset($post['link_rss_auth_method'])
-			and $post['link_rss_auth_method']
-			and ('-' != $post['link_rss_auth_method'])
+			! $link_rss_auth_method
+			|| '-' == $link_rss_auth_method
 		) :
-			$this->update_setting('http auth method', $post['link_rss_auth_method']);
-		else :
-			$this->update_setting('http auth method', NULL);
+			$link_rss_auth_method = null;
 		endif;
+		$this->update_setting( 'http auth method', $link_rss_auth_method );
 
+		$link_rss_username = FeedWordPress::post( 'link_rss_username' );
 		if (
-			isset($post['link_rss_username'])
-			and (strlen($post['link_rss_username']) > 0)
-			and ('-' != $post['link_rss_auth_method'])
+			! $link_rss_username
+			|| is_null( $link_rss_auth_method )
 		) :
-			$this->update_setting('http username', $post['link_rss_username']);
-		else :
-			$this->update_setting('http username', NULL);
+			$link_rss_username = null;
 		endif;
+		$this->update_setting( 'http username', $link_rss_username );
 
+		$link_rss_password = FeedWordPress::post( 'link_rss_password' );
 		if (
-			isset($post['link_rss_password'])
-			and (strlen($post['link_rss_password']) > 0)
-			and ('-' != $post['link_rss_auth_method'])
+			strlen( $link_rss_password ) == 0
+			|| is_null( $link_rss_auth_method )
 		) :
-			$this->update_setting('http password', $post['link_rss_password']);
-		else :
-			$this->update_setting('http password', NULL);
+			$link_rss_password = null;
 		endif;
+		$this->update_setting( 'http password', $link_rss_password );
 
-		$this->updatedPosts->accept_POST($post);
+		$this->updatedPosts->accept_POST();
 
-		parent::save_settings($post);
+		parent::save_settings();
 	} /* FeedWordPressFeedsPage::save_settings() */
 
 } /* class FeedWordPressFeedsPage */

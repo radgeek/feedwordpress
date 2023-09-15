@@ -54,9 +54,12 @@ function feedwordpress_post_edit_controls () {
 	endif;
 } /* function feedwordpress_post_edit_controls () */
 
-function feedwordpress_save_post_edit_controls ( $post_id ) {
+function feedwordpress_save_post_edit_controls( $post_id ) {
 	global $post;
-	if (!isset($_POST['feedwordpress_noncename']) or !wp_verify_nonce($_POST['feedwordpress_noncename'], plugin_basename(__FILE__))) :
+	
+	$noncename = FeedWordPress::post( 'feedwordpress_noncename' );
+	
+	if ( is_null( $noncename ) || ! wp_verify_nonce( $noncename, plugin_basename( __FILE__ ) ) ) :
 		return $post_id;
 	endif;
 
@@ -69,12 +72,15 @@ function feedwordpress_save_post_edit_controls ( $post_id ) {
 	// The data in $_POST is for applying only to the post actually
 	// in the edit window, i.e. $post
 	if ($post_id != $post->ID) :
-		return $post_id;		
+		return $post_id;
 	endif;
 	
 	// Check permissions
 	$cap[0] = 'edit_post';
-	$cap[1] = 'edit_' . $_POST['post_type'];
+
+	$post_type = FeedWordPress::post( 'post_type' );
+	$cap[1] = sanitize_key( 'edit_' . $post_type );
+
 	if (
 		!current_user_can( $cap[0], $post_id )
 		and !current_user_can( $cap[1], $post_id )
@@ -83,10 +89,10 @@ function feedwordpress_save_post_edit_controls ( $post_id ) {
 	endif;
 	
 	// OK, we're golden. Now let's save some data.
-	if (isset($_POST['freeze_updates'])) :
-
-		update_post_meta($post_id, '_syndication_freeze_updates', $_POST['freeze_updates']);
-		$ret = $_POST['freeze_updates'];
+	$freeze_updates = FeedWordPress::post( 'freeze_updates' );
+	if ( ! is_null( $freeze_updates ) ) :
+		update_post_meta($post_id, '_syndication_freeze_updates', sanitize_meta('_syndication_freeze_updates', $freeze_updates, 'post'));
+		$ret = $freeze_updates;
 		
 		// If you make manual edits through the WordPress editing
 		// UI then they should be run through normal WP formatting

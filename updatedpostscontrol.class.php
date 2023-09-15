@@ -34,7 +34,7 @@ class UpdatedPostsControl {
 	?>
 		<tr>
 		<th scope="row"><?php _e('Updated posts:') ?></th>
-		<td><p>When <?php print $aFeed; ?> includes updated content for
+		<td><p>When <?php print esc_html( $aFeed ); ?> includes updated content for
 		a post that was already syndicated, should the syndicated copy
 		of the post be updated to match the revised version?</p>
 		
@@ -49,15 +49,15 @@ class UpdatedPostsControl {
 	<?php		
 	} /* UpdatedPostsControl::display() */
 	
-	function accept_POST ($post) {
+	function accept_POST () {
 		if ($this->page->for_feed_settings()) :
-			if (isset($post['freeze_updates'])) :
-				$this->page->link->settings['freeze updates'] = $post['freeze_updates'];
+			if ( ! is_null( FeedWordPress::post( 'freeze_updates' ) ) ) :
+				$this->page->link->settings['freeze updates'] = FeedWordPress::post( 'freeze_updates' );
 			endif;
 		else :
 			// Updated posts
-			if (isset($post['freeze_updates'])) :
-				update_option('feedwordpress_freeze_updates', $post['freeze_updates']);
+			if ( ! is_null( FeedWordPress::post( 'freeze_updates' ) ) ) :
+				update_option('feedwordpress_freeze_updates', FeedWordPress::post( 'freeze_updates' ));
 			endif;
 		endif;
 	} /* UpdatedPostsControl::accept_POST() */

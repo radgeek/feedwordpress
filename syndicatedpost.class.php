@@ -44,8 +44,6 @@ class SyndicatedPost {
 	 * @param SyndicatedLink $source The feed it was syndicated from.
 	 */
 	public function __construct ($item, $source) {
-		global $wpdb;
-
 		if ( empty($item) and empty($source) )
 			return;
 
@@ -353,8 +351,8 @@ class SyndicatedPost {
 		return $this->entry->get_title();
 	} /* SyndicatedPost::title () */
 
-	public function content ($params = array()) {
-
+	public function content ($params = array())
+	{
 		$params = wp_parse_args($params, array(
 		"full only" => false,
 		));
@@ -1228,7 +1226,6 @@ class SyndicatedPost {
 	 *	2 = post has not yet been syndicated; needs to be created
 	 */
 	function freshness ($format = 'number') {
-		global $wpdb;
 
 		if ($this->filtered()) : // This should never happen.
 			FeedWordPressDiagnostic::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
@@ -1241,7 +1238,7 @@ class SyndicatedPost {
 			$q = new WP_Query(array(
 				'fields' => '_synfresh', // id, guid, post_modified_gmt
 				'ignore_sticky_posts' => true,
-				'guid' => $guid,
+				'guid' => $eguid,	// it's always better to use the escaped version, right? (gwyneth 20230915)
 			));
 
 			$old_post = NULL;
@@ -1860,9 +1857,8 @@ class SyndicatedPost {
 	 * @param bool $new If true, this post is to be inserted anew. If false, it is an update of an existing post.
 	 * @return array A normalized representation of the post ready to be inserted into the database or sent to the WordPress API functions
 	 */
-	function normalize_post ($new = true) {
-		global $wpdb;
-
+	function normalize_post ($new = true)
+	{
 		$out = $this->post;
 
 		$fullPost = $out['post_title'].$out['post_content'];
@@ -2400,9 +2396,9 @@ EOM;
 						$id = null;
 					endif;
 				// also see comment above regarding get_userdata(). (gwyneth 20220223)
-				elseif (is_numeric($unfamiliar_author) and function_exists('get_userdata') and get_userdata((int) $unfamiliar_author)) :
+				elseif ( is_numeric( $unfamiliar_author ) and function_exists( 'get_userdata ') and get_userdata((int) $unfamiliar_author ) ) :
 					$id = (int) $unfamiliar_author;
-				elseif ($unfamiliar_author === 'default') :
+				elseif ( $unfamiliar_author === 'default' ) :
 					$id = 1;
 				endif;
 			endif;

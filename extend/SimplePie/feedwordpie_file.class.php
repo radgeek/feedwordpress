@@ -8,6 +8,11 @@ class FeedWordPie_File extends WP_SimplePie_File {
 		global $feedwordpress;
 		global $wp_version;
 
+		if ( $force_fsockopen )
+		{
+			error_log("deprecated usage of \$force_fsockopen, ignored");
+		}
+
 		$source = NULL;
 		if (!empty($feedwordpress) and $feedwordpress->subscribed($url)) :
 			$source = $feedwordpress->subscription($url);
@@ -21,7 +26,6 @@ class FeedWordPie_File extends WP_SimplePie_File {
 
 		$this->method = SIMPLEPIE_FILE_SOURCE_REMOTE;
 
-		global $wpdb;
 		global $fwp_credentials;
 
 		if ( preg_match('/^http(s)?:\/\//i', $url) ) :

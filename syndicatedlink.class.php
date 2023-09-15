@@ -686,6 +686,11 @@ class SyndicatedLink {
 		WHERE link_id='$this->id'
 		");
 
+		if ( $result === false )
+		{
+			error_log("query failed: " . $wpdb->last_error);
+		}
+
 		if ($reload) :
 			// force reload of link information from DB
 			if (function_exists('clean_bookmark_cache')) :
@@ -701,9 +706,12 @@ class SyndicatedLink {
 	 * @param string $name The link setting key
 	 * @param mixed $fallback_global If the link setting is nonexistent or marked as a use-default value, fall back to the value of this global setting.
 	 * @param mixed $fallback_value If the link setting and the global setting are nonexistent or marked as a use-default value, fall back to this constant value.
-	 * @return bool TRUE on success, FALSE on failure.
+	 *
+	 * @return mixed|null Should *not* return a boolean!!
+	 * // @return bool TRUE on success, FALSE on failure.
 	 */
-	public function setting ($name, $fallback_global = NULL, $fallback_value = NULL, $default = 'default') {
+	public function setting ($name, $fallback_global = NULL, $fallback_value = NULL, $default = 'default')
+	{
 		$ret = NULL;
 		if (isset($this->settings[$name])) :
 			$ret = $this->settings[$name];
@@ -898,10 +906,11 @@ class SyndicatedLink {
 		if ($fromFeed) :
 			$value = $this->setting($setting, NULL, NULL, NULL);
 
-			$s = $this->simplepie;
-			$callable = (is_object($s) and method_exists($s, $method));
-			if (is_null($value) and $callable) :
-				$fallback = $s->{$method}();
+			$simp_pie = $this->simplepie;
+			$callable = ( is_object( $simp_pie ) and method_exists( $simp_pie, $method ) );
+			if ( is_null( $value ) and $callable ) :
+//				$fallback = $s->{$method}();	// what is fallback supposed to be here? (gwyneth 20230816)
+				$value = $simp_pie->{$method}();		// makes more sense this way!
 			endif;
 		else :
 			$value = $this->link->{$link_field};

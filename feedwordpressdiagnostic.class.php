@@ -66,13 +66,14 @@ class FeedWordPressDiagnostic {
 		endif;
 
 		print '<p><strong>Critical error:</strong> There may be a bug in FeedWordPress. Please <a href="'.FEEDWORDPRESS_AUTHOR_CONTACT.'">contact the author</a> and paste the following information into your e-mail:</p>';
-		print "\n<plaintext>";
-		print "Triggered at ${location}\n";
-		print "FeedWordPress: ".FEEDWORDPRESS_VERSION."\n";
-		print "WordPress:     {$wp_version}\n";
-		print "PHP:           ".phpversion()."\n";
+		print "\n<pre>";
+		print "Triggered at " . esc_html($location) . "\n";
+		print "FeedWordPress: " . esc_html( FEEDWORDPRESS_VERSION ) . "\n";
+		print "WordPress:     " . esc_html( $wp_version ) . "\n";
+		print "PHP:           " . esc_html( phpversion() ) . "\n";
 		print "Error data:    ";
-		print  $varname.": "; var_dump($var); echo "\n";
+		print esc_html($varname) . ": " . esc_html( MyPHP::val( $var ) ) . "\n";
+		print "\n</pre>";
 		die;
 	} /* FeedWordPressDiagnostic::critical_bug () */
 

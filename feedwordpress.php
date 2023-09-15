@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2021.0713
+Version: 2022.0222
 Author: C. Johnson
 Author URI: https://feedwordpress.radgeek.com/contact/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2021.0713
+ * @version 2022.0222
  */
 
 # This plugin uses code derived from:
@@ -30,7 +30,7 @@ License: GPL
 ## CONSTANTS & DEFAULTS ############################################################
 ####################################################################################
 
-define ('FEEDWORDPRESS_VERSION', '2021.0713');
+define ('FEEDWORDPRESS_VERSION', '2022.0222');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contact');
 
 if (!defined('FEEDWORDPRESS_BLEG')) :
@@ -48,14 +48,16 @@ define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
 define ('DEFAULT_UPDATE_PERIOD', 60); // value in minutes
 define ('FEEDWORDPRESS_DEFAULT_CHECKIN_INTERVAL', DEFAULT_UPDATE_PERIOD/10);
 
-if (isset($_REQUEST['feedwordpress_debug'])) :
-	$feedwordpress_debug = $_REQUEST['feedwordpress_debug'];
-else :
-	$feedwordpress_debug = get_option('feedwordpress_debug');
-	if (is_string($feedwordpress_debug)) :
-		$feedwordpress_debug = ($feedwordpress_debug == 'yes');
-	endif;
+// Dependencies: modules packaged with FeedWordPress plugin
+$dir = dirname( __FILE__ );
+require_once("${dir}/externals/myphp/myphp.class.php");
+
+$feedwordpress_debug = FeedWordPress::param( 'feedwordpress_debug', get_option('feedwordpress_debug') );
+
+if (is_string($feedwordpress_debug)) :
+	$feedwordpress_debug = ($feedwordpress_debug == 'yes');
 endif;
+
 define ('FEEDWORDPRESS_DEBUG', $feedwordpress_debug);
 $feedwordpress_compatibility = true;
 define ('FEEDWORDPRESS_COMPATIBILITY', $feedwordpress_compatibility);
@@ -125,9 +127,8 @@ if (count($unmetCoreDependencies) > 0) :
 	require_once(ABSPATH . WPINC . "/class-feed.php");
 endif;
 
-// Dependences: modules packaged with FeedWordPress plugin
-$dir = dirname(__FILE__);
-require_once("${dir}/externals/myphp/myphp.class.php");
+// Dependencies: modules packaged with FeedWordPress plugin
+$dir = dirname( __FILE__ );
 require_once("${dir}/feedwordpressadminpage.class.php");
 require_once("${dir}/feedwordpresssettingsui.class.php");
 require_once("${dir}/feedwordpressdiagnostic.class.php");
@@ -153,19 +154,6 @@ require_once("${dir}/feedwordpresslocalpost.class.php");
 ####################################################################################
 ## GLOBAL PARAMETERS ###############################################################
 ####################################################################################
-
-// $fwp_post used to be a global variable used to make it easier to cope
-// with the frustrating sometime presence of "Magic Quotes" in earlier
-// versions of PHP (<http://php.net/manual/en/security.magicquotes.php>).
-// Magic quotes were DEPRECATED as of PHP 5.3.0, and REMOVED as of PHP
-// 5.4.0, so for the time being $fwp_post just gets a copy of $_POST.
-global $fwp_post;
-
-if (is_array($_POST)) :
-	$fwp_post = $_POST;
-else:
-	$fwp_post = null;
-endif;
 
 // Get the path relative to the plugins directory in which FWP is stored
 preg_match (
@@ -241,8 +229,8 @@ function debug_out_feedwordpress_footer () {
 ## FILTERS: syndication-aware handling of post data for templates and feeds ####
 ################################################################################
 
-$feedwordpress_the_syndicated_content = NULL;
-$feedwordpress_the_original_permalink = NULL;
+$feedwordpress_the_syndicated_content = null;
+$feedwordpress_the_original_permalink = null;
 
 function feedwordpress_preserve_syndicated_content ($text) {
 	global $feedwordpress_the_syndicated_content;
@@ -251,7 +239,7 @@ function feedwordpress_preserve_syndicated_content ($text) {
 	if (!$p->is_exposed_to_formatting_filters()) :
 		$feedwordpress_the_syndicated_content = $text;
 	else :
-		$feedwordpress_the_syndicated_content = NULL;
+		$feedwordpress_the_syndicated_content = null;
 	endif;
 	return $text;
 }
@@ -283,7 +271,7 @@ function feedwordpress_item_feed_data () {
 	endif;
 	$updated = get_feed_meta('feed/updated');
 	if (strlen($updated) > 0) : ?>
-	<updated><?php print $updated; ?></updated>
+	<updated><?php print esc_xml($updated); ?></updated>
 <?php
 	endif;
 ?>
@@ -383,7 +371,7 @@ function syndication_comments_feed_link ($link) {
 		// wfw:commentRss or atom:link/@rel="replies" we can make use of
 		// that value here.
 		$source = get_syndication_feed_object();
-		$replacement = NULL;
+		$replacement = null;
 
 		if (is_object($source) && $source->setting('munge comments feed links', 'munge_comments_feed_links', 'yes') != 'no') :
 			$commentFeeds = get_post_custom_values('wfw:commentRSS');
@@ -479,9 +467,9 @@ class FeedWordPress {
 			array('script', 'src')
 	);
 
-	var $feeds = NULL;
-	var $feedurls = NULL;
-	var $httpauth = NULL;
+	var $feeds = null;
+	var $feedurls = null;
+	var $httpauth = null;
 
 	/**
 	 * FeedWordPress::__construct (): Construct FeedWordPress singleton object
@@ -651,7 +639,7 @@ class FeedWordPress {
 			$menu_cap,
 			$syndicationMenu,
 			NULL,
-			$this->plugin_dir_url(/* 'assets/images/feedwordpress-tiny.png' */ 'assets/images/icon.svg')
+			$this->plugin_dir_url( /* 'assets/images/feedwordpress-tiny.png' */ 'assets/images/icon.svg' )
 		);
 
 		do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
@@ -704,11 +692,7 @@ class FeedWordPress {
 		// This is a horrible fucking kludge that I have to do because the
 		// admin notice code is triggered before the code that updates the
 		// setting.
-		if (isset($_POST['feedwordpress_debug'])) :
-			$feedwordpress_debug = $_POST['feedwordpress_debug'];
-		else :
-			$feedwordpress_debug = get_option('feedwordpress_debug');
-		endif;
+		$feedwordpress_debug = FeedWordPress::param(  'feedwordpress_debug', get_option( 'feedwordpress_debug' ) );
 
 		FeedWordPressSettingsUI::get_template_part('notice-debug-mode', $feedwordpress_debug, 'html');
 	} /* function FeedWordPress::check_debug () */
@@ -730,10 +714,10 @@ class FeedWordPress {
 	 * it; or a de-activated subscription.
 	 *
 	 * @param mixed $which Numeric ID for a WordPress link object or string URL for a feed
-	 * @return mixed SyndicatedLink object if subscription is found; NULL if not
+	 * @return mixed SyndicatedLink object if subscription is found; null if not
 	 */
 	public function subscription ($which) {
-		$sub = NULL;
+		$sub = null;
 
 		if (is_string($which) and isset($this->feedurls[$which])) :
 			$which = $this->feedurls[$which];
@@ -765,9 +749,9 @@ class FeedWordPress {
 	# Arguments:
 	# ----------
 	# *    $uri (string): either the URI of the feed to poll, the URI of the
-	#      (human-readable) website whose feed you want to poll, or NULL.
+	#      (human-readable) website whose feed you want to poll, or null.
 	#
-	#      If $uri is NULL, then FeedWordPress will poll any feeds that are
+	#      If $uri is null, then FeedWordPress will poll any feeds that are
 	#      ready for polling. It will not poll feeds that are marked as
 	#      "Invisible" Links (signifying that the subscription has been
 	#      de-activated), or feeds that are not yet stale according to their
@@ -781,7 +765,7 @@ class FeedWordPress {
 	#      of old posts that were updated during the update. If both numbers
 	#      are zero, there was no change since the last poll on that URI.
 	#
-	# *    Returns NULL if URI it was passed was not a URI that this
+	# *    Returns null if URI it was passed was not a URI that this
 	#      installation of FeedWordPress syndicates.
 	#
 	# Effects:
@@ -813,7 +797,7 @@ class FeedWordPress {
 		global $wpdb;
 
 		if (FeedWordPress::needs_upgrade()) : // Will make duplicate posts if we don't hold off
-			return NULL;
+			return null;
 		endif;
 
 		if (!is_null($uri) and $uri != '*') :
@@ -854,7 +838,7 @@ class FeedWordPress {
 
 
 		// Loop through and check for new posts
-		$delta = NULL; $remaining = $max_polls;
+		$delta = null; $remaining = $max_polls;
 		foreach ($feed_set as $feed_id) :
 
 			$feed = $this->subscription($feed_id);
@@ -904,7 +888,7 @@ class FeedWordPress {
 		return $delta;
 	} /* FeedWordPress::update () */
 
-	public function crash_ts ($default = NULL) {
+	public function crash_ts ($default = null) {
 		$crash_dt = (int) get_option('feedwordpress_update_time_limit', 0);
 		if ($crash_dt > 0) :
 			$crash_ts = time() + $crash_dt;
@@ -927,12 +911,12 @@ class FeedWordPress {
 		return (MyPHP::request('feedwordpress_key')==$this->secret_key());
 	} /* FeedWordPress::has_secret () */
 
-	var $update_hooked = NULL;
+	var $update_hooked = null;
 	public function automatic_update_hook ($params = array()) {
 		$params = wp_parse_args($params, array( // Defaults
 			'setting only' => false,
 		));
-		$hook = get_option('feedwordpress_automatic_updates', NULL);
+		$hook = get_option('feedwordpress_automatic_updates', null);
 		$method = 'FeedWordPress option';
 
 		// Allow for forced behavior in testing.
@@ -966,16 +950,16 @@ class FeedWordPress {
 
 	public function last_update_all () {
 		$last = get_option('feedwordpress_last_update_all');
-		if ($this->has_secret() and MyPHP::request('automatic_update')) :
+		if ( $this->has_secret() and FeedWordPress::param('automatic_update') ) :
 			$last = 1; // A long, long time ago.
-		elseif ($this->has_secret() and MyPHP::request('last_update_all')) :
-			$last = MyPHP::request('last_update_all');
+		elseif ( $this->has_secret() and FeedWordPress::param('last_update_all') ) :
+			$last = FeedWordPress::param( 'last_update_all' );
 		endif;
 		return $last;
 	} /* FeedWordPress::last_update_all () */
 
 	public function force_update_all () {
-		return ($this->has_secret() and MyPHP::request('force_update_feeds'));
+		return ($this->has_secret() and FeedWordPress::param( 'force_update_feeds' ));
 	} /* FeedWordPress::force_update_all () */
 
 	public function stale () {
@@ -1063,7 +1047,7 @@ class FeedWordPress {
 				endif;
 			endif;
 
-			if (MyPHP::request('fwp_post_delete')=='zap') :
+			if (FeedWordPress::param( 'fwp_post_delete' ) == 'zap') :
 				FeedWordPress::diagnostic('syndicated_posts', 'Zapping existing post # '.$p->ID.' "'.$p->post_title.'" due to user request.');
 
 				$old_status = $post->post_status;
@@ -1104,11 +1088,11 @@ class FeedWordPress {
 		// magic parameter is activated, the WordPress trashcan is
 		// temporarily de-activated.
 
-		if (MyPHP::request('fwp_post_delete')=='nuke') :
+		if (FeedWordPress::param( 'fwp_post_delete' ) == 'nuke') :
 			// Get post ID #
-			$post_id = MyPHP::request('post');
+			$post_id = FeedWordPress::param( 'post' );
 			if (!$post_id) :
-				$post_id = MyPHP::request('post_ID');
+				$post_id = FeedWordPress::param( 'post_ID' );
 			endif;
 
 			// Make sure we've got the right nonce and all that.
@@ -1116,12 +1100,11 @@ class FeedWordPress {
 
 			// If so, disable the trashcan.
 			define('EMPTY_TRASH_DAYS', 0);
-
-		elseif (MyPHP::request('fwp_post_delete')=='zap' OR MyPHP::request('fwp_post_delete') == 'unzap') :
+		elseif ( FeedWordPress::param( 'fwp_post_delete' ) == 'zap' || FeedWordPress::param( 'fwp_post_delete' ) == 'unzap' ) :
 			// Get post ID #
-			$post_id = MyPHP::request('post');
+			$post_id = FeedWordPress::param( 'post' );
 			if (!$post_id) :
-				$post_id = MyPHP::request('post_ID');
+				$post_id = FeedWordPress::param( 'post_ID' );
 			endif;
 
 			// Make sure we've got the right nonce and all that
@@ -1137,17 +1120,16 @@ class FeedWordPress {
 	} /* FeedWordPress::admin_api () */
 
 	public function all_admin_notices () {
-		if (MyPHP::request('zapped')) :
-			$n = intval(MyPHP::request('zapped'));
+		if (FeedWordPress::param( 'zapped' )) :
+			$n = intval( FeedWordPress::param( 'zapped' ) );
 ?>
-<div id="message" class="updated"><p><?php print $n; ?> syndicated item<?php print ($n!=1?'s':''); ?> zapped. <strong>These items will not be re-syndicated.</strong> If this was a mistake, you must <strong>immediately</strong> Un-Zap them in the Zapped items section to avoid losing the data.</p></div>
+<div id="message" class="updated"><p><?php print esc_html( $n ); ?> syndicated item<?php print esc_html( $n != 1 ? 's' : '' ); ?> zapped. <strong>These items will not be re-syndicated.</strong> If this was a mistake, you must <strong>immediately</strong> Un-Zap them in the Zapped items section to avoid losing the data.</p></div>
 <?php
 		endif;
-
-		if (MyPHP::request('unzapped')) :
-			$n = intval(MyPHP::request('unzapped'));
+		if ( FeedWordPress::param( 'unzapped' ) ) :
+			$n = intval( FeedWordPress::param( 'unzapped' ) );
 ?>
-<div id="message" class="updated"><p><?php print $n; ?> syndicated item<?php print ($n!=1?'s':'') ?> un-zapped and restored to normal.</p></div>
+<div id="message" class="updated"><p><?php print esc-html( $n ); ?> syndicated item<?php print esc_html( $n != 1 ? 's' : '' ) ?> un-zapped and restored to normal.</p></div>
 <?php
 		endif;
 	} /* FeedWordPress::all_admin_notices () */
@@ -1316,7 +1298,7 @@ class FeedWordPress {
 	} /* FeedWordPress::fwp_feeds () */
 
 	public function fwp_feedcontents () {
-		$feed_id = MyPHP::request('feed_id');
+		$feed_id = FeedWordPress::param( 'feed_id' );
 
 		// Let's load up some data from the feed . . .
 		$feed = $this->subscription($feed_id);
@@ -1349,9 +1331,9 @@ class FeedWordPress {
 	} /* FeedWordPress::fwp_feedcontents () */
 
 	public function fwp_xpathtest () {
-		$xpath = MyPHP::request('xpath');
-		$feed_id = MyPHP::request('feed_id');
-		$post_id = MyPHP::request('post_id');
+		$xpath   = FeedWordPress::param( 'xpath' );
+		$feed_id = FeedWordPress::param( 'feed_id' );
+		$post_id = FeedWordPress::param( 'post_id' );
 
 		$expr = new FeedWordPressParsedPostMeta($xpath);
 
@@ -1430,7 +1412,7 @@ class FeedWordPress {
 			$caption = apply_filters('feedwordpress_ui_erase_link_caption', __('Erase the record of this post (will be re-syndicated if it still appears on the feed).'));
 			$linktext = apply_filters('feedwordpress_ui_erase_link_text', __('Erase/Resyndicate'));
 
-			$retireClass = NULL;
+			$retireClass = null;
 			if ($post->post_status == 'fwpzapped') :
 				if (count(get_post_meta($post->ID, '_feedwordpress_zapped_blank_me')) > 0) :
 					$retireCap = 'Un-Zap this syndicated post (so it will appear on the site again)';
@@ -1440,7 +1422,7 @@ class FeedWordPress {
 					// No Un-Zap link for posts that have
 					// been blanked. You'll just have to
 					// Erase and hope you can resyndicate...
-					$retireLink = NULL;
+					$retireLink = null;
 				endif;
 			else :
 				$retireCap = apply_filters('feedwordpress_ui_zap_link_caption', __('Zap this syndicated post (so it will not be re-syndicated if it still appears on the feed).'));
@@ -1557,7 +1539,7 @@ class FeedWordPress {
 	} /* FeedWordPress::clear_cache_magic_url() */
 
 	public function clear_cache_requested () {
-		return MyPHP::request('clear_cache');
+		return FeedWordPress::param( 'clear_cache' );
 	} /* FeedWordPress::clear_cache_requested() */
 
 	public function update_magic_url () {
@@ -1566,8 +1548,7 @@ class FeedWordPress {
 		// Explicit update request in the HTTP request (e.g. from a cron job)
 		if (self::update_requested()) :
 			/*DBG*/ header("Content-Type: text/plain");
-
-			$this->update_hooked = "Initiating a CRON JOB CHECK-IN ON UPDATE SCHEDULE due to URL parameter = ".trim($this->val($_REQUEST['update_feedwordpress']));
+			$this->update_hooked = "Initiating a CRON JOB CHECK-IN ON UPDATE SCHEDULE due to URL parameter = " . trim( $this->val( FeedWordPress::param('update_feedwordpress' ) ) );
 
 			$this->update($this->update_requested_url());
 
@@ -1599,15 +1580,18 @@ class FeedWordPress {
 	} /* FeedWordPress::update_magic_url () */
 
 	public static function update_requested () {
-		return MyPHP::request('update_feedwordpress');
+		return FeedWordPress::param( 'update_feedwordpress' );
 	} /* FeedWordPress::update_requested() */
 
 	public function update_requested_url () {
 		$ret = null;
 
-		if (($_REQUEST['update_feedwordpress']=='*')
-		or (preg_match('|^[a-z]+://.*|i', $_REQUEST['update_feedwordpress']))) :
-			$ret = $_REQUEST['update_feedwordpress'];
+		$uf = FeedWordPress::update_requested();
+		if (
+			( '*' == $uf )
+			|| ( preg_match( '|^[a-z]+://.*|i', $uf ) )
+		) :
+			$ret = $uf;
 		endif;
 
 		return $ret;
@@ -1718,9 +1702,9 @@ class FeedWordPress {
 
 	} /* FeedWordPress::null_email_set () */
 
-	public static function is_null_email ($email) {
-		$ret = in_array(strtolower(trim($email)), FeedWordPress::null_email_set());
-		$ret = apply_filters('syndicated_item_author_is_null_email', $ret, $email);
+	public static function is_null_email( $email ) {
+		$ret = in_array( strtolower( trim( $email ) ), FeedWordPress::null_email_set() );
+		$ret = apply_filters( 'syndicated_item_author_is_null_email', $ret, $email );
 		return $ret;
 	} /* FeedWordPress::is_null_email () */
 
@@ -1790,7 +1774,7 @@ class FeedWordPress {
 	static function needs_upgrade () {
 
 		global $wpdb;
-		$fwp_db_version = get_option('feedwordpress_version', NULL);
+		$fwp_db_version = get_option('feedwordpress_version', null);
 		$ret = false; // innocent until proven guilty
 		if (is_null($fwp_db_version) or ($fwp_db_version < FEEDWORDPRESS_VERSION)) :
 
@@ -1850,7 +1834,7 @@ class FeedWordPress {
 		return $ret;
 	} /* FeedWordPress::needs_upgrade () */
 
-	static function upgrade_database ($from = NULL) {
+	static function upgrade_database ($from = null) {
 		global $wpdb;
 
 		if (is_null($from) or $from <= 0.96) : $from = 0.96; endif;
@@ -1993,7 +1977,7 @@ class FeedWordPress {
 		"cache" => true,
 		));
 
-		$duration = NULL;
+		$duration = null;
 		if (!$params['cache']) :
 			$duration = 0;
 		elseif (defined('FEEDWORDPRESS_CACHE_AGE')) :
@@ -2017,25 +2001,40 @@ class FeedWordPress {
 	} /* FeedWordPress::cache_lifetime () */
 
 	# Utility functions for handling text settings
-	static function negative ($f, $setting) {
+	static function get_field( $f, $setting = null ) {
+
+		$ret = $f;
+		if ( ! is_null( $setting ) ) :
+			$ret = null;
+			if ( array_key_exists( $setting, $f ) ) :
+				$ret = $f[ $setting ];
+			endif;
+		endif;
+		return $ret;
+
+	} /* FeedWordPress::get_field () */
+
+	static function negative ($f, $setting = null) {
 		$nego = array ('n', 'no', 'f', 'false');
-		return (isset($f[$setting]) and in_array(strtolower($f[$setting]), $nego));
+		$q = self::get_field( $f, $setting );
+		return in_array( strtolower( trim( $q ) ), $nego );
 	} /* FeedWordPress::negative () */
 
-	static function affirmative ($f, $setting) {
+	static function affirmative ($f, $setting = null) {
 		$affirmo = array ('y', 'yes', 't', 'true', 1);
-		return (isset($f[$setting]) and in_array(strtolower($f[$setting]), $affirmo));
+		$q = self::get_field( $f, $setting );
+		return in_array( strtolower( trim( $q ) ), $affirmo );
 	} /* FeedWordPress::affirmative () */
 
 	# Internal debugging functions
 
-	static function diagnostic ($level, $out, $persist = NULL, $since = NULL, $mostRecent = NULL) {
+	static function diagnostic ($level, $out, $persist = null, $since = null, $mostRecent = null) {
 		global $feedwordpress_admin_footer;
 
 		$output = get_option('feedwordpress_diagnostics_output', array());
 		$dlog = get_option('feedwordpress_diagnostics_log', array());
 
-		$diagnostic_nesting = count(explode(":", $level));
+		$diagnostic_nesting = count( explode( ":", $level ) );
 
 		if (FeedWordPressDiagnostic::is_on($level)) :
 			foreach ($output as $method) :
@@ -2047,14 +2046,14 @@ class FeedWordPress {
 					break;
 				case 'echo_in_cronjob' :
 					if (self::update_requested()) :
-						echo self::log_prefix()." ".$out."\n";
+						echo self::log_prefix() . ' ' . esc_html( $out ) . "\n";
 					endif;
 					break;
 				case 'admin_footer' :
 					$feedwordpress_admin_footer[] = $out;
 					break;
 				case 'error_log' :
-					error_log(self::log_prefix().' '.$out);
+					error_log(self::log_prefix() . ' ' . $out);
 					break;
 				case 'email' :
 
@@ -2080,7 +2079,7 @@ class FeedWordPress {
 	} /* FeedWordPress::diagnostic () */
 
 	public function email_diagnostics_override () {
-		return ($this->has_secret() and isset($_REQUEST['feedwordpress_email_diagnostics']) and !!$_REQUEST['feedwordpress_email_diagnostics']);
+		return ( $this->has_secret() and ! ! FeedWordPress::param( 'feedwordpress_email_diagnostics' ) );
 	} /* FeedWordPress::email_diagnostics_override () */
 
 	public function has_emailed_diagnostics ($dlog) {
@@ -2112,7 +2111,7 @@ class FeedWordPress {
 			if ($this->ready_to_email_diagnostics($dlog)) :
 				// No news is good news; only send if
 				// there are some messages to send.
-				$body = NULL;
+				$body = null;
 				if (!isset($dlog['mesg'])) : $dlog['mesg'] = array(); endif;
 
 				foreach ($dlog['mesg'] as $sect => $mesgs) :
@@ -2197,7 +2196,7 @@ EOMAIL;
 					endif;
 
 					$mesgId = 'feedwordpress+'.time().'@'.$home;
-					$parentId = get_option('feedwordpress_diagnostics_email_root_message_id', NULL);
+					$parentId = get_option('feedwordpress_diagnostics_email_root_message_id', null);
 
 					$head = array("Message-ID: <$mesgId>");
 					if (!is_null($parentId)) :
@@ -2244,7 +2243,7 @@ EOMAIL;
 	static function admin_footer () {
 		global $feedwordpress_admin_footer;
 		foreach ($feedwordpress_admin_footer as $line) :
-			echo '<div><pre>'.$line.'</pre></div>';
+			echo '<div><pre>' . esc_html( $line ) . '</pre></div>';
 		endforeach;
 	} /* FeedWordPress::admin_footer () */
 
@@ -2295,23 +2294,48 @@ EOMAIL;
 	// compatibility with add-ons, older code, etc. Maybe someday they
 	// will go away.
 	// -------------------------------------------------------------------
-	static function param ($key, $type = 'REQUEST', $default = NULL) {
-		return MyPHP::param($key, $default, $type);
+	static function param( $key, $type = 'REQUEST', $default = null, $sanitizer = null ) {
+		return self::sanitized_parameter( MyPHP::param( $key, $default, $type ), $sanitizer );
 	} /* FeedWordPress::param () */
 
-	static function post ($key, $default = NULL) {
-		return MyPHP::post($key, $default);
+	static function post( $key, $default = null, $sanitizer = null ) {
+		return self::sanitized_parameter( MyPHP::post( $key, $default ), $sanitizer );
 	} /* FeedWordPress::post () */
+
+	static function shallow_sanitize( $item, $sanitizer = null ) {
+		if ( $sanitizer == 'raw' ) :
+			$value = $item;
+		elseif ( $sanitizer == 'textarea' ) :
+			$value = sanitize_textarea_field( $item );
+		else :
+			$value = sanitize_text_field( $item );
+		endif;
+		return $value;
+	}
+
+	static function sanitized_parameter( $value, $sanitizer = null ) {
+		if ( $sanitizer === 'raw' || is_scalar( $value ) ) :
+			$ret = self::shallow_sanitize( $value, $sanitizer );
+		elseif ( is_array( $value ) ) :
+			$ret = array();
+			foreach ( $value as $key => $item ) :
+				$ret[ $key ] = self::sanitized_parameter( $item, $sanitizer );
+			endforeach;
+		else :
+			$ret = null; // "Sanitized" objects or resources currently get nothing.
+		endif;
+		return $ret;
+	}
 
 	static function val ($v, $no_newlines = false) {
 		return MyPHP::val($v, $no_newlines);
 	} /* FeedWordPress::val () */
 
-	static function critical_bug ($varname, $var, $line, $file = NULL) {
+	static function critical_bug ($varname, $var, $line, $file = null) {
 		FeedWordPressDiagnostic::critical_bug($varname, $var, $line, $file);
 	} /* FeedWordPress::critical_bug () */
 
-	static function noncritical_bug ($varname, $var, $line, $file = NULL) {
+	static function noncritical_bug ($varname, $var, $line, $file = null) {
 		FeedWordPressDiagnostic::noncritical_bug($varname, $var, $line, $file);
 	} /* FeedWordPress::noncritical_bug () */
 
@@ -2324,29 +2348,35 @@ EOMAIL;
 $feedwordpress_admin_footer = array();
 
 // take your best guess at the realname and e-mail, given a string
-define('FWP_REGEX_EMAIL_ADDY', '([^@"(<\s]+@[^"@(<\s]+\.[^"@(<\s]+)');
-define('FWP_REGEX_EMAIL_NAME', '("([^"]*)"|([^"<(]+\S))');
-define('FWP_REGEX_EMAIL_POSTFIX_NAME', '/^\s*'.FWP_REGEX_EMAIL_ADDY."\s+\(".FWP_REGEX_EMAIL_NAME.'\)\s*$/');
-define('FWP_REGEX_EMAIL_PREFIX_NAME', '/^\s*'.FWP_REGEX_EMAIL_NAME.'\s*<'.FWP_REGEX_EMAIL_ADDY.'>\s*$/');
-define('FWP_REGEX_EMAIL_JUST_ADDY', '/^\s*'.FWP_REGEX_EMAIL_ADDY.'\s*$/');
-define('FWP_REGEX_EMAIL_JUST_NAME', '/^\s*'.FWP_REGEX_EMAIL_NAME.'\s*$/');
+define( 'FWP_REGEX_EMAIL_ADDY', '([^@"(<\s]+@[^"@(<\s]+\.[^"@(<\s]+)' );
+define( 'FWP_REGEX_EMAIL_NAME', '("([^"]*)"|([^"<(]+\S))' );
+define( 'FWP_REGEX_EMAIL_POSTFIX_NAME', '/^\s*' . FWP_REGEX_EMAIL_ADDY . '\s+\(' . FWP_REGEX_EMAIL_NAME . '\)\s*$/' );
+define( 'FWP_REGEX_EMAIL_PREFIX_NAME', '/^\s*' . FWP_REGEX_EMAIL_NAME . '\s*<' . FWP_REGEX_EMAIL_ADDY . '>\s*$/' );
+define( 'FWP_REGEX_EMAIL_JUST_ADDY', '/^\s*' . FWP_REGEX_EMAIL_ADDY . '\s*$/' );
+define( 'FWP_REGEX_EMAIL_JUST_NAME', '/^\s*' . FWP_REGEX_EMAIL_NAME . '\s*$/' );
 
-function parse_email_with_realname ($email) {
-	$ret = array();	// avoid uninitialized variables for return values, this will generate a notice/warning - and one day, an error! (gwyneth 20210714)
-	$ret['name'] = NULL; $ret['email'] = NULL;	// default: both are null; this will avoid errors below when attempting to match empty values (gwyneth 20210714)
+function parse_email_with_realname( $email ) {
+	$ret = array(
+		"name" => "",
+		"email" => ""
+	);	// avoid uninitialized variables for return values, this will generate a notice/warning - and one day, an error! (gwyneth 20210714)
 
-	if (preg_match(FWP_REGEX_EMAIL_POSTFIX_NAME, $email, $matches)) :
-		($ret['name'] = $matches[3]) or ($ret['name'] = $matches[2]);
+	if ( preg_match( FWP_REGEX_EMAIL_POSTFIX_NAME, $email, $matches ) ) :
+		( $ret["name"] = $matches[3] ) || ( $ret['name'] = $matches[2] );
 		$ret['email'] = $matches[1];
-	elseif (preg_match(FWP_REGEX_EMAIL_PREFIX_NAME, $email, $matches)) :
-		($ret['name'] = $matches[2]) or ($ret['name'] = $matches[3]);
+	elseif ( preg_match( FWP_REGEX_EMAIL_PREFIX_NAME, $email, $matches ) ) :
+		( $ret['name'] = $matches[2] ) || ( $ret['name'] = $matches[3] );
 		$ret['email'] = $matches[4];
-	elseif (preg_match(FWP_REGEX_EMAIL_JUST_ADDY, $email, $matches)) :
-		$ret['name'] = NULL; $ret['email'] = $matches[1];
-	elseif (preg_match(FWP_REGEX_EMAIL_JUST_NAME, $email, $matches)) :
-		$ret['email'] = NULL;
-		($ret['name'] = $matches[2]) or ($ret['name'] = $matches[3]);
+
+	elseif ( preg_match( FWP_REGEX_EMAIL_JUST_ADDY, $email, $matches ) ) :
+		$ret['name']  = null;
+		$ret['email'] = $matches[1];
+	elseif ( preg_match( FWP_REGEX_EMAIL_JUST_NAME, $email, $matches ) ) :
+		$ret['email'] = null;
+		( $ret['name'] = $matches[2] ) || ( $ret['name'] = $matches[3] );
+	else :
+		$ret['name']  = null;
+		$ret['email'] = null;
 	endif;
 	return $ret;
 }
-

@@ -28,123 +28,135 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		);
 	} /* FeedWordPressPostsPage constructor */
 
-	function save_settings ($post) {
+	function save_settings () {
 		// custom post settings
 		$custom_settings = $this->custom_post_settings();
 
-		foreach ($post['notes'] as $mn) :
-			if (isset($mn['key0'])) :
-				$mn['key0'] = trim($mn['key0']);
-				if (strlen($mn['key0']) > 0) :
-					unset($custom_settings[$mn['key0']]); // out with the old
+		$posted_notes = FeedWordPress::post( 'notes', array(), 'text' );
+		foreach ( $posted_notes as $mn ) :
+			if ( isset( $mn['key0'] ) ) :
+				$mn['key0'] = trim( $mn['key0'] );
+				if ( strlen( $mn['key0'] ) > 0 ) :
+					unset( $custom_settings[ $mn['key0'] ] ); // out with the old
 				endif;
 			endif;
-				
-			if (isset($mn['key1'])) :
-				$mn['key1'] = trim($mn['key1']);
 
-				if (($mn['action']=='update') and (strlen($mn['key1']) > 0)) :
-					$custom_settings[$mn['key1']] = $mn['value']; // in with the new
+			if ( isset( $mn['key1'] ) ) :
+				$mn['key1'] = trim( $mn['key1'] );
+
+				if ( ( $mn['action']=='update' ) and ( strlen( $mn['key1'] ) > 0 ) ) :
+					$custom_settings[ $mn['key1'] ] = $mn['value']; // in with the new
 				endif;
 			endif;
 		endforeach;
 
-		$this->updatedPosts->accept_POST($post);
+		$this->updatedPosts->accept_POST();
 		if ($this->for_feed_settings()) :
 			$alter = array ();
 
 			$this->link->settings['postmeta'] = serialize($custom_settings);
 
-			if (isset($post['resolve_relative'])) :
-				$this->link->settings['resolve relative'] = $post['resolve_relative'];
+			if ( ! is_null( FeedWordPress::post( 'resolve_relative', null ) ) ) :
+				$this->link->settings['resolve relative'] = FeedWordPress::post( 'resolve_relative', null, 'text' );
 			endif;
-			if (isset($post['munge_permalink'])) :
-				$this->link->settings['munge permalink'] = $post['munge_permalink'];
+			if ( ! is_null( FeedWordPress::post('munge_permalink', null, 'text' ) ) ) :
+				$this->link->settings['munge permalink'] = FeedWordPress::post( 'munge_permalink', null, 'text' );
 			endif;
-			if (isset($post['munge_comments_feed_links'])) :
-				$this->link->settings['munge comments feed links'] = $post['munge_comments_feed_links'];
+			if ( ! is_null( FeedWordPress::post('munge_comments_feed_links', null, 'text' ) ) ) :
+				$this->link->settings['munge comments feed links'] = FeedWordPress::post( 'munge_comments_feed_links', null, 'text' );
 			endif;
 
 			// Post status, comment status, ping status
 			foreach (array('post', 'comment', 'ping') as $what) :
 				$sfield = "feed_{$what}_status";
-				if (isset($post[$sfield])) :
-					if ($post[$sfield]=='site-default') :
-						unset($this->link->settings["{$what} status"]);
+				if ( ! is_null( FeedWordPress::post( $sfield, null, 'text' ) ) ) :
+					$afield = sprintf( '%s status', $what );
+					if ( FeedWordPress::post( $sfield, null, 'text' ) == 'site-default' ) :
+						unset($this->link->settings[ $afield ]);
 					else :
-						$this->link->settings["{$what} status"] = $post[$sfield];
+						$this->link->settings[ $afield ] = FeedWordPress::post( $sfield, null, 'text' );
 					endif;
 				endif;
 			endforeach;
 			
-			if (isset($post['syndicated_post_type'])) :
-				if ($post['syndicated_post_type']=='default') :
+			if ( ! is_null( FeedWordPress::post('syndicated_post_type', null, 'text' ) ) ) :
+				if ( FeedWordPress::post( 'syndicated_post_type', null, 'text' ) == 'default' ) :
 					unset($this->link->settings['syndicated post type']);
 				else :
-					$this->link->settings['syndicated post type'] = $post['syndicated_post_type'];
+					$this->link->settings['syndicated post type'] = FeedWordPress::post( 'syndicated_post_type', null, 'text' );
 				endif;
 			endif;
 
 		else :
 			// update_option ...
-			if (isset($post['feed_post_status'])) :
-				update_option('feedwordpress_syndicated_post_status', $post['feed_post_status']);
+			if ( ! is_null( FeedWordPress::post( 'feed_post_status', null ) ) ) :
+
+				update_option('feedwordpress_syndicated_post_status', FeedWordPress::post( 'feed_post_status', null, 'text' ) );
+				
 			endif;
 
 			update_option('feedwordpress_custom_settings', serialize($custom_settings));
+			
+			$sMungePermalink = FeedWordPress::post('munge_permalink', null, 'text' );
+			$sUseAggregatorSourceData = FeedWordPress::post( 'use_aggregator_source_data', null, 'text' );
+			$sFormattingFilters = FeedWordPress::post('formatting_filters', null, 'text' );
+			$sFeedCommentStatus = FeedWordPress::post( 'feed_comment_status', '', 'text' );
+			$sFeedPingStatus = FeedWordPress::post( 'feed_ping_status', '', 'text' );
+			$sResolveRelative = FeedWordPress::post( 'resolve_relative', null, 'text' );
+			$sMungeCommentsFeedLinks = FeedWordPress::post( 'munge_comments_feed_links', null, 'text' );
+			$sSyndicatedPostType = FeedWordPress::post( 'syndicated_post_type', null, 'text' );
 
-			update_option('feedwordpress_munge_permalink', $_REQUEST['munge_permalink']);
-			update_option('feedwordpress_use_aggregator_source_data', $_REQUEST['use_aggregator_source_data']);
-			update_option('feedwordpress_formatting_filters', $_REQUEST['formatting_filters']);
+			update_option('feedwordpress_munge_permalink', $sMungePermalink);
+			update_option('feedwordpress_use_aggregator_source_data', $sUseAggregatorSourceData);
+			update_option('feedwordpress_formatting_filters', $sFormattingFilters);
 
-			if (isset($post['resolve_relative'])) :
-				update_option('feedwordpress_resolve_relative', $post['resolve_relative']);
+			if ( ! is_null( $sResolveRelative ) ) :
+				update_option('feedwordpress_resolve_relative', $sResolveRelative );
 			endif;
-			if (isset($post['munge_comments_feed_links'])) :
-				update_option('feedwordpress_munge_comments_feed_links', $post['munge_comments_feed_links']);
+			if ( ! is_null( $sMungeCommentsFeedLinks ) ) :
+				update_option('feedwordpress_munge_comments_feed_links', $sMungeCommentsFeedLinks );
 			endif;
-			if (isset($_REQUEST['feed_comment_status']) and ($_REQUEST['feed_comment_status'] == 'open')) :
+			
+			if ( $sFeedCommentStatus == 'open' ) :
 				update_option('feedwordpress_syndicated_comment_status', 'open');
 			else :
 				update_option('feedwordpress_syndicated_comment_status', 'closed');
 			endif;
 
-			if (isset($_REQUEST['feed_ping_status']) and ($_REQUEST['feed_ping_status'] == 'open')) :
+			if ( $sFeedPingStatus == 'open' ) :
 				update_option('feedwordpress_syndicated_ping_status', 'open');
 			else :
 				update_option('feedwordpress_syndicated_ping_status', 'closed');
 			endif;
-			
-			if (isset($post['syndicated_post_type'])) :
-				update_option('feedwordpress_syndicated_post_type', $post['syndicated_post_type']);
+
+			if ( ! is_null( $sSyndicatedPostType ) ) :
+				update_option('feedwordpress_syndicated_post_type', $sSyndicatedPostType );
 			endif;
 		endif;
 
-		if (isset($post['save']) or isset($post['submit'])) :
-			if (isset($post['boilerplate'])) :
-				foreach ($post['boilerplate'] as $index => $line) :
-					if (0 == strlen(trim($line['template']))) :
-						unset($post['boilerplate'][$index]);
-					endif;
-				endforeach;
-
-				// Convert indexes to 0..(N-1) to avoid possible collisions
-				$post['boilerplate'] = array_values($post['boilerplate']);
-
-				if ($this->for_feed_settings()) :
-					$this->link->settings['boilerplate rules'] = serialize($post['boilerplate']);
-					$this->link->save_settings(/*reload=*/ true);
-				else :
-					update_option('feedwordpress_boilerplate', $post['boilerplate']);
+		$boilerplate = FeedWordPress::post( 'boilerplate', array(), 'raw' );
+		if ( count($boilerplate) > 0 ) :
+			foreach ( $boilerplate as $index => $line) :
+				if ( 0 == strlen( trim( $line['template'] ) ) ) :
+					unset( $boilerplate[$index] );
 				endif;
-			endif;
-		
-			if (isset($post['boilerplate_hook_order'])) :
-				$this->update_setting('boilerplate hook order', intval($post['boilerplate_hook_order']));
+			endforeach;
+
+			// Convert indexes to 0..(N-1) to avoid possible collisions
+			$boilerplate = array_values( $boilerplate );
+
+			if ($this->for_feed_settings()) :
+				$this->link->settings['boilerplate rules'] = serialize( $boilerplate );
+				$this->link->save_settings(/*reload=*/ true);
+			else :
+				update_option( 'feedwordpress_boilerplate', $boilerplate );
 			endif;
 		endif;
 
-		parent::save_settings($post);
+		$boilerplate_hook_order = FeedWordPress::post( 'boilerplate_hook_order', 10, 'text' );
+		$this->update_setting('boilerplate hook order', intval( $boilerplate_hook_order ) );
+
+		parent::save_settings();
 	}
 
 	/**
@@ -235,7 +247,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		<?php endif; ?>
 		
 		<tr><th scope="row">Relative URIs:</th>
-		<td><p>If link or image in a syndicated post from <code><?php print $url; ?></code>
+		<td><p>If link or image in a syndicated post from <code><?php print esc_html($url); ?></code>
 		refers to a partial URI like <code>/about</code>, where should
 		the syndicated copy point to?</p>
 
@@ -374,7 +386,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		<table class="edit-form narrow">
 		<?php foreach ($whatsits as $what => $how) : ?>
 		  
-		  <tr><th scope="row"><?php print $how['label']; ?>:</th>
+		  <tr><th scope="row"><?php print esc_html($how['label']); ?>:</th>
 		  <td><?php
 		  	$this->setting_radio_control(
 		  		"$what status", "syndicated_${what}_status",
@@ -386,7 +398,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		
 		  <tr><th scope="row"><?php _e('Comment feeds'); ?></th>
 		  <td><p>When WordPress feeds and templates link to comments
-		  feeds for <?php print $page->these_posts_phrase(); ?>, the
+		  feeds for <?php print esc_html($page->these_posts_phrase()); ?>, the
 		  URLs for the feeds should...</p>
 		  <?php
 		  	$this->setting_radio_control(
@@ -449,11 +461,11 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		foreach ($custom_settings as $key => $value) : 
 		?>
 		  <tr style="vertical-align:top">
-		    <th width="30%" scope="row"><input type="hidden" name="notes[<?php echo $i; ?>][key0]" value="<?php echo esc_html($key); ?>" />
-		    <input id="notes-<?php echo $i; ?>-key" name="notes[<?php echo $i; ?>][key1]" value="<?php echo esc_html($key); ?>" /></th>
-		    <td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo $i; ?>-value" name="notes[<?php echo $i; ?>][value]"><?php echo esc_html($value); ?></textarea>
-		    <?php print sprintf($testerButton, $i); ?></td>
-		    <td width="10%"><select name="notes[<?php echo $i; ?>][action]">
+		    <th width="30%" scope="row"><input type="hidden" name="notes[<?php echo esc_attr($i); ?>][key0]" value="<?php echo esc_html($key); ?>" />
+		    <input id="notes-<?php echo esc_attr( $i ); ?>-key" name="notes[<?php echo esc_attr( $i ); ?>][key1]" value="<?php echo esc_html($key); ?>" /></th>
+		    <td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo esc_attr($i); ?>-value" name="notes[<?php echo esc_attr($i); ?>][value]"><?php echo esc_html($value); ?></textarea>
+		    <?php print sprintf($testerButton, esc_attr($i) ); ?></td>
+		    <td width="10%"><select name="notes[<?php echo esc_attr($i); ?>][action]">
 		    <option value="update">save changes</option>
 		    <option value="delete">delete this setting</option>
 		    </select></td>
@@ -465,15 +477,15 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		?>
 
 		  <tr style="vertical-align: top">
-		    <th scope="row"><input type="text" size="10" name="notes[<?php echo $i; ?>][key1]" value="" /></th>
-		    <td><textarea name="notes[<?php echo $i; ?>][value]" rows="2" cols="40"></textarea><?php print sprintf($testerButton, $i); ?>
+		    <th scope="row"><input type="text" size="10" name="notes[<?php echo esc_attr($i); ?>][key1]" value="" /></th>
+		    <td><textarea name="notes[<?php echo esc_attr($i); ?>][value]" rows="2" cols="40"></textarea><?php print sprintf($testerButton, esc_attr($i)); ?>
 		      <p>Enter a text value, or a path to a data element from the syndicated item.<br/>
 		      For data elements, you can use an XPath-like syntax wrapped in <code>$( ... )</code>.<br/>
 		      <code>hello</code> = the text value <code><span style="background-color: #30FFA0;">hello</span></code><br/>
 		      <code>$(author/email)</code> = the contents of <code>&lt;author&gt;&lt;email&gt;<span style="background-color: #30FFA0">...</span>&lt;/email&gt;&lt;/author&gt;</code><br/>
 		      <code>$(media:content/@url)</code> = the contents of <code>&lt;media:content url="<span style="background-color: #30FFA0">...</span>"&gt;...&lt;/media:content&gt;</code></p>
 		    </td>
-		    <td><em>add new setting...</em><input type="hidden" name="notes[<?php echo $i; ?>][action]" value="update" /></td>
+		    <td><em>add new setting...</em><input type="hidden" name="notes[<?php echo esc_attr($i); ?>][action]" value="update" /></td>
 		  </tr>
 		</table>
 		</div> <!-- id="postcustomstuff" -->
@@ -625,15 +637,15 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 				$line['class'][] = 'boilerplate-li';
 ?>
 
-<li id="boilerplate-<?php print $index; ?>-li" class="<?php print implode(' ', $line['class']); ?>">&raquo; <strong>Add</strong> <select id="boilerplate-<?php print $index; ?>-placement" name="boilerplate[<?php print $index; ?>][placement]" style="width: 8.0em">
-<option value="before"<?php print $selected['before']; ?>>before</option>
-<option value="after"<?php print $selected['after']; ?>>after</option>
-</select> the <select style="width: 8.0em" id="boilerplate-<?php print $index; ?>-element" name="boilerplate[<?php print $index; ?>][element]">
-<option value="title"<?php print $selected['title']; ?>>title</option>
-<option value="post"<?php print $selected['post']; ?>>content</option>
-<option value="excerpt"<?php print $selected['excerpt']; ?>>excerpt</option>
+<li id="boilerplate-<?php print esc_attr($index); ?>-li" class="<?php print esc_attr(implode(' ', $line['class'])); ?>">&raquo; <strong>Add</strong> <select id="boilerplate-<?php print esc_attr($index); ?>-placement" name="boilerplate[<?php print esc_attr($index); ?>][placement]" style="width: 8.0em">
+<option value="before"<?php fwp_selected_flag( $selected, 'before' ); ?>>before</option>
+<option value="after"<?php fwp_selected_flag( $selected, 'after' ); ?>>after</option>
+</select> the <select style="width: 8.0em" id="boilerplate-<?php print esc_attr($index); ?>-element" name="boilerplate[<?php print esc_attr($index); ?>][element]">
+<option value="title"<?php fwp_selected_flag($selected, 'title' ); ?>>title</option>
+<option value="post"<?php fwp_selected_flag( $selected, 'post' ); ?>>content</option>
+<option value="excerpt"<?php fwp_selected_flag( $selected, 'excerpt' ); ?>>excerpt</option>
 </select> of 
-<?php print $syndicatedPosts; ?>: <textarea style="vertical-align: top; width: 40%;" rows="2" cols="30" class="boilerplate-template" id="boilerplate-<?php print $index; ?>-template" name="boilerplate[<?php print $index; ?>][template]"><?php print htmlspecialchars($line['template']); ?></textarea></li>
+<?php print esc_html($syndicatedPosts); ?>: <textarea style="vertical-align: top; width: 40%;" rows="2" cols="30" class="boilerplate-template" id="boilerplate-<?php print esc_attr($index); ?>-template" name="boilerplate[<?php print esc_attr($index); ?>][template]"><?php print esc_html($line['template']); ?></textarea></li>
 <?php
 			endif;
 		endforeach;
