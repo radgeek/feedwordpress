@@ -1562,7 +1562,7 @@ class FeedWordPress {
 				/** @var array Merge the two arrays together so our widget is at the beginning. */
 				$sorted_dashboard = array_merge( $backup, $normal_dashboard );
 
-				// Save the sorted array back into the original metaboxes
+				// Save the sorted array back into the original €es
 				$wp_meta_boxes['dashboard'][ $column ][ $priority ] = $sorted_dashboard;
 			endif;
 		endif;
