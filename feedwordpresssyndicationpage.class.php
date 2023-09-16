@@ -452,7 +452,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 			do_action('feedwordpress_admin_page_syndication_meta_boxes', $this);
 		?>
-			<!-- Links: <?=$links?> -->
+			<!-- Links: <?=print_r($links, true)?> -->
 			<div class="metabox-holder">
 			<?php
 				do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
@@ -474,24 +474,25 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		$links = FeedWordPress::syndicated_links(array("hide_invisible" => false));
 		$sources = $this->sources('*');
 
-		$visibility   = 'Y';	// what is this used for? (gwyneth 20230915)
+		/** @var string  what is this used for? (gwyneth 20230915) */
+		$visibility   = 'Y';
 		$hrefPrefix   = $this->form_action();
 		$activeHref   = $hrefPrefix . '&visibility=' . $visibility;
 		$inactiveHref = $hrefPrefix . '&visibility=N';
 
-		$lastUpdate = get_option('feedwordpress_last_update_all', NULL);
-		$automatic_updates = get_option('feedwordpress_automatic_updates', NULL);
+		$lastUpdate = get_option( 'feedwordpress_last_update_all', NULL );
+		$automatic_updates = get_option( 'feedwordpress_automatic_updates', NULL );
 
-		if ('init'==$automatic_updates) :
+		/** @var string  default value set here, to avoid having a else clause, but also to init the variable in the right scope. (gwyneth 20230915) */
+		$update_setting = 'using a cron job or manual check-ins';
+		if ( 'init' == $automatic_updates ) :
 			$update_setting = 'automatically before page loads';
-		elseif ('shutdown'==$automatic_updates) :
+		elseif ( 'shutdown' == $automatic_updates ) :
 			$update_setting = 'automatically after page loads';
-		else :
-			$update_setting = 'using a cron job or manual check-ins';
 		endif;
 		// Hey ho, let's go...
 		?>
-		<!-- Page: <?=$page?> Box: <?=$box?:'(empty)'?> Links: <?=$links?> -->
+		<!-- Page: <?=$page?> Box: <?=$box?:'(empty)'?> Links: <?=print_r($links, true)?> -->
 		<div style="float: left; background: /* #F5F5F5 */ white; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url(plugins_url(/* "feedwordpress.png" */ "assets/images/icon.svg", __FILE__ ) ); ?>" width="36px" height="36px" alt="FeedWordPress Logo" /></a></div>
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;">Managed by <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
 		<?php print esc_html(FEEDWORDPRESS_VERSION); ?>.</p>
@@ -559,6 +560,18 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressSyndicationPage::dashboard_box () */
 
+	/**
+	 * One of the status boxes for the FWP dashboard.
+	 *
+	 * @param  mixed $page Unused
+	 * @param  mixed|null $box Unused
+	 *
+	 * @return void
+	 *
+	 * @uses FeedWordPress::syndicated_links()
+	 * @uses FeedWordPressCompatibility::stamp_nonce()
+	 * @uses FeedWordPressSettingsUI::magic_input_tip_js()
+	 */
 	function syndicated_sources_box ($page, $box = NULL) {
 
 		$links = FeedWordPress::syndicated_links(array("hide_invisible" => false));
@@ -571,7 +584,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		$formHref = sprintf( '%s&amp;visibility=%s', $hrefPrefix, urlencode($visibility) );
 		?>
 		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-		<!-- Links: <?=$links?> Page: <?=$page?> Box: <?=$box?:'(null)'?>
+		<!-- Links: <?=print_r($links, true)?> Page: <?=$page?> Box: <?=$box?:'(null)'?>
 		<div class="tablenav">
 
 		<div id="add-multiple-uri" class="hide-if-js">
