@@ -633,8 +633,8 @@ class FeedWordPress {
 	 * @uses do_action()
 	 * @uses add_filter()
 	 */
-	public function add_pages () {
-
+	public function add_pages()
+	{
 		$menu_cap = FeedWordPress::menu_cap();
 		$settings_cap = FeedWordPress::menu_cap(/*sub=*/ true);
 		$syndicationMenu = FeedWordPress::path('syndication.php');

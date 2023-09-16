@@ -1,70 +1,124 @@
 <?php
-require_once(dirname(__FILE__) . '/admin-ui.php');
-require_once(dirname(__FILE__) . '/feedfinder.class.php');
+/**
+ * feedwordpresssyndicationpage.class.php
+ * feedwordpress
+ *
+ * @author radgeek
+ */
+require_once( dirname(__FILE__) . '/admin-ui.php' );
+require_once( dirname(__FILE__) . '/feedfinder.class.php' );
 
 ################################################################################
 ## ADMIN MENU ADD-ONS: implement Dashboard management pages ####################
 ################################################################################
 
-define('FWP_UPDATE_CHECKED', 'Update Checked');
-define('FWP_UNSUB_CHECKED', 'Unsubscribe');
-define('FWP_DELETE_CHECKED', 'Delete');
-define('FWP_RESUB_CHECKED', 'Re-subscribe');
-define('FWP_SYNDICATE_NEW', 'Add →');
-define('FWP_UNSUB_FULL', 'Unsubscribe from selected feeds →');
-define('FWP_CANCEL_BUTTON', '× Cancel');
-define('FWP_CHECK_FOR_UPDATES', 'Update');
+define( 'FWP_UPDATE_CHECKED',	'Update Checked' );
+define( 'FWP_UNSUB_CHECKED',	'Unsubscribe' );
+define( 'FWP_DELETE_CHECKED',	'Delete' );
+define( 'FWP_RESUB_CHECKED',	'Re-subscribe' );
+define( 'FWP_SYNDICATE_NEW',	'Add →' );
+define( 'FWP_UNSUB_FULL',		'Unsubscribe from selected feeds →' );
+define( 'FWP_CANCEL_BUTTON',	'× Cancel' );
+define( 'FWP_CHECK_FOR_UPDATES', 'Update' );
 
-class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
-	public function __construct ($filename = NULL) {
-		parent::__construct('feedwordpresssyndication', /*link=*/ NULL);
+/**
+ * Tab for the admin page where syndication is dealt with.
+ *
+ * @extends FeedWordPressAdminPage
+ *
+ * @uses MyPHP
+ * @uses FeedFinder
+ * @uses FeedWordPress
+ * @uses FeedWordPressCompatibility
+ * @uses FeedWordPressDiagnostic
+ */
+class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
+{
+	public function __construct( $filename = NULL )
+	{
+		parent::__construct( 'feedwordpresssyndication', /*link=*/ NULL );
 
 		// No over-arching form element
 		$this->dispatch = NULL;
-		if (is_null($filename)) :
+		if ( is_null( $filename ) ) :
 			$this->filename = __FILE__;
 		else :
 			$this->filename = $filename;
 		endif;
 	} /* FeedWordPressSyndicationPage constructor */
 
-	function has_link () { return false; }
+	/**
+	 * Stub function to comply with parent class.
+	 *
+	 * @return bool Always returns FALSE in this class.
+	 */
+	function has_link()
+	{
+		return false;
+	} /* FeedWordPressSyndicationPage::has_link() */
 
+	/** @var array|null List of sources which gets initialised by $this->sources('Y') if it's still NULL */
 	var $_sources = NULL;
 
-	function sources ($visibility = 'Y') {
-		if (is_null($this->_sources)) :
-			$links = FeedWordPress::syndicated_links(array("hide_invisible" => false));
-			$this->_sources = array("Y" => array(), "N" => array());
-			foreach ($links as $link) :
+	/**
+	 * Builds _sources (list of visible or invisible links to sources of syndicated links)
+	 * or returns existing _sources if it's already built.
+	 *
+	 * @param  string $visibility Unknown flag which toggles source visibility
+	 *
+	 * @return array Constructed list of visible/invisible sources
+	 *
+	 * @uses FeedWordPress::syndicated_links()
+	 *
+	 */
+	function sources( $visibility = 'Y' )
+	{
+		if ( is_null( $this->_sources) ) :
+			$links = FeedWordPress::syndicated_links( array( "hide_invisible" => false ) );
+			$this->_sources = array( "Y" => array(), "N" => array() );
+			foreach ( $links as $link ) :
 				$this->_sources[$link->link_visible][] = $link;
 			endforeach;
 		endif;
 		$ret = (
-			array_key_exists($visibility, $this->_sources)
+			array_key_exists( $visibility, $this->_sources )
 			? $this->_sources[$visibility]
 			: $this->_sources
 		);
 		return $ret;
 	} /* FeedWordPressSyndicationPage::sources() */
 
-	function visibility_toggle () {
-		$sources = $this->sources('*');	// why is this necessary? It's not being used (gwyneth 20230915)
+	/**
+	 * Toggles source visibility, using the side-effect of pseudo-getter $this->sources(...) method-
+	 *
+	 * @return string
+	 *
+	 * @uses FeedWordPress::param()
+	 */
+	function visibility_toggle()
+	{
+		$sources = $this->sources( '*' );	// return value unnecessary, it seems the code is just using the side-effect of initialising $this->_sources if it's uninitialised. (gwyneth 20230916)
 
 		$defaultVisibility = 'Y';
-		if ((count($this->sources('N')) > 0)
-		and (count($this->sources('Y'))==0)) :
+		if ( ( count( $this->sources('N') )  > 0 )
+		and  ( count( $this->sources('Y') ) == 0 ) ) :
 			$defaultVisibility = 'N';
 		endif;
 		// this may be output into HTML, and it should really only ever be Y or N...
 		$sVisibility = FeedWordPress::param( 'visibility', $defaultVisibility );
-		$visibility = preg_replace('/[^YyNn]+/', '', $sVisibility);
+		$visibility = preg_replace( '/[^YyNn]+/', '', $sVisibility );
 
-		return (strlen($visibility) > 0 ? $visibility : $defaultVisibility);
+		return ( strlen($visibility) > 0 ? $visibility : $defaultVisibility );
 	} /* FeedWordPressSyndicationPage::visibility_toggle() */
 
-	function show_inactive () {
-		return ($this->visibility_toggle() == 'N');
+	/**
+	 * Shows source feeds that are currently not visible.
+	 *
+	 * @return string
+	 */
+	function show_inactive()
+	{
+		return ( $this->visibility_toggle() == 'N' );
 	}
 
 	/**
@@ -87,14 +141,19 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressSyndicationPage::sanitize_ids_sql () */
 
 	/**
-	 * requested_link_ids_sql ()
+	 * requested_link_ids_sql()
 	 *
 	 * @return string An SQL list literal containing the link IDs, sanitized
 	 *                and escaped for direct use in MySQL queries.
 	 *
 	 * @uses sanitize_ids_sql()
+	 * @uses sanitize_text_field()
+	 * @uses MyPHP::post()
+	 * @uses MyPHP::request()
+	 * @uses FeedWordPress::post()
 	 */
-	public function requested_link_ids_sql () {
+	public function requested_link_ids_sql()
+	{
 		// Multiple link IDs passed in link_ids[]=...
 
 		$link_ids = array_map(
@@ -103,18 +162,29 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		);
 
 		// Or single in link_id=...
-		if ( ! is_null(MyPHP::request( 'link_id' ) ) ) :
+		if ( ! is_null( MyPHP::request( 'link_id' ) ) ) :
 			array_push( $link_ids, sanitize_text_field( MyPHP::request( 'link_id' ) ) );
 		endif;
 
 		// Now use method to sanitize for safe use in MySQL queries.
-		$link_ids = $this->sanitize_ids_sql($link_ids);
+		$link_ids = $this->sanitize_ids_sql( $link_ids );
 
 		// Convert to MySQL list literal.
-		return "('".implode("', '", $link_ids)."')";
+		return "('" . implode( "', '", $link_ids ) . "')";
 	} /* FeedWordPressSyndicationPage::requested_link_ids_sql () */
 
-	function updates_requested () {
+	/**
+	 * Returns the list of requested updates.
+	 *
+	 * @return array List of requested updates
+	 *
+	 * @uses MyPHP::post()
+	 * @uses MyPHP::request()
+	 * @uses FeedWordPress::post()
+	 * @uses FeedWordPressDiagnostic::critical_bug()
+	 */
+	function updates_requested()
+	{
 		global $wpdb;
 
 		if ( FeedWordPress::post( 'update' ) || FeedWordPress::post( 'action' ) || FeedWordPress::post( 'update_uri' ) ) :
@@ -125,9 +195,9 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		endif;
 
 		$update_set = array();
-		if ($fwp_update_invoke != 'get') :
-			if (is_array(MyPHP::post('link_ids'))
-			and (MyPHP::post('action')==FWP_UPDATE_CHECKED)) :
+		if ( $fwp_update_invoke != 'get' ) :
+			if  ( is_array( MyPHP::post( 'link_ids' ) )
+			and ( MyPHP::post( 'action' ) == FWP_UPDATE_CHECKED ) ) :
 				// Get single link ID or multiple link IDs from REQUEST parameters
 				// if available. Sanitize values for MySQL.
 				$link_list = $this->requested_link_ids_sql();
@@ -137,22 +207,22 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 				SELECT * FROM $wpdb->links
 				WHERE link_id IN ${link_list}
 				");
-				if (is_array($targets)) :
+				if ( is_array( $targets ) ) :
 					foreach ($targets as $target) :
 						$update_set[] = $target->link_rss;
 					endforeach;
 				else : // This should never happen
-					FeedWordPressDiagnostic::critical_bug('fwp_syndication_manage_page::targets', $targets, __LINE__, __FILE__);
+					FeedWordPressDiagnostic::critical_bug( 'fwp_syndication_manage_page::targets', $targets, __LINE__, __FILE__ );
 				endif;
-			elseif (!is_null(FeedWordPress::post('update_uri'))) :
-				$targets = FeedWordPress::post('update_uri');
-				if (!is_array($targets)) :
-					$targets = array($targets);
+			elseif ( !is_null( FeedWordPress::post( 'update_uri' ) ) ) :
+				$targets = FeedWordPress::post( 'update_uri' );
+				if ( !is_array( $targets ) ) :
+					$targets = array( $targets );
 				endif;
 
-				$targets_keys = array_keys($targets);
-				$first_key = reset($targets_keys);
-				if (!is_numeric($first_key)) : // URLs in keys
+				$targets_keys = array_keys( $targets );
+				$first_key = reset( $targets_keys );
+				if ( !is_numeric( $first_key) ) : // URLs in keys
 					$targets = $targets_keys;
 				endif;
 				$update_set = $targets;
@@ -161,21 +231,56 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		return $update_set;
 	}
 
-	public function cancel_requested () {
+	/**
+	 * Cancels the request.
+	 *
+	 * @return bool Success
+	 *
+	 * @uses FeedWordPress::post()
+	 */
+	public function cancel_requested()
+	{
 		$cancel = FeedWordPress::post( 'cancel' );
 		return ( $cancel === __( FWP_CANCEL_BUTTON ) );
 	}
-	public function multiadd_requested () {
+
+	/**
+	 * Adds multiple requests.
+	 *
+	 * @return bool Success
+	 *
+	 * @uses FeedWordPress::post()
+	 */
+	public function multiadd_requested()
+	{
 		$multiadd = FeedWordPress::post( 'multiadd' );
 		return ( $multiadd === FWP_SYNDICATE_NEW );
 	}
-	public function multiadd_confirm_requested () {
+
+	/**
+	 * Confirms that multiple requests were added.
+	 *
+	 * @return bool Success
+	 *
+	 * @uses FeedWordPress::post()
+	 */
+	public function multiadd_confirm_requested()
+	{
 		$confirm = FeedWordPress::post( 'confirm' );
 		return ( $confirm === 'multiadd' );
 	}
 
-	function accept_multiadd () {
-
+	/**
+	 * Accepts multiple requests that were added.
+	 *
+	 * @return bool Always true
+	 *
+	 * @uses FeedWordPress::post()
+	 * @uses FeedWordPress::syndicate_link()
+	 * @uses FeedWordPressCompatibility::validate_http_request()
+	 */
+	function accept_multiadd()
+	{
 		if ( $this->cancel_requested() ) :
 			return true; // Continue ....
 		endif;
@@ -231,11 +336,11 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			endif;
 			print "</div>\n";
 
-		elseif (is_array($in) or strlen($in) > 0) :
+		elseif ( is_array( $in ) or strlen( $in ) > 0 ) :
 			add_meta_box(
 				/*id=*/ 'feedwordpress_multiadd_box',
-				/*title=*/ __('Add Feeds'),
-				/*callback=*/ array($this, 'multiadd_box'),
+				/*title=*/ __( 'Add Feeds' ),
+				/*callback=*/ array( $this, 'multiadd_box' ),
 				/*page=*/ $this->meta_box_context(),
 				/*context =*/ $this->meta_box_context()
 			);
@@ -243,41 +348,63 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		return true; // Continue...
 	}
 
-	function display_multiadd_line ($line) {
-		$short_feed = feedwordpress_display_url($line['feed']);
-		$feed = $line['feed'];
-		$link = $line['link'];
+	/**
+	 * Emits HTML for multiple added lines.
+	 *
+	 * @param array $line	Line item to be displayed.
+	 */
+	function display_multiadd_line( $line )
+	{
+		$short_feed = feedwordpress_display_url( $line['feed'] );
+		$feed  = $line['feed'];
+		$link  = $line['link'];
 		$title = $line['title'];
 		$i = $line['i'];
 
-		print "<li><label><input type='checkbox' name='multilookup[".esc_attr($i)."][add]' value='yes'";
-		if (strlen($line['checked']) > 0) :
+		print "<li><label><input type='checkbox' name='multilookup[" . esc_attr( $i ) . "][add]' value='yes'";
+		if ( strlen( $line['checked'] ) > 0 ) :
 			print ' checked="checked" ';
 		endif;
-		print "/> ".esc_html($title)."</label> &middot; <a href='".esc_url($feed)."'>".esc_html($short_feed)."</a>";
+		print "/> " . esc_html( $title ) . "</label> &middot; <a href='"
+			. esc_url($feed) . "'>" . esc_html( $short_feed ) . "</a>";
 
-		if (isset($line['extra'])) :
-			print " &middot; ".esc_html($line['extra']);
+		if ( isset( $line['extra']) ) :
+			print " &middot; " . esc_html( $line['extra'] );
 		endif;
 
-		print "<input type='hidden' name='multilookup[".esc_attr($i)."][url]' value='".esc_attr($feed)."' />
-			<input type='hidden' name='multilookup[".esc_attr($i)."][link]' value='".esc_attr($link)."' />
-			<input type='hidden' name='multilookup[".esc_attr($i)."][title]' value='".esc_attr($title)."' />
-			</li>\n";
+		print
+			"<input type='hidden' name='multilookup[" . esc_attr( $i ) . "][url]' value='"   . esc_attr( $feed )  . "' />
+			 <input type='hidden' name='multilookup[" . esc_attr( $i ) . "][link]' value='"  . esc_attr( $link )  . "' />
+			 <input type='hidden' name='multilookup[" . esc_attr( $i ) . "][title]' value='" . esc_attr( $title ) . "' />
+		</li>\n";
 
 		flush();
 	}
 
-	function multiadd_box ($page, $box = NULL) {
-
+	/**
+	 * Emits HTML for the box that allows adding multiple sources.
+	 *
+	 * @param  int 			$page	Unknown and unused.
+	 * @param  string|null  $box    Unknown and unused.
+	 *
+	 * @return bool 		Always true
+	 *
+	 * @uses file_get_contents()
+	 * @uses FeedFinder
+	 * @uses FeedWordPress::fetch()
+	 * @uses FeedWordPress::post()
+	 * @uses FeedWordPressCompatibility::stamp_nonce()
+	 */
+	function multiadd_box($page, $box = NULL)
+	{
 		$localData = NULL;
 
-		if (isset($_FILES['opml_upload']['name']) and
-		(strlen($_FILES['opml_upload']['name']) > 0)) :
+		if  ( isset(  $_FILES['opml_upload']['name'] )
+		and ( strlen( $_FILES['opml_upload']['name'] ) > 0 ) ) :
 			$in = 'tag:localhost';
 
 			/*FIXME: check whether $_FILES['opml_upload']['error'] === UPLOAD_ERR_OK or not...*/
-			$localData = file_get_contents($_FILES['opml_upload']['tmp_name']);
+			$localData = file_get_contents( $_FILES['opml_upload']['tmp_name'] );
 			$merge_all = true;
 		elseif ( ! is_null( FeedWordPress::post( 'multilookup' ) ) ) :
 			$in = FeedWordPress::post( 'multilookup' );
@@ -290,7 +417,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			$merge_all = false;
 		endif;
 
-		if (strlen($in) > 0) :
+		if ( strlen( $in ) > 0 ) :
 			$lines = preg_split(
 				"/\s+/",
 				$in,
@@ -300,38 +427,38 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 			$i = 0;
 			?>
-			<!-- Page: <?=$page?> Box: <?=$box?:'(empty)'?> -->
-			<form id="multiadd-form" action="<?php print esc_attr($this->form_action()); ?>" method="post">
-			<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
-			<input type="hidden" name="multiadd" value="<?php print esc_attr(FWP_SYNDICATE_NEW); ?>" />
+			<!-- Page: <? echo $page; ?> Box: <? echo $box ?: '(empty)'; ?> -->
+			<form id="multiadd-form" action="<?php print esc_attr( $this->form_action() ); ?>" method="post">
+			<div><?php FeedWordPressCompatibility::stamp_nonce( 'feedwordpress_feeds' ); ?>
+			<input type="hidden" name="multiadd" value="<?php print esc_attr( FWP_SYNDICATE_NEW ); ?>" />
 			<input type="hidden" name="confirm" value="multiadd" />
 
-			<input type="hidden" name="multiadd" value="<?php print esc_attr(FWP_SYNDICATE_NEW); ?>" />
+			<input type="hidden" name="multiadd" value="<?php print esc_attr( FWP_SYNDICATE_NEW ); ?>" />
 			<input type="hidden" name="confirm" value="multiadd" /></div>
 
 			<div id="multiadd-status">
-			<p><img src="<?php print esc_url ( admin_url( 'images/wpspin_light.gif' ) ); ?>" alt="" />
+			<p><img src="<?php print esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" alt="" />
 			Looking up feed information...</p>
 			</div>
 
 			<div id="multiadd-buttons">
-			<input type="submit" class="button" name="cancel" value="<?php _e(FWP_CANCEL_BUTTON); ?>" />
-			<input type="submit" class="button-primary" value="<?php print _e('Subscribe to selected sources →'); ?>" />
+			<input type="submit" class="button" name="cancel" value="<?php _e( FWP_CANCEL_BUTTON ); ?>" />
+			<input type="submit" class="button-primary" value="<?php print _e( 'Subscribe to selected sources →' ); ?>" />
 			</div>
 
-			<p><?php _e('Here are the feeds that FeedWordPress has discovered from the addresses that you provided. To opt out of a subscription, unmark the checkbox next to the feed.'); ?></p>
+			<p><?php _e( 'Here are the feeds that FeedWordPress has discovered from the addresses that you provided. To opt out of a subscription, unmark the checkbox next to the feed.' ); ?></p>
 
 			<?php
 			print "<ul id=\"multiadd-list\">\n"; flush();
-			foreach ($lines as $line) :
-				$url = trim($line);
-				if (strlen($url) > 0) :
+			foreach ( $lines as $line ) :
+				$url = trim( $line );
+				if ( strlen( $url ) > 0) :
 					// First, use FeedFinder to check the URL.
-					if (is_null($localData)) :
-						$finder = new FeedFinder($url, /*verify=*/ false, /*fallbacks=*/ 1);
+					if ( is_null( $localData ) ) :
+						$finder = new FeedFinder( $url, /*verify=*/ false, /*fallbacks=*/ 1 );
 					else :
-						$finder = new FeedFinder('tag:localhost', /*verify=*/ false, /*fallbacks=*/ 1);
-						$finder->upload_data($localData);
+						$finder = new FeedFinder( 'tag:localhost', /*verify=*/ false, /*fallbacks=*/ 1 );
+						$finder->upload_data( $localData );
 					endif;
 
 					$feeds = array_values(
@@ -341,10 +468,10 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 					);
 
 					$found = false;
-					if (count($feeds) > 0) :
-						foreach ($feeds as $feed) :
-							$pie = FeedWordPress::fetch($feed);
-							if (!is_wp_error($pie)) :
+					if ( count( $feeds ) > 0 ) :
+						foreach ( $feeds as $feed ) :
+							$pie = FeedWordPress::fetch( $feed );
+							if ( !is_wp_error( $pie ) ) :
 								$found = true;
 
 								$this->display_multiadd_line(array(
@@ -357,22 +484,22 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 								$i++; // Increment field counter
 
-								if (!$merge_all) : // Break out after first find
+								if ( !$merge_all ) : // Break out after first find
 									break;
 								endif;
 							endif;
 						endforeach;
 					endif;
 
-					if (!$found) :
-						$this->display_multiadd_line(array(
+					if ( !$found ) :
+						$this->display_multiadd_line( array(
 							'feed' => $url,
-							'title' => feedwordpress_display_url($url),
+							'title' => feedwordpress_display_url( $url ),
 							'extra' => " [FeedWordPress couldn't detect any feeds for this URL.]",
 							'link' => NULL,
 							'checked' => '',
 							'i' => $i,
-						));
+						) );
 						$i++; // Increment field counter
 					endif;
 				endif;
@@ -394,9 +521,15 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		return true; // Continue
 	}
 
-	function display ()
+	/**
+	 * Displays the main syndication page.
+	 *
+	 * @uses FeedWordPress::needs_upgrade()
+	 * @uses FeedWordPress::param()
+	 */
+	function display()
 	{
-		if (FeedWordPress::needs_upgrade()) :
+		if ( FeedWordPress::needs_upgrade() ) :
 			fwp_upgrade_page();
 			return;
 		endif;
@@ -418,25 +551,25 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			if ( method_exists( $this, $method ) ) :
 				$cont = $this->{$method}();
 			else :
-				$cont = call_user_func($method);
+				$cont = call_user_func( $method );
 			endif;
 		elseif ( $this->multiadd_requested() ) :
 			$cont = $this->accept_multiadd();
 		endif;
 
-		if ( $cont ):
-			$links = $this->sources('Y');
-			$potential_updates = (!$this->show_inactive() and (count($this->sources('Y')) > 0));
+		if ( $cont ) :
+			$links = $this->sources( 'Y' );	// side-effect of getting _sources instantiated... (gwyneth 20230916)
+			$potential_updates = ( !$this->show_inactive() and ( count( $this->sources( 'Y' ) ) > 0 ) );
 
-			$this->open_sheet('Syndicated Sites');
+			$this->open_sheet( 'Syndicated Sites' );
 			?>
 			<div id="post-body">
 			<?php
-			if ($potential_updates
-			or (count($this->updates_requested()) > 0)) :
+			if ( $potential_updates
+			or ( count( $this->updates_requested() ) > 0 ) ) :
 				add_meta_box(
 					/*id=*/ 'feedwordpress_update_box',
-					/*title=*/ __('Update feeds now'),
+					/*title=*/ __( 'Update feeds now' ),
 					/*callback=*/ 'fwp_syndication_manage_page_update_box',
 					/*page=*/ $this->meta_box_context(),
 					/*context =*/ $this->meta_box_context()
@@ -444,23 +577,22 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 			endif;
 			add_meta_box(
 				/*id=*/ 'feedwordpress_feeds_box',
-				/*title=*/ __('Syndicated sources'),
-				/*callback=*/ array($this, 'syndicated_sources_box'),
+				/*title=*/ __( 'Syndicated sources' ),
+				/*callback=*/ array( $this, 'syndicated_sources_box' ),
 				/*page=*/ $this->meta_box_context(),
 				/*context =*/ $this->meta_box_context()
 			);
 
-			do_action('feedwordpress_admin_page_syndication_meta_boxes', $this);
+			do_action( 'feedwordpress_admin_page_syndication_meta_boxes', $this );
 		?>
-			<!-- Links: <?php var_dump($links); ?> -->
 			<div class="metabox-holder">
 			<?php
-				do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
+				do_meta_boxes( $this->meta_box_context(), $this->meta_box_context(), $this );
 			?>
 			</div> <!-- class="metabox-holder" -->
 			</div> <!-- id="post-body" -->
 
-			<?php $this->close_sheet(/*dispatch=*/ NULL); ?>
+			<?php $this->close_sheet( /*dispatch=*/ NULL ); ?>
 
 			<div style="display: none">
 			<div id="tags-input"></div> <!-- avoid JS error from WP 2.5 bug -->
@@ -469,10 +601,16 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressSyndicationPage::display () */
 
-	function dashboard_box ($page, $box = NULL)
+	/**
+	 * Displays the dashboard box.
+	 *
+	 * @param  int			$page	Unknown usage.
+	 * @param  array|null   $box    Unknown usage.
+	 */
+	function dashboard_box($page, $box = NULL)
 	{
-		$links = FeedWordPress::syndicated_links(array("hide_invisible" => false));
-		$sources = $this->sources('*');
+		$links = FeedWordPress::syndicated_links( array( "hide_invisible" => false ) );	// what is $links for? (gwyneth 20230916)
+		$sources = $this->sources( '*' );	// uses side-effects to initialise _sources (gwyneth 20230916)
 
 		/** @var string  what is this used for? (gwyneth 20230915) */
 		$visibility   = 'Y';
@@ -492,7 +630,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		endif;
 		// Hey ho, let's go...
 		?>
-		<!-- Page: <?=$page?> Box: <?=$box?:'(empty)'?> Links: <?php var_dump($links); ?> -->
+		<!-- Page: <? echo $page; ?> Box: <? echo $box ?: '(empty)'; ?> -->
 		<div style="float: left; background: /* #F5F5F5 */ white; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url(plugins_url(/* "feedwordpress.png" */ "assets/images/icon.svg", __FILE__ ) ); ?>" width="36px" height="36px" alt="FeedWordPress Logo" /></a></div>
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;">Managed by <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
 		<?php print esc_html(FEEDWORDPRESS_VERSION); ?>.</p>
@@ -574,7 +712,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 	 */
 	function syndicated_sources_box ($page, $box = NULL) {
 
-		$links = FeedWordPress::syndicated_links(array("hide_invisible" => false));
+		$links = FeedWordPress::syndicated_links(array("hide_invisible" => false));	// what is $links for? (gwyneth 20230916)
 		$sources = $this->sources('*');
 
 		$visibility = $this->visibility_toggle();
@@ -584,7 +722,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		$formHref = sprintf( '%s&amp;visibility=%s', $hrefPrefix, urlencode($visibility) );
 		?>
 		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-		<!-- Links: <?php var_dump($links); ?> Page: <?=$page?> Box: <?=$box?:'(null)'?>
+		<!-- Page: <? echo $page ?> Box: <? echo $box?:'(null)'?>
 		<div class="tablenav">
 
 		<div id="add-multiple-uri" class="hide-if-js">
@@ -712,7 +850,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 	function bleg_thanks ($page, $box = NULL) {
 		?>
-		<!-- Page: <?=$page?> Box: <?=$box?:'(empty)'?> -->
+		<!-- Page: <? echo $page; ?> Box: <? echo $box ?: '(empty)'; ?> -->
 		<div class="donation-thanks">
 		<h4>Thank you!</h4>
 		<p><strong>Thank you</strong> for your contribution to <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a> development.
@@ -739,7 +877,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
         t.parentNode.insertBefore(s, t);
     })();
 /* ]]> */</script>
-<!-- Page is: <?=$page?> Box is: <?=$box?:'(null)'?> -->
+<!-- Page is: <? echo $page; ?> Box is: <? echo $box?:'(null)'?> -->
 <div class="donation-form">
 <h4>Consider a Donation to FeedWordPress</h4>
 <form action="https://www.paypal.com/cgi-bin/webscr" accept-charset="UTF-8" method="post"><div>
