@@ -4,50 +4,66 @@
  * WordPress administrative / settings interface.
  */
 class FeedWordPressSettingsUI {
-	static function is_admin () {
-
+	/**
+	 * Checks if current user is an administrator with permissions to
+	 * see the FWP dashboard.
+	 *
+	 * @return bool True if current user is an administrator.
+	 *
+	 * @uses is_admin()
+	 * @uses FeedWordPress::path()
+	 * @uses MyPHP::request()
+	 */
+	static function is_admin() {
 		$admin_page = false; // Innocent until proven guilty
-		if ( !is_null(MyPHP::request('page'))) :
-			$fwp = preg_quote(FeedWordPress::path());
+		if ( ! is_null( MyPHP::request( 'page' ) ) ) :
+			$fwp = preg_quote( FeedWordPress::path() );
 			$admin_page = (
 				is_admin()
-				and preg_match("|^${fwp}/|", MyPHP::request('page'))
+				and preg_match( "|^${fwp}/|", MyPHP::request( 'page' ) )
 			);
 		endif;
 		return $admin_page;
 	}
 
-	static function admin_scripts () {
-		wp_enqueue_script('post'); // for magic tag and category boxes
-		wp_enqueue_script('admin-forms'); // for checkbox selection
+	/**
+	 * Enqueues JavaScript for the administration dashboard.
+	 */
+	static function admin_scripts() {
+		wp_enqueue_script( 'post' ); // for magic tag and category boxes
+		wp_enqueue_script( 'admin-forms' ); // for checkbox selection
 
-		wp_register_script('feedwordpress-elements', plugins_url('assets/js/feedwordpress-elements.js', __FILE__ ) );
-		wp_enqueue_script('feedwordpress-elements');
+		wp_register_script( 'feedwordpress-elements', plugins_url( 'assets/js/feedwordpress-elements.js', __FILE__ ) );
+		wp_enqueue_script( 'feedwordpress-elements' );
 	}
 
-	static function admin_styles () {
-		/* TODO: At some point in the future, these ought to be changed to modern designs,
-			i.e. either Dashicons or the upcoming SVG icon fonts (gwyneth 20210717) */
+	/**
+	 * Sets the CSS for the administration dashboard.
+	 *
+	 * 	@todo At some point in the future, these ought to be changed to modern designs,
+	 * 	i.e. either Dashicons or the upcoming SVG icon fonts. (gwyneth 20210717)
+	 */
+	static function admin_styles() {
 		?>
 		<style type="text/css">
 		#feedwordpress-admin-feeds .link-rss-params-remove .x, .feedwordpress-admin .remove-it .x {
-			background: url(<?php print admin_url('images/xit.gif') ?>) no-repeat scroll 0 0 transparent;
+			background: url(<?php print admin_url( 'images/xit.gif' ) ?>) no-repeat scroll 0 0 transparent;
 		}
 		#feedwordpress-admin-feeds .link-rss-params-remove:hover .x, .feedwordpress-admin .remove-it:hover .x {
-			background: url(<?php print admin_url('images/xit.gif') ?>) no-repeat scroll -10px 0 transparent;
+			background: url(<?php print admin_url( 'images/xit.gif' ) ?>) no-repeat scroll -10px 0 transparent;
 		}
 
 		/* Note: the old images referred here were deprecated around 2009 or so and are *not*
 			part of the WordPress core any more; see https://core.trac.wordpress.org/ticket/20980
 			I have placed these missing images on the images folder instead (gwyneth 20210717) */
 		.fwpfs {
-			background-image: url(<?php /* print admin_url('images/fav.png'); */ echo plugins_url('assets/images/fav.png', __FILE__); ?>);
+			background-image: url(<?php /* print admin_url('images/fav.png'); */ echo plugins_url( 'assets/images/fav.png', __FILE__ ); ?>);
 			background-repeat: repeat-x;
 			background-position: left center;
 			background-attachment: scroll;
 		}
 		.fwpfs.slide-down {
-			background-image: url(<?php /* print admin_url('images/fav-top.png'); */  echo plugins_url('assets/images/fav-top.png', __FILE__); ?>);
+			background-image: url(<?php /* print admin_url('images/fav-top.png'); */  echo plugins_url( 'assets/images/fav-top.png', __FILE__ ); ?>);
 			background-position: 0 top;
 			background-repeat: repeat-x;
 		}
@@ -59,8 +75,13 @@ class FeedWordPressSettingsUI {
 		<?php
 	} /* FeedWordPressSettingsUI::admin_styles () */
 
-	static function ajax_nonce_fields () {
-		if (function_exists('wp_nonce_field')) :
+	/**
+	 * Makes sure we have nonce active.
+	 *
+	 * @uses wp_nonce_field()
+	 */
+	static function ajax_nonce_fields() {
+		if ( function_exists( 'wp_nonce_field' ) ) :
 			echo "<form style='display: none' method='get' action=''>\n<p>\n";
 			wp_nonce_field( 'closedpostboxes', 'closedpostboxesnonce', false );
 			wp_nonce_field( 'meta-box-order', 'meta-box-order-nonce', false );
@@ -94,7 +115,7 @@ class FeedWordPressSettingsUI {
 	 * @param string $name The name of the specialized template
 	 * @param array $args Additional arguments passed to the template.
 	 */
-	static public function get_template_part ( $slug, $name = null, $type = null, $args = array() ) {
+	static public function get_template_part( $slug, $name = null, $type = null, $args = array() ) {
 		global $feedwordpress;
 
 		do_action( "feedwordpress_get_template_part_${slug}", $slug, $name, $type, $args );
@@ -104,11 +125,11 @@ class FeedWordPressSettingsUI {
 		$type = (string) $type;
 
 		$ext = ".php";
-		if ( strlen($type) > 0 ):
+		if ( strlen( $type ) > 0 ):
 			$ext = ".${type}${ext}";
 		endif;
 
-		if ( strlen($name) > 0 ) :
+		if ( strlen( $name ) > 0 ) :
 			$templates[] = "${slug}-${name}${ext}";
 		endif;
 		$templates[] = "${slug}${ext}";
@@ -119,7 +140,7 @@ class FeedWordPressSettingsUI {
 		$located = '';
 		foreach ( $templates as $template_name ) :
 			if ( !! $template_name ) :
-				$templatePath = $feedwordpress->plugin_dir_path('templates/' . $template_name);
+				$templatePath = $feedwordpress->plugin_dir_path( 'templates/' . $template_name );
 				if ( is_readable( $templatePath ) ) :
 					$located = $templatePath;
 					break;
@@ -127,28 +148,38 @@ class FeedWordPressSettingsUI {
 			endif;
 		endforeach;
 
-		if ( strlen($located) > 0 ) :
+		if ( strlen( $located ) > 0 ) :
 			load_template( $located, /*require_once=*/ false, /*args=*/ $args );
 		endif;
 	} /* FeedWordPressSettingsUI::get_template_part () */
 
-	static function magic_input_tip_js ($id) {
-			if ( !preg_match('/^[.#]/', $id)) :
-				$id = '#'.$id;
+	/**
+	 * Generates contextual hovering text with tips for the form fields.
+	 *
+	 * How exactly this works is beyond myself. (gwyneth 20230916)
+	 *
+	 * @param string $id Apparently it's the field's id attribute.
+	 *
+	 */
+	static function magic_input_tip_js( $id ) {
+			if ( ! preg_match( '/^[.#]/', $id ) ) :
+				$id = '#' . $id;
 			endif;
 		?>
 			<script type="text/javascript">
-			jQuery(document).ready( function () {
-				var inputBox = jQuery("<?php print esc_attr( $id ); ?>");
-				var boxEl = inputBox.get(0);
-				if (boxEl.value==boxEl.defaultValue) { inputBox.addClass('form-input-tip'); }
+			jQuery( document ).ready( function () {
+				var inputBox = jQuery( "<?php print esc_attr( $id ); ?>" );
+				var boxEl = inputBox.get( 0 );
+				if ( boxEl.value == boxEl.defaultValue ) {
+					inputBox.addClass( 'form-input-tip' );
+				}
 				inputBox.focus(function() {
 					if ( this.value == this.defaultValue )
-						jQuery(this).val( '' ).removeClass( 'form-input-tip' );
+						jQuery( this ).val( '' ).removeClass( 'form-input-tip' );
 				});
-				inputBox.blur(function() {
+				inputBox.blur( function() {
 					if ( this.value == '' )
-						jQuery(this).val( this.defaultValue ).addClass( 'form-input-tip' );
+						jQuery( this ).val( this.defaultValue ).addClass( 'form-input-tip' );
 				});
 			} );
 			</script>

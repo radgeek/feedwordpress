@@ -631,7 +631,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		// Hey ho, let's go...
 		?>
 		<!-- Page: <? echo $page; ?> Box: <? echo $box ?: '(empty)'; ?> -->
-		<div style="float: left; background: /* #F5F5F5 */ white; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url(plugins_url(/* "feedwordpress.png" */ "assets/images/icon.svg", __FILE__ ) ); ?>" width="36px" height="36px" alt="FeedWordPress Logo" /></a></div>
+		<div style="float: left; background: /* #F5F5F5 */ white; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url( plugins_url( /* "feedwordpress.png" */ "assets/images/icon.svg", __FILE__ ) ); ?>" width="36px" height="36px" alt="FeedWordPress Logo" /></a></div>
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;">Managed by <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
 		<?php print esc_html(FEEDWORDPRESS_VERSION); ?>.</p>
 		<?php if (FEEDWORDPRESS_BLEG) : ?>

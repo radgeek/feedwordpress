@@ -47,7 +47,7 @@ class FeedWordPressAdminPage {
 
 		if (isset($this->pagenames[$context])) :
 			$name = $this->pagenames[$context];
-		elseif (isset($tis->pagenames['default'])) :
+		elseif (isset($this->pagenames['default'])) :
 			$name = $this->pagenames['default'];
 		else :
 			$name = $this->pageslug();
@@ -380,18 +380,24 @@ class FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
 
-	public function display_sheet_header ($pagename = 'Syndication', $all = false) {
+	/**
+	 * Displays a header section throughout the FWP dashboard.
+	 *
+	 * @param  string $pagename Page name for which this header is.
+	 * @param  bool   $all      False if it displays just the settings; true if it displays all.
+	 */
+	public function display_sheet_header( $pagename = 'Syndication', $all = false ) {
 	/* changed to use a SVG instead, while keeping the correct size.
 		Note that these icons have been deprecated in 2013 or so:
 		 @see https://core.trac.wordpress.org/ticket/26119 */
 		?>
-		<div class="icon32"><img src="<?php print esc_attr(plugins_url('assets/images/icon.svg', __FILE__)); ?>" alt="FeedWordPress Logo" /></div>
-		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name(/*from feed=*/ false)); ?><?php endif; ?></h2>
+		<div class="icon32"><img src="<?php print esc_attr( plugins_url( 'assets/images/icon.svg', __FILE__ ) ); ?>" alt="FeedWordPress Logo" /></div>
+		<h2><?php print esc_html( __( $pagename . ( $all ? '' : ' Settings' ) ) ); ?><?php if ( $this->for_feed_settings() ) : ?>: <?php echo esc_html( $this->link->name( /*from feed=*/ false ) ); ?><?php endif; ?></h2>
 		<?php
-	}
+	} /* FeedWordPressAdminPage::display_sheet_header() */
 
-	public function display_update_notice_if_updated ($pagename = 'Syndication', $mesg = NULL) {
-		if ( !is_null($mesg)) :
+	public function display_update_notice_if_updated( $pagename = 'Syndication', $mesg = NULL ) {
+		if ( ! is_null( $mesg ) ) :
 			$this->mesg = $mesg;
 		endif;
 

@@ -31,91 +31,93 @@ License: GPL
 ####################################################################################
 
 define ('FEEDWORDPRESS_VERSION', '2022.0222');
-define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contact');
+define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contact' );
 
-if ( ! defined('FEEDWORDPRESS_BLEG')) :
-	define ('FEEDWORDPRESS_BLEG', true);
+if ( ! defined( 'FEEDWORDPRESS_BLEG' ) ) :
+	define ( 'FEEDWORDPRESS_BLEG', true );
 endif;
 
-define('FEEDWORDPRESS_BLEG_BTC_pre_2020', '15EsQ9QMZtLytsaVYZUaUCmrkSMaxZBTso');
-define('FEEDWORDPRESS_BLEG_BTC_2020', '1NB1ebYVb68Har4WijmE8gKnZ47NptCqtB'); // 2020.0201
-define('FEEDWORDPRESS_BLEG_BTC', '1HCDdeGcR66EPxkPT2rbdTd1ezh27pmjPR'); // 2021.0713
+define( 'FEEDWORDPRESS_BLEG_BTC_pre_2020', '15EsQ9QMZtLytsaVYZUaUCmrkSMaxZBTso' );
+define( 'FEEDWORDPRESS_BLEG_BTC_2020', '1NB1ebYVb68Har4WijmE8gKnZ47NptCqtB' ); // 2020.0201
+define( 'FEEDWORDPRESS_BLEG_BTC', '1HCDdeGcR66EPxkPT2rbdTd1ezh27pmjPR' ); // 2021.0713
 
-define('FEEDWORDPRESS_BLEG_PAYPAL', '22PAJZZCK5Z3W');
+define( 'FEEDWORDPRESS_BLEG_PAYPAL', '22PAJZZCK5Z3W' );
 
 // Defaults
-define ('DEFAULT_SYNDICATION_CATEGORY', 'Contributors');
-define ('DEFAULT_UPDATE_PERIOD', 60); // value in minutes
-define ('FEEDWORDPRESS_DEFAULT_CHECKIN_INTERVAL', DEFAULT_UPDATE_PERIOD/10);
+define( 'DEFAULT_SYNDICATION_CATEGORY', 'Contributors' );
+define( 'DEFAULT_UPDATE_PERIOD', 60 ); // value in minutes
+define( 'FEEDWORDPRESS_DEFAULT_CHECKIN_INTERVAL', DEFAULT_UPDATE_PERIOD / 10 );
 
-// Dependencies: modules packaged with FeedWordPress plugin
+// Dependencies: modules packaged with FeedWordPress plugin.
+/** @var string Path to parent directory */
 $dir = dirname( __FILE__ );
-require_once("${dir}/externals/myphp/myphp.class.php");
+require_once "${dir}/externals/myphp/myphp.class.php";
 
-$feedwordpress_debug = FeedWordPress::param( 'feedwordpress_debug', get_option('feedwordpress_debug') );
+/** @var bool|string Set to either true or 'yes' if debugging is set. */
+$feedwordpress_debug = FeedWordPress::param( 'feedwordpress_debug', get_option( 'feedwordpress_debug' ) );
 
-if (is_string($feedwordpress_debug)) :
-	$feedwordpress_debug = ($feedwordpress_debug == 'yes');
+if ( is_string( $feedwordpress_debug ) ) :
+	$feedwordpress_debug = ( $feedwordpress_debug == 'yes' );
 endif;
 
-define ('FEEDWORDPRESS_DEBUG', $feedwordpress_debug);
+define ( 'FEEDWORDPRESS_DEBUG', $feedwordpress_debug );
 $feedwordpress_compatibility = true;
-define ('FEEDWORDPRESS_COMPATIBILITY', $feedwordpress_compatibility);
+define ( 'FEEDWORDPRESS_COMPATIBILITY', $feedwordpress_compatibility );
 
-define ('FEEDWORDPRESS_CAT_SEPARATOR_PATTERN', '/[:\n]/');
-define ('FEEDWORDPRESS_CAT_SEPARATOR', "\n");
+define ( 'FEEDWORDPRESS_CAT_SEPARATOR_PATTERN', '/[:\n]/' );
+define ( 'FEEDWORDPRESS_CAT_SEPARATOR', "\n" );
 
 // define ('FEEDVALIDATOR_URI', 'http://feedvalidator.org/check.cgi');	// Link dead (gwyneth 20210617)
-define ('FEEDVALIDATOR_URI', 'https://validator.w3.org/feed/check.cgi');	// Falling back to the W3C validator link
+define ( 'FEEDVALIDATOR_URI', 'https://validator.w3.org/feed/check.cgi' );	// Falling back to the W3C validator link
 
-define ('FEEDWORDPRESS_FRESHNESS_INTERVAL', 10*60); // Every ten minutes
+define ( 'FEEDWORDPRESS_FRESHNESS_INTERVAL', 10 * 60 ); // Every ten minutes
 
-define('FEEDWORDPRESS_BOILERPLATE_DEFAULT_HOOK_ORDER', 11000); // at the tail end of the filtering process
+define( 'FEEDWORDPRESS_BOILERPLATE_DEFAULT_HOOK_ORDER', 11000 ); // at the tail end of the filtering process
 
-if (FEEDWORDPRESS_DEBUG) :
+if ( FEEDWORDPRESS_DEBUG ) :
 	// Help us to pick out errors, if any.
-	ini_set('error_reporting', E_ALL & ~E_NOTICE);
-	ini_set('display_errors', true);
+	ini_set( 'error_reporting', E_ALL & ~E_NOTICE );
+	ini_set( 'display_errors', true );
 
 	 // When testing we don't want cache issues to interfere. But this is
 	 // a VERY BAD SETTING for a production server. Webmasters will eat your
 	 // face for breakfast if you use it, and the baby Jesus will cry. So
 	 // make sure FEEDWORDPRESS_DEBUG is FALSE for any site that will be
 	 // used for more than testing purposes!
-	define('FEEDWORDPRESS_CACHE_AGE', 1);
-	define('FEEDWORDPRESS_CACHE_LIFETIME', 1);
-	define('FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT', 60);
+	define( 'FEEDWORDPRESS_CACHE_AGE', 1 );
+	define( 'FEEDWORDPRESS_CACHE_LIFETIME', 1 );
+	define( 'FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT', 60 );
 else :
 	// Hold onto data all day for conditional GET purposes,
 	// but consider it stale after 1 min (requiring a conditional GET)
-	define('FEEDWORDPRESS_CACHE_LIFETIME', 24*60*60);
-	define('FEEDWORDPRESS_CACHE_AGE', 1*60);
-	define('FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT', 20);
+	define( 'FEEDWORDPRESS_CACHE_LIFETIME', 24 * 60 * 60 );	// aka one day.
+	define( 'FEEDWORDPRESS_CACHE_AGE', 1 * 60 );
+	define( 'FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT', 20 );
 endif;
 
 ####################################################################################
 ## CORE DEPENDENCIES & PLUGIN MODULES ##############################################
 ####################################################################################
 
-// Dependencies: modules packaged with WordPress core
+/** @var array<string> Dependencies: modules packaged with WordPress core */
 $wpCoreDependencies = array(
-"class:SimplePie" => "class-simplepie",
-"class:WP_SimplePie_File" => "class-wp-simplepie-file",
-"class:WP_SimplePie_Sanitize_KSES" => "class-wp-simplepie-sanitize-kses",
-"function:wp_insert_user" => "registration",
+	"class:SimplePie" => "class-simplepie",
+	"class:WP_SimplePie_File" => "class-wp-simplepie-file",
+	"class:WP_SimplePie_Sanitize_KSES" => "class-wp-simplepie-sanitize-kses",
+	"function:wp_insert_user" => "registration",
 );
 
 // Ensure that we have SimplePie loaded up and ready to go
 // along with the WordPress auxiliary classes.
 $unmetCoreDependencies = array();
-foreach ($wpCoreDependencies as $unit => $fileSlug) :
-	list($unitType, $unitName) = explode(":", $unit, 2);
+foreach ( $wpCoreDependencies as $unit => $fileSlug ) :
+	list( $unitType, $unitName ) = explode( ":", $unit, 2 );
 
-	$dependencyMet = (('class'==$unitType) ? class_exists($unitName) : function_exists($unitName));
-	if ( ! $dependencyMet) :
+	$dependencyMet = ( ('class' == $unitType ) ? class_exists( $unitName ) : function_exists( $unitName ) );
+	if ( ! $dependencyMet ) :
 		$phpFileName = ABSPATH . WPINC . "/${fileSlug}.php";
-		if (file_exists($phpFileName)) :
-			require_once($phpFileName);
+		if ( file_exists( $phpFileName ) ) :
+			require_once $phpFileName;
 		else :
 			$unmetCoreDependencies[] = $unitName;
 		endif;
@@ -123,33 +125,33 @@ foreach ($wpCoreDependencies as $unit => $fileSlug) :
 endforeach;
 
 // Fallback garbage-pail module used in WP < 4.7 which may meet our dependencies
-if (count($unmetCoreDependencies) > 0) :
-	require_once(ABSPATH . WPINC . "/class-feed.php");
+if ( count( $unmetCoreDependencies ) > 0 ) :
+	require_once ABSPATH . WPINC . "/class-feed.php";
 endif;
 
 // Dependencies: modules packaged with FeedWordPress plugin
 $dir = dirname( __FILE__ );
-require_once("${dir}/feedwordpressadminpage.class.php");
-require_once("${dir}/feedwordpresssettingsui.class.php");
-require_once("${dir}/feedwordpressdiagnostic.class.php");
-require_once("${dir}/admin-ui.php");
-require_once("${dir}/template-functions.php");
-require_once("${dir}/feedwordpresssyndicationpage.class.php");
-require_once("${dir}/compatability.php"); // Legacy API
-require_once("${dir}/syndicatedpost.class.php");
-require_once("${dir}/syndicatedlink.class.php");
-require_once("${dir}/feedwordpresshtml.class.php");
-require_once("${dir}/inspectpostmeta.class.php");
-require_once("${dir}/syndicationdataqueries.class.php");
-require_once("${dir}/extend/SimplePie/feedwordpie.class.php");
-require_once("${dir}/extend/SimplePie/feedwordpie_cache.class.php");
-require_once("${dir}/extend/SimplePie/feedwordpie_item.class.php");
-require_once("${dir}/extend/SimplePie/feedwordpie_file.class.php");
-require_once("${dir}/extend/SimplePie/feedwordpie_parser.class.php");
-require_once("${dir}/extend/SimplePie/feedwordpie_content_type_sniffer.class.php");
-require_once("${dir}/feedwordpressrpc.class.php");
-require_once("${dir}/feedwordpresshttpauthenticator.class.php");
-require_once("${dir}/feedwordpresslocalpost.class.php");
+require_once "${dir}/feedwordpressadminpage.class.php";
+require_once "${dir}/feedwordpresssettingsui.class.php";
+require_once "${dir}/feedwordpressdiagnostic.class.php";
+require_once "${dir}/admin-ui.php";
+require_once "${dir}/template-functions.php";
+require_once "${dir}/feedwordpresssyndicationpage.class.php";
+require_once "${dir}/compatability.php"; // Legacy API
+require_once "${dir}/syndicatedpost.class.php";
+require_once "${dir}/syndicatedlink.class.php";
+require_once "${dir}/feedwordpresshtml.class.php";
+require_once "${dir}/inspectpostmeta.class.php";
+require_once "${dir}/syndicationdataqueries.class.php";
+require_once "${dir}/extend/SimplePie/feedwordpie.class.php";
+require_once "${dir}/extend/SimplePie/feedwordpie_cache.class.php";
+require_once "${dir}/extend/SimplePie/feedwordpie_item.class.php";
+require_once "${dir}/extend/SimplePie/feedwordpie_file.class.php";
+require_once "${dir}/extend/SimplePie/feedwordpie_parser.class.php";
+require_once "${dir}/extend/SimplePie/feedwordpie_content_type_sniffer.class.php";
+require_once "${dir}/feedwordpressrpc.class.php";
+require_once "${dir}/feedwordpresshttpauthenticator.class.php";
+require_once "${dir}/feedwordpresslocalpost.class.php";
 
 ####################################################################################
 ## GLOBAL PARAMETERS ###############################################################
@@ -157,12 +159,12 @@ require_once("${dir}/feedwordpresslocalpost.class.php");
 
 // Get the path relative to the plugins directory in which FWP is stored
 preg_match (
-	'|'.preg_quote(WP_PLUGIN_DIR).'/(.+)$|',
-	dirname(__FILE__),
+	'|'.preg_quote( WP_PLUGIN_DIR ) . '/(.+)$|',
+	dirname( __FILE__ ),
 	$ref
 );
 
-if (isset($ref[1])) :
+if ( isset( $ref[1] ) ) :
 	$fwp_path = $ref[1];
 else : // Something went wrong. Let's just guess.
 	$fwp_path = 'feedwordpress';
@@ -173,48 +175,65 @@ endif;
 ####################################################################################
 
 $feedwordpress = new FeedWordPress;
-if ( ! $feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
+if ( ! $feedwordpress->needs_upgrade() ) : // only work if the conditions are safe!
 	$feedwordpress->add_filters();
 
 	# Inbound XML-RPC update methods
 	$feedwordpressRPC = new FeedWordPressRPC;
 
 	# Outbound XML-RPC ping reform
-	remove_action('publish_post', 'generic_ping'); // WP 1.5.x
-	remove_action('do_pings', 'do_all_pings', 10, 1); // WP 2.1, 2.2
-	remove_action('publish_post', '_publish_post_hook', 5, 1); // WP 2.3
+	remove_action( 'publish_post', 'generic_ping' ); // WP 1.5.x
+	remove_action( 'do_pings', 'do_all_pings', 10, 1 ); // WP 2.1, 2.2
+	remove_action( 'publish_post', '_publish_post_hook', 5, 1 ); // WP 2.3
 
-	add_action('publish_post', 'fwp_publish_post_hook', 5, 1);
-	add_action('do_pings', 'fwp_do_pings', 10, 1);
-	add_action('feedwordpress_update', 'fwp_hold_pings');
-	add_action('feedwordpress_update_complete', 'fwp_release_pings');
+	add_action( 'publish_post', 'fwp_publish_post_hook', 5, 1 );
+	add_action( 'do_pings', 'fwp_do_pings', 10, 1 );
+	add_action( 'feedwordpress_update', 'fwp_hold_pings' );
+	add_action( 'feedwordpress_update_complete', 'fwp_release_pings' );
 
 else :
 	# Hook in the menus, which will just point to the upgrade interface
-	add_action('admin_menu', array($feedwordpress, 'add_pages'));
+	add_action( 'admin_menu', array( $feedwordpress, 'add_pages' ) );
 endif; // if ( !FeedWordPress::needs_upgrade())
 
-register_deactivation_hook(__FILE__, 'feedwordpress_deactivate');
-function feedwordpress_deactivate () {
-	wp_clear_scheduled_hook('fwp_scheduled_update_checkin');
+register_deactivation_hook( __FILE__, 'feedwordpress_deactivate' );
+
+/**
+ * Hook to deactivate FeedWordPress.
+ *
+ * @return int|false @see wp_clear_scheduled_hook()
+ */
+function feedwordpress_deactivate() {
+	wp_clear_scheduled_hook( 'fwp_scheduled_update_checkin' );
 } /* feedwordpress_deactivate () */
 
 ################################################################################
 ## LOGGING FUNCTIONS: log status updates to error_log if you want it ###########
 ################################################################################
 
-function debug_out_human_readable_bytes ($quantity) {
+/**
+ * Divides bytes into units of higher magnitude (e.g KB, MB, etc).
+ *
+ * @param  int|string $quantity Quantity in bytes to be displayed. Can be a string that only includes numeric digots.
+ *
+ * @return string Formatted string with quantity and unit.
+ */
+function debug_out_human_readable_bytes( $quantity ) {
+	if ( ! is_numeric( $quantity ) ) :
+		return __( "(wrong quantity)" );
+	endif;
 	$quantity = (int) $quantity;
 	$magnitude = 'B';
-	$orders = array('KB', 'MB', 'GB', 'TB');
-	while (($quantity > (1024*100)) and (count($orders) > 0)) :
-		$quantity = floor($quantity / 1024);
-		$magnitude = array_shift($orders);
+	/** @var array Two-letter abbreviations of the units in increasing magnitude. */
+	$orders = array( 'KB', 'MB', 'GB', 'TB' );
+	while ( ($quantity > ( 1024 * 100 ) ) and ( count( $orders ) > 0 ) ) :
+		$quantity = floor( $quantity / 1024 );
+		$magnitude = array_shift( $orders );
 	endwhile;
 	return "${quantity} ${magnitude}";
 }
 
-function debug_out_feedwordpress_footer () {
+function debug_out_feedwordpress_footer() {
 	if (FeedWordPressDiagnostic::is_on('memory_usage')) :
 		if (function_exists('memory_get_usage')) :
 			FeedWordPress::diagnostic ('memory_usage', "Memory: Current usage: ".debug_out_human_readable_bytes(memory_get_usage()));
@@ -301,7 +320,7 @@ function feedwordpress_item_feed_data () {
  * @global $id
  * @global $feedwordpress_the_original_permalink
  */
-function syndication_permalink ($permalink = '', $post = null, $leavename = false, $sample = false) {
+function syndication_permalink($permalink = '', $post = null, $leavename = false, $sample = false ) {
 	global $id;
 	global $feedwordpress_the_original_permalink;
 
@@ -2150,10 +2169,16 @@ class FeedWordPress {
 		return $ret;
 	} /* FeedWordPress::ready_to_email_diagnostics () */
 
-	public function email_diagnostic_log ($params = array()) {
-		$params = wp_parse_args($params, array(
-		"force" => false,
-		));
+	/**
+	 * Emails a diagnostic log to the WP administrator.
+	 	 *
+	 * @param  Array $params See @wp_parse_args()
+	 *
+	 */
+	public function email_diagnostic_log( $params = array() ) {
+		$params = wp_parse_args( $params, array(
+			"force" => false,
+		) );
 
 		$dlog = get_option('feedwordpress_diagnostics_log', array());
 
@@ -2172,7 +2197,7 @@ class FeedWordPress {
 						$body .= "<h2>".ucfirst($sect)." issues</h2>\n"
 							."<table>\n"
 							."<thead><tr>\n";
-						foreach ($paradigm as $col => $value) :
+						foreach ( $paradigm as $col => $value ) :
 							$body .= '<th scope="col">'.$col."</th>\n";
 						endforeach;
 						$body .= "</tr></thead>\n"
@@ -2283,10 +2308,11 @@ EOMAIL;
 			);
 		endif;
 
-		update_option('feedwordpress_diagnostics_log', $dlog);
+		update_option( 'feedwordpress_diagnostics_log', $dlog );
 	} /* FeedWordPress::email_diagnostic_log () */
 
-	static function allow_html_mail () {
+
+	static function allow_html_mail() {
 		return 'text/html';
 	} /* FeedWordPress::allow_html_mail () */
 
