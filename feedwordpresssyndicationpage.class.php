@@ -484,14 +484,14 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 
 								$i++; // Increment field counter
 
-								if ( !$merge_all ) : // Break out after first find
+								if ( ! $merge_all ) : // Break out after first find
 									break;
 								endif;
 							endif;
 						endforeach;
 					endif;
 
-					if ( !$found ) :
+					if ( ! $found ) :
 						$this->display_multiadd_line( array(
 							'feed' => $url,
 							'title' => feedwordpress_display_url( $url ),
@@ -559,7 +559,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 
 		if ( $cont ) :
 			$links = $this->sources( 'Y' );	// side-effect of getting _sources instantiated... (gwyneth 20230916)
-			$potential_updates = ( !$this->show_inactive() and ( count( $this->sources( 'Y' ) ) > 0 ) );
+			$potential_updates = ( ! $this->show_inactive() and ( count( $this->sources( 'Y' ) ) > 0 ) );
 
 			$this->open_sheet( 'Syndicated Sites' );
 			?>
@@ -647,7 +647,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		<li><strong>Scheduled:</strong> <?php print esc_html($update_setting); ?>
 		(<a href="<?php print esc_url($this->form_action('feeds-page.php')); ?>">change setting</a>)</li>
 
-		<li><?php if (!is_null($lastUpdate)) : ?>
+		<li><?php if ( !is_null($lastUpdate)) : ?>
 		<strong>Last checked:</strong> <?php print esc_html(fwp_time_elapsed($lastUpdate)); ?>
 		<?php else : ?>
 		<strong>Last checked:</strong> none yet
@@ -821,7 +821,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		$hrefN = sprintf( "%s&amp;visibility=%s", $hrefPrefix, "N" );
 ?>
 	<ul class="subsubsub">
-	<li><a <?php if (!$showInactive) : ?>class="current" <?php endif; ?>href="<?php print esc_url( $hrefY ); ?>">Subscribed
+	<li><a <?php if ( ! $showInactive) : ?>class="current" <?php endif; ?>href="<?php print esc_url( $hrefY ); ?>">Subscribed
 	<span class="count">(<?php print count($sources['Y']); ?>)</span></a></li>
 	<?php if ($showInactive or (count($sources['N']) > 0)) : ?>
 	<li><a <?php if ($showInactive) : ?>class="current" <?php endif; ?>href="<?php print esc_url( $hrefN ); ?>">Inactive</a>
@@ -1026,7 +1026,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 			$errs = array();
 			foreach ($alter as $sql) :
 				$result = $wpdb->query($sql);
-				if (!$result):
+				if ( ! $result):
 					$errs[] = $wpdb->last_error;
 				endif;
 			endforeach;
@@ -1085,7 +1085,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 	and all the posts from this feed in the database, but don't syndicate any
 	new posts from the feed.)</span></label></li>
 	<?php endif; ?>
-	<li><input type="radio" id="nuke-<?php echo esc_attr($link->link_id); ?>"<?php if (!$subscribed) : ?> checked="checked"<?php endif; ?>
+	<li><input type="radio" id="nuke-<?php echo esc_attr($link->link_id); ?>"<?php if ( ! $subscribed) : ?> checked="checked"<?php endif; ?>
 	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="nuke" />
 	<label for="nuke-<?php echo esc_attr($link->link_id); ?>">Delete this syndicated link and all the
 	posts that were syndicated from it</label></li>
@@ -1151,7 +1151,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 			$errs = array();
 			foreach ($alter as $sql) :
 				$result = $wpdb->query($sql);
-				if (!$result):
+				if ( ! $result):
 					$errs[] = $wpdb->last_error;
 				endif;
 			endforeach;
@@ -1185,7 +1185,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 	<?php
 		foreach ($targets as $link) :
 			$subscribed = ('Y' == strtoupper($link->link_visible));
-			if (!$subscribed) :
+			if ( ! $subscribed) :
 	?>
 	<fieldset>
 	<legend><?php echo esc_html($link->link_name); ?></legend>
@@ -1274,7 +1274,7 @@ updated to &lt;<a href="<?php echo esc_html( $feed ); ?>"><?php echo esc_html( $
 
 		if (isset($existingLink)) :
 			$auth = FeedWordPress::post('link_rss_auth_method');
-			if (!is_null($auth) and (strlen($auth) > 0) and ($auth != '-')) :
+			if ( !is_null($auth) and (strlen($auth) > 0) and ($auth != '-')) :
 				$existingLink->update_setting('http auth method', $auth);
 				$existingLink->update_setting('http username',
 					FeedWordPress::post('link_rss_username')
@@ -1291,7 +1291,7 @@ updated to &lt;<a href="<?php echo esc_html( $feed ); ?>"><?php echo esc_html( $
 			$existingLink->save_settings(/*reload=*/ true);
 		endif;
 
-		if (!$changed) :
+		if ( ! $changed) :
 			?>
 	<div class="updated"><p>Nothing was changed.</p></div>
 			<?php
@@ -1334,14 +1334,14 @@ function fwp_dashboard_update_if_requested ($object) {
 		echo "<ul>\n";
 		$tdelta = NULL;
 		foreach ($update_set as $uri) :
-			if (!is_null($crash_ts) and (time() > $crash_ts)) :
+			if ( !is_null($crash_ts) and (time() > $crash_ts)) :
 				echo "<li><p><strong>Further updates postponed:</strong> update time limit of ".$crash_dt." second".(($crash_dt==1)?"":"s")." exceeded.</p></li>";
 				break;
 			endif;
 
 			if ($uri == '*') : $uri = NULL; endif;
 			$delta = $feedwordpress->update($uri, $crash_ts);
-			if (!is_null($delta)) :
+			if ( !is_null($delta)) :
 				if (is_null($tdelta)) :
 					$tdelta = $delta;
 				else :
@@ -1356,7 +1356,7 @@ function fwp_dashboard_update_if_requested ($object) {
 		endforeach;
 		echo "</ul>\n";
 
-		if (!is_null($tdelta)) :
+		if ( !is_null($tdelta)) :
 			echo "<p><strong>Update complete.</strong>".fwp_update_set_results_message($delta)."</p>";
 			echo "\n"; flush();
 		endif;
@@ -1377,7 +1377,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 		$bleg_box_hidden = 'permanent';
 	endif;
 
-	if (!is_null($bleg_box_hidden)) :
+	if ( !is_null($bleg_box_hidden)) :
 		update_option('feedwordpress_bleg_box_hidden', $bleg_box_hidden);
 	else :
 		$bleg_box_hidden = get_option('feedwordpress_bleg_box_hidden');
@@ -1385,7 +1385,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 ?>
 	<?php
 	$bleg_box_ready = (FEEDWORDPRESS_BLEG and (
-		!$bleg_box_hidden
+		! $bleg_box_hidden
 		or (is_numeric($bleg_box_hidden) and $bleg_box_hidden < time())
 	));
 
@@ -1408,7 +1408,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	<?php
 	fwp_dashboard_update_if_requested($object);
 
-	if (!get_option('feedwordpress_automatic_updates')) :
+	if ( !get_option('feedwordpress_automatic_updates')) :
 	?>
 		<p class="heads-up"><strong>Note:</strong> Automatic updates are currently turned
 		<strong>off</strong>. New posts from your feeds will not be syndicated

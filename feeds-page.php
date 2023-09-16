@@ -202,7 +202,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<td><select id="automatic-updates-selector" name="automatic_updates" size="1" onchange="contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');">
 		<option value="shutdown"<?php fwp_selected_flag( $automatic_updates=='shutdown' ); ?>>automatically check for updates after pages load</option>
 		<option value="init"<?php fwp_selected_flag( $automatic_updates=='init' ); ?>>automatically check for updates before pages load</option>
-		<option value="no"<?php fwp_selected_flag( !$automatic_updates ); ?>>cron job or manual updates</option>
+		<option value="no"<?php fwp_selected_flag( ! $automatic_updates ); ?>>cron job or manual updates</option>
 		</select>
 		<div id="cron-job-explanation" class="setting-description">
 		<p><?php
@@ -362,7 +362,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressFeedsPage::global_feeds_box() */
 
 	function update_window_edit_box ($updateWindow, $defaulted, $params) {
-			if (!is_numeric($updateWindow)) :
+			if ( !is_numeric($updateWindow)) :
 				$updateWindow = DEFAULT_UPDATE_PERIOD;
 			endif;
 		?>
@@ -524,7 +524,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 	function feed_information_box ($page, $box = NULL) {
 		$link_rss_params = maybe_unserialize($page->setting('query parameters', ''));
-		if (!is_array($link_rss_params)) :
+		if ( !is_array($link_rss_params)) :
 			$link_rss_params = array();
 		endif;
 
@@ -549,12 +549,12 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$found_link_category_id = false;
 			foreach ($results as $row) :
 				// Normalize case
-				if (!isset($row->cat_id)) : $row->cat_id = $row->cat_ID; endif;
+				if ( !isset($row->cat_id)) : $row->cat_id = $row->cat_ID; endif;
 
 				if ($row->cat_id == $cat_id) :	$found_link_category_id = true;	endif;
 			endforeach;
 
-			if (!$found_link_category_id) :
+			if ( ! $found_link_category_id) :
 				$results[] = get_category($cat_id);
 			endif;
 
@@ -717,7 +717,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php
 			foreach ($results as $row) :
 				// Normalize case
-				if (!isset($row->cat_id)) : $row->cat_id = $row->cat_ID; endif;
+				if ( !isset($row->cat_id)) : $row->cat_id = $row->cat_ID; endif;
 
 				echo "\n\t<option value=\"$row->cat_id\"";
 				if ($row->cat_id == $cat_id) :
@@ -771,7 +771,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	<?php
 		$i = 0;
 		foreach ($page->link->settings as $key => $value) :
-			if (!preg_match("\007^((".implode(')|(', $page->special_settings)."))$\007i", $key)) :
+			if ( !preg_match("\007^((".implode(')|(', $page->special_settings)."))$\007i", $key)) :
 	?>
 				<tr style="vertical-align:top">
 				<th width="30%" scope="row"><input type="hidden" name="notes[<?php echo esc_attr($i); ?>][key0]" value="<?php echo esc_html($key); ?>" />
@@ -858,7 +858,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		endif;
 
 		$finder = array();
-		if (!is_null($current)) :
+		if ( !is_null($current)) :
 			$finder[$current] = new FeedFinder($current);
 		endif;
 		$finder[$lookup] = new FeedFinder($lookup);
@@ -947,7 +947,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 					<?php
 					$classes = array('feed-found'); $currentFeed = '';
-					if (!is_null($current) and $current==$f) :
+					if ( !is_null($current) and $current==$f) :
 						$classes[] = 'current';
 						$currentFeed = ' (currently subscribed)';
 					endif;
@@ -964,7 +964,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 					// No feed specified = add new feed; we
 					// need to pass along a starting title
 					// and homepage URL for the new Link.
-					if (!$this->for_feed_settings()):
+					if ( ! $this->for_feed_settings()):
 						?>
 						<input type="hidden" name="feed_title" value="<?php echo esc_html($feed_title); ?>" />
 						<input type="hidden" name="feed_link" value="<?php echo esc_html($feed_link); ?>" />
@@ -980,7 +980,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 					<?php
 					$link = null;
 					$post = null;
-					if (!is_wp_error($rss) and count($rss->items) > 0):
+					if ( !is_wp_error($rss) and count($rss->items) > 0):
 						// Prepare to display Sample Item
 						$link = new MagpieMockLink(array('simplepie' => $pie, 'magpie' => $rss), $f);
 						$post = new SyndicatedPost(array('simplepie' => $rss->originals[0], 'magpie' => $rss->items[0]), $link);
@@ -1048,7 +1048,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				// Diagnostics
 				print "<div class=\"updated\" style=\"margin-left: 3.0em; margin-right: 3.0em;\">\n";
 				print "<h3>".__('Diagnostic information')."</h3>\n";
-				if (!is_null($ff->error()) and strlen($ff->error()) > 0) :
+				if ( !is_null($ff->error()) and strlen($ff->error()) > 0) :
 					print "<h4>".__('HTTP request failure')."</h4>\n";
 					print "<p>".$ff->error()."</p>\n";
 				else :
@@ -1084,7 +1084,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			endforeach;
 		endif;
 
-		if (!$feedSwitch) :
+		if ( ! $feedSwitch) :
 			$this->display_alt_feed_box($lookup, /*alt=*/ true);
 		endif;
 		?>
@@ -1114,7 +1114,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds');
 		?>
 		<fieldset class="alt"
-		<?php if (!$alt): ?>style="margin: 1.0em 3.0em; font-size: smaller;"<?php endif; ?>>
+		<?php if ( ! $alt): ?>style="margin: 1.0em 3.0em; font-size: smaller;"<?php endif; ?>>
 		<legend><?php if ($alt) : ?>Alternative feeds<?php else: ?>Find feeds<?php endif; ?></legend>
 		<?php if ($alt) : ?><h3>Use a different feed</h3><?php endif; ?>
 		<?php if (is_wp_error($params['err'])) :

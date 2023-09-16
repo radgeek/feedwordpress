@@ -5,7 +5,7 @@
  * @uses SimplePie_Misc
  */
 
-if (!class_exists('SimplePie')) :
+if ( !class_exists('SimplePie')) :
 	require_once(ABSPATH . WPINC . '/class-simplepie.php');
 endif;
 require_once(dirname(__FILE__).'/feedwordpresshtml.class.php');
@@ -87,7 +87,7 @@ class FeedFinder {
 		endif;
 		
 		$ret = array ();
-		if (!is_null($this->data($uri))) :
+		if ( !is_null($this->data($uri))) :
 			if ($this->is_opml($uri)) :
 				$href = $this->_opml_rss_uris();
 			else :
@@ -158,7 +158,7 @@ class FeedFinder {
 	function status ($uri = NULL) {
 		$this->_get($uri);
 		
-		if (!is_wp_error($this->_response) and isset($this->_response['response']['code'])) :
+		if ( !is_wp_error($this->_response) and isset($this->_response['response']['code'])) :
 			$ret = $this->_response['response']['code'];
 		else :
 			$ret = NULL;
@@ -320,14 +320,14 @@ class FeedFinder {
 			$newUrl[0] = (''
 				.(isset($bits['scheme']) ? $bits['scheme'].':' : '')
 				.(isset($bits['host']) ? '//'.$credentials.$bits['host'] : '')
-				.(!is_null($newPath) ? $newPath : '')
-				.(!is_null($newQuery) ? '?'.$newQuery : '')
+				.( !is_null($newPath) ? $newPath : '')
+				.( !is_null($newQuery) ? '?'.$newQuery : '')
 				.(isset($bits['fragment']) ? '#'.$bits['fragment'] : '')
 			);
 			$newUrl[1] = (''
 				.(isset($bits['scheme']) ? $bits['scheme'].':' : '')
 				.(isset($bits['host']) ? '//'.$credentials.$bits['host'] : '')
-				.(!is_null($newPath) ? $newPath : '')
+				.( !is_null($newPath) ? $newPath : '')
 				.(isset($bits['query']) ? '?'.$bits['query'] : '')
 				.(isset($bits['fragment']) ? '#'.$bits['fragment'] : '')
 			);
@@ -335,7 +335,7 @@ class FeedFinder {
 				.(isset($bits['scheme']) ? $bits['scheme'].':' : '')
 				.(isset($bits['host']) ? '//'.$credentials.$bits['host'] : '')
 				.(isset($bits['path']) ? $bits['path'] : '')
-				.(!is_null($newQuery) ? '?'.$newQuery : '')
+				.( !is_null($newQuery) ? '?'.$newQuery : '')
 				.(isset($bits['fragment']) ? '#'.$bits['fragment'] : '')
 			);
 			$href = array_merge($href, $newUrl);

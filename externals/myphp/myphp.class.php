@@ -6,7 +6,7 @@
  * @package MyPHP
  * @version 2014.0805
  */
-if (!class_exists('MyPHP')) :
+if ( !class_exists('MyPHP')) :
 	class MyPHP {
 		/**
 		 * MyPHP::param: For dealing with HTTP GET/POST parameters sent

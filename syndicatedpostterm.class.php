@@ -21,7 +21,7 @@ class SyndicatedPostTerm {
 			endif;
 
 			$aTerm = get_term($cat_id, $tax);
-			if (!is_wp_error($aTerm) and !!$aTerm) :
+			if ( !is_wp_error($aTerm) and !! $aTerm) :
 				$this->exists = (array) $aTerm;
 				$this->exists_in = $this->exists['taxonomy'];
 				
@@ -54,7 +54,7 @@ class SyndicatedPostTerm {
 			  .' by feed; checking '.json_encode($this->tax)
 			  . ' with result: '.json_encode($ex) 
 		);
-		return (!is_wp_error($ex) and !!$ex);
+		return ( !is_wp_error($ex) and !! $ex);
 	} /* SyndicatedPostTerm::familiar () */
 	
 	protected function search () {
@@ -71,7 +71,7 @@ class SyndicatedPostTerm {
 
 		foreach ($this->tax as $tax) :
 			
-			if (!$this->is_forbidden_in($tax)) :
+			if ( ! $this->is_forbidden_in($tax)) :
 				
 				$found = $this->fetch_record_in($tax); 
 				if ($found) :
@@ -110,7 +110,7 @@ class SyndicatedPostTerm {
 			  .' with result: '.json_encode($record) 
 		);
 		
-		$found = (!is_wp_error($record) and !!$record);
+		$found = ( !is_wp_error($record) and !! $record);
 		
 		if ($found) :
 			$this->exists = $record;
@@ -176,7 +176,7 @@ class SyndicatedPostTerm {
 			endif;
 		endif;
 		
-		if (!$this->is_forbidden_in($tax)) :
+		if ( ! $this->is_forbidden_in($tax)) :
 			$aTerm = wp_insert_term($this->term, $tax);
 			if (is_wp_error($aTerm)) :
 			

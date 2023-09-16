@@ -70,7 +70,7 @@ class MagpieFromSimplePie {
 		$this->pie = $pie;
 
 		// item in {NULL, true} = process channel data
-		if (!is_a($item, 'SimplePie_Item')) :
+		if ( !is_a($item, 'SimplePie_Item')) :
 			$this->originals = $this->pie->get_items();
 
 			$this->channel = $this->processFeedData($this->pie->data);
@@ -80,7 +80,7 @@ class MagpieFromSimplePie {
 		endif;
 
 		// item in {true, SimplePie_Item} = process item data
-		if (!is_null($item)) :
+		if ( !is_null($item)) :
 			foreach ($this->originals as $key => $item) :
 				$this->items[$key] = $this->processItemData($item->data);
 			endforeach;
@@ -320,7 +320,7 @@ class MagpieFromSimplePie {
 					$childTag = $this->increment_element($ret, $childTag, $ns, $path);
 					$childPath = $path; $childPath[] = strtolower($childTag); 
 
-					if (!is_null($copyOver)) :
+					if ( !is_null($copyOver)) :
 						$co = array();
 						$co[implode('_', $childPath)] = $copyOver;
 					else :
@@ -344,7 +344,7 @@ class MagpieFromSimplePie {
 					// Close tag
 					if ('textinput'==$tag and 'rss'==$ns) : $this->inTextInput = false; endif;
 				elseif ($this->is_namespaced($ns)) :
-					if (!isset($ret[$ns])) : $ret[$ns] = array(); endif;
+					if ( !isset($ret[$ns])) : $ret[$ns] = array(); endif;
 					$ret[$ns] = $arr + $ret[$ns];
 				else :
 					$ret = $arr + $ret;
@@ -395,7 +395,7 @@ class MagpieFromSimplePie {
 	function normalize () {
 		do_action('feedwordpress_magpiefromsimplepie_normalize_pre', $this);
 
-		if (!is_null($this->channel)) :
+		if ( !is_null($this->channel)) :
 			// Normalize channel data
 			if ( $this->is_atom() ) :
 				// Atom 1.0 elements <=> Atom 0.3 elements (Thanks, o brilliant wordsmiths of the Atom 1.0 standard!)
@@ -439,7 +439,7 @@ class MagpieFromSimplePie {
 			endif;
 		endif;
 
-		if (!is_null($this->items)) :
+		if ( !is_null($this->items)) :
 			// Now loop through and normalize item data
 			for ( $i = 0; $i < count($this->items); $i++) :
 				$item = $this->items[$i];
@@ -498,7 +498,7 @@ class MagpieFromSimplePie {
 				if ( $item_date ) :
 					$date_timestamp = new FeedTime($item_date);
 	
-					if (!$date_timestamp->failed()) :
+					if ( ! $date_timestamp->failed()) :
 						$item['date_timestamp'] = $date_timestamp->timestamp();
 					endif;
 				endif;
@@ -530,7 +530,7 @@ class MagpieFromSimplePie {
 		// considered to apply to the entry if there are no
 		// atom:author elements in the locations described
 		// above." <http://atompub.org/2005/08/17/draft-ietf-atompub-format-11.html#rfc.section.4.2.1>
-		if (!isset($item["author#"])) :
+		if ( !isset($item["author#"])) :
 			$authors = $original->get_authors();
 			foreach ($authors as $author) :
 				$tag = $this->increment_element($item, 'author', 'atom', array());
@@ -727,12 +727,12 @@ class MagpieFromSimplePie {
 	function increment_element (&$data, $childTag, $ns, $path) {
 		$counterIndex = strtolower(implode('_', array_merge($path, array($childTag.'#'))));
 		if ($this->is_namespaced($ns)) :
-			if (!isset($data[$ns])) : $data[$ns] = array(); endif;
-			if (!isset($data[$ns][$counterIndex])) : $data[$ns][$counterIndex] = 0; endif;
+			if ( !isset($data[$ns])) : $data[$ns] = array(); endif;
+			if ( !isset($data[$ns][$counterIndex])) : $data[$ns][$counterIndex] = 0; endif;
 			$data[$ns][$counterIndex] += 1;
 			$N = $data[$ns][$counterIndex];
 		else :
-			if (!isset($data[$counterIndex])) : $data[$counterIndex] = 0; endif;
+			if ( !isset($data[$counterIndex])) : $data[$counterIndex] = 0; endif;
 			$data[$counterIndex] += 1;
 			$N = $data[$counterIndex];
 		endif;
@@ -759,7 +759,7 @@ class MagpieFromSimplePie {
 		endif;
 		
 		// RDF formats; namespaced in attribs but not in elements
-		if (!$attribute and $this->is_rdf()) :
+		if ( ! $attribute and $this->is_rdf()) :
 			$root[] = 'rdf';
 		endif;
 

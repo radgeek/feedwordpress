@@ -54,7 +54,7 @@ class FeedWordPressLocalPost {
 		// Now if we are supposed to look for ultimate source data (e.g. from
 		// <atom:source> ... </atom:source> elements), do so here.
 		if ($params['unproxy']) :
-			if (!is_string($params['unproxied setting'])) :
+			if ( !is_string($params['unproxied setting'])) :
 				// Default pattern for unproxied settings: {$name}_original
 				$params['unproxied setting'] = $what . '_original';
 			endif;
@@ -73,7 +73,7 @@ class FeedWordPressLocalPost {
 		// -=-=-= 3. DEAL WITH THE RESULTS, IF ANY, OR FALLBACK VALUES. =-=-=-
 		
 		// If we have results now, cool. Just pass them back.
-		if (!empty($results)) :
+		if ( !empty($results)) :
 			$ret = ($params['single'] ? $results[0] : $results);
 			
 		// If we got no results but we have a fallback global setting, cool. Use
@@ -94,7 +94,7 @@ class FeedWordPressLocalPost {
 	}
 	
 	public function is_syndicated () {
-		return (!is_null($this->feed_id(/*single=*/ false))); 
+		return ( !is_null($this->feed_id(/*single=*/ false))); 
 	}
 
 	public function syndication_permalink () {
@@ -146,7 +146,7 @@ class FeedWordPressLocalPost {
 	public function is_exposed_to_formatting_filters () {
 		
 		return (
-			!$this->is_syndicated()
+			! $this->is_syndicated()
 			or (
 				'yes' == $this->meta(
 					'_feedwordpress_formatting_filters',

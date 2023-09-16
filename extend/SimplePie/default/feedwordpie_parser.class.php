@@ -122,7 +122,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 			$parseResults = $results[0];
 			$data = $results[1];
 
-			if (!$parseResults) {
+			if ( ! $parseResults) {
 				$this->error_code = xml_get_error_code($xml);
 				$this->error_string = xml_error_string($this->error_code);
 				$return = false;
@@ -210,7 +210,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 		// Parse!
 		$parseResults = xml_parse($xml, $data, true);
 		$endOfJunk = strpos($data, '<?xml');
-		if (!$parseResults and $endOfJunk > 0) :
+		if ( ! $parseResults and $endOfJunk > 0) :
 			// There is some junk before the feed prolog. Try to get rid of it.
 			$data = substr($data, $endOfJunk);
 			$data = trim($data);
@@ -220,7 +220,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 		endif;
 			
 		$badEntity = (xml_get_error_code($xml) == 26);
-		if (!$parseResults and $badEntity) :
+		if ( ! $parseResults and $badEntity) :
 			// There was an entity that libxml couldn't understand.
 			// Chances are, it was a stray HTML entity. So let's try
 			// converting all the named HTML entities to numeric XML
@@ -269,7 +269,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 	}
 	
 	function start_xmlns ($parser, $prefix, $uri) {
-		if (!$prefix) :
+		if ( ! $prefix) :
 			$prefix = '';
 		endif;
 		if ($this->current_xhtml_construct < 0) :

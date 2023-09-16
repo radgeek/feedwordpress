@@ -448,7 +448,7 @@ jQuery(document).ready( function($) {
 		} );
 		
 		catAddBefore = function (s) {
-			if ( !$('#'+newCatId).val() )
+			if ( ! $('#'+newCatId).val() )
 				return false;
 			s.data += '&' + $( ':checked', '#'+checkboxId ).serialize();
 			return s;

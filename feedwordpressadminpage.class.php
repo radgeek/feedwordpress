@@ -85,7 +85,7 @@ class FeedWordPressAdminPage {
 		$delta = $feedwordpress->update($uri);
 		print "</ul>";
 
-		if (!is_null($delta)) :
+		if ( !is_null($delta)) :
 			echo "<p><strong>Update complete.</strong>".fwp_update_set_results_message($delta)."</p>";
 			echo "\n"; flush();
 		else :
@@ -115,10 +115,10 @@ class FeedWordPressAdminPage {
 	} /* FeedWordPressAdminPage::save_settings () */
 
 	public function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
-	public function for_default_settings () { return !$this->for_feed_settings(); }
+	public function for_default_settings () { return ! $this->for_feed_settings(); }
 
 	public function setting ($names, $fallback_value = NULL, $params = array()) {
-		if (!is_array($params)) :
+		if ( !is_array($params)) :
 			$params = array('default' => $params);
 		endif;
 		$params = shortcode_atts(array(
@@ -135,7 +135,7 @@ class FeedWordPressAdminPage {
 		endif;
 
 		if ($this->for_feed_settings()) : // Check feed-specific setting first; fall back to global
-			if (!$params['fallback']) : $global_name = NULL; endif;
+			if ( ! $params['fallback']) : $global_name = NULL; endif;
 			$ret = $this->link->setting($feed_name, $global_name, $fallback_value, $params['default']);
 		else : // Check global setting
 			$ret = get_option($global_name, $fallback_value);
@@ -245,7 +245,7 @@ class FeedWordPressAdminPage {
 
 		var rollup=document.getElementById(item);
 		if (rollup) {
-			if ((checkbox && rollup.checked) || (!checkbox && value==rollup.value)) {
+			if ((checkbox && rollup.checked) || ( !checkbox && value==rollup.value)) {
 				jQuery('#'+disappear).hide();
 				jQuery('#'+appear).show(600);
 			} else {
@@ -264,7 +264,7 @@ class FeedWordPressAdminPage {
 		$params = array_merge($params, array('page' => $fwp_path.'/'.$page));
 
 		// If there is a link ID provided, then merge that in too.
-		if (!is_null($link)) :
+		if ( !is_null($link)) :
 			$link_id = NULL;
 			if (is_object($link)) :
 				if (method_exists($link, 'found')) :
@@ -281,7 +281,7 @@ class FeedWordPressAdminPage {
 				$link_id = $link;
 			endif;
 
-			if (!is_null($link_id)) :
+			if ( !is_null($link_id)) :
 				$params = array_merge($params, array('link_id' => $link_id));
 			endif;
 		endif;
@@ -321,7 +321,7 @@ class FeedWordPressAdminPage {
 
 		print $params['before']; $first = true;
 		foreach ($links as $label => $link) :
-			if (!$first) :	print $params['between']; endif;
+			if ( ! $first) :	print $params['between']; endif;
 
 			if (isset($link['url'])) : MyPHP::url($link['url'], array("link_id" => $link_id));
 			else : $url = $this->admin_page_href($link['page'], array(), $sub);
@@ -357,7 +357,7 @@ class FeedWordPressAdminPage {
 		<li><select name="link_id" class="fwpfs" style="max-width: 20.0em;">
 		  <option value="*"<?php if ($this->for_default_settings()) : ?> selected="selected"<?php endif; ?>>- defaults for all feeds -</option>
 		<?php if ($links) : foreach ($links as $ddlink) : ?>
-		  <option value="<?php print (int) $ddlink->link_id; ?>"<?php if (!is_null($this->link) and ($this->link->id==$ddlink->link_id)) : ?> selected="selected"<?php endif; ?>><?php print esc_html($ddlink->link_name); ?></option>
+		  <option value="<?php print (int) $ddlink->link_id; ?>"<?php if ( !is_null($this->link) and ($this->link->id==$ddlink->link_id)) : ?> selected="selected"<?php endif; ?>><?php print esc_html($ddlink->link_name); ?></option>
 		<?php endforeach; endif; ?>
 		</select>
 		<input id="fwpfs-button" class="button" type="submit" name="go" value="<?php _e('Go') ?> &raquo;" /></li>
@@ -392,7 +392,7 @@ class FeedWordPressAdminPage {
 	}
 
 	public function display_update_notice_if_updated ($pagename = 'Syndication', $mesg = NULL) {
-		if (!is_null($mesg)) :
+		if ( !is_null($mesg)) :
 			$this->mesg = $mesg;
 		endif;
 
@@ -404,7 +404,7 @@ class FeedWordPressAdminPage {
 			endif;
 		endif;
 
-		if (!is_null($this->mesg)) :
+		if ( !is_null($this->mesg)) :
 			?>
 			<div class="updated">
 			<p><?php print esc_html($this->mesg); ?></p>
@@ -520,7 +520,7 @@ class FeedWordPressAdminPage {
 		?>
 		<div class="wrap feedwordpress-admin" id="feedwordpress-admin-<?php print esc_attr( $this->pageslug() ); ?>">
 		<?php
-		if (!is_null($header)) :
+		if ( !is_null($header)) :
 			$this->display_sheet_header($header);
 		endif;
 
@@ -539,7 +539,7 @@ class FeedWordPressAdminPage {
 		endif;
 
 		?><div class="tablenav"><?php
-		if (!is_null($this->dispatch)) :
+		if ( !is_null($this->dispatch)) :
 			?><div class="alignright"><?php
 			$this->save_button();
 			?></div><?php
@@ -560,7 +560,7 @@ class FeedWordPressAdminPage {
 
 		</div> <!-- id="poststuff" -->
 		<?php
-		if (!is_null($this->dispatch)) :
+		if ( !is_null($this->dispatch)) :
 			$this->save_button();
 			print "</form>\n";
 		endif;
@@ -624,7 +624,7 @@ class FeedWordPressAdminPage {
 		endif;
 
 		if (isset($params['default-input-id-no'])) : $defaultInputIdNo = $params['default-input-id-no'];
-		elseif (!is_null($defaultInputId)) : $defaultInputIdNo = $defaultInputId.'-no';
+		elseif ( !is_null($defaultInputId)) : $defaultInputIdNo = $defaultInputId.'-no';
 		else : $defaultInputIdNo = NULL;
 		endif;
 
@@ -648,7 +648,7 @@ class FeedWordPressAdminPage {
 
 		$settingDefaulted = (is_null($setting) or ($settingDefault === $setting));
 
-		if (!is_callable($options)) :
+		if ( !is_callable($options)) :
 			$checked = array();
 			if ($settingDefaulted) :
 				$checked[$defaultInputValue] = ' checked="checked"';
@@ -685,7 +685,7 @@ class FeedWordPressAdminPage {
 			<li><label><input type="radio"
 				name="<?php print esc_attr( $defaultInputName ); ?>"
 				value="<?php print esc_attr( $defaultInputValue ); ?>"
-				<?php if (!is_null($defaultInputId)) : ?>id="<?php print esc_attr( $defaultInputId ); ?>" <?php endif; ?>
+				<?php if ( !is_null($defaultInputId)) : ?>id="<?php print esc_attr( $defaultInputId ); ?>" <?php endif; ?>
 				<?php fwp_checked_flag($defaulted, 'yes'); ?> />
 			Use the site-wide setting</label>
 			<span class="current-setting">Currently:
@@ -709,7 +709,7 @@ class FeedWordPressAdminPage {
 				<li><label><input type="radio"
 					name="<?php print esc_attr( $defaultInputName ); ?>"
 					value="no"
-					<?php if (!is_null($defaultInputIdNo)) : ?>id="<?php print esc_attr( $defaultInputIdNo ); ?>" <?php endif; ?>
+					<?php if ( !is_null($defaultInputIdNo)) : ?>id="<?php print esc_attr( $defaultInputIdNo ); ?>" <?php endif; ?>
 					<?php fwp_checked_flag($defaulted, 'no'); ?> />
 				<?php _e('Do something different with this feed.'); ?></label>
 			<?php endif;

@@ -14,7 +14,7 @@ class FeedWordPie_File extends WP_SimplePie_File {
 		}
 
 		$source = NULL;
-		if (!empty($feedwordpress) and $feedwordpress->subscribed($url)) :
+		if ( !empty($feedwordpress) and $feedwordpress->subscribed($url)) :
 			$source = $feedwordpress->subscription($url);
 		endif;
 
@@ -51,7 +51,7 @@ class FeedWordPie_File extends WP_SimplePie_File {
 			// This is ugly as hell, but communicating up and down the chain
 			// in any other way is difficult.
 
-			if (!is_null($fwp_credentials)) :
+			if ( !is_null($fwp_credentials)) :
 
 				$args['authentication'] = $fwp_credentials['authentication'];
 				$args['username'] = $fwp_credentials['username'];

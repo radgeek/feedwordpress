@@ -237,7 +237,7 @@ class SyndicatedPostXPathQuery {
 		endif;
 
 		$matches = $data;
-		while (!is_null($node)) :
+		while ( !is_null($node)) :
 			if (is_object($node) OR strlen($node) > 0) :
 				list($axis, $element) = $this->xpath_name_and_axis($node);
 				if ('self'==$axis) :
@@ -289,7 +289,7 @@ class SyndicatedPostXPathQuery {
 					$matches = array();
 
 					foreach ($data as $idx => $datum) :
-						if (!is_string($datum) and isset($datum[$axis])) :
+						if ( !is_string($datum) and isset($datum[$axis])) :
 							foreach ($datum[$axis] as $ns => $elements) :
 								if (isset($elements[$element])) :
 									// Potential match.

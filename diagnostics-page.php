@@ -147,7 +147,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 
 		<tr>
 		<th scope="row">Link Category:</th>
-		<td><?php if (!is_wp_error($link_category_id)) :
+		<td><?php if ( !is_wp_error($link_category_id)) :
 			$term = get_term($link_category_id, 'link_category');
 		?><p>Syndicated feeds are
 		kept in link category #<?php print esc_html( $term->term_id ); ?>, <strong><?php print esc_html( $term->name ); ?></strong>.</p>
@@ -162,7 +162,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		<th scope="row">Message:</th>
 		<td><?php print esc_html( $link_category_id->get_error_message() ); ?></td>
 		</tr>
-		<?php $data = $link_category_id->get_error_data(); if (!empty($data)) : ?>
+		<?php $data = $link_category_id->get_error_data(); if ( !empty($data)) : ?>
 		<tr>
 		<th scope="row">Auxiliary Data:</th>
 		<td><pre><?php print esc_html(MyPHP::val($link_category_id->get_error_data())); ?></pre></td>
@@ -229,7 +229,7 @@ testing but absolutely inappropriate for a production server.</p>
 <?php foreach ($users as $id => $name) : ?>
 <option value="user:<?php print (int) $id; ?>"<?php if (sprintf('user:%d', (int) $id)==$ded) : ?> selected="selected"<?php endif; ?>><?php print esc_html($name); ?></option>
 <?php endforeach; ?>
-<option value="mailto"<?php if (!is_null($ded_addy)) : ?> selected="selected"<?php endif; ?>>another e-mail address...</option>
+<option value="mailto"<?php if ( !is_null($ded_addy)) : ?> selected="selected"<?php endif; ?>>another e-mail address...</option>
 </select>
 <input type="email" id="diagnostics-email-destination-address" name="diagnostics_email_destination_address" value="<?php print esc_attr( $ded_addy ); ?>" placeholder="email address" /></li>
 </ul></td>

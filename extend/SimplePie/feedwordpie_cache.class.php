@@ -154,7 +154,7 @@ class FeedWordPie_Cache extends SimplePie_Cache {
 
 		$type = explode(':', $location, 2);
 		$type = $type[0];
-		if (!empty(self::$handlers[$type]))
+		if ( !empty(self::$handlers[$type]))
 		{
 			$class = self::$handlers[$type];
 			return $class($location, $filename, $extension);

@@ -38,7 +38,7 @@ function add_boilerplate_simple ($element, $title, $id = NULL) {
 		$meta = get_feed_meta('boilerplate rules', $id);
 		if ($meta and !is_array($meta)) : $meta = unserialize($meta); endif;
 
-		if (!is_array($meta) or empty($meta)) :
+		if ( !is_array($meta) or empty($meta)) :
 			$meta = get_option('feedwordpress_boilerplate');
 		endif;
 
@@ -104,7 +104,7 @@ function add_boilerplate_content ($content) {
 		$meta = get_feed_meta('boilerplate rules');
 		if ($meta and !is_array($meta)) : $meta = unserialize($meta); endif;
 
-		if (!is_array($meta) or empty($meta)) :
+		if ( !is_array($meta) or empty($meta)) :
 			$meta = get_option('feedwordpress_boilerplate');
 		endif;
 

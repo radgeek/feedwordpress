@@ -35,7 +35,7 @@ function fwp_release_pings () {
 	
 	$fwp_held_ping = NULL;	// NULL: not holding pings anymore
 	
-	if (!is_null($diag_message)) :
+	if ( !is_null($diag_message)) :
 		FeedWordPress::diagnostic(
 			'syndicated_posts:do_pings',
 			"FeedWordPress ${diag_message}, fwp_held_ping=".json_encode($fwp_held_ping)
@@ -46,7 +46,7 @@ function fwp_release_pings () {
 function fwp_do_pings () {
 	global $fwp_held_ping;
 
-	if (!is_null($fwp_held_ping) and $post_id) : // Defer until we're done updating
+	if ( !is_null($fwp_held_ping) and $post_id) : // Defer until we're done updating
 		$fwp_held_ping = $post_id;
 
 		FeedWordPress::diagnostic(
@@ -64,7 +64,7 @@ function fwp_do_pings () {
 function fwp_publish_post_hook ($post_id) {
 	global $fwp_held_ping;
 
-	if (!is_null($fwp_held_ping)) : // Syndicated post. Don't mark with _pingme
+	if ( !is_null($fwp_held_ping)) : // Syndicated post. Don't mark with _pingme
 		if ( defined('XMLRPC_REQUEST') )
 			do_action('xmlrpc_publish_post', $post_id);
 		if ( defined('APP_REQUEST') )

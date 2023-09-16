@@ -20,7 +20,7 @@ class FeedWordPressCompatibility {
 
 		$ver = (isset($wp_db_version) ? $wp_db_version : 0);
 		$good = ($ver >= $floor);
-		if (!is_null($ceiling)) :
+		if ( !is_null($ceiling)) :
 			$good = ($good and ($ver < $ceiling));
 		endif;
 		return $good;
@@ -33,7 +33,7 @@ class FeedWordPressCompatibility {
 		$term = wp_insert_term($name, 'link_category');
 
 		// OK: returned array('term_id' => $term_id, 'term_taxonomy_id' => $tt_id)
-		if (!is_wp_error($term)) :
+		if ( !is_wp_error($term)) :
 			$cat_id = $term['term_id'];
 
 		// Error: term with this name already exists. Well, let's use that then.
@@ -73,7 +73,7 @@ class FeedWordPressCompatibility {
 		// Only worry about this if we're using a method with significant side-effects
 		if (strtoupper($_SERVER['REQUEST_METHOD']) == 'POST') :
 			// Limit post by user capabilities
-			if (!is_null($capability) and !current_user_can($capability)) :
+			if ( !is_null($capability) and !current_user_can($capability)) :
 				wp_die(__('Cheatin&#8217; uh?'));
 			endif;
 
@@ -105,7 +105,7 @@ class FeedWordPressCompatibility {
 
 // Compat
 
-if (!function_exists('set_post_field')) {
+if ( !function_exists('set_post_field')) {
 
 	/**
 	 * Update data from a post field based on Post ID
@@ -135,7 +135,7 @@ if (!function_exists('set_post_field')) {
 
 } /* if */
 
-if (!function_exists('is_countable')) {
+if ( !function_exists('is_countable')) {
 
 	// Copied from WordPress 5.3.2 wp-includes/compat.php pursuant to terms
 	// of GPL. Provide support for is_countable() for versions of PHP < 7.3

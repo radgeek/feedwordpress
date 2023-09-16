@@ -55,7 +55,7 @@ if ($page->for_default_settings()) :
   <select style="max-width: 27.0em" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');">
     <option value="create"<?php fwp_selected_flag($unfamiliar, 'create'); ?>>will have a new author account created for them</option>
     <?php foreach ($page->authorlist as $author_id => $author_name) :
-		if (!isset($unfamiliar[$author_id])) : $unfamiliar[$author_id] = false; endif;
+		if ( !isset($unfamiliar[$author_id])) : $unfamiliar[$author_id] = false; endif;
 	?>
       <option value="<?php echo esc_attr($author_id); ?>"<?php fwp_selected_flag($unfamiliar, $author_id); ?>>will have their posts attributed to <?php echo esc_html($author_name); ?></option>
     <?php endforeach; ?>
@@ -96,7 +96,7 @@ name="author_rules_action[all]" onchange="contextual_appearance('author-rules-al
   <span class="author-rules-newuser" id="author-rules-all-newuser">named
   <input type="text" name="author_rules_newuser[all]" value="" /></span></p></li>
 <li><p><input type="radio" name="author_rules_name[all]" value=""
-<?php if (!isset($map['name']['*'])) : ?>
+<?php if ( !isset($map['name']['*'])) : ?>
 	checked="checked"
 <?php endif; ?>
 /> Attribute posts to authors based on automatic mapping rules. (Blank out a

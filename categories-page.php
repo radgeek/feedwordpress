@@ -55,7 +55,7 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 		foreach ($taxonomies as $tax) :
 			$taxonomy = get_taxonomy($tax);
 
-			if (!$taxonomy->hierarchical) :
+			if ( ! $taxonomy->hierarchical) :
 				$tagLikeTaxonomies[] = $tax;
 			endif;
 
@@ -154,12 +154,12 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 			if ($uck == 'tag') : $uck = 'create:post_tag'; endif;
 			if ($uck == 'create') : $uck = 'create:category'; endif;
 
-			if (!is_string($uck)) :
+			if ( !is_string($uck)) :
 				$uck = $unmatchedDefault[$what];
 			endif;
 			$ucKey[$what] = $uck;
 
-			if (!array_key_exists($uck, $unmatchedRadio[$what])) :
+			if ( !array_key_exists($uck, $unmatchedRadio[$what])) :
 				$obsoleteLi = array(
 					$uck => array(
 					'label' => ' <span style="font-style: italic; color: #777;">'.$this->unfamiliar_category_label($uck).'</span> <span style="background-color: #ffff90; color: black;">(This setting is no longer applicable to the type of post syndicated from this feed!)</span><p>Please change this one of the following settings:</p>',
@@ -185,7 +185,7 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 				endif;
 			endif;
 
-			if (!$defaulted[$what] or $this->for_feed_settings()) :
+			if ( ! $defaulted[$what] or $this->for_feed_settings()) :
 				foreach ($set as $against) :
 					if (array_key_exists($against, $matchUl[$what])) :
 						$matchUl[$what][$against]['checked'] = ' checked="checked"';
@@ -207,7 +207,7 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 	<tr><td class="equals first <?php if ($defaulted['cats']) : ?>active<?php else: ?>inactive<?php endif; ?>"><p><label><input type="radio" name="match_default[cats]"
 value="yes" <?php if ($defaulted['cats']) : ?> checked="checked"<?php endif; ?> /><?php $this->setting_radio_label( array( "label" => array ( $href, $globalMatchLabels['cats'] ) ) ); ?></label></p></td>
 	<td class="equals second <?php if ($defaulted['cats']) : ?>inactive<?php else: ?>active<?php endif; ?>"><p><label><input type="radio" name="match_default[cats]"
-value="no" <?php if (!$defaulted['cats']) : ?> checked="checked"<?php endif; ?> />
+value="no" <?php if ( ! $defaulted['cats']) : ?> checked="checked"<?php endif; ?> />
 Do something different with this feed.</label>
 <?php else : ?>
 	<p>
@@ -275,7 +275,7 @@ value="yes" <?php if ($defaulted['tags']) : ?> checked="checked"<?php endif; ?> 
 <?php $this->setting_radio_label( array( "label" => array( $href, $globalMatchLabels['tags'] ) ) ); ?></label></p>
 </td>
 	<td class="equals second <?php if ($defaulted['tags']) : ?>inactive<?php else: ?>active<?php endif; ?>"><p><label><input type="radio" name="match_default[tags]"
-value="no" <?php if (!$defaulted['tags']) : ?> checked="checked"<?php endif; ?> />
+value="no" <?php if ( ! $defaulted['tags']) : ?> checked="checked"<?php endif; ?> />
 Do something different with this feed.</label>
 <?php else : ?>
 	<p>
@@ -336,7 +336,7 @@ value="yes" <?php if ($defaulted['filter']) : ?> checked="checked"<?php endif; ?
 	</td>
 	<td class="equals second <?php if ($defaulted['filter']) : ?>inactive<?php else: ?>active<?php endif; ?>">
 	<p><label><input type="radio" name="match_default[filter]"
-value="no" <?php if (!$defaulted['filter']) : ?> checked="checked"<?php endif; ?> />
+value="no" <?php if ( ! $defaulted['filter']) : ?> checked="checked"<?php endif; ?> />
 Do something different with this feed:</label></p>
 <div style="margin-left: 3.0em;">
 <?php endif; ?>
@@ -574,7 +574,7 @@ blank.</p></td>
 			if ($this->for_feed_settings()) :
 				$this->link->update_setting($settingMap[$tax], $terms, array());
 			else :
-				if (!empty($terms)) :
+				if ( !empty($terms)) :
 					update_option($optionMap[$tax], implode(FEEDWORDPRESS_CAT_SEPARATOR, $terms));
 				else :
 					delete_option($optionMap[$tax]);

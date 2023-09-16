@@ -33,7 +33,7 @@ License: GPL
 define ('FEEDWORDPRESS_VERSION', '2022.0222');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contact');
 
-if (!defined('FEEDWORDPRESS_BLEG')) :
+if ( !defined('FEEDWORDPRESS_BLEG')) :
 	define ('FEEDWORDPRESS_BLEG', true);
 endif;
 
@@ -112,7 +112,7 @@ foreach ($wpCoreDependencies as $unit => $fileSlug) :
 	list($unitType, $unitName) = explode(":", $unit, 2);
 
 	$dependencyMet = (('class'==$unitType) ? class_exists($unitName) : function_exists($unitName));
-	if (!$dependencyMet) :
+	if ( ! $dependencyMet) :
 		$phpFileName = ABSPATH . WPINC . "/${fileSlug}.php";
 		if (file_exists($phpFileName)) :
 			require_once($phpFileName);
@@ -173,7 +173,7 @@ endif;
 ####################################################################################
 
 $feedwordpress = new FeedWordPress;
-if (!$feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
+if ( ! $feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
 	$feedwordpress->add_filters();
 
 	# Inbound XML-RPC update methods
@@ -192,7 +192,7 @@ if (!$feedwordpress->needs_upgrade()) : // only work if the conditions are safe!
 else :
 	# Hook in the menus, which will just point to the upgrade interface
 	add_action('admin_menu', array($feedwordpress, 'add_pages'));
-endif; // if (!FeedWordPress::needs_upgrade())
+endif; // if ( !FeedWordPress::needs_upgrade())
 
 register_deactivation_hook(__FILE__, 'feedwordpress_deactivate');
 function feedwordpress_deactivate () {
@@ -236,7 +236,7 @@ function feedwordpress_preserve_syndicated_content ($text) {
 	global $feedwordpress_the_syndicated_content;
 
 	$p = new FeedWordPressLocalPost;
-	if (!$p->is_exposed_to_formatting_filters()) :
+	if ( ! $p->is_exposed_to_formatting_filters()) :
 		$feedwordpress_the_syndicated_content = $text;
 	else :
 		$feedwordpress_the_syndicated_content = null;
@@ -416,7 +416,7 @@ function syndication_comments_feed_link ($link) {
 			endif;
 		endif;
 
-		if (!is_null($replacement)) : $link = $replacement; endif;
+		if ( !is_null($replacement)) : $link = $replacement; endif;
 	endif;
 	return $link;
 } /* function syndication_comments_feed_link() */
@@ -595,7 +595,7 @@ class FeedWordPress {
 
 		# Cron-less auto-update. Hooray!
 		$autoUpdateHook = $this->automatic_update_hook();
-		if (!is_null($autoUpdateHook)) :
+		if ( !is_null($autoUpdateHook)) :
 			add_action($autoUpdateHook, array($this, 'auto_update'));
 		endif;
 
@@ -740,7 +740,7 @@ class FeedWordPress {
 		endif;
 
 		// Load 'er up if you haven't already.
-		if (!is_null($sub) and !($sub InstanceOf SyndicatedLink)) :
+		if ( !is_null($sub) and !($sub InstanceOf SyndicatedLink)) :
 			$link = new SyndicatedLink($sub);
 			$this->feeds[$which] = $link;
 			$sub = $link;
@@ -809,7 +809,7 @@ class FeedWordPress {
 			return null;
 		endif;
 
-		if (!is_null($uri) and $uri != '*') :
+		if ( !is_null($uri) and $uri != '*') :
 			$uri = trim($uri);
 		else : // Update all
 			if ($this->update_hooked) :
@@ -855,7 +855,7 @@ class FeedWordPress {
 			// Has this process overstayed its welcome?
 			if (
 				// Over time limit?
-				(!is_null($crash_ts) and (time() > $crash_ts))
+				( !is_null($crash_ts) and (time() > $crash_ts))
 
 				// Over feed count?
 				or ($remaining == 0)
@@ -865,7 +865,7 @@ class FeedWordPress {
 
 			$pinged_that = (is_null($uri) or ($uri=='*') or in_array($uri, array($feed->uri(), $feed->homepage())));
 
-			if (!is_null($uri)) : // A site-specific ping always updates
+			if ( !is_null($uri)) : // A site-specific ping always updates
 				$timely = true;
 			else :
 				$timely = $feed->stale();
@@ -909,7 +909,7 @@ class FeedWordPress {
 
 	public function secret_key () {
 		$secret = get_option('feedwordpress_secret_key', false);
-		if (!$secret) : // Generate random key.
+		if ( ! $secret) : // Generate random key.
 			$secret = substr(md5(uniqid(microtime())), 0, 6);
 			update_option('feedwordpress_secret_key', $secret);
 		endif;
@@ -930,7 +930,7 @@ class FeedWordPress {
 
 		// Allow for forced behavior in testing.
 		if (
-			!$params['setting only']
+			! $params['setting only']
 			and $this->has_secret()
 			and MyPHP::request('automatic_update')
 		) :
@@ -940,7 +940,7 @@ class FeedWordPress {
 
 		$exact = $hook; // Before munging
 
-		if (!!$hook) :
+		if ( !! $hook) :
 			if ($hook == 'init' or $hook == 'wp_loaded') : // Re-map init to wp_loaded
 				$hook = ($params['setting only'] ? 'init' : 'wp_loaded');
 
@@ -972,7 +972,7 @@ class FeedWordPress {
 	} /* FeedWordPress::force_update_all () */
 
 	public function stale () {
-		if (!is_null($this->automatic_update_hook())) :
+		if ( !is_null($this->automatic_update_hook())) :
 			// Do our best to avoid possible simultaneous
 			// updates by getting up-to-the-minute settings.
 
@@ -1008,7 +1008,7 @@ class FeedWordPress {
 		// element to avoid problems with user capabilities that presume the presence of the Links Manager in the admin UI.
 		global $post_type;
 
-		if (!intval(get_option('link_manager_enabled', false))) :
+		if ( !intval(get_option('link_manager_enabled', false))) :
 			update_option('link_manager_enabled', true);
 		endif;
 
@@ -1102,7 +1102,7 @@ class FeedWordPress {
 		if (FeedWordPress::param( 'fwp_post_delete' ) == 'nuke') :
 			// Get post ID #
 			$post_id = FeedWordPress::param( 'post' );
-			if (!$post_id) :
+			if ( ! $post_id) :
 				$post_id = FeedWordPress::param( 'post_ID' );
 			endif;
 
@@ -1114,7 +1114,7 @@ class FeedWordPress {
 		elseif ( FeedWordPress::param( 'fwp_post_delete' ) == 'zap' || FeedWordPress::param( 'fwp_post_delete' ) == 'unzap' ) :
 			// Get post ID #
 			$post_id = FeedWordPress::param( 'post' );
-			if (!$post_id) :
+			if ( ! $post_id) :
 				$post_id = FeedWordPress::param( 'post_ID' );
 			endif;
 
@@ -1351,7 +1351,7 @@ class FeedWordPress {
 		$feed = $this->subscription($feed_id);
 		$posts = $feed->live_posts();
 
-		if (!is_wp_error($posts)) :
+		if ( !is_wp_error($posts)) :
 			if (strlen($post_id) == 0) :
 				$post = $posts[0];
 			else :
@@ -1402,7 +1402,7 @@ class FeedWordPress {
 			) :
 				do_action('feedwordpress_redirect_retired', $wp_query->post);
 
-				if (!($template = get_404_template())) :
+				if ( !($template = get_404_template())) :
 					$template = get_index_template();
 				endif;
 				if ($template = apply_filters('template_include', $template)) :
@@ -1450,14 +1450,14 @@ class FeedWordPress {
 					#$links[$key] = "<a class='submitdelete' title='" . esc_attr( __( 'Move this item to the Trash (will NOT be re-syndicated)' ) ) . "' href='" . get_delete_post_link( $post->ID ) . "'>" . __( 'Trash' ) . "</a>";
 
 					// Placeholder.
-					if (!is_null($retireLink)) :
+					if ( !is_null($retireLink)) :
 						$links['zap trash'] = '';
 					endif;
 					$links['delete'] = '';
 				endif;
 			endforeach;
 
-			if (!is_null($retireLink)) :
+			if ( !is_null($retireLink)) :
 				$links['zap trash'] = '<a class="'.esc_attr($retireClass).'" title="'.esc_attr(__($retireCap)).'" href="' . $retireLink . '">' . __($retireText) . '</a>';
 			endif;
 			$links['delete'] = '<a class="submitdelete" title="'.esc_attr(__($caption)).'" href="' . $eraseLink . '">' . __($linktext) . '</a>';
@@ -1532,7 +1532,7 @@ class FeedWordPress {
 
 		$post = new FeedWordPressLocalPost;
 
-		if (!$post->is_exposed_to_formatting_filters()) :
+		if ( ! $post->is_exposed_to_formatting_filters()) :
 			// Disable visual editor and only allow operations
 			// directly on HTML if post is bypassing fmt filters
 			# $rich_edit = false;
@@ -1568,7 +1568,7 @@ class FeedWordPress {
 				foreach ($wpdb->queries as $query) :
 					$time = $query[1] * 1000000.0;
 					$mysqlTime += $query[1];
-					if (!isset($byTime[$time])) : $byTime[$time] = array(); endif;
+					if ( !isset($byTime[$time])) : $byTime[$time] = array(); endif;
 					$byTime[$time][] = $query[0]. ' // STACK: ' . $query[2];
 				endforeach;
 				krsort($byTime);
@@ -1658,14 +1658,14 @@ class FeedWordPress {
 	public static function syndicate_link ($name, $uri, $rss) {
 		// Get the category ID#
 		$cat_id = FeedWordPress::link_category_id();
-		if (!is_wp_error($cat_id)) :
+		if ( !is_wp_error($cat_id)) :
 			$link_category = array($cat_id);
 		else :
 			$link_category = array();
 		endif;
 
 		// WordPress gets cranky if there's no homepage URI
-		if (!is_string($uri) or strlen($uri)<1) : $uri = $rss; endif;
+		if ( !is_string($uri) or strlen($uri)<1) : $uri = $rss; endif;
 
 		// Check if this feed URL is already being syndicated.
 		$link_id = wp_insert_link(/*linkdata=*/ array(
@@ -1682,7 +1682,7 @@ class FeedWordPress {
 
 	static function syndicated_status ($what, $default) {
 		$ret = get_option("feedwordpress_syndicated_{$what}_status");
-		if (!$ret) :
+		if ( ! $ret) :
 			$ret = $default;
 		endif;
 		return $ret;
@@ -1736,7 +1736,7 @@ class FeedWordPress {
 
 	public static function syndicated_links ($args = array()) {
 		$contributors = FeedWordPress::link_category_id();
-		if (!is_wp_error($contributors)) :
+		if ( !is_wp_error($contributors)) :
 			$links = get_bookmarks(array_merge(
 				array("category" => $contributors),
 				$args
@@ -1752,7 +1752,7 @@ class FeedWordPress {
 		$cat_id = get_option('feedwordpress_cat_id');
 
 		// If we don't yet have the category ID stored, search by name
-		if (!$cat_id) :
+		if ( ! $cat_id) :
 			$cat_id = FeedWordPressCompatibility::link_category_id(DEFAULT_SYNDICATION_CATEGORY);
 
 			if ($cat_id) :
@@ -1767,9 +1767,9 @@ class FeedWordPress {
 
 		// If we could not find an appropriate link category,
 		// make a new one for ourselves.
-		if (!$cat_id) :
+		if ( ! $cat_id) :
 			$cat_id = FeedWordPressCompatibility::insert_link_category(DEFAULT_SYNDICATION_CATEGORY);
-			if (!is_wp_error($cat_id)) :
+			if ( !is_wp_error($cat_id)) :
 				// Stamp it
 				update_option('feedwordpress_cat_id', $cat_id);
 			endif;
@@ -1911,7 +1911,7 @@ class FeedWordPress {
 		// Props Erigami Scholey-Fuller <http://www.piepalace.ca/blog/2010/11/feedwordpress-broke-my-heart.html>
 		$timeout = FeedWordPress::fetch_timeout();
 
-		if (!is_array($params)) :
+		if ( !is_array($params)) :
 			$force_feed = $params;
 		else : // Parameter array
 			$args = wp_parse_args(array(
@@ -1983,7 +1983,7 @@ class FeedWordPress {
 		));
 
 		$duration = null;
-		if (!$params['cache']) :
+		if ( ! $params['cache']) :
 			$duration = 0;
 		elseif (defined('FEEDWORDPRESS_CACHE_AGE')) :
 			$duration = FEEDWORDPRESS_CACHE_AGE;
@@ -2045,7 +2045,7 @@ class FeedWordPress {
 			foreach ($output as $method) :
 				switch ($method) :
 				case 'echo' :
-					if (!self::update_requested()) :
+					if ( !self::update_requested()) :
 						echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.$out."</pre></div>\n";
 					endif;
 					break;
@@ -2072,8 +2072,8 @@ class FeedWordPress {
 						$line = array("Since" => $since, "Message" => $out, "Most Recent" => $mostRecent);
 					endif;
 
-					if (!isset($dlog['mesg'])) : $dlog['mesg'] = array(); endif;
-					if (!isset($dlog['mesg'][$sect])) : $dlog['mesg'][$sect] = array(); endif;
+					if ( !isset($dlog['mesg'])) : $dlog['mesg'] = array(); endif;
+					if ( !isset($dlog['mesg'][$sect])) : $dlog['mesg'][$sect] = array(); endif;
 
 					$dlog['mesg'][$sect][$hook] = $line;
 				endswitch;
@@ -2117,7 +2117,7 @@ class FeedWordPress {
 				// No news is good news; only send if
 				// there are some messages to send.
 				$body = null;
-				if (!isset($dlog['mesg'])) : $dlog['mesg'] = array(); endif;
+				if ( !isset($dlog['mesg'])) : $dlog['mesg'] = array(); endif;
 
 				foreach ($dlog['mesg'] as $sect => $mesgs) :
 					if (count($mesgs) > 0) :
@@ -2150,7 +2150,7 @@ class FeedWordPress {
 				endforeach;
 
 				$body = apply_filters('feedwordpress_diagnostic_email_body', $body, $dlog);
-				if (!is_null($body)) :
+				if ( !is_null($body)) :
 					$home = feedwordpress_display_url(get_bloginfo('url'));
 					$subj = apply_filters('feedwordpress_diagnostic_email_subject', $home . " syndication issues", $dlog);
 					$agent = 'FeedWordPress '.FEEDWORDPRESS_VERSION;
@@ -2204,7 +2204,7 @@ EOMAIL;
 					$parentId = get_option('feedwordpress_diagnostics_email_root_message_id', null);
 
 					$head = array("Message-ID: <$mesgId>");
-					if (!is_null($parentId)) :
+					if ( !is_null($parentId)) :
 						// We've already sent off a diagnostic message in the past. Let's do some
 						// magic to help with threading, in the hopes that all diagnostic messages
 						// get threaded together.

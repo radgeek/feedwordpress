@@ -7,7 +7,7 @@ class FeedWordPressSettingsUI {
 	static function is_admin () {
 
 		$admin_page = false; // Innocent until proven guilty
-		if (!is_null(MyPHP::request('page'))) :
+		if ( !is_null(MyPHP::request('page'))) :
 			$fwp = preg_quote(FeedWordPress::path());
 			$admin_page = (
 				is_admin()
@@ -133,7 +133,7 @@ class FeedWordPressSettingsUI {
 	} /* FeedWordPressSettingsUI::get_template_part () */
 
 	static function magic_input_tip_js ($id) {
-			if (!preg_match('/^[.#]/', $id)) :
+			if ( !preg_match('/^[.#]/', $id)) :
 				$id = '#'.$id;
 			endif;
 		?>

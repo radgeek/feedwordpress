@@ -37,9 +37,9 @@ class FeedWordPressRPC {
 		$password = $wp_xmlrpc_server->escape(array_shift($args));
 
 		$ret = array();
-		if ( !$user = $wp_xmlrpc_server->login($username, $password) ) :
+		if ( ! $user = $wp_xmlrpc_server->login($username, $password) ) :
 			$ret = $wp_xmlrpc_server->error;
-		elseif (!current_user_can('manage_links')) :
+		elseif ( !current_user_can('manage_links')) :
 			$ret = new IXR_Error(401, 'Sorry, you cannot change the subscription list.');
 		endif;
 		return $ret;
@@ -82,7 +82,7 @@ class FeedWordPressRPC {
 			foreach ($args as $arg) :
 				$link_id = FeedWordPress::find_link($arg);
 				
-				if (!$link_id) :
+				if ( ! $link_id) :
 					$link_id = FeedWordPress::find_link($arg, 'link_url');
 				endif;
 				
