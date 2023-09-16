@@ -57,11 +57,11 @@ class SyndicatedPost {
 			$this->entry = $item;
 
 			// convert to Magpie for compat purposes
-			$mp = new MagpieFromSimplePie($source->simplepie, $this->entry);
-			$this->item = $mp->get_item();
+			$mpie = new MagpieFromSimplePie($source->simplepie, $this->entry);
+			$this->item = $mpie->get_item();
 
 			// done with conversion object
-			$mp = NULL; unset($mp);
+			$mpie = NULL; unset($mpie);
 		else :
 			$this->item = $item;
 		endif;
@@ -448,7 +448,7 @@ class SyndicatedPost {
 	} /* SyndicatedPost::permalink () */
 
 	public function created ($params = array()) {
-		$unfiltered = false; $default = NULL;
+		$unfiltered = false; // $default = NULL; // seems to be unused on this function (gwyneth 20230916)
 		extract($params);
 
 		$date = '';
@@ -461,11 +461,11 @@ class SyndicatedPost {
 		endif;
 
 		$time = new FeedTime($date);
-		$ts = $time->timestamp();
+		$tstamp = $time->timestamp();
 		if (!$unfiltered) :
-			apply_filters('syndicated_item_created', $ts, $this);
+			apply_filters('syndicated_item_created', $tstamp, $this);
 		endif;
-		return $ts;
+		return $tstamp;
 	} /* SyndicatedPost::created() */
 
 	public function published ($params = array(), $default = NULL) {
@@ -477,7 +477,7 @@ class SyndicatedPost {
 		endif;
 
 		$date = '';
-		$ts = null;
+		$tstamp = null;
 
 		# RSS is a fucking mess. Figure out whether we have a date in
 		# <dc:date>, <issued>, <pubDate>, etc., and get it into Unix
@@ -497,24 +497,24 @@ class SyndicatedPost {
 
 		if (strlen($date) > 0) :
 			$time = new FeedTime($date);
-			$ts = $time->timestamp();
+			$tstamp = $time->timestamp();
 		elseif ($fallback) :						// Fall back to <updated> / <modified> if present
-			$ts = $this->updated(/*fallback=*/ false, /*default=*/ $default);
+			$tstamp = $this->updated(/*fallback=*/ false, /*default=*/ $default);
 		endif;
 
 		# If everything failed, then default to the current time.
-		if (is_null($ts)) :
+		if (is_null($tstamp)) :
 			if (-1 == $default) :
-				$ts = time();
+				$tstamp = time();
 			else :
-				$ts = $default;
+				$tstamp = $default;
 			endif;
 		endif;
 
 		if (!$unfiltered) :
-			$ts = apply_filters('syndicated_item_published', $ts, $this);
+			$tstamp = apply_filters('syndicated_item_published', $tstamp, $this);
 		endif;
-		return $ts;
+		return $tstamp;
 	} /* SyndicatedPost::published() */
 
 	public function updated ($params = array(), $default = -1) {
