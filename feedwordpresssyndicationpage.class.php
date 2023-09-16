@@ -722,7 +722,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		$formHref = sprintf( '%s&amp;visibility=%s', $hrefPrefix, urlencode($visibility) );
 		?>
 		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-		<!-- Page: <? echo $page ?> Box: <? echo $box?:'(null)'?>
+		<!-- Page: <? echo $page ?> Box: <? echo $box ?: '(empty)'; ?> -->
 		<div class="tablenav">
 
 		<div id="add-multiple-uri" class="hide-if-js">
@@ -877,7 +877,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
         t.parentNode.insertBefore(s, t);
     })();
 /* ]]> */</script>
-<!-- Page is: <? echo $page; ?> Box is: <? echo $box?:'(null)'?> -->
+<!-- Page is: <? echo $page; ?> Box is: <? echo $box ?: '(empty)'; ?> -->
 <div class="donation-form">
 <h4>Consider a Donation to FeedWordPress</h4>
 <form action="https://www.paypal.com/cgi-bin/webscr" accept-charset="UTF-8" method="post"><div>
