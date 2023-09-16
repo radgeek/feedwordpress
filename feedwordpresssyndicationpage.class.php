@@ -452,7 +452,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 
 			do_action('feedwordpress_admin_page_syndication_meta_boxes', $this);
 		?>
-			<!-- Links: <?=print_r($links, true)?> -->
+			<!-- Links: <?php var_dump($links); ?> -->
 			<div class="metabox-holder">
 			<?php
 				do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
@@ -492,7 +492,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		endif;
 		// Hey ho, let's go...
 		?>
-		<!-- Page: <?=$page?> Box: <?=$box?:'(empty)'?> Links: <?=print_r($links, true)?> -->
+		<!-- Page: <?=$page?> Box: <?=$box?:'(empty)'?> Links: <?php var_dump($links); ?> -->
 		<div style="float: left; background: /* #F5F5F5 */ white; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url(plugins_url(/* "feedwordpress.png" */ "assets/images/icon.svg", __FILE__ ) ); ?>" width="36px" height="36px" alt="FeedWordPress Logo" /></a></div>
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;">Managed by <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
 		<?php print esc_html(FEEDWORDPRESS_VERSION); ?>.</p>
@@ -584,7 +584,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage {
 		$formHref = sprintf( '%s&amp;visibility=%s', $hrefPrefix, urlencode($visibility) );
 		?>
 		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-		<!-- Links: <?=print_r($links, true)?> Page: <?=$page?> Box: <?=$box?:'(null)'?>
+		<!-- Links: <?php var_dump($links); ?> Page: <?=$page?> Box: <?=$box?:'(null)'?>
 		<div class="tablenav">
 
 		<div id="add-multiple-uri" class="hide-if-js">
