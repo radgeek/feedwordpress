@@ -287,6 +287,9 @@ function feedwordpress_item_feed_data () {
  * variable for later use.
  *
  * @param string $permalink The internal permalink
+ * @param mixed|null $post Post object
+ * @param bool $leavename Unused
+ * @param bool $sample Unused
  * @return string The new permalink. Same as the old if the post is not
  *	syndicated, or if FWP is set to use internal permalinks, or if the post
  *	was syndicated, but didn't have a proper permalink recorded.
@@ -364,7 +367,7 @@ function syndication_permalink_escaped ($permalink) {
  * @uses FeedWordPress::munge_permalinks()
  */
 function syndication_comments_feed_link ($link) {
-	global $feedwordpress_the_original_permalink, $id;
+	global $feedwordpress_the_original_permalink;
 
 	if (is_syndicated() and FeedWordPress::munge_permalinks()) :
 		// If the source post provided a comment feed URL using
@@ -474,6 +477,8 @@ class FeedWordPress {
 	/**
 	 * FeedWordPress::__construct (): Construct FeedWordPress singleton object
 	 * and retrieves a list of feeds for later reference.
+	 *
+	 * @uses FeedWordPressHTTPAuthenticator
 	 */
 	public function __construct () {
 		$this->feeds = array ();
@@ -744,57 +749,61 @@ class FeedWordPress {
 		return $sub;
 	} /* FeedWordPress::subscription () */
 
-	# function update (): polls for updates on one or more Contributor feeds
-	#
-	# Arguments:
-	# ----------
-	# *    $uri (string): either the URI of the feed to poll, the URI of the
-	#      (human-readable) website whose feed you want to poll, or null.
-	#
-	#      If $uri is null, then FeedWordPress will poll any feeds that are
-	#      ready for polling. It will not poll feeds that are marked as
-	#      "Invisible" Links (signifying that the subscription has been
-	#      de-activated), or feeds that are not yet stale according to their
-	#      TTL setting (which is either set in the feed, or else set
-	#      randomly within a window of 30 minutes - 2 hours).
-	#
-	# Returns:
-	# --------
-	# *    Normally returns an associative array, with 'new' => the number
-	#      of new posts added during the update, and 'updated' => the number
-	#      of old posts that were updated during the update. If both numbers
-	#      are zero, there was no change since the last poll on that URI.
-	#
-	# *    Returns null if URI it was passed was not a URI that this
-	#      installation of FeedWordPress syndicates.
-	#
-	# Effects:
-	# --------
-	# *    One or more feeds are polled for updates
-	#
-	# *    If the feed Link does not have a hardcoded name set, its Link
-	#      Name is synchronized with the feed's title element
-	#
-	# *    If the feed Link does not have a hardcoded URI set, its Link URI
-	#      is synchronized with the feed's human-readable link element
-	#
-	# *    If the feed Link does not have a hardcoded description set, its
-	#      Link Description is synchronized with the feed's description,
-	#      tagline, or subtitle element.
-	#
-	# *    The time of polling is recorded in the feed's settings, and the
-	#      TTL (time until the feed is next available for polling) is set
-	#      either from the feed (if it is supplied in the ttl or syndication
-	#      module elements) or else from a randomly-generated time window
-	#      (between 30 minutes and 2 hours).
-	#
-	# *    New posts from the polled feed are added to the WordPress store.
-	#
-	# *    Updates to existing posts since the last poll are mirrored in the
-	#      WordPress store.
-	#
+	/** function update (): polls for updates on one or more Contributor feeds
+	@desc
+	Arguments:
+	==========
+	* $uri (string): Either the URI of the feed to poll, the URI of the
+	    (human-readable) website whose feed you want to poll, or null.
+
+	    If $uri is null, then FeedWordPress will poll any feeds that are
+	    ready for polling. It will not poll feeds that are marked as
+	    "Invisible" Links (signifying that the subscription has been
+	    de-activated), or feeds that are not yet stale according to their
+	    TTL setting (which is either set in the feed, or else set
+	    randomly within a window of 30 minutes - 2 hours).
+
+	Returns:
+	========
+
+	*	Normally returns an associative array, with 'new' => the number
+	    of new posts added during the update, and 'updated' => the number
+	    of old posts that were updated during the update. If both numbers
+	    are zero, there was no change since the last poll on that URI.
+
+	*	Returns null if URI it was passed was not a URI that this
+	    installation of FeedWordPress syndicates.
+
+	Effects:
+	========
+	*	One or more feeds are polled for updates
+
+	*   If the feed Link does not have a hardcoded name set, its Link
+	    Name is synchronized with the feed's title element
+
+	*   If the feed Link does not have a hardcoded URI set, its Link URI
+	    is synchronized with the feed's human-readable link element
+
+	*   If the feed Link does not have a hardcoded description set, its
+	    Link Description is synchronized with the feed's description,
+	    tagline, or subtitle element.
+
+	*   The time of polling is recorded in the feed's settings, and the
+	    TTL (time until the feed is next available for polling) is set
+	    either from the feed (if it is supplied in the ttl or syndication
+	    module elements) or else from a randomly-generated time window
+	    (between 30 minutes and 2 hours).
+
+	*   New posts from the polled feed are added to the WordPress store.
+
+	*   Updates to existing posts since the last poll are mirrored in the
+	    WordPress store.
+
+	@param string|null $uri Either the URI of the feed to poll, the URI of the (human-readable) website whose feed you want to poll, or null.
+	@param mixed|null $crash_ts Unknown purpose.
+	@return array|null Associative array, with 'new' => # of new posts added during update, and 'updated' => # of old posts that were updated. If both are zero, there was no change since çast update.
+	*/
 	public function update ($uri = null, $crash_ts = null) {
-		global $wpdb;
 
 		if (FeedWordPress::needs_upgrade()) : // Will make duplicate posts if we don't hold off
 			return null;
@@ -997,6 +1006,8 @@ class FeedWordPress {
 		// WordPress 3.5+ compat: the WP devs are in the midst of removing Links from the WordPress core. Eventually we'll have to deal
 		// with the possible disappearance of the wp_links table as a whole; but in the meantime, we just need to turn on the interface
 		// element to avoid problems with user capabilities that presume the presence of the Links Manager in the admin UI.
+		global $post_type;
+
 		if (!intval(get_option('link_manager_enabled', false))) :
 			update_option('link_manager_enabled', true);
 		endif;
@@ -1009,7 +1020,7 @@ class FeedWordPress {
 				or strpos( $sendback, 'post.php' ) !== false
 				or strpos( $sendback, 'post-new.php' ) !== false
 			) :
-				if ( 'attachment' == $post_type ) :
+				if ( 'attachment' == $post_type ) :		// where does this come from?? I put it as a global...(gwyneth 20230916)
 					$sendback = admin_url( 'upload.php' );
 				else :
 					$sendback = admin_url( 'edit.php' );
@@ -1028,7 +1039,7 @@ class FeedWordPress {
 			if ( $post ) :
 				$post_type = $post->post_type;
 			endif;
-			$p = get_post($post_id);
+			$p = get_post( $post_id );
 
 			if ( ! $post ) :
 				wp_die( __( 'The item you are trying to zap no longer exists.' ) );
@@ -1112,7 +1123,6 @@ class FeedWordPress {
 
 			// If so, get ready to intercept the call a little
 			// further down the line.
-
 			define('FEEDWORDPRESS_PREPARE_TO_ZAP', $post_id);
 
 		endif;
@@ -1129,7 +1139,7 @@ class FeedWordPress {
 		if ( FeedWordPress::param( 'unzapped' ) ) :
 			$n = intval( FeedWordPress::param( 'unzapped' ) );
 ?>
-<div id="message" class="updated"><p><?php print esc-html( $n ); ?> syndicated item<?php print esc_html( $n != 1 ? 's' : '' ) ?> un-zapped and restored to normal.</p></div>
+<div id="message" class="updated"><p><?php print esc_html( $n ); ?> syndicated item<?php print esc_html( $n != 1 ? 's' : '' ) ?> un-zapped and restored to normal.</p></div>
 <?php
 		endif;
 	} /* FeedWordPress::all_admin_notices () */
@@ -1739,8 +1749,6 @@ class FeedWordPress {
 	} /* FeedWordPress::syndicated_links() */
 
 	public static function link_category_id () {
-		global $wpdb, $wp_db_version;
-
 		$cat_id = get_option('feedwordpress_cat_id');
 
 		// If we don't yet have the category ID stored, search by name
@@ -1772,8 +1780,6 @@ class FeedWordPress {
 
 	# Upgrades and maintenance...
 	static function needs_upgrade () {
-
-		global $wpdb;
 		$fwp_db_version = get_option('feedwordpress_version', null);
 		$ret = false; // innocent until proven guilty
 		if (is_null($fwp_db_version) or ($fwp_db_version < FEEDWORDPRESS_VERSION)) :
@@ -1834,9 +1840,8 @@ class FeedWordPress {
 		return $ret;
 	} /* FeedWordPress::needs_upgrade () */
 
-	static function upgrade_database ($from = null) {
-		global $wpdb;
-
+	static function upgrade_database ($from = null)
+	{
 		if (is_null($from) or $from <= 0.96) : $from = 0.96; endif;
 
 		switch ($from) :
@@ -2247,6 +2252,12 @@ EOMAIL;
 		endforeach;
 	} /* FeedWordPress::admin_footer () */
 
+	/**
+	 * Returns the log prefix, optionally with a date.
+	 *
+	 * @param  boolean $date If true, a date timestamp is added to the prefix.
+	 * @return string Generated log prefix.
+	 */
 	static function log_prefix ($date = false) {
 		$home = get_bloginfo('url');
 		$prefix = '['.feedwordpress_display_url($home).'] [feedwordpress] ';
@@ -2256,6 +2267,12 @@ EOMAIL;
 		return $prefix;
 	} /* FeedWordPress::log_prefix () */
 
+	/**
+	 * Returns the menu capacity value.
+	 *
+	 * @param  boolean $sub If true, we're on a menu sublevel.
+	 * @return mixed Returns the capacity.
+	 */
 	static function menu_cap ($sub = false) {
 		if ($sub) :
 			$cap = apply_filters('feedwordpress_menu_settings_capacity', 'manage_options');
@@ -2355,14 +2372,21 @@ define( 'FWP_REGEX_EMAIL_PREFIX_NAME', '/^\s*' . FWP_REGEX_EMAIL_NAME . '\s*<' .
 define( 'FWP_REGEX_EMAIL_JUST_ADDY', '/^\s*' . FWP_REGEX_EMAIL_ADDY . '\s*$/' );
 define( 'FWP_REGEX_EMAIL_JUST_NAME', '/^\s*' . FWP_REGEX_EMAIL_NAME . '\s*$/' );
 
+/**
+ * Parses an email address that includes the real name as well.
+ *
+ * @param  string $email Email address to parse.
+ *
+ * @return array  Associative array with 'name' and 'email' as fields (each may be null).
+ */
 function parse_email_with_realname( $email ) {
 	$ret = array(
-		"name" => "",
-		"email" => ""
+		'name' => null,
+		'email' => null
 	);	// avoid uninitialized variables for return values, this will generate a notice/warning - and one day, an error! (gwyneth 20210714)
 
 	if ( preg_match( FWP_REGEX_EMAIL_POSTFIX_NAME, $email, $matches ) ) :
-		( $ret["name"] = $matches[3] ) || ( $ret['name'] = $matches[2] );
+		( $ret['name'] = $matches[3] ) || ( $ret['name'] = $matches[2] );
 		$ret['email'] = $matches[1];
 	elseif ( preg_match( FWP_REGEX_EMAIL_PREFIX_NAME, $email, $matches ) ) :
 		( $ret['name'] = $matches[2] ) || ( $ret['name'] = $matches[3] );
@@ -2374,9 +2398,6 @@ function parse_email_with_realname( $email ) {
 	elseif ( preg_match( FWP_REGEX_EMAIL_JUST_NAME, $email, $matches ) ) :
 		$ret['email'] = null;
 		( $ret['name'] = $matches[2] ) || ( $ret['name'] = $matches[3] );
-	else :
-		$ret['name']  = null;
-		$ret['email'] = null;
 	endif;
 	return $ret;
 }
