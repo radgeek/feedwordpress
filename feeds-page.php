@@ -4,6 +4,12 @@ require_once(dirname(__FILE__) . '/magpiemocklink.class.php');
 require_once(dirname(__FILE__) . '/feedfinder.class.php');
 require_once(dirname(__FILE__) . '/updatedpostscontrol.class.php');
 
+/**
+ * List of feeds for FWP
+ *
+ * @extends FeedWordPressAdminPage
+ * @global 	$post_source
+ */
 class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	var $HTTPStatusMessages = array (
 		200 => 'OK. FeedWordPress had no problems retrieving the content at this URL but the content does not seem to be a feed, and does not seem to include links to any feeds.',
@@ -82,13 +88,14 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	 * Constructs the Feeds page object
 	 *
 	 * @param mixed $link An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings
+	 * @uses UpdatedPostsControl
 	 */
 	public function __construct( $link = -1 ) {
-		if (is_numeric($link) and -1 == $link) :
+		if ( is_numeric( $link ) and -1 == $link ) :
 			$link = $this->submitted_link();
 		endif;
 
-		parent::__construct('feedwordpressfeeds', $link);
+		parent::__construct( 'feedwordpressfeeds', $link );
 
 		$this->dispatch = 'feedwordpress_admin_page_feeds';
 		$this->pagenames = array(
@@ -97,29 +104,34 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			'open-sheet' => 'Feed and Update',
 		);
 		$this->filename = __FILE__;
-		$this->updatedPosts = new UpdatedPostsControl($this);
+		$this->updatedPosts = new UpdatedPostsControl( $this );
 
-		$this->special_settings = apply_filters('syndicated_feed_special_settings', $this->special_settings, $this);
+		$this->special_settings = apply_filters( 'syndicated_feed_special_settings', $this->special_settings, $this );
 	} /* FeedWordPressFeedsPage constructor */
 
-	function display () {
-
+	/**
+	 * Prints out the feeds page.
+	 *
+	 * @return bool  TRUE to continue printing out, FALSE to stop.
+	 * @uses FeedWordPress::param()
+	 */
+	function display() {
 		global $post_source;
 
 		$this->boxes_by_methods = array(
-			'feed_information_box' => __('Feed Information'),
-			'global_feeds_box' => __('Update Scheduling'),
-			'updated_posts_box' => __('Updated Posts'),
-			'custom_settings_box' => __('Custom Feed Settings (for use in templates)'),
-			'advanced_settings_box' => __('Advanced Settings'),
+			'feed_information_box'	=> __( 'Feed Information' ),
+			'global_feeds_box'		=> __( 'Update Scheduling' ),
+			'updated_posts_box'		=> __( 'Updated Posts' ),
+			'custom_settings_box'	=> __( 'Custom Feed Settings (for use in templates)' ),
+			'advanced_settings_box' => __( 'Advanced Settings' ),
 		);
 		if ($this->for_default_settings()) :
-			unset($this->boxes_by_methods['custom_settings_box']);
+			unset( $this->boxes_by_methods['custom_settings_box'] );
 		endif;
 
 		// Allow overriding of normal source for FeedFinder, which may
 		// be called from multiple points.
-		if (isset($post_source) and !is_null($post_source)) :
+		if ( isset( $post_source ) and ! is_null( $post_source ) ) :
 			$source = $post_source;
 		else :
 			$source = $this->dispatch;
@@ -139,20 +151,25 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		return false; // Don't continue
 	} /* FeedWordPressFeedsPage::display() */
 
-	function ajax_interface_js () {
+	/**
+	 * Interface with JavaScript calls.
+	 *
+	 * @return void  description
+	 */
+	function ajax_interface_js() {
 		parent::ajax_interface_js();
 		?>
 
-		jQuery(document).ready( function () {
-			contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');
-			contextual_appearance('time-limit', 'time-limit-box', null, 'yes');
-			contextual_appearance('use-default-update-window-no', 'update-scheduling-note', null, null, 'block', true);
-			jQuery('#use-default-update-window-yes, #use-default-update-window-no').click( function () {
-				contextual_appearance('use-default-update-window-no', 'update-scheduling-note', null, null, 'block', true);
+		jQuery( document ).ready( function () {
+			contextual_appearance( 'automatic-updates-selector', 'cron-job-explanation', null, 'no' );
+			contextual_appearance( 'time-limit', 'time-limit-box', null, 'yes' );
+			contextual_appearance( 'use-default-update-window-no', 'update-scheduling-note', null, null, 'block', true );
+			jQuery( '#use-default-update-window-yes, #use-default-update-window-no' ).click( function () {
+				contextual_appearance( 'use-default-update-window-no', 'update-scheduling-note', null, null, 'block', true );
 			} );
 
 			var els = ['name', 'description', 'url'];
-			for (var i = 0; i < els.length; i++) {
+			for ( var i = 0; i < els.length; i++ ) {
 				contextual_appearance(
 					/*item=*/ 'basics-hardcode-'+els[i],
 					/*appear=*/ 'basics-'+els[i]+'-view',

@@ -33,7 +33,7 @@ License: GPL
 define ('FEEDWORDPRESS_VERSION', '2022.0222');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contact');
 
-if ( !defined('FEEDWORDPRESS_BLEG')) :
+if ( ! defined('FEEDWORDPRESS_BLEG')) :
 	define ('FEEDWORDPRESS_BLEG', true);
 endif;
 
@@ -750,10 +750,11 @@ class FeedWordPress {
 	} /* FeedWordPress::subscription () */
 
 	/** function update (): polls for updates on one or more Contributor feeds
+
 	@desc
-	Arguments:
-	==========
-	* $uri (string): Either the URI of the feed to poll, the URI of the
+	# Arguments:
+
+	- $uri (string): Either the URI of the feed to poll, the URI of the
 	    (human-readable) website whose feed you want to poll, or null.
 
 	    If $uri is null, then FeedWordPress will poll any feeds that are
@@ -763,143 +764,154 @@ class FeedWordPress {
 	    TTL setting (which is either set in the feed, or else set
 	    randomly within a window of 30 minutes - 2 hours).
 
-	Returns:
-	========
+	# Returns:
 
-	*	Normally returns an associative array, with 'new' => the number
+	-	Normally returns an associative array, with 'new' => the number
 	    of new posts added during the update, and 'updated' => the number
 	    of old posts that were updated during the update. If both numbers
 	    are zero, there was no change since the last poll on that URI.
 
-	*	Returns null if URI it was passed was not a URI that this
+	-	Returns null if URI it was passed was not a URI that this
 	    installation of FeedWordPress syndicates.
 
-	Effects:
-	========
-	*	One or more feeds are polled for updates
+	# Effects:
 
-	*   If the feed Link does not have a hardcoded name set, its Link
+	-	One or more feeds are polled for updates
+
+	-   If the feed Link does not have a hardcoded name set, its Link
 	    Name is synchronized with the feed's title element
 
-	*   If the feed Link does not have a hardcoded URI set, its Link URI
+	-   If the feed Link does not have a hardcoded URI set, its Link URI
 	    is synchronized with the feed's human-readable link element
 
-	*   If the feed Link does not have a hardcoded description set, its
+	-   If the feed Link does not have a hardcoded description set, its
 	    Link Description is synchronized with the feed's description,
 	    tagline, or subtitle element.
 
-	*   The time of polling is recorded in the feed's settings, and the
+	-   The time of polling is recorded in the feed's settings, and the
 	    TTL (time until the feed is next available for polling) is set
 	    either from the feed (if it is supplied in the ttl or syndication
 	    module elements) or else from a randomly-generated time window
 	    (between 30 minutes and 2 hours).
 
-	*   New posts from the polled feed are added to the WordPress store.
+	-   New posts from the polled feed are added to the WordPress store.
 
-	*   Updates to existing posts since the last poll are mirrored in the
+	-   Updates to existing posts since the last poll are mirrored in the
 	    WordPress store.
 
 	@param string|null $uri Either the URI of the feed to poll, the URI of the (human-readable) website whose feed you want to poll, or null.
 	@param mixed|null $crash_ts Unknown purpose.
 	@return array|null Associative array, with 'new' => # of new posts added during update, and 'updated' => # of old posts that were updated. If both are zero, there was no change since çast update.
 	*/
-	public function update ($uri = null, $crash_ts = null) {
-
-		if (FeedWordPress::needs_upgrade()) : // Will make duplicate posts if we don't hold off
+	public function update( $uri = null, $crash_ts = null ) {
+		if ( FeedWordPress::needs_upgrade() ) : // Will make duplicate posts if we don't hold off
 			return null;
 		endif;
 
-		if ( !is_null($uri) and $uri != '*') :
-			$uri = trim($uri);
+		if ( ! is_null( $uri ) and $uri != '*' ) :
+			$uri = trim( $uri );
 		else : // Update all
-			if ($this->update_hooked) :
+			if ( $this->update_hooked ) :
 				$diag = $this->update_hooked;
 			else :
-				$diag = 'Initiating a MANUAL check-in on the update schedule at '.date('r', time());
+				$diag = 'Initiating a MANUAL check-in on the update schedule at ' . date( 'r', time() );
 			endif;
-			$this->diagnostic('update_schedule:check', $diag);
+			$this->diagnostic( 'update_schedule:check', $diag );
 
-			update_option('feedwordpress_last_update_all', time());
+			update_option( 'feedwordpress_last_update_all', time() );
 		endif;
 
-		do_action('feedwordpress_update', $uri);
+		do_action( 'feedwordpress_update', $uri );
 
-		if (is_null($crash_ts)) :
+		if ( is_null( $crash_ts ) ) :
 			$crash_ts = $this->crash_ts();
 		endif;
 
 		// Randomize order for load balancing purposes
-		$feed_set = array_keys($this->feeds);
-		shuffle($feed_set);
+		$feed_set = array_keys( $this->feeds );
+		shuffle( $feed_set );
 
-		$updateWindow = (int) get_option('feedwordpress_update_window', DEFAULT_UPDATE_PERIOD) * 60 /* sec/min */;
-		$interval = (int) get_option('feedwordpress_freshness', FEEDWORDPRESS_FRESHNESS_INTERVAL);
+		$updateWindow = (int) get_option( 'feedwordpress_update_window', DEFAULT_UPDATE_PERIOD ) * 60 /* sec/min */;
+		$interval = (int) get_option( 'feedwordpress_freshness', FEEDWORDPRESS_FRESHNESS_INTERVAL );
 		$portion = max(
-			(int) ceil(count($feed_set) / ($updateWindow / $interval)),
+			(int) ceil( count( $feed_set ) / ( $updateWindow / $interval ) ),
 			10
 		);
 
-		$max_polls = apply_filters('feedwordpress_polls_per_update', get_option(
-			'feedwordpress_polls_per_update',	$portion
-		), $uri);
+		$max_polls = apply_filters(
+			'feedwordpress_polls_per_update',
+			get_option(
+				'feedwordpress_polls_per_update', $portion
+			),
+			$uri
+		);
 
-		$feed_set = apply_filters('feedwordpress_update_feeds', $feed_set, $uri);
-
+		$feed_set = apply_filters( 'feedwordpress_update_feeds', $feed_set, $uri );
 
 		// Loop through and check for new posts
-		$delta = null; $remaining = $max_polls;
-		foreach ($feed_set as $feed_id) :
+		$delta = null;
+		$remaining = $max_polls;
+		foreach ( $feed_set as $feed_id)  :
 
-			$feed = $this->subscription($feed_id);
+			$feed = $this->subscription( $feed_id );
 
 			// Has this process overstayed its welcome?
 			if (
 				// Over time limit?
-				( !is_null($crash_ts) and (time() > $crash_ts))
+				( ! is_null( $crash_ts ) and ( time() > $crash_ts ) )
 
 				// Over feed count?
-				or ($remaining == 0)
+				or ( 0 == $remaining )
 			) :
 				break;
 			endif;
 
-			$pinged_that = (is_null($uri) or ($uri=='*') or in_array($uri, array($feed->uri(), $feed->homepage())));
+			$pinged_that = ( is_null( $uri ) or ( $uri == '*' ) or in_array( $uri, array( $feed->uri(), $feed->homepage() ) ) );
 
-			if ( !is_null($uri)) : // A site-specific ping always updates
+			if ( ! is_null( $uri ) ) : // A site-specific ping always updates
 				$timely = true;
 			else :
 				$timely = $feed->stale();
 			endif;
 
 			// If at least one feed was hit for updating...
-			if ($pinged_that and is_null($delta)) :
+			if ( $pinged_that and is_null( $delta ) ) :
 				// ... don't return error condition
-				$delta = array('new' => 0, 'updated' => 0, 'stored' => 0);
+				$delta = array( 'new' => 0, 'updated' => 0, 'stored' => 0 );
 			endif;
 
-			if ($pinged_that and $timely) :
+			if ( $pinged_that and $timely ) :
 				$remaining = $remaining - 1;
 
-				do_action('feedwordpress_check_feed', $feed->settings);
+				do_action( 'feedwordpress_check_feed', $feed->settings );
 				$start_ts = time();
-				$added = $feed->poll($crash_ts);
-				do_action('feedwordpress_check_feed_complete', $feed->settings, $added, time() - $start_ts);
+				$added = $feed->poll( $crash_ts );
+				do_action( 'feedwordpress_check_feed_complete', $feed->settings, $added, time() - $start_ts );
 
-				if (is_array($added)) : // Success
-					foreach ($added as $key => $count) :
-						$delta[$key] += $added[$key];
+				if ( is_array( $added ) ) : // Success
+					foreach ( $added as $key => $count ) :
+						$delta[ $key ] += $added[ $key ];
 					endforeach;
 				endif;
 			endif;
 		endforeach;
 
-		do_action('feedwordpress_update_complete', $delta);
+		do_action( 'feedwordpress_update_complete', $delta );
 		return $delta;
 	} /* FeedWordPress::update () */
 
-	public function crash_ts ($default = null) {
-		$crash_dt = (int) get_option('feedwordpress_update_time_limit', 0);
-		if ($crash_dt > 0) :
+	/**
+	 * Checks if we're over the update time limit.
+	 *
+	 * @todo is returning null advisable? (gwyneth 20230916)
+	 *
+	 * @param  int|null $default Default value, called when the corresponding FWP option is not set.
+	 *
+	 * @return int|null
+	 */
+	public function crash_ts( $default = null ) {
+		$crash_dt = (int) get_option( 'feedwordpress_update_time_limit', 0 );
+		if ( $crash_dt > 0 ) :
 			$crash_ts = time() + $crash_dt;
 		else :
 			$crash_ts = $default;
@@ -907,42 +919,69 @@ class FeedWordPress {
 		return $crash_ts;
 	} /* FeedWordPress::crash_ts () */
 
-	public function secret_key () {
-		$secret = get_option('feedwordpress_secret_key', false);
+
+	/**
+	 * Checks if we have a secret key set in the options; if not, generate one.
+	 *
+	 * @return string Secret key, either from options or auto-generated.
+	 *
+	 * @todo Only 6 characters? That is rather easy to guess... Also, uniqid() can return 13 or 23
+	 * characters, what's the point of using MD5 in this case? (gwyneth 20230916)
+	 */
+	public function secret_key() {
+		$secret = get_option( 'feedwordpress_secret_key', false );
 		if ( ! $secret) : // Generate random key.
-			$secret = substr(md5(uniqid(microtime())), 0, 6);
-			update_option('feedwordpress_secret_key', $secret);
+			$secret = substr( md5( uniqid( microtime() ) ), 0, 6 );
+			update_option( 'feedwordpress_secret_key', $secret );
 		endif;
 		return $secret;
 	} /* FeedWordPress::secret_key () */
 
-	public function has_secret () {
-		return (MyPHP::request('feedwordpress_key')==$this->secret_key());
+	/**
+	 * Returns true if we have set a secret FWP key.
+	 *
+	 * @return bool  True if we have a secret key, false otherwise
+	 *
+	 * @uses MyPHP::request()
+	 */
+	public function has_secret() {
+		return ( MyPHP::request( 'feedwordpress_key' ) == $this->secret_key() );
 	} /* FeedWordPress::has_secret () */
 
 	var $update_hooked = null;
-	public function automatic_update_hook ($params = array()) {
-		$params = wp_parse_args($params, array( // Defaults
+
+	/**
+	 * Activates the hook for automatic plugin updates, if requested.
+	 *
+	 * @param  Array $params Parameters to send to the hook.
+	 *
+	 * @return string Represents the hook's name. There is a slight chance that this is null, though. (gwyneth 20230916)
+	 *
+	 * @uses wp_parse_args()
+	 * @uses MyPHP::request()
+	 */
+	public function automatic_update_hook( $params = array() ) {
+		$params = wp_parse_args( $params, array( // Defaults
 			'setting only' => false,
 		));
-		$hook = get_option('feedwordpress_automatic_updates', null);
+		$hook = get_option( 'feedwordpress_automatic_updates', null );
 		$method = 'FeedWordPress option';
 
 		// Allow for forced behavior in testing.
 		if (
 			! $params['setting only']
 			and $this->has_secret()
-			and MyPHP::request('automatic_update')
+			and MyPHP::request( 'automatic_update' )
 		) :
-			$hook = MyPHP::request('automatic_update');
+			$hook = MyPHP::request( 'automatic_update') ;
 			$method = 'URL parameter';
 		endif;
 
 		$exact = $hook; // Before munging
 
 		if ( !! $hook) :
-			if ($hook == 'init' or $hook == 'wp_loaded') : // Re-map init to wp_loaded
-				$hook = ($params['setting only'] ? 'init' : 'wp_loaded');
+			if ( $hook == 'init' or $hook == 'wp_loaded' ) : // Re-map init to wp_loaded
+				$hook = ( $params['setting only'] ? 'init' : 'wp_loaded' );
 
 			// Constrain possible values. If it's not an init or wp_loaded, it's a shutdown
 			else :
@@ -950,8 +989,8 @@ class FeedWordPress {
 			endif;
 		endif;
 
-		if ($hook) :
-			$this->update_hooked = "Initiating an AUTOMATIC CHECK FOR UPDATES ON PAGE LOAD ".$hook." due to ".$method." = ".trim($this->val($exact));
+		if ( $hook ) :
+			$this->update_hooked = "Initiating an AUTOMATIC CHECK FOR UPDATES ON PAGE LOAD " . $hook . " due to " . $method . " = " . trim( $this->val( $exact ) );
 		endif;
 
 		return $hook;
