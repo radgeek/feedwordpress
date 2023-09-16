@@ -1,4 +1,6 @@
 <?php
+define( 'FWP_BOLD_PREFIX_REGEX', '/^[*][*] ([^*]+) [*][*] \s+ (\S.*)$/x' );
+
 /**
  * class FeedWordPressAdminPage
  *
@@ -8,9 +10,6 @@
  * settings on particular feeds.
  *
  */
- 
-define( 'FWP_BOLD_PREFIX_REGEX', '/^[*][*] ([^*]+) [*][*] \s+ (\S.*)$/x');
- 
 class FeedWordPressAdminPage {
 	protected $context;
 	protected $updated = false;
@@ -31,7 +30,7 @@ class FeedWordPressAdminPage {
 
 		// Set meta-box context name
 		$this->context = $page;
-		if ($this->for_feed_settings()) :
+		if ( $this->for_feed_settings() ) :
 			$this->context .= 'forfeed';
 		endif;
 	} /* FeedWordPressAdminPage constructor */
@@ -225,7 +224,7 @@ class FeedWordPressAdminPage {
 	 * @see add_meta_box()
 	 * @see do_meta_boxes()
 	 */
-	public function meta_box_context () {
+	public function meta_box_context() {
 		return $this->context;
 	} /* FeedWordPressAdminPage::meta_box_context () */
 
@@ -484,15 +483,15 @@ class FeedWordPressAdminPage {
 				/*id=*/ $id,
 				/*title=*/ $title,
 				/*callback=*/ array($this, $method),
-				/*page=*/ $this->meta_box_context(),
-				/*context=*/ $this->meta_box_context()
+				/*screen=*/ $this->meta_box_context(),
+				/*context=*/ $this->meta_box_context(),
 			);
 		endforeach;
 		do_action($this->dispatch.'_meta_boxes', $this);
 		?>
 		<div class="metabox-holder">
 		<?php
-			do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
+			do_meta_boxes( $this->meta_box_context(), $this->meta_box_context(), $this );
 		?>
 		</div> <!-- class="metabox-holder" -->
 		</div> <!-- id="post-body" -->

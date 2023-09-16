@@ -1506,17 +1506,24 @@ class FeedWordPress {
 		return $actions;
 	} /* FeedWordPress::row_actions () */
 
-	public function dashboard_setup () {
+	/**
+	 * Sets up the FWP dashboard.
+	 *
+	 * @global $wp_meta_boxes
+	 * @uses FeedWordPress::menu_cap
+	 */
+	public function dashboard_setup() {
+		/** @var mixed User capability */
 		$see_it = FeedWordPress::menu_cap();
 
-		if (current_user_can($see_it)) :
+		if ( current_user_can( $see_it ) ) :
 			// Get the stylesheet
-			wp_enqueue_style('feedwordpress-elements');
+			wp_enqueue_style( 'feedwordpress-elements' );
 
-			$widget_id = 'feedwordpress_dashboard';
-			$widget_name = __('Syndicated Sources');
-			$column = 'side';
-			$priority = 'core';
+			$widget_id   = 'feedwordpress_dashboard';
+			$widget_name = __( 'Syndicated Sources' );
+			$column      = 'side';
+			$priority    = 'core';
 
 			// I would love to use wp_add_dashboard_widget() here and save
 			// myself some trouble. But WP 3 does not yet have any way to
@@ -1525,39 +1532,38 @@ class FeedWordPress {
 			add_meta_box(
 				/*id=*/ $widget_id,
 				/*title=*/ $widget_name,
-				/*callback=*/ array($this, 'dashboard'),
-				/*page=*/ 'dashboard',
+				/*callback=*/ array( $this, 'dashboard' ),
+				/*screen=*/ 'dashboard',
 				/*context=*/ $column,
 				/*priority=*/ $priority
 			);
 			/*control_callback= array($this, 'dashboard_control') */
 
-			// This is kind of rude, I know, but the dashboard widget isn't
-			// worth much if users don't know that it exists, and I don't
-			// know of any better way to reorder the boxen.
-			//
-			// Gleefully ripped off of codex.wordpress.org/Dashboard_Widgets_API
+			/* This is kind of rude, I know, but the dashboard widget isn't
+			 * worth much if users don't know that it exists, and I don't
+			 * know of any better way to reorder the boxen.
+			 *
+			 * Gleefully ripped off of codex.wordpress.org/Dashboard_Widgets_API
+			 */
 
-			// Globalize the metaboxes array, this holds all the widgets for wp-admin
+			/** @var mixed Globalizes the metaboxes array, this holds all the widgets for wp-admin. */
 			global $wp_meta_boxes;
 
-			// Get the regular dashboard widgets array
-			// (which has our new widget already but at the end)
-
+			/** @var mixed Get the regular dashboard widgets array
+			 * (which has our new widget already but at the end). */
 			$normal_dashboard = $wp_meta_boxes['dashboard'][$column][$priority];
 
 			// Backup and delete our new dashbaord widget from the end of the array
-			if (isset($normal_dashboard[$widget_id])) :
+			if ( isset( $normal_dashboard[ $widget_id ] ) ) :
 				$backup = array();
-				$backup[$widget_id] = $normal_dashboard[$widget_id];
-				unset($normal_dashboard[$widget_id]);
+				$backup[ $widget_id ] = $normal_dashboard[ $widget_id ];
+				unset( $normal_dashboard[ $widget_id ] );
 
-				// Merge the two arrays together so our widget is at the
-				// beginning
-				$sorted_dashboard = array_merge($backup, $normal_dashboard);
+				/** @var array Merge the two arrays together so our widget is at the beginning. */
+				$sorted_dashboard = array_merge( $backup, $normal_dashboard );
 
 				// Save the sorted array back into the original metaboxes
-				$wp_meta_boxes['dashboard'][$column][$priority] = $sorted_dashboard;
+				$wp_meta_boxes['dashboard'][ $column ][ $priority ] = $sorted_dashboard;
 			endif;
 		endif;
 	} /* FeedWordPress::dashboard_setup () */
