@@ -655,21 +655,27 @@ class FeedWordPress {
 	public function add_pages()
 	{
 		$menu_cap = FeedWordPress::menu_cap();
-		$settings_cap = FeedWordPress::menu_cap(/*sub=*/ true);
-		$syndicationMenu = FeedWordPress::path('syndication.php');
+		$settings_cap = FeedWordPress::menu_cap( /*sub=*/ true );
+		$syndicationMenu = FeedWordPress::path( 'syndication.php' );
 
 		add_menu_page(
-			'Syndicated Sites', 'Syndication',
-			$menu_cap,
-			$syndicationMenu,
-			NULL,
-			$this->plugin_dir_url( /* 'assets/images/feedwordpress-tiny.png' */ 'assets/images/icon.svg' )
+			/* page_title */ 'Syndicated Sites',
+			/* menu_title */ 'Syndication',
+			/* capability */ $menu_cap,
+			/* menu_slug  */ $syndicationMenu,
+			/* function   */ NULL,
+			/* icon_url   */ $this->plugin_dir_url( /* 'assets/images/feedwordpress-tiny.png' */ 'assets/images/icon.svg' )
+			/* position   */
 		);
 
-		do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
+		do_action( 'feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap );
 		add_submenu_page(
-			$syndicationMenu, 'Syndicated Sites', 'Syndicated Sites',
-			$settings_cap, $syndicationMenu
+			/* parent_slug */ $syndicationMenu,
+			/* page_title  */ 'Syndicated Sites',
+			/* menu_title  */ 'Syndicated Sites',
+			/* capability  */ $settings_cap,
+			/* menu_slug   */ $syndicationMenu,
+			/* function    */
 		);
 
 		do_action('feedwordpress_admin_menu_pre_feeds', $menu_cap, $settings_cap);
@@ -712,13 +718,13 @@ class FeedWordPress {
 		add_filter('post_row_actions', array($this, 'row_actions'), 10, 2);
 	} /* function FeedWordPress::add_pages () */
 
-	public function check_debug () {
+	public function check_debug() {
 		// This is a horrible fucking kludge that I have to do because the
 		// admin notice code is triggered before the code that updates the
 		// setting.
-		$feedwordpress_debug = FeedWordPress::param(  'feedwordpress_debug', get_option( 'feedwordpress_debug' ) );
+		$feedwordpress_debug = FeedWordPress::param( 'feedwordpress_debug', get_option( 'feedwordpress_debug' ) );
 
-		FeedWordPressSettingsUI::get_template_part('notice-debug-mode', $feedwordpress_debug, 'html');
+		FeedWordPressSettingsUI::get_template_part( 'notice-debug-mode', $feedwordpress_debug, 'html' );
 	} /* function FeedWordPress::check_debug () */
 
 	/**

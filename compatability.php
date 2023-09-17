@@ -1,45 +1,59 @@
 <?php
-################################################################################
-## LEGACY API: Replicate or mock up functions for legacy support purposes ######
-################################################################################
+/**
+ * LEGACY API: Replicate or mock up functions for legacy support purposes.
+ *
+ * @author radgeek
+ */
 
+/**
+ * Implements legacy functionality no longer present in the current WordPress
+ * versions
+ */
 class FeedWordPressCompatibility {
 
 	/**
 	 * FeedWordPressCompatibility::test_version: test version of WordPress
 	 * based on the database schema version.
 	 *
-	 * @param int $floor The minimum version necessary
+	 * @param int   $floor   The minimum version necessary.
 	 * @param mixed $ceiling The first version that is too high. If omitted
 	 * 	or NULL, no version is too high.
-	 * @return bool TRUE if within the range of versions, FALSE if too low
+	 * @return      bool     TRUE if within the range of versions, FALSE if too low
 	 * 	or too high.
 	 */
-	static function test_version ($floor, $ceiling = null) {
+	static function test_version( $floor, $ceiling = null ) {
 		global $wp_db_version;
 
-		$ver = (isset($wp_db_version) ? $wp_db_version : 0);
-		$good = ($ver >= $floor);
-		if ( !is_null($ceiling)) :
-			$good = ($good and ($ver < $ceiling));
+		$ver = ( isset( $wp_db_version ) ? $wp_db_version : 0 );
+		$good = ( $ver >= $floor );
+		if ( ! is_null( $ceiling ) ) :
+			$good = ( $good and ( $ver < $ceiling ) );
 		endif;
 		return $good;
 	} /* FeedWordPressCompatibility::test_version() */
 
-	static function insert_link_category ($name) {
-		global $wpdb;
-
+	/**
+	 * Creates a new category for the Links.
+	 *
+	 * WP dropped support for "Links".
+	 *
+	 * @param  string $name New link category name.
+	 *
+	 * @return mixed  Most of the time should return an array with `term_id`
+	 *                and `term_taxonomy_id`, unless there was an error.
+	 */
+	static function insert_link_category( $name ) {
 		// WordPress 2.3+ term/taxonomy API
-		$term = wp_insert_term($name, 'link_category');
+		$term = wp_insert_term( $name, 'link_category' );
 
 		// OK: returned array('term_id' => $term_id, 'term_taxonomy_id' => $tt_id)
-		if ( !is_wp_error($term)) :
+		if ( ! is_wp_error( $term ) ) :
 			$cat_id = $term['term_id'];
 
 		// Error: term with this name already exists. Well, let's use that then.
-		elseif ($term->get_error_code() == 'term_exists') :
+		elseif ( 'term_exists' == $term->get_error_code() ) :
 			// Already-existing term ID is returned in data field
-			$cat_id = $term->get_error_data('term_exists');
+			$cat_id = $term->get_error_data( 'term_exists' );
 
 		// Error: another kind of error, harder to recover from. Return WP_Error.
 		else :
@@ -50,15 +64,24 @@ class FeedWordPressCompatibility {
 		return $cat_id;
 	} /* FeedWordPressCompatibility::insert_link_category () */
 
-	static function link_category_id ($value, $key = 'cat_name') {
-		global $wpdb;
-
+	/**
+	 * Returns category id for a Links category.
+	 *
+	 * "Links" became optional in WP.
+	 *
+	 * For the explanation of the values, see @see term_exists()
+	 *
+	 * @param  int|string $value @see term_exists()
+	 * @param  string     $key   Unused.
+	 * @return mixed             @see term_exists()
+	 */
+	static function link_category_id( $value, $key = 'cat_name' ) {
 		$cat_id = NULL;
 
-		$the_term = term_exists($value, 'link_category');
+		$the_term = term_exists( $value, 'link_category' );
 
 		// Sometimes, in some versions, we get a row
-		if (is_array($the_term)) :
+		if ( is_array( $the_term ) ) :
 			$cat_id = $the_term['term_id'];
 
 		// other times we get an integer result
@@ -69,17 +92,26 @@ class FeedWordPressCompatibility {
 		return $cat_id;
 	} /* FeedWordPressCompatibility::link_category_id () */
 
-	static function validate_http_request ($action = -1, $capability = null) {
+	/**
+	 * Validate if the user has the right capability for doing this request.
+	 *
+	 * @see check_admin_referer()
+	 * @see current_user_can()
+	 *
+	 * @param  int|string   $action     The nonce action.
+	 * @param  string|null  $capability Capability name.
+	 */
+	static function validate_http_request( $action = -1, $capability = null ) {
 		// Only worry about this if we're using a method with significant side-effects
-		if (strtoupper($_SERVER['REQUEST_METHOD']) == 'POST') :
+		if ( 'POST' == strtoupper( $_SERVER['REQUEST_METHOD'] ) ) :
 			// Limit post by user capabilities
-			if ( !is_null($capability) and !current_user_can($capability)) :
-				wp_die(__('Cheatin&#8217; uh?'));
+			if ( ! is_null( $capability ) and ! current_user_can( $capability ) ) :
+				wp_die( __( 'Cheatin&#8217; uh?' ) );
 			endif;
 
 			// If check_admin_referer() checks a nonce.
-			if (function_exists('wp_verify_nonce')) :
-				check_admin_referer($action);
+			if ( function_exists( 'wp_verify_nonce' ) ) :
+				check_admin_referer( $action );
 
 			// No nonces means no checking nonces.
 			else :
@@ -88,10 +120,23 @@ class FeedWordPressCompatibility {
 		endif;
 	} /* FeedWordPressCompatibility::validate_http_request() */
 
-	static function stamp_nonce ($action = -1) {
-		// stamp form with hidden fields for a nonce in WP 2.0.3 & later
-		if (function_exists('wp_nonce_field')) :
-			wp_nonce_field($action);
+	/**
+	 * Stamps form with hidden fields for a nonce in WP 2.0.3 & later.
+	 *
+	 * Basically just checks if the function wp_nonce_field() exists, and, if so,
+	 * uses it; on earlier WP versions, just skips it.
+	 *
+	 * @todo What about the HTML which might get returned by wp_nonce_field()?
+	 * (gwyneth 20230917)
+	 *
+	 * @see wp_nonce_field()
+	 *
+	 * @param  int|string  $action  Optional action name, defaults to -1.
+	 *
+	 */
+	static function stamp_nonce( $action = -1 ) {
+		if ( function_exists( 'wp_nonce_field' ) ) :
+			wp_nonce_field( $action );
 		endif;
 	} /* FeedWordPressCompatibility::stamp_nonce() */
 
@@ -105,10 +150,9 @@ class FeedWordPressCompatibility {
 
 // Compat
 
-if ( !function_exists('set_post_field')) {
-
+if ( ! function_exists( 'set_post_field' ) ) {
 	/**
-	 * Update data from a post field based on Post ID
+	 * Update data from a post field based on Post ID.
 	 *
 	 * Examples of the post field will be, 'post_type', 'post_status', 'post_content', etc.
 	 *
@@ -117,10 +161,10 @@ if ( !function_exists('set_post_field')) {
 	 *
 	 * @uses sanitize_post_field()
 	 *
-	 * @param string $field Post field name
-	 * @param mixed $value New value for post field
-	 * @param id $post Post ID
-	 * @return bool Result of UPDATE query
+	 * @param string $field Post field name.
+	 * @param mixed  $value New value for post field.
+	 * @param id     $post  Post ID.
+	 * @return bool  Result of UPDATE query.
 	 *
 	 * Included under terms of GPL from WordPress Ticket #10946 <http://core.trac.wordpress.org/attachment/ticket/10946/post.php.diff>
 	 */
@@ -135,15 +179,15 @@ if ( !function_exists('set_post_field')) {
 
 } /* if */
 
-if ( !function_exists('is_countable')) {
+if ( ! function_exists( 'is_countable' ) ) {
+	/* Copied from WordPress 5.3.2 wp-includes/compat.php pursuant to terms
+	 * of GPL. Provide support for is_countable() for versions of PHP < 7.3
+	 * and for versions of WordPress < 4.9.6. -C.J. 2020/01/24
+     */
 
-	// Copied from WordPress 5.3.2 wp-includes/compat.php pursuant to terms
-	// of GPL. Provide support for is_countable() for versions of PHP < 7.3
-	// and for versions of WordPress < 4.9.6. -C.J. 2020/01/24
-	
 	/**
 	 * Polyfill for is_countable() function added in PHP 7.3.
-	 * 
+	 *
 	 * Verify that the content of a variable is an array or an object
 	 * implementing the Countable interface.
 	 *
@@ -160,67 +204,92 @@ if ( !function_exists('is_countable')) {
 					|| $var instanceof ResourceBundle
 			);
 	}
-
 } /* if */
 
-require_once(dirname(__FILE__).'/feedwordpress-walker-category-checklist.class.php');
+require_once dirname(__FILE__) . '/feedwordpress-walker-category-checklist.class.php';
 
-function fwp_category_checklist ($post_id = 0, $descendents_and_self = 0, $selected_cats = false, $params = array()) {
-	if (is_string($params)) :
+/**
+ * Checks if we have all the categories we need.
+ *
+ * @see wp_terms_checklist()
+ *
+ * @param  int          $post_id               Optional, defaults to zero.
+ * @param  int          $descendents_and_self  @see wp_terms_checklist()
+ * @param  bool         $selected_cats         @see wp_terms_checklist()
+ * @param  string|array $params                @see wp_terms_checklist()
+ *
+ * @uses wp_terms_checklist()
+ * @uses FeedWordPress_Walker_Category_Checklist()
+ */
+function fwp_category_checklist( $post_id = 0, $descendents_and_self = 0, $selected_cats = false, $params = array() ) {
+	if ( is_string( $params ) ) :
 		$prefix = $params;
 		$taxonomy = 'category';
-	elseif (is_array($params)) :
-		$prefix = (isset($params['prefix']) ? $params['prefix'] : '');
-		$taxonomy = (isset($params['taxonomy']) ? $params['taxonomy'] : 'category');
+	elseif ( is_array( $params ) ) :
+		$prefix   = ( isset( $params['prefix'] )   ? $params['prefix']   : '' );
+		$taxonomy = ( isset( $params['taxonomy'] ) ? $params['taxonomy'] : 'category' );
 	endif;
 
-	$walker = new FeedWordPress_Walker_Category_Checklist($params);
-	$walker->set_prefix($prefix);
-	$walker->set_taxonomy($taxonomy);
-	wp_terms_checklist(/*post_id=*/ $post_id, array(
-		'taxonomy' => $taxonomy,
+	$walker = new FeedWordPress_Walker_Category_Checklist( $params );
+	$walker->set_prefix( $prefix );
+	$walker->set_taxonomy( $taxonomy );
+	wp_terms_checklist( /*post_id=*/ $post_id, array(
+		'taxonomy'             => $taxonomy,
 		'descendents_and_self' => $descendents_and_self,
-		'selected_cats' => $selected_cats,
-		'popular_cats' => false,
-		'walker' => $walker,
-		'checked_ontop' => true,
-	));
-}
+		'selected_cats'        => $selected_cats,
+		'popular_cats'         => false,
+		'walker'               => $walker,
+		'checked_ontop'        => true,
+	) );
+} /* function fwp_category_checklist() */
 
-function fwp_time_elapsed ($ts) {
-	if (function_exists('human_time_diff')) :
-		if ($ts >= time()) :
-			$ret = __(human_time_diff($ts)." from now");
+/**
+ * Calculates the difference between a timestamp and the current time.
+ *
+ * @param  int $ts Timestamp.
+ *
+ * @return string A human-readable indication of the elapsed time.
+ */
+function fwp_time_elapsed( $ts ) {
+	if ( function_exists( 'human_time_diff' ) ) :
+		if ( $ts >= time() ) :
+			$ret = __( human_time_diff( $ts ) . " from now" );
 		else :
-			$ret = __(human_time_diff($ts)." ago");
+			$ret = __( human_time_diff( $ts ) . " ago" );
 		endif;
 	else :
-		$ret = strftime('%x %X', $ts);
+	//	$ret = strftime( '%x %X', $ts );  // deprecated
+		$ret = date( "Y-m-d H:i:s", $ts );
 	endif;
 	return $ret;
-}
+} /* function fwp_time_elapsed() */
 
-################################################################################
-## UPGRADE INTERFACE: Have users upgrade DB from older versions of FWP #########
-################################################################################
-
-function fwp_upgrade_page () {
-	if (MyPHP::post('action')=='Upgrade') :
-		$ver = get_option('feedwordpress_version');
-		if (get_option('feedwordpress_version') != FEEDWORDPRESS_VERSION) :
+/**
+ * UPGRADE INTERFACE: Have users upgrade DB from older versions of FWP.
+ *
+ * @uses FeedWordPress
+ * @uses FeedWordPress::upgrade_database()
+ * @uses get_option()
+ * @uses MyPHP::post()
+ */
+function fwp_upgrade_page() {
+	if ( 'Upgrade' == MyPHP::post( 'action' ) ) :
+		/** @var string Current FeedWordPress version. */
+		$ver = get_option( 'feedwordpress_version' );
+		if ( ! empty( $ver ) and FEEDWORDPRESS_VERSION != $ver ) :
 			echo "<div class=\"wrap\">\n";
 			echo "<h2>Upgrading FeedWordPress...</h2>";
 
 			$feedwordpress = new FeedWordPress;
-			$feedwordpress->upgrade_database($ver);
-			echo "<p><strong>Done!</strong> Upgraded database to version ".FEEDWORDPRESS_VERSION.".</p>\n";
+			$feedwordpress->upgrade_database( $ver );
+			echo "<p><strong>Done!</strong> Upgraded database to version " . FEEDWORDPRESS_VERSION . ".</p>\n";
 			echo "<form action=\"\" method=\"get\">\n";
 			echo "<div class=\"submit\"><input type=\"hidden\" name=\"page\" value=\"syndication.php\" />";
 			echo "<input type=\"submit\" value=\"Continue &raquo;\" /></form></div>\n";
 			echo "</div>\n";
 			return;
 		else :
-			echo "<div class=\"updated\"><p>Already at version ".FEEDWORDPRESS_VERSION."!</p></div>";
+			echo "<div class=\"updated\"><p>Already at version " . FEEDWORDPRESS_VERSION . "!</p></div>";
 		endif;
 	endif;
 ?>
@@ -243,14 +312,22 @@ like me you may want to back up your database before you proceed.</p>
 <p>This may take several minutes for a large installation.</p>
 
 <form action="" method="post">
-<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_upgrade'); ?>
+<?php FeedWordPressCompatibility::stamp_nonce( 'feedwordpress_upgrade' ); ?>
 <div class="submit"><input type="submit" name="action" value="Upgrade" /></div>
 </form>
 </div>
 <?php
-} // function fwp_upgrade_page ()
+} /* function fwp_upgrade_page() */
 
-function remove_dummy_zero ($var) {
-	return !(is_numeric($var) and ((int) $var == 0));
+/**
+ * Filter action for removing dummy zeroes.
+ *
+ * @todo Requires a better explanation! (gwyneth 20230917)
+ *
+ * @param  mixed $var  Variable to test.
+ *
+ * @return int   Possibly returns filtered result
+ */
+function remove_dummy_zero( $var ) {
+	return ! ( is_numeric( $var ) and ( 0 == (int) $var ) );
 }
-
