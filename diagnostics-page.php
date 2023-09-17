@@ -75,7 +75,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 	public function what_requested () {
 		return FeedWordPress::post( 'feedwordpress_diagnostics_do' );
 	}
-	
+
 	function accept_POST () {
 		if ( self::save_requested() || self::do_requested() ) :
 
@@ -267,6 +267,7 @@ testing but absolutely inappropriate for a production server.</p>
 				'feed_items' => 'as each syndicated item is considered on the feed',
 				'memory_usage' => 'indicating how much memory was used',
 			),
+			// Note: the embedded HTML gets filtered out, so this might require some refactoring. (gwyneth 20230917)
 			'Feed Retrieval' => array(
 				'updated_feeds:errors:persistent' => 'when attempts to update a feed have resulted in errors</label> <label>for at least <input type="number" min="1" max="360" step="1" name="diagnostics_persistent_error_hours" value="'.$hours.'" /> hours',
 				'updated_feeds:errors' => 'any time FeedWordPress encounters any errors while checking a feed for updates',
@@ -324,7 +325,7 @@ testing but absolutely inappropriate for a production server.</p>
 		$url = FeedWordPress::param( 'http_test_url' );
 		$method = FeedWordPress::param( 'http_test_method' );
 		$xpath = FeedWordPress::param( 'http_test_xpath' );
-		
+
 		$aMethods = array(
 			'wp_remote_request',
 			'FeedWordPie_File',
@@ -383,7 +384,7 @@ function clone_http_test_args_keyvalue_prototype () {
 	<div><p>Leave blank to test HTTP, fill in to test a query.</p></div>
 	</td>
 	</tr>
-	
+
 	<?php if (isset($page->test_html['http_test'])) : ?>
 	<tr>
 	<th scope="row">RESULTS:</th>
@@ -472,7 +473,7 @@ function clone_http_test_args_keyvalue_prototype () {
 				endif;
 				break;
 			endswitch;
-			
+
 			$this->test_html['url']       = $url;
 			$this->test_html['http_test'] = esc_html( MyPHP::val($out) );
 		endif;
