@@ -104,7 +104,7 @@ class FeedWordPie_File extends WP_SimplePie_File {
 		 * hosting environment.
 		 */
 		else :
-			$this->error = 'FeedWordPress only allows http or https URLs';
+			$this->error = __( 'FeedWordPress only allows http or https URLs' );
 			$this->success = false;
 		endif;
 
