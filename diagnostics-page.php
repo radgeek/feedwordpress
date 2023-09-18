@@ -126,46 +126,43 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 
 		<tbody>
 		<tr>
-		<th scope="row">Version:</th>
-		<td>You are using FeedWordPress version <strong><?php print FEEDWORDPRESS_VERSION; ?></strong>.</td>
+		<th scope="row">Version:' ); ?></th>
+		<td><?php _e( 'You are using FeedWordPress version' ); ?> <strong><?php print FEEDWORDPRESS_VERSION; ?></strong>.</td>
 		</tr>
 
 		<tr>
-		<th scope="row">Hosting Environment:</th>
+		<th scope="row"><?php _e( 'Hosting Environment:' ); ?></th>
 		<td><ul style="margin-top: 0; padding-top: 0;">
-		<li><em>WordPress:</em> version <?php print esc_html( $wp_version ); ?></li>
-		<li><em>SimplePie:</em> version <?php print esc_html( SIMPLEPIE_VERSION ); ?></li>
+		<li><em>WordPress:</em> <?php _e( 'version' ); ?> <?php print esc_html( $wp_version ); ?></li>
+		<li><em>SimplePie:</em> <?php _e( 'version' ); ?> <?php print esc_html( SIMPLEPIE_VERSION ); ?></li>
 		<?php if ( function_exists( 'phpversion' ) ) : ?>
-		<li><em>PHP:</em> version <?php print esc_html( phpversion() ); ?></li>
+		<li><em><?php _e( 'PHP:' ); ?></em> <?php _e( 'version' ); ?> <?php print esc_html( phpversion() ); ?></li>
 		<?php endif; ?>
-		<?php if (function_exists( 'apache_get_version' )) : ?>
-		<li><sem>Web Server:</em> <?php print esc_html( apache_get_version() ); ?></li>
+		<?php if ( function_exists( 'apache_get_version' ) ) : ?>
+		<li><em><?php _e( 'Web Server:' ); ?></em> <?php print esc_html( apache_get_version() ); ?></li>
 		<?php endif; ?>
 		</ul>
 		</td>
 		</tr>
 
 		<tr>
-		<th scope="row">Link Category:</th>
-		<td><?php if ( !is_wp_error($link_category_id)) :
-			$term = get_term($link_category_id, 'link_category');
-		?><p>Syndicated feeds are
-		kept in link category #<?php print esc_html( $term->term_id ); ?>, <strong><?php print esc_html( $term->name ); ?></strong>.</p>
+		<th scope="row"><?php _e( 'Link Category:' ); ?></th>
+		<td><?php if ( ! is_wp_error( $link_category_id ) ) :
+			$term = get_term( $link_category_id, 'link_category' );
+		?><p><?php _e( 'Syndicated feeds are kept in link category' ); ?> #<?php print esc_html( $term->term_id ); ?>, <strong><?php print esc_html( $term->name ); ?></strong>.</p>
 		<?php else : ?>
-		<p><strong>FeedWordPress has been unable to set up a valid Link Category
-		for syndicated feeds.</strong> Attempting to set one up returned an
-		<code><?php $link_category_id->get_error_code(); ?></code> error with this
-		additional data:</p>
+		<p><strong><?php _e( 'FeedWordPress has been unable to set up a valid Link Category for syndicated feeds.' ); ?></strong> <?php _e( 'Attempting to set one up returned an' ); ?>
+		<code><?php $link_category_id->get_error_code(); ?></code> <?php _e( 'error with this additional data:' ); ?></p>
 		<table>
 		<tbody>
 		<tr>
-		<th scope="row">Message:</th>
+		<th scope="row"><?php _e( 'Message:' ); ?></th>
 		<td><?php print esc_html( $link_category_id->get_error_message() ); ?></td>
 		</tr>
-		<?php $data = $link_category_id->get_error_data(); if ( !empty($data)) : ?>
+		<?php $data = $link_category_id->get_error_data(); if ( ! empty( $data ) ) : ?>
 		<tr>
-		<th scope="row">Auxiliary Data:</th>
-		<td><pre><?php print esc_html(MyPHP::val($link_category_id->get_error_data())); ?></pre></td>
+		<th scope="row"><?php _e( 'Auxiliary Data:' ); ?></th>
+		<td><pre><?php print esc_html( MyPHP::val( $link_category_id->get_error_data() ) ); ?></pre></td>
 		</tr>
 		<?php endif; ?>
 		</table>
@@ -174,17 +171,15 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 
 		<tr>
 		<th scope="row"><?php _e('Secret Key:'); ?></th>
-		<td><input type="text" name="feedwordpress_secret_key" value="<?php print esc_attr($feedwordpress->secret_key()); ?>" />
-		<p class="setting-description">This is used to control access to some diagnostic testing functions. You can change it to any string you want,
-		but only tell it to people you trust to help you troubleshoot your
-		FeedWordPress installation. Keep it secret&mdash;keep it safe.</p></td>
+		<td><input type="text" name="feedwordpress_secret_key" value="<?php print esc_attr( $feedwordpress->secret_key() ); ?>" />
+		<p class="setting-description"><?php _e( 'This is used to control access to some diagnostic testing functions. You can change it to any string you want, but only tell it to people you trust to help you troubleshoot your FeedWordPress installation. Keep it secret&mdash;keep it safe.' ); ?></p></td>
 		</tr>
 		</table>
 
 		<?php
 	} /* FeedWordPressDiagnosticsPage::info_box () */
 
-	static function diagnostics_box ($page, $box = NULL) {
+	static function diagnostics_box( $page, $box = NULL ) {
 		$settings = array();
 		$settings['debug'] = (get_option('feedwordpress_debug')=='yes');
 
@@ -204,7 +199,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		?>
 <table class="edit-form">
 <tr style="vertical-align: top">
-<th scope="row">Debugging mode:</th>
+<th scope="row"><?php _e( 'Debugging mode:' ); ?></th>
 <td><select name="feedwordpress_debug" size="1">
 <option value="yes"<?php echo ($settings['debug'] ? ' selected="selected"' : ''); ?>>on</option>
 <option value="no"<?php echo ($settings['debug'] ? '' : ' selected="selected"'); ?>>off</option>
