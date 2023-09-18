@@ -34,7 +34,7 @@ class FeedWordPress_Walker_Category_Checklist extends Walker_Category_Checklist 
 			$taxonomy = 'category';
 		endif;
 
-		if (!is_null($this->checkbox_name)) :
+		if ( !is_null($this->checkbox_name)) :
 			$name = $this->checkbox_name;
 		elseif ($taxonomy=='category') :
 			$name = 'post_category';

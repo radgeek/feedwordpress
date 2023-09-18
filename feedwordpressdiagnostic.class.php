@@ -59,7 +59,7 @@ class FeedWordPressDiagnostic {
 	public static function critical_bug ($varname, $var, $line, $file = NULL) {
 		global $wp_version;
 
-		if (!is_null($file)) :
+		if ( !is_null($file)) :
 			$location = "line # ${line} of ".basename($file);
 		else :
 			$location = "line # ${line}";

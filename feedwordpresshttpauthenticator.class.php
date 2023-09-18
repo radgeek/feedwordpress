@@ -65,7 +65,7 @@ class FeedWordPressHTTPAuthenticator {
 				// Wee ha!
 				$method = $this->args['authentication'];
 				$credentials = $this->args['username'];
-				if (!is_null($this->args['password'])) :
+				if ( !is_null($this->args['password'])) :
 					$credentials .= ':'.$args['password'];
 				endif;
 				
@@ -89,7 +89,7 @@ class FeedWordPressHTTPAuthenticator {
 		default :
 			if (is_callable('WP_Http', '_get_first_available_transport')) :
 				$trans = WP_Http::_get_first_available_transport($args, $url);
-				if (!$trans) :
+				if ( ! $trans) :
 					$trans = WP_Http::_get_first_available_transport(array(), $url);
 				endif;
 			elseif (is_callable('WP_Http', '_getTransport')) :
@@ -155,9 +155,9 @@ class FeedWordPressHTTPAuthenticator {
 			curl_setopt($handle, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
 		endif;
 		
-		if (!is_null($this->args['username'])) :
+		if ( !is_null($this->args['username'])) :
 			$userPass = $this->args['username'];
-			if (!is_null($this->args['password'])) :
+			if ( !is_null($this->args['password'])) :
 				$userPass .= ':'.$this->args['password'];
 			endif;
 			

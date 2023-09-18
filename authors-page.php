@@ -4,7 +4,7 @@ require_once(dirname(__FILE__) . '/admin-ui.php');
 class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 	var $authorlist = NULL;
 	var $rule_count = 0;
-	
+
 	public function __construct( $link = -1 ) {
 		if (is_numeric($link) and -1 == $link) :
 			$link = $this->submitted_link();
@@ -21,14 +21,14 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 			'open-sheet' => 'Syndicated Author',
 		);
 	}
-	
+
 	function refresh_author_list () {
 		$this->authorlist = fwp_author_list();
 
 		// Case-insensitive "natural" alphanumeric sort. Preserves key/value associations.
 		if (function_exists('natcasesort')) : natcasesort($this->authorlist); endif;
 	}
-	
+
 	/*static*/ function syndicated_authors_box ($page, $box = NULL) {
 		$link = $page->link;
 		$unfamiliar = array ('create' => '','default' => '','filter' => '');
@@ -51,11 +51,11 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 if ($page->for_default_settings()) :
 ?>
 <tr><th>Unmatched authors</th>
-<td><span>Authors who haven&#8217;t been syndicated before</span>
+<td><span>Authors who haven&rsquo;t been syndicated before</span>
   <select style="max-width: 27.0em" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');">
     <option value="create"<?php fwp_selected_flag($unfamiliar, 'create'); ?>>will have a new author account created for them</option>
     <?php foreach ($page->authorlist as $author_id => $author_name) :
-		if (!isset($unfamiliar[$author_id])) : $unfamiliar[$author_id] = false; endif;
+		if ( !isset($unfamiliar[$author_id])) : $unfamiliar[$author_id] = false; endif;
 	?>
       <option value="<?php echo esc_attr($author_id); ?>"<?php fwp_selected_flag($unfamiliar, $author_id); ?>>will have their posts attributed to <?php echo esc_html($author_name); ?></option>
     <?php endforeach; ?>
@@ -96,7 +96,7 @@ name="author_rules_action[all]" onchange="contextual_appearance('author-rules-al
   <span class="author-rules-newuser" id="author-rules-all-newuser">named
   <input type="text" name="author_rules_newuser[all]" value="" /></span></p></li>
 <li><p><input type="radio" name="author_rules_name[all]" value=""
-<?php if (!isset($map['name']['*'])) : ?>
+<?php if ( !isset($map['name']['*'])) : ?>
 	checked="checked"
 <?php endif; ?>
 /> Attribute posts to authors based on automatic mapping rules. (Blank out a
@@ -124,7 +124,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
     <option value="newuser">will be assigned to a new user...</option>
     <option value="filter"<?php fwp_selected_flag('filter'==$author_action); ?>>get filtered out</option>
   </select>
-  
+
   <span class="author-rules-newuser" id="<?php echo esc_attr($authorRulesId); ?>-newuser">named <input type="text" name="author_rules_newuser[]" value="" /></span>
   </td>
 </tr>
@@ -145,7 +145,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
       <option value="newuser">will be assigned to a new user...</option>
       <option value="filter">get filtered out</option>
     </select>
-   
+
    <span id="add-author-rule-newuser">named <input type="text" name="add_author_rule_newuser" value="" /></span>
    </td>
 </tr>
@@ -194,8 +194,9 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 </table>
 		<?php
 	} /* FeedWordPressAuthorsPage::syndicated_authors_box () */
-	
-	/*static*/ function fix_authors_box ($page, $box = NULL) {
+
+	/*static*/ function fix_authors_box ($page, $box = NULL)
+	{
 		?>
 		<table class="form-table">
 		<tbody>
@@ -260,8 +261,8 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 		$fix = FeedWordPress::post( 'fix_mismatch' );
 		return ( ! is_null( $fix ) && strlen( $fix ) > 0 );
 	}
-	
-	function accept_POST () {
+
+	public function accept_POST () {
 		if ( self::fix_mismatch_requested() ) :
 			$this->fix_mismatch();
 		else :
@@ -273,7 +274,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 		global $wpdb;
 
 		$to = FeedWordPress::post( 'fix_mismatch_to' );
-		if ( 'newuser' === $fix_to ) :
+		if ( 'newuser' === $fix_to ) :	// will _always_ be false, since $fix_to is not called from anywhere (gwyneth 20230915)
 			$newuser_name = trim( FeedWordPress::post('fix_mismatch_to_newuser', '' ) );
 			$to = fwp_insert_new_user( $newuser_name );
 		endif;
@@ -291,7 +292,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 			AND {$wpdb->postmeta}.meta_value = '{$this->link->id}'
 			AND {$wpdb->posts}.post_author = '{$from}'
 			");
-			
+
 			if (count($post_ids) > 0) :
 				$N = count($post_ids);
 				$posts = 'post'.(($N==1) ? '' : 's');
@@ -299,10 +300,10 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 				// Re-assign them all to the correct author
 				if (is_numeric($to)) : // re-assign to a particular user
 					$post_set = "(".implode(",", $post_ids).")";
-					
+
 					// Getting the revisions too, if there are any
 					$parent_in_clause = "OR {$wpdb->posts}.post_parent IN $post_set";
-					
+
 					$wpdb->query("
 					UPDATE {$wpdb->posts}
 					SET post_author='{$to}'
@@ -316,7 +317,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 					foreach ($post_ids as $post_id) :
 						wp_delete_post($post_id);
 					endforeach;
-			
+
 					$this->mesg = sprintf(__("Deleted %d ${posts}."), $N);
 				endif;
 			else :
@@ -345,7 +346,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 					);
 				endif;
 			endif;
-			
+
 			// Handle author mapping rules
 			$author_rules_name = FeedWordPress::post( 'author_rules_name' );
 			$author_rules_action = FeedWordPress::post('author_rules_action' );
@@ -355,11 +356,11 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 						$author_rules_name = array(
 							'all' => $author_rules_name['all'],
 						);
-						
+
 						// Erase all the rest.
 					endif;
 				endif;
-				
+
 				unset($this->link->settings['map authors']);
 				foreach ($author_rules_name as $key => $name) :
 					// Normalize for case and whitespace

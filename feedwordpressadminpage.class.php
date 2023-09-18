@@ -1,4 +1,6 @@
 <?php
+define( 'FWP_BOLD_PREFIX_REGEX', '/^[*][*] ([^*]+) [*][*] \s+ (\S.*)$/x' );
+
 /**
  * class FeedWordPressAdminPage
  *
@@ -8,9 +10,6 @@
  * settings on particular feeds.
  *
  */
- 
-define( 'FWP_BOLD_PREFIX_REGEX', '/^[*][*] ([^*]+) [*][*] \s+ (\S.*)$/x');
- 
 class FeedWordPressAdminPage {
 	protected $context;
 	protected $updated = false;
@@ -31,7 +30,7 @@ class FeedWordPressAdminPage {
 
 		// Set meta-box context name
 		$this->context = $page;
-		if ($this->for_feed_settings()) :
+		if ( $this->for_feed_settings() ) :
 			$this->context .= 'forfeed';
 		endif;
 	} /* FeedWordPressAdminPage constructor */
@@ -48,7 +47,7 @@ class FeedWordPressAdminPage {
 
 		if (isset($this->pagenames[$context])) :
 			$name = $this->pagenames[$context];
-		elseif (isset($tis->pagenames['default'])) :
+		elseif (isset($this->pagenames['default'])) :
 			$name = $this->pagenames['default'];
 		else :
 			$name = $this->pageslug();
@@ -72,7 +71,7 @@ class FeedWordPressAdminPage {
 		add_action('feedwordpress_check_feed_complete', 'update_feeds_finish', 10, 3);
 
 		$link = $this->link;
-		
+
 		print '<div class="updated">';
 		print "<ul>";
 		$uri = $this->link->uri();
@@ -85,7 +84,7 @@ class FeedWordPressAdminPage {
 		$delta = $feedwordpress->update($uri);
 		print "</ul>";
 
-		if (!is_null($delta)) :
+		if ( !is_null($delta)) :
 			echo "<p><strong>Update complete.</strong>".fwp_update_set_results_message($delta)."</p>";
 			echo "\n"; flush();
 		else :
@@ -115,10 +114,10 @@ class FeedWordPressAdminPage {
 	} /* FeedWordPressAdminPage::save_settings () */
 
 	public function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
-	public function for_default_settings () { return !$this->for_feed_settings(); }
+	public function for_default_settings () { return ! $this->for_feed_settings(); }
 
 	public function setting ($names, $fallback_value = NULL, $params = array()) {
-		if (!is_array($params)) :
+		if ( !is_array($params)) :
 			$params = array('default' => $params);
 		endif;
 		$params = shortcode_atts(array(
@@ -135,7 +134,7 @@ class FeedWordPressAdminPage {
 		endif;
 
 		if ($this->for_feed_settings()) : // Check feed-specific setting first; fall back to global
-			if (!$params['fallback']) : $global_name = NULL; endif;
+			if ( ! $params['fallback']) : $global_name = NULL; endif;
 			$ret = $this->link->setting($feed_name, $global_name, $fallback_value, $params['default']);
 		else : // Check global setting
 			$ret = get_option($global_name, $fallback_value);
@@ -225,7 +224,7 @@ class FeedWordPressAdminPage {
 	 * @see add_meta_box()
 	 * @see do_meta_boxes()
 	 */
-	public function meta_box_context () {
+	public function meta_box_context() {
 		return $this->context;
 	} /* FeedWordPressAdminPage::meta_box_context () */
 
@@ -245,7 +244,7 @@ class FeedWordPressAdminPage {
 
 		var rollup=document.getElementById(item);
 		if (rollup) {
-			if ((checkbox && rollup.checked) || (!checkbox && value==rollup.value)) {
+			if ((checkbox && rollup.checked) || ( !checkbox && value==rollup.value)) {
 				jQuery('#'+disappear).hide();
 				jQuery('#'+appear).show(600);
 			} else {
@@ -264,7 +263,7 @@ class FeedWordPressAdminPage {
 		$params = array_merge($params, array('page' => $fwp_path.'/'.$page));
 
 		// If there is a link ID provided, then merge that in too.
-		if (!is_null($link)) :
+		if ( !is_null($link)) :
 			$link_id = NULL;
 			if (is_object($link)) :
 				if (method_exists($link, 'found')) :
@@ -281,7 +280,7 @@ class FeedWordPressAdminPage {
 				$link_id = $link;
 			endif;
 
-			if (!is_null($link_id)) :
+			if ( !is_null($link_id)) :
 				$params = array_merge($params, array('link_id' => $link_id));
 			endif;
 		endif;
@@ -321,7 +320,7 @@ class FeedWordPressAdminPage {
 
 		print $params['before']; $first = true;
 		foreach ($links as $label => $link) :
-			if (!$first) :	print $params['between']; endif;
+			if ( ! $first) :	print $params['between']; endif;
 
 			if (isset($link['url'])) : MyPHP::url($link['url'], array("link_id" => $link_id));
 			else : $url = $this->admin_page_href($link['page'], array(), $sub);
@@ -357,7 +356,7 @@ class FeedWordPressAdminPage {
 		<li><select name="link_id" class="fwpfs" style="max-width: 20.0em;">
 		  <option value="*"<?php if ($this->for_default_settings()) : ?> selected="selected"<?php endif; ?>>- defaults for all feeds -</option>
 		<?php if ($links) : foreach ($links as $ddlink) : ?>
-		  <option value="<?php print (int) $ddlink->link_id; ?>"<?php if (!is_null($this->link) and ($this->link->id==$ddlink->link_id)) : ?> selected="selected"<?php endif; ?>><?php print esc_html($ddlink->link_name); ?></option>
+		  <option value="<?php print (int) $ddlink->link_id; ?>"<?php if ( !is_null($this->link) and ($this->link->id==$ddlink->link_id)) : ?> selected="selected"<?php endif; ?>><?php print esc_html($ddlink->link_name); ?></option>
 		<?php endforeach; endif; ?>
 		</select>
 		<input id="fwpfs-button" class="button" type="submit" name="go" value="<?php _e('Go') ?> &raquo;" /></li>
@@ -381,15 +380,24 @@ class FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressAdminPage::display_feed_select_dropdown() */
 
-	public function display_sheet_header ($pagename = 'Syndication', $all = false) {
+	/**
+	 * Displays a header section throughout the FWP dashboard.
+	 *
+	 * @param  string $pagename Page name for which this header is.
+	 * @param  bool   $all      False if it displays just the settings; true if it displays all.
+	 */
+	public function display_sheet_header( $pagename = 'Syndication', $all = false ) {
+	/* changed to use a SVG instead, while keeping the correct size.
+		Note that these icons have been deprecated in 2013 or so:
+		 @see https://core.trac.wordpress.org/ticket/26119 */
 		?>
-		<div class="icon32"><img src="<?php print esc_attr( plugins_url( 'feedwordpress.png', __FILE__ ) ); ?>" alt="" /></div>
-		<h2><?php print esc_html(__($pagename.($all ? '' : ' Settings'))); ?><?php if ($this->for_feed_settings()) : ?>: <?php echo esc_html($this->link->name(/*from feed=*/ false)); ?><?php endif; ?></h2>
+		<div class="icon32"><img src="<?php print esc_attr( plugins_url( 'assets/images/icon.svg', __FILE__ ) ); ?>" alt="FeedWordPress Logo" /></div>
+		<h2><?php print esc_html( __( $pagename . ( $all ? '' : ' Settings' ) ) ); ?><?php if ( $this->for_feed_settings() ) : ?>: <?php echo esc_html( $this->link->name( /*from feed=*/ false ) ); ?><?php endif; ?></h2>
 		<?php
-	}
+	} /* FeedWordPressAdminPage::display_sheet_header() */
 
-	public function display_update_notice_if_updated ($pagename = 'Syndication', $mesg = NULL) {
-		if (!is_null($mesg)) :
+	public function display_update_notice_if_updated( $pagename = 'Syndication', $mesg = NULL ) {
+		if ( ! is_null( $mesg ) ) :
 			$this->mesg = $mesg;
 		endif;
 
@@ -401,7 +409,7 @@ class FeedWordPressAdminPage {
 			endif;
 		endif;
 
-		if (!is_null($this->mesg)) :
+		if ( !is_null($this->mesg)) :
 			?>
 			<div class="updated">
 			<p><?php print esc_html($this->mesg); ?></p>
@@ -481,15 +489,15 @@ class FeedWordPressAdminPage {
 				/*id=*/ $id,
 				/*title=*/ $title,
 				/*callback=*/ array($this, $method),
-				/*page=*/ $this->meta_box_context(),
-				/*context=*/ $this->meta_box_context()
+				/*screen=*/ $this->meta_box_context(),
+				/*context=*/ $this->meta_box_context(),
 			);
 		endforeach;
 		do_action($this->dispatch.'_meta_boxes', $this);
 		?>
 		<div class="metabox-holder">
 		<?php
-			do_meta_boxes($this->meta_box_context(), $this->meta_box_context(), $this);
+			do_meta_boxes( $this->meta_box_context(), $this->meta_box_context(), $this );
 		?>
 		</div> <!-- class="metabox-holder" -->
 		</div> <!-- id="post-body" -->
@@ -517,7 +525,7 @@ class FeedWordPressAdminPage {
 		?>
 		<div class="wrap feedwordpress-admin" id="feedwordpress-admin-<?php print esc_attr( $this->pageslug() ); ?>">
 		<?php
-		if (!is_null($header)) :
+		if ( !is_null($header)) :
 			$this->display_sheet_header($header);
 		endif;
 
@@ -536,7 +544,7 @@ class FeedWordPressAdminPage {
 		endif;
 
 		?><div class="tablenav"><?php
-		if (!is_null($this->dispatch)) :
+		if ( !is_null($this->dispatch)) :
 			?><div class="alignright"><?php
 			$this->save_button();
 			?></div><?php
@@ -557,7 +565,7 @@ class FeedWordPressAdminPage {
 
 		</div> <!-- id="poststuff" -->
 		<?php
-		if (!is_null($this->dispatch)) :
+		if ( !is_null($this->dispatch)) :
 			$this->save_button();
 			print "</form>\n";
 		endif;
@@ -621,7 +629,7 @@ class FeedWordPressAdminPage {
 		endif;
 
 		if (isset($params['default-input-id-no'])) : $defaultInputIdNo = $params['default-input-id-no'];
-		elseif (!is_null($defaultInputId)) : $defaultInputIdNo = $defaultInputId.'-no';
+		elseif ( !is_null($defaultInputId)) : $defaultInputIdNo = $defaultInputId.'-no';
 		else : $defaultInputIdNo = NULL;
 		endif;
 
@@ -645,7 +653,7 @@ class FeedWordPressAdminPage {
 
 		$settingDefaulted = (is_null($setting) or ($settingDefault === $setting));
 
-		if (!is_callable($options)) :
+		if ( !is_callable($options)) :
 			$checked = array();
 			if ($settingDefaulted) :
 				$checked[$defaultInputValue] = ' checked="checked"';
@@ -682,7 +690,7 @@ class FeedWordPressAdminPage {
 			<li><label><input type="radio"
 				name="<?php print esc_attr( $defaultInputName ); ?>"
 				value="<?php print esc_attr( $defaultInputValue ); ?>"
-				<?php if (!is_null($defaultInputId)) : ?>id="<?php print esc_attr( $defaultInputId ); ?>" <?php endif; ?>
+				<?php if ( !is_null($defaultInputId)) : ?>id="<?php print esc_attr( $defaultInputId ); ?>" <?php endif; ?>
 				<?php fwp_checked_flag($defaulted, 'yes'); ?> />
 			Use the site-wide setting</label>
 			<span class="current-setting">Currently:
@@ -706,7 +714,7 @@ class FeedWordPressAdminPage {
 				<li><label><input type="radio"
 					name="<?php print esc_attr( $defaultInputName ); ?>"
 					value="no"
-					<?php if (!is_null($defaultInputIdNo)) : ?>id="<?php print esc_attr( $defaultInputIdNo ); ?>" <?php endif; ?>
+					<?php if ( !is_null($defaultInputIdNo)) : ?>id="<?php print esc_attr( $defaultInputIdNo ); ?>" <?php endif; ?>
 					<?php fwp_checked_flag($defaulted, 'no'); ?> />
 				<?php _e('Do something different with this feed.'); ?></label>
 			<?php endif;

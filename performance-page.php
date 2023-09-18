@@ -94,7 +94,7 @@ and force FeedWordPress to make a fresh scan for updates on syndicated feeds.</p
 
 <tr style="vertical-align: top">
 <th width="33%" scope="row">Guid index:</th>
-<td width="67%"><?php if (!FeedWordPress::has_guid_index()) : ?>
+<td width="67%"><?php if ( !FeedWordPress::has_guid_index()) : ?>
 <input class="button" type="submit" name="create_index" value="Create index on guid column in posts database table" />
 <p>Creating this index may significantly improve performance on some large
 FeedWordPress installations.</p>

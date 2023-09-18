@@ -231,7 +231,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		endif;
 		?>
 		<table class="edit-form narrow">
-		<?php if (!is_null($formatting_filters)) : ?>
+		<?php if ( !is_null($formatting_filters)) : ?>
 
 		  <tr><th scope="row">Formatting filters:</th>
 		  <td><select name="formatting_filters" size="1">
@@ -294,7 +294,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			),
 		);
 
-		if (!$page->for_feed_settings()) :
+		if ( ! $page->for_feed_settings()) :
 			$use_aggregator_source_data = get_option('feedwordpress_use_aggregator_source_data');
 		endif;
 		?>
@@ -315,7 +315,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 		</td></tr>
 		
-		<?php if (!$page->for_feed_settings()) : ?>
+		<?php if ( ! $page->for_feed_settings()) : ?>
 		<tr><th scope="row">Posts from aggregator feeds:</th>
 		<td><ul class="options">
 		<li><label><input type="radio" name="use_aggregator_source_data" value="no"<?php echo ($use_aggregator_source_data!="yes")?' checked="checked"':''; ?>> Give the aggregator itself as the source of posts from an aggregator feed.</label></li>
@@ -426,7 +426,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			$custom_settings = unserialize($custom_settings);
 		endif;
 		
-		if (!is_array($custom_settings)) :
+		if ( !is_array($custom_settings)) :
 			$custom_settings = array();
 		endif;
 
@@ -612,7 +612,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 <?php
 		print "<ul>\n";
-		if (!is_array($attrib)) : $attrib = array(); endif;
+		if ( !is_array($attrib)) : $attrib = array(); endif;
 
 		print '<input type="hidden" id="next-boilerplate-rule-index" name="next_boilerplate_rule_index" value="'.count($attrib).'" />';
 
@@ -633,7 +633,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 				$selected['post'] = (($line['element']=='post') ? ' selected="selected"' : '');
 				$selected['excerpt'] = (($line['element']=='excerpt') ? ' selected="selected"' : '');
 
-				if (!isset($line['class'])) : $line['class'] = array(); endif;
+				if ( !isset($line['class'])) : $line['class'] = array(); endif;
 				$line['class'][] = 'boilerplate-li';
 ?>
 

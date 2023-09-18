@@ -79,9 +79,9 @@ class SyndicatedLink {
 			$stale = false; // don't update on any timed updates; pings only
 		elseif ($this->setting('update/hold')=='next') :
 			$stale = true; // update on the next timed update
-		elseif ( !$this->setting('update/last') ) :
+		elseif ( ! $this->setting('update/last') ) :
 			$stale = true; // initial update
-		elseif ($feedwordpress->force_update_all()) :
+		elseif ( !empty($feedwordpress) and $feedwordpress->force_update_all()) :
 			$stale = true; // forced general updating
 		else :
 			$after = (
@@ -110,9 +110,9 @@ class SyndicatedLink {
 			$this->magpie = new MagpieFromSimplePie($this->simplepie, NULL);
 		endif;
 	} /* SyndicatedLink::fetch () */
-	
+
 	public function live_posts () {
-		if (!is_object($this->simplepie)) :
+		if ( !is_object($this->simplepie)) :
 			$this->fetch();
 		endif;
 
@@ -137,9 +137,9 @@ class SyndicatedLink {
 
 		$url = $this->uri(array('add_params' => true, 'fetch' => true));
 		FeedWordPress::diagnostic('updated_feeds', 'Polling feed ['.$url.']');
-	
+
 		$this->fetch();
-	
+
 		$new_count = NULL;
 
 		$resume = ('yes'==$this->setting('update/unfinished'));
@@ -164,7 +164,7 @@ class SyndicatedLink {
 				$oldError = unserialize($oldError);
 			endif;
 
-			if (!is_null($oldError)) :
+			if ( !is_null($oldError)) :
 				// Copy over the in-error-since timestamp
 				$theError['since'] = $oldError['since'];
 
@@ -194,20 +194,20 @@ class SyndicatedLink {
 			# -- Update Link metadata live from feed
 			$channel = $this->magpie->channel;
 
-			if (!isset($channel['id'])) :
+			if ( !isset($channel['id'])) :
 				$channel['id'] = $this->link->link_rss;
 			endif;
 
 			$update = array();
-			if (!$this->hardcode('url') and isset($channel['link'])) :
+			if ( ! $this->hardcode('url') and isset($channel['link'])) :
 				$update[] = "link_url = '".esc_sql($channel['link'])."'";
 			endif;
 
-			if (!$this->hardcode('name') and isset($channel['title'])) :
+			if ( ! $this->hardcode('name') and isset($channel['title'])) :
 				$update[] = "link_name = '".esc_sql($channel['title'])."'";
 			endif;
 
-			if (!$this->hardcode('description')) :
+			if ( ! $this->hardcode('description')) :
 				if (isset($channel['tagline'])) :
 					$update[] = "link_description = '".esc_sql($channel['tagline'])."'";
 				elseif (isset($channel['description'])) :
@@ -222,7 +222,7 @@ class SyndicatedLink {
 			$this->update_setting('update/last', time());
 			$this->do_update_ttl();
 
-			if (!$this->setting('update/hold') != 'ping') :
+			if ( ! $this->setting('update/hold') != 'ping') :
 				$this->update_setting('update/hold', 'scheduled');
 			endif;
 
@@ -244,7 +244,7 @@ class SyndicatedLink {
 			$crashed = false;
 
 			$posts = $this->live_posts();
-			
+
 			$this->magpie->originals = $posts;
 
 			// If this is a complete feed, rather than an incremental feed, we
@@ -264,24 +264,24 @@ class SyndicatedLink {
 
 			if (is_array($posts)) :
 				foreach ($posts as $key => $item) :
-					if (!$this->pause_updates()) :
+					if ( ! $this->pause_updates()) :
 						$post = new SyndicatedPost($item, $this);
 
-						if (!$resume or !in_array(trim($post->guid()), $processed)) :
+						if ( ! $resume or !in_array(trim($post->guid()), $processed)) :
 							$processed[] = $post->guid();
-							if (!$post->filtered()) :
+							if ( ! $post->filtered()) :
 								$new = $post->store();
 								if ( $new !== false ) $new_count[$new]++;
 							endif;
 
-							if (!is_null($crash_ts) and (time() > $crash_ts)) :
+							if ( !is_null($crash_ts) and (time() > $crash_ts)) :
 								$crashed = true;
 								break;
 							endif;
 						endif;
 
 						unset($post);
-					endif;					
+					endif;
 				endforeach;
 			endif;
 
@@ -289,7 +289,7 @@ class SyndicatedLink {
 				// Check for use of Atom tombstones. Spec:
 				// <http://tools.ietf.org/html/draft-snell-atompub-tombstones-18>
 				$tombstones = $this->simplepie->get_feed_tags('http://purl.org/atompub/tombstones/1.0', 'deleted-entry');
-				if (!is_null($tombstones) && count($tombstones) > 0) :
+				if ( !is_null($tombstones) && count($tombstones) > 0) :
 					foreach ($tombstones as $tombstone) :
 						$ref = NULL;
 						foreach (array('', 'http://purl.org/atompub/tombstones/1.0') as $ns) :
@@ -322,7 +322,7 @@ class SyndicatedLink {
 			do_action("update_syndicated_feed_items_${suffix}", $this->id, $this);
 
 			$this->update_setting('update/processed', $processed);
-			if (!$crashed) :
+			if ( ! $crashed) :
 				$this->update_setting('update/unfinished', 'no');
 			endif;
 			$this->update_setting('link/item count', count($posts));
@@ -357,7 +357,7 @@ class SyndicatedLink {
 	public function do_update_ttl () {
 		list($ttl, $xml) = $this->ttl(/*return element=*/ true);
 
-		if (!is_null($ttl)) :
+		if ( !is_null($ttl)) :
 			$this->update_setting('update/ttl', $ttl);
 			$this->update_setting('update/xml', $xml);
 			$this->update_setting('update/timed', 'feed');
@@ -377,7 +377,7 @@ class SyndicatedLink {
 		));
 
 	} /* SyndicatedLink::do_update_ttl () */
-	
+
 	public function process_retirements ($delta) {
 		global $post;
 
@@ -526,7 +526,7 @@ class SyndicatedLink {
 			$pair = explode(": ", $note, 2);
 			$key = (isset($pair[0]) ? $pair[0] : null);
 			$value = (isset($pair[1]) ? $pair[1] : null);
-			if (!is_null($key) and !is_null($value)) :
+			if ( !is_null($key) and !is_null($value)) :
 				// Unescape and trim() off the whitespace.
 				// Thanks to Ray Lischner for pointing out the
 				// need to trim off whitespace.
@@ -557,7 +557,7 @@ class SyndicatedLink {
 		// Set this up automagically for del.icio.us
 		$bits = parse_url($this->link->link_rss);
 		$tagspacers = array('del.icio.us', 'feeds.delicious.com');
-		if (!isset($this->settings['cat_split']) and in_array($bits['host'], $tagspacers)) :
+		if ( !isset($this->settings['cat_split']) and in_array($bits['host'], $tagspacers)) :
 			$this->settings['cat_split'] = '\s'; // Whitespace separates multiple tags in del.icio.us RSS feeds
 		endif;
 
@@ -575,7 +575,7 @@ class SyndicatedLink {
 			// Look for new format
 			$this->settings['terms'] = maybe_unserialize($this->settings['terms']);
 
-			if (!is_array($this->settings['terms'])) :
+			if ( !is_array($this->settings['terms'])) :
 				// Deal with old format instead. Ugh.
 
 				// Split on two *or more* consecutive breaks
@@ -686,6 +686,11 @@ class SyndicatedLink {
 		WHERE link_id='$this->id'
 		");
 
+		if ( $result === false )
+		{
+			error_log("query failed: " . $wpdb->last_error);
+		}
+
 		if ($reload) :
 			// force reload of link information from DB
 			if (function_exists('clean_bookmark_cache')) :
@@ -701,9 +706,12 @@ class SyndicatedLink {
 	 * @param string $name The link setting key
 	 * @param mixed $fallback_global If the link setting is nonexistent or marked as a use-default value, fall back to the value of this global setting.
 	 * @param mixed $fallback_value If the link setting and the global setting are nonexistent or marked as a use-default value, fall back to this constant value.
-	 * @return bool TRUE on success, FALSE on failure.
+	 *
+	 * @return mixed|null Should *not* return a boolean!!
+	 * // @return bool TRUE on success, FALSE on failure.
 	 */
-	public function setting ($name, $fallback_global = NULL, $fallback_value = NULL, $default = 'default') {
+	public function setting ($name, $fallback_global = NULL, $fallback_value = NULL, $default = 'default')
+	{
 		$ret = NULL;
 		if (isset($this->settings[$name])) :
 			$ret = $this->settings[$name];
@@ -743,7 +751,7 @@ class SyndicatedLink {
 	} /* SyndicatedLink::merge_settings () */
 
 	public function update_setting ($name, $value, $default = 'default') {
-		if (!is_null($value) and $value != $default) :
+		if ( !is_null($value) and $value != $default) :
 			$this->settings[$name] = $value;
 		else : // Zap it.
 			unset($this->settings[$name]);
@@ -756,7 +764,7 @@ class SyndicatedLink {
 
 	public function get_feed_type () {
 		$type_code = $this->setting('link/feed_type');
-		
+
 		// list derived from: <http://simplepie.org/api/class-SimplePie.html>, retrieved 2020/01/18
 		$bitmasks = array(
 			SIMPLEPIE_TYPE_RSS_090 => 'RSS 0.90',
@@ -786,10 +794,10 @@ class SyndicatedLink {
 				endif;
 			endif;
 		endforeach;
-		
+
 		return $type;
 	} /* SyndicatedLink::get_feed_type () */
-	
+
 	public function uri ($params = array()) {
 		$params = wp_parse_args($params, array(
 		'add_params' => false,
@@ -798,13 +806,13 @@ class SyndicatedLink {
 
 		// Initialize $qp (= array for added query parameters, if any)
 		$qp = array();
-		
-		$link_rss = (is_object($this->link) ? $this->link->link_rss : NULL); 
-		
+
+		$link_rss = (is_object($this->link) ? $this->link->link_rss : NULL);
+
 		// $link_rss stores the URI for the subscription as stored in the feed's record.
-		// $uri stores the effective URI of the request including any/all added query parameters 
+		// $uri stores the effective URI of the request including any/all added query parameters
 		$uri = $link_rss;
-		if (!is_null($uri) and strlen($uri) > 0 and $params['add_params']) :
+		if ( !is_null($uri) and strlen($uri) > 0 and $params['add_params']) :
 			$qp = maybe_unserialize($this->setting('query parameters', array()));
 
 			// For high-tech HTTP feed request kung fu
@@ -828,7 +836,7 @@ class SyndicatedLink {
 		// Do we have any filters that apply here?
 		$uri = apply_filters('syndicated_link_uri', $uri, $link_rss, $qp, $params, $this);
 
-		// Return the filtered link URI.		
+		// Return the filtered link URI.
 		return $uri;
 	} /* SyndicatedLink::uri () */
 
@@ -862,7 +870,7 @@ class SyndicatedLink {
 			if ($default_custom_settings and !is_array($default_custom_settings)) :
 				$default_custom_settings = unserialize($default_custom_settings);
 			endif;
-			if (!is_array($default_custom_settings)) :
+			if ( !is_array($default_custom_settings)) :
 				$default_custom_settings = array();
 			endif;
 
@@ -871,7 +879,7 @@ class SyndicatedLink {
 			if ($custom_settings and !is_array($custom_settings)) :
 				$custom_settings = unserialize($custom_settings);
 			endif;
-			if (!is_array($custom_settings)) :
+			if ( !is_array($custom_settings)) :
 				$custom_settings = array();
 			endif;
 
@@ -886,7 +894,7 @@ class SyndicatedLink {
 			endforeach;
 		endif;
 
-		$ret = $this->postmeta[!!$params['parsed']];
+		$ret = $this->postmeta[!! $params['parsed']];
 		if (is_string($params['field'])) :
 			$ret = $ret[$params['field']];
 		endif;
@@ -898,10 +906,11 @@ class SyndicatedLink {
 		if ($fromFeed) :
 			$value = $this->setting($setting, NULL, NULL, NULL);
 
-			$s = $this->simplepie;
-			$callable = (is_object($s) and method_exists($s, $method));
-			if (is_null($value) and $callable) :
-				$fallback = $s->{$method}();
+			$simp_pie = $this->simplepie;
+			$callable = ( is_object( $simp_pie ) and method_exists( $simp_pie, $method ) );
+			if ( is_null( $value ) and $callable ) :
+//				$fallback = $s->{$method}();	// what is fallback supposed to be here? (gwyneth 20230816)
+				$value = $simp_pie->{$method}();		// makes more sense this way!
 			endif;
 		else :
 			$value = $this->link->{$link_field};
@@ -948,14 +957,14 @@ class SyndicatedLink {
 		$params = wp_parse_args($params, array(
 		"rel" => NULL,
 		));
-		
+
 		$fLinks = array();
 		$search = array(
 			array('', 'link'),
 			array(SIMPLEPIE_NAMESPACE_ATOM_10, 'link'),
 			array(SIMPLEPIE_NAMESPACE_ATOM_03, 'link'),
 		);
-		
+
 		foreach ($search as $pair) :
 			if ($link_tags = $this->simplepie->get_feed_tags($pair[0], $pair[1])) :
 				$fLinks = array_merge($fLinks, $link_tags);
@@ -964,24 +973,24 @@ class SyndicatedLink {
 				$fLinks = array_merge($fLinks, $link_tags);
 			endif;
 		endforeach;
-		
+
 		$ret = array();
 		foreach ($fLinks as $link) :
 			$filter = false;
-			if (!is_null($params['rel'])) :
+			if ( !is_null($params['rel'])) :
 				$filter = true;
 
 				if (isset($link['attribs'])) :
 					// Get a list of NSes from the search
 					foreach ($search as $pair) :
 						$ns = $pair[0];
-						
+
 						if (isset($link['attribs'][$ns])
 						and isset($link['attribs'][$ns]['rel'])
 						) :
 							$rel = strtolower(trim($link['attribs'][$ns]['rel']));
 							$fRel = strtolower(trim($params['rel']));
-					
+
 							if ($rel == $fRel) :
 								$filter = false;
 							endif;
@@ -989,15 +998,15 @@ class SyndicatedLink {
 					endforeach;
 				endif;
 			endif;
-			
-			if (!$filter) :
+
+			if ( ! $filter) :
 				$ret[] = $link;
 			endif;
 		endforeach;
 
 		return $ret;
 	}
-	
+
 	public function ttl ($return_element = false) {
 		if (is_object($this->magpie)) :
 			$channel = $this->magpie->channel;
@@ -1044,7 +1053,7 @@ class SyndicatedLink {
 			// do we recognize the alphanumeric period name? if not, then guess
 			// a responsible default, e.g. roughly hourly
 			$mins = (isset($period_minutes[$period]) ? $period_minutes[$period] : 67);
-			
+
 			$xml = 'sy:updateFrequency';
 			$ret = (int) ($mins / $freq);
 
@@ -1066,7 +1075,7 @@ class SyndicatedLink {
 	public function automatic_ttl () {
 		// spread out over a time interval for staggered updates
 		$updateWindow = $this->setting('update/window', 'update_window', DEFAULT_UPDATE_PERIOD);
-		if (!is_numeric($updateWindow) or ($updateWindow < 1)) :
+		if ( !is_numeric($updateWindow) or ($updateWindow < 1)) :
 			$updateWindow = DEFAULT_UPDATE_PERIOD;
 		endif;
 
@@ -1174,7 +1183,7 @@ class SyndicatedLink {
 			if ($oTerm->is_familiar()) :
 
 				$tax = $oTerm->taxonomy();
-				if (!isset($terms[$tax])) :
+				if ( !isset($terms[$tax])) :
 					$terms[$tax] = array();
 				endif;
 				$terms[$tax][] = $oTerm->id();
@@ -1194,8 +1203,8 @@ class SyndicatedLink {
 					endif;
 
 					$inserted = $oTerm->insert($tax);
-					if (!is_null($inserted)) :
-						if (!isset($terms[$tax])) :
+					if ( !is_null($inserted)) :
+						if ( !isset($terms[$tax])) :
 							$terms[$tax] = array();
 						endif;
 						$terms[$tax][] = $inserted;

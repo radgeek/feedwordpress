@@ -52,7 +52,7 @@ class FeedWordPressParsedPostMeta {
 			// Parameter stored in $piece[1]
 			$param = $piece[1];
 			if (is_string($param)) :
-				if (!isset($values[$param])) :
+				if ( !isset($values[$param])) :
 					$values[$param] = $post->query($param);
 				endif;
 				$term = $param;
@@ -64,7 +64,7 @@ class FeedWordPressParsedPostMeta {
 			// Filtering function, if any, stored in $piece[2]
 			if (isset($piece[2])) :
 				$filter = $post->substitution_function(trim(strtolower($piece[2])));
-				if (!is_null($filter)) :
+				if ( !is_null($filter)) :
 					foreach ($results as $key => $result) :
 						$results[$key] = $filter($result);
 					endforeach;
@@ -156,7 +156,7 @@ class FeedWordPressParsedPostMeta {
 			$out = array();
 			
 			$this->reset();
-			while (!$this->EOS()) :
+			while ( ! $this->EOS()) :
 				switch ($this->look()) :
 				case '$' :
 					$this->ptr++;
@@ -186,7 +186,7 @@ class FeedWordPressParsedPostMeta {
 		$ptr0 = $this->ptr;
 
 		$complete = false;
-		while (!$this->EOS() and !$complete) :
+		while ( ! $this->EOS() and ! $complete) :
 			$tok = $this->look();
 			switch ($tok) :
 			case '(' :
@@ -262,7 +262,7 @@ class FeedWordPressParsedPostMeta {
 					$next = $this->nextDelim('EXPR');
 
 					// Skip ahead to the next potentially interesting character.
-					if (!is_null($next)) :
+					if ( !is_null($next)) :
 						$this->ptr = $next;
 					else :
 						$this->ptr = $this->ptrEOS;
