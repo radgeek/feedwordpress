@@ -141,6 +141,9 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		<?php if ( function_exists( 'apache_get_version' ) ) : ?>
 		<li><em><?php _e( 'Web Server:' ); ?></em> <?php print esc_html( apache_get_version() ); ?></li>
 		<?php endif; ?>
+		<?php if ( ! empty( $_SERVER['SERVER_SIGNATURE'] ) ) : ?>
+		<li><em><?php _e( 'Web Server signature:' ); ?></em> <?php print esc_html( $_SERVER['SERVER_SIGNATURE'] ); ?></li>
+		<?php endif; ?>
 		</ul>
 		</td>
 		</tr>
