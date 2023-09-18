@@ -214,7 +214,7 @@ function feedwordpress_deactivate() {
 /**
  * Divides bytes into units of higher magnitude (e.g KB, MB, etc).
  *
- * @param  int|string $quantity Quantity in bytes to be displayed. Can be a string that only includes numeric digots.
+ * @param  int|string $quantity Quantity in bytes to be displayed. Can be a string that only includes numeric digits.
  *
  * @return string Formatted string with quantity and unit.
  */
@@ -222,11 +222,11 @@ function debug_out_human_readable_bytes( $quantity ) {
 	if ( ! is_numeric( $quantity ) ) :
 		return __( "(wrong quantity)" );
 	endif;
-	$quantity = (int) $quantity;
+	$quantity = intval( $quantity );
 	$magnitude = 'B';
 	/** @var array Two-letter abbreviations of the units in increasing magnitude. */
 	$orders = array( 'KB', 'MB', 'GB', 'TB' );
-	while ( ($quantity > ( 1024 * 100 ) ) and ( count( $orders ) > 0 ) ) :
+	while ( ( $quantity > ( 1024 * 100 ) ) and ( count( $orders ) > 0 ) ) :
 		$quantity = floor( $quantity / 1024 );
 		$magnitude = array_shift( $orders );
 	endwhile;
