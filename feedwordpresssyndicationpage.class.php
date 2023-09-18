@@ -876,7 +876,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		is anything I can do to help make FeedWordPress more useful for
 		you, please <a href="http://feedwordpress.radgeek.com/contact">contact me</a>
 		and let me know what you&rsquo;re thinking about.' ); ?></p>
-		<p class="signature">&#8212;<a href="http://radgeek.com/">Charles Johnson</a>, <?php _e(' Developer' ); ?>, <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>.</p>
+		<p class="signature">&mdash;<a href="http://radgeek.com/">Charles Johnson</a>, <?php _e(' Developer' ); ?>, <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>.</p>
 		</div>
 		<?php
 	} /* FeedWordPressSyndicationPage::bleg_thanks () */

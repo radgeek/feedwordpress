@@ -195,7 +195,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php
 	}
 
-	/*static*/ function updated_posts_box ($page, $box = NULL) {
+	/*static*/ function updated_posts_box( $page, $box = NULL ) {
 		?>
 		<table class="edit-form">
 		<?php $page->updatedPosts->display(); ?>
@@ -203,23 +203,31 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressFeedsPage::updated_posts_box() */
 
-	/*static*/ function global_feeds_box ($page, $box = NULL) {
+	/**
+	 * Displays form to deal with global feeds.
+	 *
+	 * @param  object     $page  Current page object (?).
+	 * @param  mixed|null $box   A box inside this object.
+	 *
+	 * @uses FeedWordPress::automatic_update_hook()
+	 */
+	/*static*/ function global_feeds_box( $page, $box = NULL ) {
 		global $feedwordpress;
-		$automatic_updates = $feedwordpress->automatic_update_hook(array('setting only' => true));
-		$update_time_limit = (int) get_option('feedwordpress_update_time_limit');
+		$automatic_updates = $feedwordpress->automatic_update_hook( array( 'setting only' => true ) );
+		$update_time_limit = (int) get_option( 'feedwordpress_update_time_limit' );
 
 		// Hey, ho, let's go...
 		?>
 
-		<table class="edit-form">
-		<?php if ($page->for_default_settings()) : ?>
+		<table class="edit-form"
+		<?php if ( $page->for_default_settings() )  : ?>
 
 		<tr>
-		<th scope="row">Update Method:</th>
+		<th scope="row"><?php _e( 'Update Method:' ); ?></th>
 		<td><select id="automatic-updates-selector" name="automatic_updates" size="1" onchange="contextual_appearance('automatic-updates-selector', 'cron-job-explanation', null, 'no');">
-		<option value="shutdown"<?php fwp_selected_flag( $automatic_updates=='shutdown' ); ?>>automatically check for updates after pages load</option>
-		<option value="init"<?php fwp_selected_flag( $automatic_updates=='init' ); ?>>automatically check for updates before pages load</option>
-		<option value="no"<?php fwp_selected_flag( ! $automatic_updates ); ?>>cron job or manual updates</option>
+		<option value="shutdown"<?php fwp_selected_flag( 'shutdown' == $automatic_updates ); ?>><?php _e( 'automatically check for updates after pages load' ); ?></option>
+		<option value="init"<?php fwp_selected_flag( 'init' == $automatic_updates ); ?>><?php _e( 'automatically check for updates before pages load' ); ?></option>
+		<option value="no"<?php fwp_selected_flag( ! $automatic_updates ); ?>><?php _e( 'cron job or manual updates' ); ?></option>
 		</select>
 		<div id="cron-job-explanation" class="setting-description">
 		<p><?php
@@ -229,9 +237,9 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		// up something for the sake of example.
 		$curlOrWgetPath = NULL;
 
-		$shellExecAvailable = (is_callable('shell_exec') && false === stripos(ini_get('disable_functions'), 'shell_exec'));
+		$shellExecAvailable = ( is_callable( 'shell_exec' ) && false === stripos( ini_get( 'disable_functions' ), 'shell_exec') );
 
-		if ($shellExecAvailable) :
+		if ( $shellExecAvailable ) :
 			$curlOrWgetPath = `which curl`; $opts = '--silent %s';
 		endif;
 
@@ -247,13 +255,11 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 
 		$cmdline = $curlOrWgetPath . ' ' . sprintf($opts, get_bloginfo('url').'?update_feedwordpress=1');
 
-		?>If you want to use a cron job,
-		you can perform scheduled updates by sending regularly-scheduled
-		requests to <a href="<?php bloginfo('url'); ?>?update_feedwordpress=1"><code><?php bloginfo('url'); ?>?update_feedwordpress=1</code></a>
-		For example, inserting the following line in your crontab:</p>
+		?><?php _e( 'If you want to use a cron job,	you can perform scheduled updates by sending regularly-scheduled requests to ' ); ?><a href="<?php bloginfo('url'); ?>?update_feedwordpress=1"><code><?php bloginfo('url'); ?>?update_feedwordpress=1</code></a>
+		<?php _e( 'For example, inserting the following line in your crontab:' ); ?></p>
 		<pre style="font-size: 0.80em"><code>*/10 * * * * <?php print esc_html($cmdline); ?></code></pre>
-		<p class="setting-description">will check in every 10 minutes
-		and check for updates on any feeds that are ready to be polled for updates.</p>
+		<p class="setting-description"><?php _e( 'will check in every 10 minutes
+		and check for updates on any feeds that are ready to be polled for updates.' ); ?></p>
 		</div>
 		</td>
 		</tr>
@@ -261,52 +267,54 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php else : /* Feed-specific settings */ ?>
 
 		<tr>
-		<th scope="row"><?php _e('Last update') ?>:</th>
+		<th scope="row"><?php _e( 'Last update' ) ?>:</th>
 		<td><?php
-			if (isset($page->link->settings['update/last'])) :
-				echo fwp_time_elapsed($page->link->settings['update/last'])." ";
+			if ( isset( $page->link->settings['update/last'] ) ) :
+				echo fwp_time_elapsed( $page->link->settings[ 'update/last'] )." ";
 			else :
-				echo " none yet";
+				_e( " none yet" );
 			endif;
 		?></td></tr>
 
-		<tr><th><?php _e('Next update') ?>:</th>
+		<tr><th><?php _e( 'Next update' ) ?>:</th>
 		<td><?php
-			$holdem = (isset($page->link->settings['update/hold']) ? $page->link->settings['update/hold'] : 'scheduled');
+			$holdem = ( isset( $page->link->settings['update/hold'] ) ? $page->link->settings['update/hold'] : 'scheduled' );
 		?>
 		<select name="update_schedule">
-		<option value="scheduled"<?php echo ($holdem=='scheduled')?' selected="selected"':''; ?>>update on schedule <?php
+		<option value="scheduled"<?php echo ( 'scheduled' == $holdem ) ? ' selected="selected"' : ''; ?>><?php _e( 'update on schedule' ); ?> <?php
 			echo " (";
-			if (isset($page->link->settings['update/ttl']) and is_numeric($page->link->settings['update/ttl'])) :
-				if (isset($page->link->settings['update/timed']) and $page->link->settings['update/timed']=='automatically') :
-					echo 'next: ';
-					$next = $page->link->settings['update/last'] + ((int) $page->link->settings['update/ttl'] * 60);
-					if (strftime('%x', time()) != strftime('%x', $next)) :
-						echo strftime('%x', $next)." ";
+			if ( isset( $page->link->settings['update/ttl'] ) and is_numeric( $page->link->settings['update/ttl'] ) ) :
+				if ( isset($page->link->settings['update/timed'] ) and 'automatically' == $page->link->settings['update/timed'] ) :
+					_e( 'next: ');
+					$next = $page->link->settings['update/last'] + ( (int) $page->link->settings['update/ttl'] * 60 );
+					// Note: strftime() is deprecated; use date() instead. (gwyneth 20230918)
+					if ( strftime( '%x', time() ) != strftime( '%x', $next) ) :
+						echo strftime( '%x', $next )." ";
 					endif;
-					echo strftime('%X', $page->link->settings['update/last']+((int) $page->link->settings['update/ttl']*60));
+					echo strftime( '%X', $page->link->settings['update/last'] + ((int) $page->link->settings['update/ttl'] * 60 ) );
 				else :
-					echo "every ".$page->link->settings['update/ttl']." minute".(($page->link->settings['update/ttl']!=1)?"s":"");
+					echo __( "every " ) . $page->link->settings['update/ttl'] . __( " minute" )
+						. ( ( 1 != $page->link->settings['update/ttl'] ) ? __( "s" ) : "" );
 				endif;
 			else:
-				echo "next scheduled update";
+				_e( "next scheduled update" );
 			endif;
 			echo ")";
 		?></option>
-		<option value="next"<?php echo ($holdem=='next')?' selected="selected"':''; ?>>update ASAP</option>
-		<option value="ping"<?php echo ($holdem=='ping')?' selected="selected"':''; ?>>update only when pinged</option>
+		<option value="next"<?php echo ( 'next' == $holdem ) ? ' selected="selected"' : ''; ?>><?php _e( 'update ASAP' ); ?></option>
+		<option value="ping"<?php echo ( 'ping' == $holdem ) ? ' selected="selected"' : ''; ?>><?php _e( 'update only when pinged' ); ?></option>
 		</select></td></tr>
 
 		<?php endif; ?>
 
 		<tr id="pause-resume">
-		<th scope="row"><?php print __('Pause/Resume:'); ?></th>
+		<th scope="row"><?php _e( 'Pause/Resume:'); ?></th>
 		<td><?php
 		$this->setting_radio_control(
 			'update/pause', 'update_pause',
 			/*options=*/ array(
-				'no' => '<strong>UPDATE:</strong> import new posts as normal',
-				'yes' => '<strong>PAUSE:</strong> do not import new posts until I unpause updates',
+				'no' => __( '<strong>UPDATE:</strong> import new posts as normal' ),
+				'yes' => __( '<strong>PAUSE:</strong> do not import new posts until I unpause updates' ),
 			),
 			/*params=*/ array(
 				'setting-default' => NULL,
@@ -318,7 +326,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		</tr>
 
 		<tr>
-		<th scope="row"><?php print __('Update scheduling:') ?></th>
+		<th scope="row"><?php _e( 'Update scheduling:') ?></th>
 		<td><p style="margin-top:0px">How long should FeedWordPress wait between updates before it considers this feed ready to be polled for updates again?</p>
 		<?php
 
@@ -337,7 +345,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		</tr>
 
 		<tr>
-		<th scope="row"><?php print __('Minimum Interval:'); ?></th>
+		<th scope="row"><?php _e( 'Minimum Interval:'); ?></th>
 		<td><p style="margin-top:0px">Some feeds include standard elements that
 		request a specific update schedule. If the interval requested by the
 		feed provider is <em>longer</em> than FeedWordPress's normal scheduling,
@@ -363,7 +371,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<?php if ($this->for_default_settings()) : ?>
 
 		<tr>
-		<th scope="row"><?php print __('Time limit on updates'); ?>:</th>
+		<th scope="row"><?php _e('Time limit on updates'); ?>:</th>
 		<td><select id="time-limit" name="update_time_limit" size="1" onchange="contextual_appearance('time-limit', 'time-limit-box', null, 'yes');">
 		<option value="no"<?php fwp_selected_flag($update_time_limit<=0); ?>>no time limit on updates</option>
 		<option value="yes"<?php fwp_selected_flag($update_time_limit>0); ?>>limit updates to no more than...</option>
@@ -383,7 +391,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				$updateWindow = DEFAULT_UPDATE_PERIOD;
 			endif;
 		?>
-		<p>Wait <input type="text" name="update_window" value="<?php print esc_attr($updateWindow); ?>" size="4" /> minutes between polling.</p>
+		<p><?php _e( 'Wait' ); ?> <input type="text" name="update_window" value="<?php print esc_attr($updateWindow); ?>" size="4" /> <?php _e( 'minutes between polling.' ); ?></p>
 		<div class="setting-description" id="update-scheduling-note">
 		<p<?php if ( $updateWindow < 50 ) : ?> style="color: white; background-color: #703030; padding: 1.0em;"<?php endif; ?>><?php _e( '<strong>Recommendation.</strong> Unless you are positive that you have the webmaster&rsquo;s permission, you generally should not set FeedWordPress to poll feeds more frequently than once every 60 minutes. Many webmasters consider more frequent automated polling to be abusive, and may complain to your web host, or ban your IP address, as retaliation for hammering their servers too hard.' ); ?></p>
 		<p><?php _e( '<strong>Note.</strong> This is a default setting that FeedWordPress uses to schedule updates when the feed does not provide any scheduling requests. If this feed does provide update scheduling information (through elements such as <code>&lt;rss:ttl&gt;</code> or <code>&lt;sy:updateFrequency&gt;</code>), FeedWordPress will respect the feed&rsquo;s request.' ); ?></p>
@@ -405,9 +413,9 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		$timeout = intval( $this->setting( 'fetch timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT ) );
 
 		if ( $this->for_feed_settings() ) :
-			$article = 'this';
+			$article = __( 'this' );
 		else :
-			$article = 'a';
+			$article = __( 'a' );
 		endif;
 		?>
 		<p><?php _e( 'Wait no more than

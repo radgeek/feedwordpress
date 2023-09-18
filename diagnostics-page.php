@@ -177,7 +177,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		<td><input type="text" name="feedwordpress_secret_key" value="<?php print esc_attr($feedwordpress->secret_key()); ?>" />
 		<p class="setting-description">This is used to control access to some diagnostic testing functions. You can change it to any string you want,
 		but only tell it to people you trust to help you troubleshoot your
-		FeedWordPress installation. Keep it secret&#8212;keep it safe.</p></td>
+		FeedWordPress installation. Keep it secret&mdash;keep it safe.</p></td>
 		</tr>
 		</table>
 
