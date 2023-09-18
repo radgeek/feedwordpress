@@ -614,5 +614,10 @@ table.twofer td.secondary {
  */
 li#toplevel_page_feedwordpress-syndication .wp-menu-image img {
 	padding: 0;
+	margin-top: 0;	/* added this for good measure */
 }
 
+/* This is to avoid that Dashicons get underlines! */
+.fwp-no-underline, .fwp-no-underline:hover {
+	text-decoration: none;
+}
