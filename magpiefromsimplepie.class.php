@@ -26,7 +26,7 @@ class MagpieFromSimplePie {
 	'http://purl.org/atom/ns#' => 'atom' /* pre-1.0 */,
 	'http://purl.org/rss/1.0/' => 'rss' /* 1.0 */,
 	'http://backend.userland.com/RSS2' => 'rss' /* 2.0 */,
-	'http://www.w3.org/1999/02/22-rdf-syntax-ns#' => 'rdf', 
+	'http://www.w3.org/1999/02/22-rdf-syntax-ns#' => 'rdf',
 	'http://www.w3.org/1999/xhtml' => 'xhtml',
 	'http://purl.org/dc/elements/1.1/' => 'dc',
 	'http://purl.org/dc/terms/' => 'dcterms',
@@ -51,7 +51,7 @@ class MagpieFromSimplePie {
 	'http://a9.com/-/spec/opensearchrss/1.0/' => 'openSearch',
 	'http://purl.org/rss/1.0/modules/slash/' => 'slash',
 	'http://www.google.com/schemas/reader/atom/' => 'gr',
-	'urn:atom-extension:indexing' => 'indexing', 
+	'urn:atom-extension:indexing' => 'indexing',
 	);
 
 	/**
@@ -63,7 +63,7 @@ class MagpieFromSimplePie {
 	 * @uses SimplePie::get_items
 	 * @uses MagpieFromSimplePie::processFeedData
 	 * @uses MagpieFromSimplePie::processItemData
-	 * @uses MagpieFromSimplePie::normalize 
+	 * @uses MagpieFromSimplePie::normalize
 	 * @uses MagpieFromSimplePie::is_atom
 	 */
 	function __construct( $pie, $item = true ) {
@@ -89,7 +89,7 @@ class MagpieFromSimplePie {
 		endif;
 
 		$this->normalize();
-		
+
 		// In case anyone goes poking around our private members (uh...)
 		$this->feed_type = ($this->is_atom() ? 'Atom' : 'RSS');
 		$this->feed_version = $this->feed_version();
@@ -99,18 +99,18 @@ class MagpieFromSimplePie {
 	function MagpieFromSimplePie( $pie, $item = true ) {
 		self::__construct( $pie, $item );
 	}
-	
+
 	/**
 	 * MagpieFromSimplePie::get_items: returns an array of MagpieRSS format arrays
 	 * equivalent to the SimplePie_Item objects in the SimplePie object from which this
 	 * object was constructed.
-	 * 
+	 *
 	 * @return array An array of MagpieRSS-format arrays representing the items on this feed
 	 */
 	function get_items () {
 		return $this->items;
 	} /* MagpieFromSimplePie::get_items () */
-	
+
 	/**
 	 * MagpieFromSimplePie::get_item: returns a single MagpieRSS format array equivalent
 	 * to a SimplePie_Item object from which this object was constructed.
@@ -150,7 +150,7 @@ class MagpieFromSimplePie {
 							if (isset($element['child'][$ns]['entry'])) : unset($element['child'][$ns]['entry']); endif;
 							if (isset($element['child'][$ns]['item'])) : unset($element['child'][$ns]['item']); endif;
 						endforeach;
-				
+
 						$ret = $this->processChannelData($element) + $ret;
 					elseif (in_array(strtolower($name), array('rss', 'rdf'))) :
 						// Drop down to get to <channel> element
@@ -159,7 +159,7 @@ class MagpieFromSimplePie {
 				endforeach;
 			endforeach;
 		endforeach; endif;
-		
+
 		return apply_filters('feedwordpress_magpiefromsimplepie_processfeeddata', $ret, $data, $this);
 	} /* MagpieFromSimplePie::processFeedData() */
 
@@ -176,14 +176,14 @@ class MagpieFromSimplePie {
         function processChannelData ($data, $path = array()) {
         	$ret = array();
 		$tagPath = strtolower(implode('_', $path));
-		
+
 		// Only process at the right level
 		if (strlen($tagPath) > 0
 		and isset($data['data'])
 		and strlen($data['data']) > 0) :
 			$ret[$tagPath] = $data['data'];
 		endif;
-		
+
 		$ret = $this->handleAttributes($data, $path)
 			+ $this->handleChildren($data, $path, 'processChannelData')
 			+ $ret;
@@ -204,16 +204,16 @@ class MagpieFromSimplePie {
 	function processItemData ($data, $path = array()) {
 		$ret = array();
 		$tagPath = strtolower(implode('_', $path));
-	
+
 		if (strlen($tagPath) > 0 and isset($data['data']) and strlen($data['data']) > 0) :
 			$ret[$tagPath] = $data['data'];
 		endif;
-	
+
 		// Set up xml:base to be recorded in array
 		if (isset($data['xml_base_explicit']) and $data['xml_base_explicit']) :
 			$data['attribs']['']['xml:base'] = $data['xml_base'];
 		endif;
-		
+
 		$ret = $this->handleAttributes($data, $path)
 			+ $this->handleChildren($data, $path, 'processItemData')
 			+ $ret;
@@ -258,7 +258,7 @@ class MagpieFromSimplePie {
 
 		return apply_filters('feedwordpress_magpiefromsimplepie_handleattributes', $ret, $data, $path, $this);
 	} /* MagpieFromSimplePie::handleAttributes() */
-	
+
 	var $inImage = false;
 	var $inTextInput = false;
 
@@ -275,7 +275,7 @@ class MagpieFromSimplePie {
 	 * @uses MagpieFromSimplePie::processItemData
 	 */
 	function handleChildren ($data, $path = array(), $method = 'processItemData') {
-		$tagPath = strtolower(implode('_', $path));
+		$tagPath = strtolower(implode('_', $path));	// what is this for? It's never used... (gwyneth 20230918)
 		$ret = array();
 		if (isset($data['child'])) : foreach ($data['child'] as $ns => $elements) :
 			if (isset($this->_XMLNS_FAMILIAR[$ns])) :
@@ -316,9 +316,9 @@ class MagpieFromSimplePie {
 					elseif ('content'==$tag and 'atom'==$ns) :
 						$childTag = 'atom_'.$tag;
 					endif;
-					
+
 					$childTag = $this->increment_element($ret, $childTag, $ns, $path);
-					$childPath = $path; $childPath[] = strtolower($childTag); 
+					$childPath = $path; $childPath[] = strtolower($childTag);
 
 					if ( !is_null($copyOver)) :
 						$co = array();
@@ -332,15 +332,15 @@ class MagpieFromSimplePie {
 				if ($co) :
 					$arr = $co + $arr; // Left-hand overwrites right-hand
 				endif;
-				
+
 				if ($this->inImage) :
 					$this->image = $arr + $this->image;
-					
+
 					// Close tag
 					if ('image'==$tag and 'rss'==$ns) : $this->inImage = false; endif;
 				elseif ($this->inTextInput) :
 					$this->textinput = $arr + $this->textinput;
-					
+
 					// Close tag
 					if ('textinput'==$tag and 'rss'==$ns) : $this->inTextInput = false; endif;
 				elseif ($this->is_namespaced($ns)) :
@@ -350,7 +350,7 @@ class MagpieFromSimplePie {
 					$ret = $arr + $ret;
 				endif;
 			endforeach; endforeach;
-			
+
 		endforeach; endif;
 
 		return apply_filters('feedwordpress_magpiefromsimplepie_handlechildren', $ret, $data, $path, $method, $this);
@@ -410,10 +410,10 @@ class MagpieFromSimplePie {
 				endif;
 				$this->normalize_element($this->channel, 'author', $this->channel['dc'], 'creator', 'normalize_atom_person');
 				$this->normalize_element($this->channel, 'contributor', $this->channel['dc'], 'contributor', 'normalize_atom_person');
-	
+
 				// Atom elements to RSS elements
 				$this->normalize_element($this->channel, 'subtitle', $this->channel, 'description');
-		
+
 				if ( isset($this->channel['logo']) ) :
 					$this->normalize_element($this->channel, 'logo', $this->image, 'url');
 					$this->normalize_element($this->channel, 'link', $this->image, 'link');
@@ -431,7 +431,7 @@ class MagpieFromSimplePie {
 				//$this->normalize_element($this->channel, 'textinput_link', $this->textinput, 'link');
 				//$this->normalize_element($this->channel, 'textinput_name', $this->textinput, 'name');
 				//$this->normalize_element($this->channel, 'textinput_description', $this->textinput, 'description');
-			
+
 				// RSS elements to Atom elements
 				$this->normalize_element($this->channel, 'description', $this->channel, 'tagline'); // Atom 0.3
 				$this->normalize_element($this->channel, 'description', $this->channel, 'subtitle'); // Atom 1.0 (yay wordsmithing!)
@@ -443,7 +443,7 @@ class MagpieFromSimplePie {
 			// Now loop through and normalize item data
 			for ( $i = 0; $i < count($this->items); $i++) :
 				$item = $this->items[$i];
-			
+
 				// if atom populate rss fields and normalize 0.3 and 1.0 feeds
 				if ( $this->is_atom() ) :
 					// Atom 1.0 elements <=> Atom 0.3 elements
@@ -456,7 +456,7 @@ class MagpieFromSimplePie {
 					endif;
 
 					$this->normalize_author_inheritance($item, $this->originals[$i]);
-	
+
 					// Atom elements to RSS elements
 					$this->normalize_element($item, 'author', $item['dc'], 'creator', 'normalize_atom_person');
 					$this->normalize_element($item, 'contributor', $item['dc'], 'contributor', 'normalize_atom_person');
@@ -477,14 +477,14 @@ class MagpieFromSimplePie {
 					// RSS elements to Atom elements
 					$this->normalize_element($item, 'description', $item, 'summary');
 					$this->normalize_element($item, 'enclosure', $item, 'link_enclosure', 'normalize_enclosure');
-				
+
 					// Categories
 					if ( isset($item['category#']) ) : // RSS 2.0 categories to dc:subject and Atom 1.0 categories
 						$this->normalize_element($item, 'category', $item['dc'], 'subject', 'normalize_category');
 					elseif ( isset($item['dc']['subject#']) ) : // dc:subject to Atom 1.0 and RSS 2.0 categories
 						$this->normalize_element($item['dc'], 'subject', $item, 'category', 'normalize_dc_subject');
 					endif;
-	
+
 					// Normalized item timestamp
 					if (isset($item['pubdate'])) :
 						$item_date = $item['pubdate'];
@@ -497,7 +497,7 @@ class MagpieFromSimplePie {
 
 				if ( $item_date ) :
 					$date_timestamp = new FeedTime($item_date);
-	
+
 					if ( ! $date_timestamp->failed()) :
 						$item['date_timestamp'] = $date_timestamp->timestamp();
 					endif;
@@ -506,7 +506,7 @@ class MagpieFromSimplePie {
 				$this->items[$i] = $item;
 			endfor;
 		endif;
-		
+
 		do_action('feedwordpress_magpiefromsimplepie_normalize_post', $this);
 	} /* MagpieFromSimplePie::normalize() */
 
@@ -540,9 +540,9 @@ class MagpieFromSimplePie {
 			endforeach;
 		endif;
 	} /* MagpieFromSimplePie::normalize_author_inheritance() */
-	
+
 	/**
-	 * MagpieFromSimplePie::normalize_element 
+	 * MagpieFromSimplePie::normalize_element
 	 * Simplify the logic for normalize(). Makes sure that count of elements
 	 * and each of multiple elements is normalized properly. If you need to
 	 * mess with things like attributes or change formats or the like, pass
@@ -569,7 +569,7 @@ class MagpieFromSimplePie {
 				else : // just make it the same
 					$from_id = $this->element_id($from, $i);
 					$to_id = $this->element_id($to, $i);
-					
+
 					if (isset($source[$from_id])) : // Avoid PHP notice nastygrams
 						$dest[$to_id] = $source[$from_id];
 					endif;
@@ -682,7 +682,7 @@ class MagpieFromSimplePie {
 		// Now put the identifier into dc:subject
 		$dest[$dc_id] = $source[$cat_id];
 	} /* MagpieFromSimplePie::normalize_category */
-    
+
 	/**
 	 * MagpieFromSimplePie::normalize_dc_subject: Normalize Dublin Core
 	 * "subject" elements to Atom 1.0 and RSS 2.0 categories.
@@ -736,7 +736,7 @@ class MagpieFromSimplePie {
 			$data[$counterIndex] += 1;
 			$N = $data[$counterIndex];
 		endif;
-		
+
 		if ($N > 1) :
 			$childTag .= '#'.$N;
 		endif;
@@ -757,7 +757,7 @@ class MagpieFromSimplePie {
 		if ($this->is_atom()) : $root = array('', 'atom');
 		else : $root = array('', 'rss');
 		endif;
-		
+
 		// RDF formats; namespaced in attribs but not in elements
 		if ( ! $attribute and $this->is_rdf()) :
 			$root[] = 'rdf';
@@ -774,7 +774,7 @@ class MagpieFromSimplePie {
 	function is_atom () {
 		return $this->pie->get_type() & SIMPLEPIE_TYPE_ATOM_ALL;
 	} /* MagpieFromSimplePie::increment_element */
-	
+
 	/**
 	 * MagpieFromSimplePie::is_rss
 	 *
@@ -783,7 +783,7 @@ class MagpieFromSimplePie {
 	function is_rss () {
 		return $this->pie->get_type() & SIMPLEPIE_TYPE_RSS_ALL;
 	} /* MagpieFromSimplePie::is_rss */
-	
+
 	/**
 	 * MagpieFromSimplePie::is_rdf
 	 *

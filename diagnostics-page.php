@@ -126,7 +126,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 
 		<tbody>
 		<tr>
-		<th scope="row">Version:' ); ?></th>
+		<th scope="row"><?php _e( 'Version:' ); ?></th>
 		<td><?php _e( 'You are using FeedWordPress version' ); ?> <strong><?php print FEEDWORDPRESS_VERSION; ?></strong>.</td>
 		</tr>
 
@@ -144,6 +144,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		<?php if ( ! empty( $_SERVER['SERVER_SIGNATURE'] ) ) : ?>
 		<li><em><?php _e( 'Web Server signature:' ); ?></em> <?php print esc_html( $_SERVER['SERVER_SIGNATURE'] ); ?></li>
 		<?php endif; ?>
+		<li><em><?php _e( 'Hosted on:' ); ?></em> <?php print esc_html( php_uname( 'a' ) ); ?></li>
 		</ul>
 		</td>
 		</tr>
@@ -184,15 +185,15 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 
 	static function diagnostics_box( $page, $box = NULL ) {
 		$settings = array();
-		$settings['debug'] = (get_option('feedwordpress_debug')=='yes');
+		$settings['debug'] = ( get_option( 'feedwordpress_debug' ) == 'yes' );
 
-		$diagnostics_output = get_option('feedwordpress_diagnostics_output', array());
+		$diagnostics_output = get_option( 'feedwordpress_diagnostics_output', array() );
 
 		$users = fwp_author_list();
 
-		$ded = get_option('feedwordpress_diagnostics_email_destination', 'admins');
+		$ded = get_option( 'feedwordpress_diagnostics_email_destination', 'admins' );
 
-		if (preg_match('/^mailto:(.*)$/', $ded, $ref)) :
+		if (preg_match( '/^mailto:(.*)$/', $ded, $ref ) ) :
 			$ded_addy = $ref[1];
 		else :
 			$ded_addy = NULL;
@@ -204,14 +205,14 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 <tr style="vertical-align: top">
 <th scope="row"><?php _e( 'Debugging mode:' ); ?></th>
 <td><select name="feedwordpress_debug" size="1">
-<option value="yes"<?php echo ($settings['debug'] ? ' selected="selected"' : ''); ?>>on</option>
-<option value="no"<?php echo ($settings['debug'] ? '' : ' selected="selected"'); ?>>off</option>
+<option value="yes"<?php echo ( $settings['debug'] ? ' selected="selected"' : '' ); ?>><?php _e( 'on' ); ?></option>
+<option value="no"<?php echo ( $settings['debug'] ? '' : ' selected="selected"' ); ?>><?php _e( 'off' ); ?></option>
 </select>
 
-<p>When debugging mode is <strong>ON</strong>, FeedWordPress displays many
+<p><?php _e( 'When debugging mode is <strong>ON</strong>, FeedWordPress displays many
 diagnostic error messages, warnings, and notices that are ordinarily suppressed,
 and turns off all caching of feeds. Use with caution: this setting is useful for
-testing but absolutely inappropriate for a production server.</p>
+testing but absolutely inappropriate for a production server.' ); ?></p>
 
 </td>
 </tr>
@@ -223,7 +224,7 @@ testing but absolutely inappropriate for a production server.</p>
 <li><input type="checkbox" name="diagnostics_output[]" value="echo" <?php print (in_array('echo', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Echo in web browser as they are issued</label></li>
 <li><input type="checkbox" name="diagnostics_output[]" value="echo_in_cronjob" <?php print (in_array('echo_in_cronjob', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Echo to output when they are issued during an update cron job</label></li>
 <li><input type="checkbox" name="diagnostics_output[]" value="email" <?php print (in_array('email', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Send a daily email digest to:</label> <select name="diagnostics_email_destination" id="diagnostics-email-destination" size="1">
-<option value="admins"<?php if ('admins'==$ded) : ?> selected="selected"<?php endif; ?>>the site administrators</option>
+<option value="admins"<?php if ( 'admins' == $ded ) : ?> selected="selected"<?php endif; ?>>the site administrators</option>
 <?php foreach ($users as $id => $name) : ?>
 <option value="user:<?php print (int) $id; ?>"<?php if (sprintf('user:%d', (int) $id)==$ded) : ?> selected="selected"<?php endif; ?>><?php print esc_html($name); ?></option>
 <?php endforeach; ?>
@@ -242,7 +243,7 @@ testing but absolutely inappropriate for a production server.</p>
 		'mailto',
 		'inline'
 	);
-	jQuery('#diagnostics-email-destination').change ( function () {
+	jQuery( '#diagnostics-email-destination' ).change ( function () {
 		contextual_appearance(
 			'diagnostics-email-destination',
 			'diagnostics-email-destination-address',
@@ -255,9 +256,17 @@ testing but absolutely inappropriate for a production server.</p>
 		<?php
 	} /* FeedWordPressDiagnosticsPage::diagnostics_box () */
 
+	/**
+	 * Shows the box for the many possible update options.
+	 *
+	 * @param  type $page description
+	 * @param  type $box description
+	 *
+	 * @return void  description
+	 */
 	static function updates_box ($page, $box = NULL) {
-		$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
-		$fields = apply_filters('feedwordpress_diagnostics', array(
+		$hours = get_option( 'feedwordpress_diagnostics_persistent_errors_hours', 2 );
+		$fields = apply_filters( 'feedwordpress_diagnostics', array(
 			'Update Diagnostics' => array(
 				'update_schedule:check' => 'whenever a FeedWordPress checks in on the update schedule',
 				'updated_feeds' => 'as each feed is checked for updates',
@@ -284,16 +293,16 @@ testing but absolutely inappropriate for a production server.</p>
 				'syndicated_posts:categories:test' => 'as FeedWordPress checks for the familiarity of feed categories and tags',
 				'syndicated_posts:static_meta_data' => 'providing meta-data about syndicated posts in the Edit Posts interface',
 			),
-		), $page);
+		), $page );
 
-		foreach ($fields as $section => $items) :
-			foreach ($items as $key => $label) :
+		foreach ( $fields as $section => $items ) :
+			foreach ( $items as $key => $label ) :
 				$checked[$key] = '';
 			endforeach;
 		endforeach;
 
-		$diagnostics_show = get_option('feedwordpress_diagnostics_show', array());
-		if (is_array($diagnostics_show)) : foreach ($diagnostics_show as $thingy) :
+		$diagnostics_show = get_option( 'feedwordpress_diagnostics_show', array() );
+		if ( is_array( $diagnostics_show ) ) : foreach ( $diagnostics_show as $thingy ) :
 			$checked[$thingy] = ' checked="checked"';
 		endforeach; endif;
 
@@ -303,12 +312,12 @@ testing but absolutely inappropriate for a production server.</p>
 	<?php foreach ($fields as $section => $ul) : ?>
 	  <tr>
 	  <th scope="row"><?php print esc_html($section); ?>:</th>
-	  <td><p>Show a diagnostic message...</p>
+	  <td><p><?php _e( 'Show a diagnostic message...' ); ?></p>
 	  <ul class="options">
 	  <?php foreach ($ul as $key => $label) : ?>
 	    <li><label><input
 	    	type="checkbox" name="diagnostics_show[]"
-	    	value="<?php print esc_html($key); ?>"
+	    	value="<?php print esc_html( $key ); ?>"
 	    	<?php fwp_selected_flag( $checked, $key, "checked" ); ?> />
 	    <?php print esc_html( $label ); ?></label></li>
 	  <?php endforeach; ?>
