@@ -919,21 +919,21 @@ support, and documentation.' ); ?></p>
 <div id="flattr-paypal">
 
 <div class="hovered-component" style="display: inline-block; vertical-align: bottom">
-<a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>"><img src="<?php print esc_url( plugins_url('/'.FeedWordPress::path('assets/images/btc-qr-128px.png') ) ); ?>" alt="Donate" /></a>
-<div><a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>">via bitcoin<span class="hover-on pop-over" style="background-color: #ddffdd; padding: 5px; color: black; border-radius: 5px;">bitcoin:<?php print esc_html(FEEDWORDPRESS_BLEG_BTC); ?></span></a></div>
+<a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>"><img src="<?php print esc_url( plugins_url('/'.FeedWordPress::path('assets/images/btc-qr-128px.png') ) ); ?>" alt="<?php _e( 'Donate' ); ?>" /></a>
+<div><a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>"><?php _e( 'via' ); ?> bitcoin<span class="hover-on pop-over" style="background-color: #ddffdd; padding: 5px; color: black; border-radius: 5px;">bitcoin:<?php print esc_html( FEEDWORDPRESS_BLEG_BTC ); ?></span></a></div>
 </div>
 
 <div style="display: inline-block; vertical-align: bottom">
-<input type="image" name="submit" src="<?php print esc_url(plugins_url('/' . FeedWordPress::path('assets/images/paypal-donation-64px.png' ) ) ); ?>" style="width: 128px; height: 128px;" alt="Donate via PayPal" />
-<input type="hidden" name="business" value="<?php print esc_attr(FEEDWORDPRESS_BLEG_PAYPAL); ?>"  />
+<input type="image" name="submit" src="<?php print esc_url( plugins_url( '/' . FeedWordPress::path('assets/images/paypal-donation-64px.png' ) ) ); ?>" style="width: 128px; height: 128px;" alt="<?php _e( 'Donate via PayPal' ); ?>" />
+<input type="hidden" name="business" value="<?php print esc_attr( FEEDWORDPRESS_BLEG_PAYPAL ); ?>"  />
 <input type="hidden" name="cmd" value="_xclick"  />
-<input type="hidden" name="item_name" value="FeedWordPress donation"  />
+<input type="hidden" name="item_name" value="<?php _e( 'FeedWordPress donation' ); ?>"  />
 <input type="hidden" name="no_shipping" value="1"  />
-<input type="hidden" name="return" value="<?php print esc_attr($this->admin_page_href(basename($this->filename), array('paid' => 'yes'))); ?>"  />
+<input type="hidden" name="return" value="<?php print esc_attr( $this->admin_page_href( basename( $this->filename ), array( 'paid' => 'yes' ) ) ); ?>"  />
 <input type="hidden" name="currency_code" value="USD" />
 <input type="hidden" name="notify_url" value="http://feedwordpress.radgeek.com/ipn/donation"  />
 <input type="hidden" name="custom" value="1"  />
-<div>via PayPal</div>
+<div><?php _e( 'via PayPal' ); ?></div>
 </div> <!-- style="display: inline-block" -->
 
 </div> <!-- id="flattr-paypal" -->
@@ -948,29 +948,29 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 
 <div class="sod-off">
 <form style="text-align: center" action="<?php print esc_url( $this->form_action() ); ?>" method="POST"><div>
-<input class="button" type="submit" name="maybe_later" value="<?php _e( "Maybe Later" ); ?>/>
-<input class="button" type="submit" name="go_away" value="<?php _e( "Dismiss" ); ?>/>
+<input class="button" type="submit" name="maybe_later" value="<?php _e( 'Maybe Later' ); ?>"/>
+<input class="button" type="submit" name="go_away" value="<?php _e( 'Dismiss' ); ?>"/>
 </div></form>
 </div>
 </div> <!-- class="donation-form" -->
 		<?php
-	} /* FeedWordPressSyndicationPage::bleg_box () */
+	} /* FeedWordPressSyndicationPage::bleg_box() */
 
 	/**
 	 * Override the default display of a save-settings button and replace
 	 * it with nothing.
 	 */
-	function interstitial () {
+	function interstitial() {
 		/* NOOP */
 	} /* FeedWordPressSyndicationPage::interstitial() */
 
-	function multidelete_page () {
+	function multidelete_page() {
 		global $wpdb;
 
 		// If this is a POST, validate source and user credentials
-		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_feeds', /*capability=*/ 'manage_links');
+		FeedWordPressCompatibility::validate_http_request( /*action=*/ 'feedwordpress_feeds', /*capability=*/ 'manage_links' );
 
-		if (MyPHP::post('submit')==FWP_CANCEL_BUTTON) :
+		if ( MyPHP::post( 'submit' ) == FWP_CANCEL_BUTTON ) :
 			return true; // Continue without further ado.
 		endif;
 

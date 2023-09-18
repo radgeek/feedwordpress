@@ -144,12 +144,12 @@ function fwp_update_set_results_message( $delta, $joiner = ';' ) {
 		$mesg = implode( $joiner, $mesg );
 	endif;
 	return $mesg;
-} /* function fwp_update_set_results_message () */
+} /* function fwp_update_set_results_message() */
 
 /**
  * Outputs the HTML template for a "Submit" button on FWP admin pages.
  *
- * @param mixed $link The syndicated link, if any, that we are viewing settings for.
+ * @param mixed $link The syndicated link, if any, that we are viewing settings for. (Unused)
  */
 function fwp_authors_single_submit( $link = null ) {
 	?>
@@ -164,7 +164,7 @@ function fwp_authors_single_submit( $link = null ) {
 </p>
 </div>
 	<?php
-}
+} /* function fwp_authors_single_submit() */
 
 /**
  * Outputs the HTML template for a Tags (or similar taxonomy) add / remove box in FeedWordPress admin UI pages.
@@ -208,12 +208,12 @@ function fwp_tags_box( $tags, $object, $params = array() ) {
 	if ( is_null( $params['input_name'] ) ) :
 		$params['input_name'] = "newtag[$tax_name]";
 	endif;
-
 	if ( is_null( $params['id'] ) ) :
 		$params['id'] = $tax_name;
 	endif;
 
-	printf( /* $desc = */ '<p style="font-size:smaller;font-style:bold;margin:0\">Tag %s as...</p>', esc_html( $object ) );
+	printf( /* $desc = */ '<p style="font-size:smaller;font-style:bold;margin:0\">' . __( 'Tag' ) . ' %s '
+		 . __( 'as' ) . '...</p>', esc_html( $object ) );
 	$helps        = __( 'Separate tags with commas.' );
 	$box['title'] = __( 'Tags' );
 	?>
@@ -248,14 +248,16 @@ function fwp_tags_box( $tags, $object, $params = array() ) {
 /**
  * Outputs the HTML template for a Category (or similar taxonomy) add / remove box in FeedWordPress admin UI pages.
  *
- * @param array  $checked    An array of cats already applied to the object.
- * @param string $object The human-readable description of the objects to be tagged ("post", "posts from this feed", etc.).
- * @param array  $tags Not used.
- * @param array  $params  An array of optional parameters.
+ * @param  array   $checked    An array of cats already applied to the object.
+ * @param  string  $object     The human-readable description of the objects to be tagged ("post", "posts from this feed", etc.).
+ * @param  array   $tags       Not used.
+ * @param  array   $params     An array of optional parameters (to be parsed with wp_parse_args).
+ *
+ * @uses wp_parse_args()
+ * @uses get_taxonomy()
+ * @uses get_taxonomy_labels()
  */
 function fwp_category_box( $checked, $object, $tags = array(), $params = array() ) {
-	global $wp_db_version;
-
 	if ( is_string( $params ) ) :
 		$prefix   = $params;
 		$taxonomy = 'category';
@@ -281,7 +283,7 @@ function fwp_category_box( $checked, $object, $tags = array(), $params = array()
 
 	$id_prefix   = $prefix . '-';
 	$id_suffix   = '-' . $prefix;
-	$name_prefix = $prefix . '_';
+	$name_prefix = $prefix . '_';	// unused? (gwyneth 20230918)
 
 	$box_div_id = sanitize_html_class( $id_prefix . 'taxonomy-' . $taxonomy );
 	$tabs_ul_id = sanitize_html_class( $id_prefix . $taxonomy . '-tabs' );
@@ -297,7 +299,7 @@ function fwp_category_box( $checked, $object, $tags = array(), $params = array()
 <div id="<?php print esc_attr( $box_div_id ); ?>" class="feedwordpress-category-div">
 	<ul id="<?php print esc_attr( $tabs_ul_id ); ?>" class="category-tabs">
 	<li class="ui-tabs-selected tabs"><a href="#<?php print esc_attr( $all_tab_id ); ?>" tabindex="3"><?php esc_html_e( 'All posts' ); ?></a>
-	<p style="font-size:smaller;font-style:bold;margin:0">Give <?php print esc_html( $object ); ?> these <?php print esc_html( $o_tax_labels->name ); ?></p>
+	<p style="font-size:smaller;font-style:bold;margin:0"><?php _e( 'Give' ); ?> <?php print esc_html( $object ); ?> <?php _e( 'these' ); ?> <?php print esc_html( $o_tax_labels->name ); ?></p>
 	</li>
 	</ul>
 
@@ -309,7 +311,7 @@ function fwp_category_box( $checked, $object, $tags = array(), $params = array()
 </div>
 
 <div id="<?php print esc_attr( $add_tax_id ); ?>" class="<?php print esc_attr( $taxonomy ); ?>-adder wp-hidden-children">
-	<h4><a id="<?php print esc_attr( $add_tog_id ); ?>" class="category-add-toggle" href="#<?php print esc_attr( $add_cat_id ); ?>" class="hide-if-no-js" tabindex="3"><?php esc_html_e( '+ Add New Category' ); ?></a></h4>.
+	<h4><a id="<?php print esc_attr( $add_tog_id ); ?>" class="category-add-toggle" href="#<?php print esc_attr( $add_cat_id ); ?>" class="hide-if-no-js" tabindex="3"><span class="dashicons dashicons-plus fwp-no-underline"></span> <?php esc_html_e( 'Add New Category' ); ?></a></h4>.
 	<p id="<?php print esc_attr( $add_cat_id ); ?>" class="category-add wp-hidden-child">
 	<?php
 	$newcat = 'new' . $taxonomy;
@@ -323,7 +325,7 @@ function fwp_category_box( $checked, $object, $tags = array(), $params = array()
 		type="text" name="<?php print esc_attr( $newcat ); ?>"
 		value="<?php esc_attr_e( 'New category name' ); ?>"
 	/>
-	<label class="screen-reader-text" for="<?php print esc_attr( $new_tax_id ); ?>-parent"><?php esc_html_e( 'Parent Category:' ); ?></label>
+	<label class="screen-reader-text" for="<?php print esc_attr( $new_tax_id ); ?>-parent"><?php esc_html_e( 'Parent Category' ); ?>:</label>
 	<?php
 	wp_dropdown_categories(
 		array(
@@ -360,18 +362,18 @@ function fwp_category_box( $checked, $object, $tags = array(), $params = array()
  */
 function update_feeds_mention( $feed ) {
 	printf(
-		'<li>Updating <cite>%s</cite> from &lt;<a href="%s">%s</a>&gt; ...',
+		'<li>' . __( 'Updating' ) . ' <cite>%s</cite> ' . __( 'from' ) . ' &lt;<a href="%s">%s</a>&gt; ...',
 		esc_html( $feed['link/name'] ),
-		esc_url( $feed['link/uri'] ),
+		esc_url(  $feed['link/uri'] ),
 		esc_html( $feed['link/uri'] )
 	);
 	flush();
-}
+} /* update_feeds_mention() */
 
 /**
  * Outputs a text/html status message indicating that FWP has completed polling a feed.
  *
- * @param array $feed  An associative array containing meta-data about the feed being polled.
+ * @param array $feed  An associative array containing meta-data about the feed being polled (unused).
  * @param mixed $added a WP_Error object with error codes and messages, if there was an error in polling.
  * @param int   $dt      seconds it took to complete the poll.
  */
@@ -379,14 +381,14 @@ function update_feeds_finish( $feed, $added, $dt ) {
 	if ( is_wp_error( $added ) ) :
 		$mesgs = $added->get_error_messages();
 		foreach ( $mesgs as $mesg ) :
-			printf( '<br/><strong>Feed error:</strong> <code>%s</code>', esc_html( $mesg ) );
+			printf( '<br/><strong>' . __( 'Feed error' ) . ':</strong> <code>%s</code>', esc_html( $mesg ) );
 		endforeach;
 		echo "</li>\n";
 	else :
-		printf( " completed in %d second%s</li>\n", esc_html( $dt ), esc_html( _s( $dt ) ) );
+		printf( __(" completed in %d second%s") . "</li>\n", esc_html( $dt ), esc_html( _s( $dt ) ) );
 	endif;
 	flush();
-}
+} /* update_feeds_finish() */
 
 /**
  * Retrieves a list of users via the WordPress API.
@@ -394,7 +396,6 @@ function update_feeds_finish( $feed, $added, $dt ) {
  * @return array List of users, by numeric ID => display_name
  */
 function fwp_author_list() {
-	global $wpdb;
 	$ret = array();
 
 	$users = get_users();
@@ -409,17 +410,15 @@ function fwp_author_list() {
 		endforeach;
 	endif;
 	return $ret;
-}
+} /* fwp_author_list() */
 
 /**
  * Insert a new user into the WordPress database, with some FeedWordPress-specific default behaviors.
  *
- * @param string $newuser_name The "Display Name" for the new user; user logins and the like will be determined by a formula.
- * @return mixed Either a numeric ID or a WP_Error object.
+ * @param  string        $newuser_name   The "Display Name" for the new user; user logins and the like will be determined by a formula.
+ * @return int|WP_Error  Either a numeric ID or a WP_Error object.
  */
 function fwp_insert_new_user( $newuser_name ) {
-	global $wpdb;
-
 	$ret = null;
 	if ( strlen( $newuser_name ) > 0 ) :
 		$userdata                  = array();
@@ -473,11 +472,11 @@ function fwp_syndication_manage_page_links_table_rows( $links, $page, $visible =
 		foreach ( $fwp_syndicated_sources_columns as $col ) :
 			printf( "\t<th scope='col'>%s</th>\n", esc_html( $col ) );
 		endforeach;
-		print "</tr>\n";
-		print "</thead>\n";
-		print "\n";
-		print "<tbody>\n";
-
+		?>
+	</tr>
+	</thead>
+	<tbody>
+	<?php
 		$alt_row = true;
 		if ( count( $links ) > 0 ) :
 			foreach ( $links as $link ) :
@@ -518,7 +517,7 @@ function fwp_syndication_manage_page_links_table_rows( $links, $page, $visible =
 				if ( $subscribed ) :
 					$page->display_feed_settings_page_links(
 						array(
-							'before'       => '<div><strong>Settings &gt;</strong> ',
+							'before'       => '<div><strong> ' . __( 'Settings' ) . ' &gt;</strong> ',
 							'after'        => '</div>',
 							'subscription' => $link,
 						)
@@ -526,7 +525,7 @@ function fwp_syndication_manage_page_links_table_rows( $links, $page, $visible =
 				endif;
 				?>
 
-	<div><strong>Actions &gt;</strong>
+	<div><strong><?php _e( 'Actions' ); ?> &gt;</strong>
 				<?php if ( $subscribed ) : ?>
 	<a href="<?php print esc_url( $page->admin_page_href( 'syndication.php', array( 'action' => 'feedfinder' ), $link ) ); ?>"><?php echo esc_html( $caption ); ?></a>
 				<?php else : ?>
@@ -547,7 +546,7 @@ function fwp_syndication_manage_page_links_table_rows( $links, $page, $visible =
 				<?php if ( strlen( $link->link_rss ) > 0 ) : ?>
 	<td><div><a href="<?php echo esc_html( $link->link_rss ); ?>"><?php echo esc_html( feedwordpress_display_url( $link->link_rss, 32 ) ); ?></a></div></td>
 				<?php else : ?>
-	<td class="feed-missing"><p><strong>no feed assigned</strong></p></td>
+	<td class="feed-missing"><p><strong><?php _e( 'no feed assigned' ); ?></strong></p></td>
 				<?php endif; ?>
 
 	<td><div style="float: right; padding-left: 10px">
@@ -567,18 +566,13 @@ function fwp_syndication_manage_page_links_table_rows( $links, $page, $visible =
 			endforeach;
 		else :
 			?>
-<tr><td colspan="4"><p>There are no websites currently listed for syndication.</p></td></tr>
+	<tr><td colspan="4"><p><?php _e( 'There are no websites currently listed for syndication.' ); ?></p></td></tr>
 			<?php
-
 		endif;
-
 		?>
-
-</tbody>
-</table>
-
+	</tbody>
+	</table> <!-- <?php print esc_attr( $table_classes ); ?> -->
 		<?php
-
 	endif;
 } /* function fwp_syndication_manage_page_links_table_rows ( ) */
 
@@ -595,8 +589,8 @@ function fwp_links_table_rows_errors_since( $the_error ) {
 		$s_recent  = fwp_time_elapsed( $the_error['ts'] );
 		?>
 
-<div class="returning-errors"><p><strong>Returning errors</strong> since <?php print esc_html( $s_elapsed ); ?></p>
-<p>Most recent (<?php print esc_html( $s_recent ); ?>):
+<div class="returning-errors"><p><strong><?php _e( 'Returning errors' ); ?></strong> <?php _e( 'since' ); ?> <?php print esc_html( $s_elapsed ); ?></p>
+<p><?php _e( 'Most recent' ); ?> (<?php print esc_html( $s_recent ); ?>):
 		<?php
 		foreach ( $the_error['object']->get_error_messages() as $mesg ) :
 			printf( '<br/><code>%s</code>', esc_html( $mesg ) );
@@ -616,7 +610,7 @@ function fwp_links_table_rows_errors_since( $the_error ) {
  */
 function fwp_links_table_rows_last_updated( $o_s_link ) {
 	if ( ! is_null( $o_s_link->setting( 'update/last' ) ) ) :
-		print esc_html( 'Last checked ' . fwp_time_elapsed( $o_s_link->setting( 'update/last' ) ) );
+		esc_html_e( 'Last checked ') . esc_html( fwp_time_elapsed( $o_s_link->setting( 'update/last' ) ) );
 	else :
 		esc_html_e( 'None yet' );
 	endif;
@@ -627,7 +621,7 @@ function fwp_links_table_rows_last_updated( $o_s_link ) {
 
 		if ( 'automatically' !== $o_s_link->setting( 'update/timed' ) ) :
 
-			print ' &middot; Next ';
+			print ' &middot; ' . __( 'Next') . ' ';
 			print esc_html( fwp_relative_time_string( $next ) );
 
 		endif;
@@ -646,7 +640,7 @@ function fwp_relative_time_string( $ts, $ago = false ) {
 	$dt = ( $ts - time() );
 
 	if ( $dt < 0 && ! $ago ) :
-		$ret = 'ASAP';
+		$ret = __( 'ASAP' );
 	elseif ( $dt < 60 * 60 ) :
 		$ret = fwp_time_elapsed( $ts );
 	elseif ( $dt < 60 * 60 * 24 ) :
@@ -679,7 +673,7 @@ function fwp_links_table_rows_file_size( $o_s_link ) {
 	if ( is_null( $o_s_link->setting( 'update/error' ) ) ) :
 
 		if ( ! is_null( $o_s_link->setting( 'link/filesize' ) ) ) :
-			$mesg_file_size_lines[] = size_format( $o_s_link->setting( 'link/filesize' ) ) . ' total';
+			$mesg_file_size_lines[] = size_format( $o_s_link->setting( 'link/filesize' ) ) . __( ' total' );
 		endif;
 
 	endif;
@@ -713,31 +707,33 @@ function fwp_links_table_rows_next_update( $o_s_link ) {
 		$next = $o_s_link->setting( 'update/last' ) + $o_s_link->setting( 'update/fudge' ) + ( (int) $ttl * 60 );
 		if ( 'automatically' === $o_s_link->setting( 'update/timed' ) ) :
 			if ( $next < time() ) :
-				print 'Ready and waiting to be updated since ';
+				esc_html_e( 'Ready and waiting to be updated since ' );
 			else :
-				print 'Scheduled for next update ';
+				esc_html_e( 'Scheduled for next update ' );
 			endif;
 
 			print esc_html( fwp_time_elapsed( $next ) );
 			if ( FEEDWORDPRESS_DEBUG ) :
 				$interval = ( ( $next - time() ) / 60 );
-				printf( ' [%d minute%s]', intval( $interval ), esc_html( _s( $interval ) ) );
+				printf( ' [%d ' . __( 'minute' ) . '%s]', intval( $interval ), esc_html( _s( $interval ) ) );
 			endif;
 		else :
-			printf( '. Scheduled to be checked for updates every %d minute%s', intval( $ttl ), esc_html( _s( $ttl ) ) );
+			printf( __( 'Scheduled to be checked for updates every ' ) . '%d' . __( 'minute' ) . '%s',
+				intval( $ttl ),
+				esc_html( _s( $ttl ) ) );
 			?>
 			</div>
 
-			<div style="size:0.9em; margin-top: 0.5em">This update schedule was requested by the feed provider
+			<div style="size:0.9em; margin-top: 0.5em"><?php _e( 'This update schedule was requested by the feed provider' ); ?>
 			<?php
 			if ( $o_s_link->setting( 'update/xml' ) ) :
 				?>
-				 using a standard <code style="font-size: inherit; padding: 0; background: transparent">&lt;<?php print esc_html( $o_s_link->setting( 'update/xml' ) ); ?>&gt;</code> element
+				 <?php _e( 'using a standard' ); ?> <code style="font-size: inherit; padding: 0; background: transparent">&lt;<?php print esc_html( $o_s_link->setting( 'update/xml' ) ); ?>&gt;</code> <?php _e( 'element' ); ?>
 				<?php
 			endif;
 		endif;
 	else :
-		print 'Scheduled for update as soon as possible';
+		_e( 'Scheduled for update as soon as possible' );
 	endif;
 	print '.';
 	?>

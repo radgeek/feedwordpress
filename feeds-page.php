@@ -821,7 +821,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		jQuery('<td><a href="#" class="add-remove link-rss-params-remove"><span class="x">(X)</span> <?php _e( 'Remove' ); ?></a></td>' ).insertAfter( '.link-rss-params-value-cell' );
 
 		jQuery( '#link-rss-params-new' ).hide();
-		jQuery( '<a class="add-remove" id="link-rss-params-add" href="#">+ <?php _e( 'Add a query parameter' ); ?></a>').insertAfter( '#link-rss-params' );
+		jQuery( '<a class="add-remove" id="link-rss-params-add" href="#"><span class="dashicons dashicons-plus fwp-no-underline"></span> <?php _e( 'Add a query parameter' ); ?></a>').insertAfter( '#link-rss-params' );
 		jQuery( '#link-rss-params-add' ).click( function () {
 			var next = jQuery( '#link-rss-params-num' ).val();
 			var newRow = jQuery( '#link-rss-params-new' ).clone().attr( 'id', 'link-rss-params-' + next );
