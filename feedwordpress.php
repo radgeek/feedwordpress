@@ -1500,7 +1500,7 @@ class FeedWordPress {
 				endif;
 			else :
 				$retireCap = apply_filters('feedwordpress_ui_zap_link_caption', __('Zap this syndicated post (so it will not be re-syndicated if it still appears on the feed).'));
-				$retireText = apply_filters('feedwordpress_ui_zap_link_text', __('Zap/Don&#8217;t Resyndicate'));
+				$retireText = apply_filters('feedwordpress_ui_zap_link_text', __('Zap/Don&rsquo;t Resyndicate'));
 				$retireLink = MyPHP::url($link, array("fwp_post_delete" => "zap"));
 				$retireClass = 'submitdelete';
 			endif;

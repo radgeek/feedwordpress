@@ -106,7 +106,7 @@ class FeedWordPressCompatibility {
 		if ( 'POST' == strtoupper( $_SERVER['REQUEST_METHOD'] ) ) :
 			// Limit post by user capabilities
 			if ( ! is_null( $capability ) and ! current_user_can( $capability ) ) :
-				wp_die( __( 'Cheatin&#8217; uh?' ) );
+				wp_die( __( 'Cheatin&rsquo; uh?' ) );
 			endif;
 
 			// If check_admin_referer() checks a nonce.

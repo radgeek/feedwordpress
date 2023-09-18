@@ -317,7 +317,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 			'ndash'    => '&#8211;',
 			'mdash'    => '&#8212;',
 			'lsquo'    => '&#8216;',
-			'rsquo'    => '&#8217;',
+			'rsquo'    => '&rsquo;',
 			'sbquo'    => '&#8218;',
 			'ldquo'    => '&#8220;',
 			'rdquo'    => '&#8221;',

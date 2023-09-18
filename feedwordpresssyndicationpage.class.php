@@ -875,7 +875,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		<p><?php _e( 'If you have any questions about FeedWordPress, or if there
 		is anything I can do to help make FeedWordPress more useful for
 		you, please <a href="http://feedwordpress.radgeek.com/contact">contact me</a>
-		and let me know what you&#8217;re thinking about.' ); ?></p>
+		and let me know what you&rsquo;re thinking about.' ); ?></p>
 		<p class="signature">&#8212;<a href="http://radgeek.com/">Charles Johnson</a>, <?php _e(' Developer' ); ?>, <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>.</p>
 		</div>
 		<?php
@@ -909,7 +909,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 <form action="https://www.paypal.com/cgi-bin/webscr" accept-charset="UTF-8" method="post"><div>
 <p><a href="http://feedwordpress.radgeek.com/">FeedWordPress</a> <?php _e( 'makes syndication
 simple and empowers you to stream content from all over the web into your
-WordPress hub. If you&#8217;re finding FWP useful,
+WordPress hub. If you&rsquo;re finding FWP useful,
 <a href="http://feedwordpress.radgeek.com/donate/">a modest gift</a>
 is the best way to support steady progress on development, enhancements,
 support, and documentation.' ); ?></p>
@@ -1108,7 +1108,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="hide" checked="checked" />
 	<label for="hide-<?php echo esc_attr($link->link_id); ?>"><?php _e( 'Turn off the subscription for this
 	syndicated link<br/><span style="font-size:smaller">(Keep the feed information
-	and all the posts from this feed in the database, but don&#8217;t syndicate any
+	and all the posts from this feed in the database, but don&rsquo;t syndicate any
 	new posts from the feed.)' ); ?></span></label></li>
 	<?php endif; ?>
 	<li><input type="radio" id="nuke-<?php echo esc_attr($link->link_id); ?>"<?php if ( ! $subscribed) : ?> checked="checked"<?php endif; ?>

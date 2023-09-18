@@ -51,7 +51,7 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 if ($page->for_default_settings()) :
 ?>
 <tr><th>Unmatched authors</th>
-<td><span>Authors who haven&#8217;t been syndicated before</span>
+<td><span>Authors who haven&rsquo;t been syndicated before</span>
   <select style="max-width: 27.0em" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');">
     <option value="create"<?php fwp_selected_flag($unfamiliar, 'create'); ?>>will have a new author account created for them</option>
     <?php foreach ($page->authorlist as $author_id => $author_name) :

@@ -385,48 +385,47 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		?>
 		<p>Wait <input type="text" name="update_window" value="<?php print esc_attr($updateWindow); ?>" size="4" /> minutes between polling.</p>
 		<div class="setting-description" id="update-scheduling-note">
-		<p<?php if ($updateWindow<50) : ?> style="color: white; background-color: #703030; padding: 1.0em;"<?php endif; ?>><strong>Recommendation.</strong> Unless you are positive that you have the webmaster's permission, you generally should not set FeedWordPress to poll feeds more frequently than once every 60 minutes. Many webmasters consider more frequent automated polling to be abusive, and may complain to your web host, or ban your IP address, as retaliation for hammering their servers too hard.</p>
-		<p><strong>Note.</strong> This is a default setting that FeedWordPress uses to schedule updates when the feed does not provide any scheduling requests. If this feed does provide update scheduling information (through elements such as <code>&lt;rss:ttl&gt;</code> or <code>&lt;sy:updateFrequency&gt;</code>), FeedWordPress will respect the feed's request.</p>
+		<p<?php if ( $updateWindow < 50 ) : ?> style="color: white; background-color: #703030; padding: 1.0em;"<?php endif; ?>><?php _e( '<strong>Recommendation.</strong> Unless you are positive that you have the webmaster&rsquo;s permission, you generally should not set FeedWordPress to poll feeds more frequently than once every 60 minutes. Many webmasters consider more frequent automated polling to be abusive, and may complain to your web host, or ban your IP address, as retaliation for hammering their servers too hard.' ); ?></p>
+		<p><?php _e( '<strong>Note.</strong> This is a default setting that FeedWordPress uses to schedule updates when the feed does not provide any scheduling requests. If this feed does provide update scheduling information (through elements such as <code>&lt;rss:ttl&gt;</code> or <code>&lt;sy:updateFrequency&gt;</code>), FeedWordPress will respect the feed&rsquo;s request.' ); ?></p>
 		</div>
 		<?php
 	} /* FeedWordPressFeedsPage::update_window_edit_box () */
 
-	function update_window_currently ($updateWindow, $defaulted, $params) {
+	function update_window_currently( $updateWindow, $defaulted, $params ) {
 		$updateWindow = (int) $updateWindow;
-		if (1==$updateWindow) :
-			$caption = 'wait %d minute between polling';
+		if ( 1 == $updateWindow ) :
+			$caption = __( 'wait %d minute between polling' );
 		else :
-			$caption = 'wait %d minutes between polling';
+			$caption = __( 'wait %d minutes between polling' );
 		endif;
-		return sprintf(__($caption), $updateWindow);
+		return sprintf( $caption, $updateWindow );
 	} /* FeedWordPressFeedsPage::update_window_currently () */
 
-	function fetch_timeout_setting ($setting, $defaulted, $params) {
-		$timeout = intval($this->setting('fetch timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT));
+	function fetch_timeout_setting( $setting, $defaulted, $params ) {
+		$timeout = intval( $this->setting( 'fetch timeout', FEEDWORDPRESS_FETCH_TIMEOUT_DEFAULT ) );
 
-		if ($this->for_feed_settings()) :
+		if ( $this->for_feed_settings() ) :
 			$article = 'this';
 		else :
 			$article = 'a';
 		endif;
 		?>
-		<p>Wait no more than
-		than <input name="fetch_timeout" type="number" min="0" size="3" value="<?php print esc_attr($timeout); ?>" />
-		second(s) when trying to fetch <?php print esc_html($article); ?> feed to check for updates.</p>
-		<p>If <?php print esc_html($article); ?> source's web server does not respond before time runs
-		out, FeedWordPress will skip over the source and try again during
-		the next update cycle.</p>
+		<p><?php _e( 'Wait no more than
+		than' ); ?> <input name="fetch_timeout" type="number" min="0" size="3" value="<?php print esc_attr($timeout); ?>" />
+		<?php _e( 'second(s) when trying to fetch '); print esc_html( $article ); _(' feed to check for updates. '); ?></p>
+		<p><?php _e( 'If ' ); print esc_html( $article ); _(' source&rsquo;s web server does not respond before time runs
+		out, FeedWordPress will skip over the source and try again during the next update cycle.' ); ?></p>
 		<?php
 	}
-	function fetch_timeout_setting_value ($setting, $defaulted, $params) {
-		print number_format(intval($setting)) . " " . (($setting==1) ? "second" : "seconds");
+	function fetch_timeout_setting_value( $setting, $defaulted, $params ) {
+		print number_format( intval( $setting) ) . " " . ( ( 1 == $setting ) ? "second" : "seconds" );
 	}
 
-	function advanced_settings_box ($page, $box = NULL) {
+	function advanced_settings_box( $page, $box = NULL ) {
 		?>
 		<table class="edit-form">
 		<tr>
-		<th>Fetch Timeout:</th>
+		<th><?php _e( 'Fetch Timeout:' ); ?></th>
 		<td>
 		<?php
 		$this->setting_radio_control(
@@ -443,12 +442,12 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		</td>
 		</tr>
 		<tr>
-		<th>Feed Update Type:</th>
+		<th><?php _e( 'Feed Update Type:' ); ?></th>
 		<td><?php
-		$this->setting_radio_control('update_incremental', 'update_incremental',
+		$this->setting_radio_control( 'update_incremental', 'update_incremental',
 			/*options=*/ array(
-				'incremental' => '**Incremental.** When items no longer appear on the feed, keep them in the WordPress posts table.',
-				'complete' => '**Complete.** When items no longer appear on the feed, they are obsolete; retire them from the WordPress posts table.',
+				'incremental' => __( '**Incremental.** When items no longer appear on the feed, keep them in the WordPress posts table.' ),
+				'complete' => __( '**Complete.** When items no longer appear on the feed, they are obsolete; retire them from the WordPress posts table.' ),
 			),
 			/*params=*/ array(
 				'setting-default' => NULL,
@@ -460,10 +459,10 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		<tr>
 		<th>Allow Feeds to Delete Posts:</th>
 		<td><?php
-		$this->setting_radio_control('tombstones', 'tombstones',
+		$this->setting_radio_control( 'tombstones', 'tombstones',
 			/*options=*/ array(
-				'yes' => 'Yes. If a feed indicates that one of its posts has been deleted, delete the local copy syndicated to this website.',
-				'no' => 'No. Even if a feed indicates that one of its posts has been deleted, retain the local copy on this website.',
+				'yes' => __( 'Yes. If a feed indicates that one of its posts has been deleted, delete the local copy syndicated to this website.' ),
+				'no' => __( 'No. Even if a feed indicates that one of its posts has been deleted, retain the local copy on this website.' ),
 			),
 			/*params=*/ array(
 				'setting-default' => NULL,
