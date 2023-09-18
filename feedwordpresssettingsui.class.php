@@ -46,11 +46,23 @@ class FeedWordPressSettingsUI {
 	static function admin_styles() {
 		?>
 		<style type="text/css">
+		/*
 		#feedwordpress-admin-feeds .link-rss-params-remove .x, .feedwordpress-admin .remove-it .x {
 			background: url(<?php print admin_url( 'images/xit.gif' ) ?>) no-repeat scroll 0 0 transparent;
 		}
 		#feedwordpress-admin-feeds .link-rss-params-remove:hover .x, .feedwordpress-admin .remove-it:hover .x {
 			background: url(<?php print admin_url( 'images/xit.gif' ) ?>) no-repeat scroll -10px 0 transparent;
+		}
+		*/
+		#feedwordpress-admin-feeds .link-rss-params-remove .x, .feedwordpress-admin .remove-it .x {
+			content: "\f153"; /* dashicons-dismiss */
+			color: var(--wp-components-color-foreground,#1e1e1e);
+			background-color: var(--wp-components-color-background);
+		}
+		#feedwordpress-admin-feeds .link-rss-params-remove:hover .x, .feedwordpress-admin .remove-it:hover .x {
+			content: "\f153"; /* dashicons-dismiss */
+			color: var(--wp-components-color-accent);
+			background-color: var(--wp-components-color-background);
 		}
 
 		/* Note: the old images referred here were deprecated around 2009 or so and are *not*
