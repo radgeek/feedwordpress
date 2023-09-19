@@ -530,10 +530,9 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$article = __( 'a' );
 		endif;
 		?>
-		<p><?php _e( 'Wait no more than
-		than' ); ?> <input name="fetch_timeout" type="number" min="0" size="3" value="<?php print esc_attr( $timeout ); ?>" />
-		<?php _e( 'second(s) when trying to fetch '); print esc_html( $article ); _(' feed to check for updates. '); ?></p>
-		<p><?php _e( 'If ' ); print esc_html( $article ); _(' source&rsquo;s web server does not respond before time runs
+		<p><?php _e( 'Wait no more than' ); ?> <input name="fetch_timeout" type="number" min="0" size="3" value="<?php print esc_attr( $timeout ); ?>" />
+		<?php _e( 'second(s) when trying to fetch '); print esc_html( $article ); _e(' feed to check for updates. '); ?></p>
+		<p><?php _e( 'If ' ); print esc_html( $article ); _e(' source&rsquo;s web server does not respond before time runs
 		out, FeedWordPress will skip over the source and try again during the next update cycle.' ); ?></p>
 		<?php
 	} /* FeedWordPressFeedsPage::fetch_timeout_setting() */
