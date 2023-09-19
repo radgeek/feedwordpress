@@ -883,7 +883,7 @@ class FeedWordPress {
 			$feed = $this->subscription( $feed_id );
 			// Try to catch a very unusual condition where the $feed comes as NULL (gwyneth 20230919)
 			if ( ! empty( $feed ) ) :
-				$this->diagnostic( 'update_schedule', "Feed ${$feed_id} returned an empty feed" );
+				$this->diagnostic( 'update_schedule', "Feed " .  $feed_id . " returned an empty feed" );
 			endif;
 
 			// Has this process overstayed its welcome?
