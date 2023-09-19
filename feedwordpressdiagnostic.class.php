@@ -1,42 +1,53 @@
 <?php
 /**
  * class FeedWordPressDiagnostic: help to organize some diagnostics output functions.
+ *
+ * @uses FeedWordPress::diagnostic()
  */
 class FeedWordPressDiagnostic {
-	public static function feed_error ($error, $old, $link) {
+	/**
+	 * Log error on a feed.
+	 *
+	 * @param  array  $error  A structured array of error fields.
+	 * @param  mixex  $old    Unused.
+	 * @param  object $link   A link object, containing an URI.	 *
+	 */
+	public static function feed_error( $error, $old, $link ) {
 		$wpError = $error['object'];
 		$url = $link->uri();
-		
+
 		// check for effects of an effective-url filter
-		$effectiveUrl = $link->uri(array('fetch' => true));
-		if ($url != $effectiveUrl) : $url .= ' | ' . $effectiveUrl; endif;
+		$effectiveUrl = $link->uri( array( 'fetch' => true ) );
+		if ( $url != $effectiveUrl ) : $url .= ' | ' . $effectiveUrl; endif;
 
 		$mesgs = $wpError->get_error_messages();
-		foreach ($mesgs as $mesg) :
-			$mesg = esc_html($mesg);
+		foreach ( $mesgs as $mesg ) :
+			$mesg = esc_html( $mesg );
 			FeedWordPress::diagnostic(
 				'updated_feeds:errors',
 				"Feed Error: [${url}] update returned error: $mesg"
 			);
 
-			$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
-			$span = ($error['ts'] - $error['since']);
+			$hours = get_option( 'feedwordpress_diagnostics_persistent_errors_hours', 2 );
+			$span = ( $error['ts'] - $error['since'] );
 
-			if ($span >= ($hours * 60 * 60)) :
-				$since = date('r', $error['since']);
-				$mostRecent = date('r', $error['ts']);
+			if ( $span >= ( $hours * 60 * 60 ) ) :
+				$since = date( 'r', $error['since'] );
+				$mostRecent = date( 'r', $error['ts'] );	// never used?... (gwyneth 20230919)
 				FeedWordPress::diagnostic(
 					'updated_feeds:errors:persistent',
 					"Feed Update Error: [${url}] returning errors"
 					." since ${since}:<br/><code>$mesg</code>",
-					$url, $error['since'], $error['ts']
+					$url,
+					$error['since'],
+					$error['ts']
 				);
 			endif;
 		endforeach;
-	}
+	} /* FeedWordPressDiagnostic::feed_error() */
 
-	public static function admin_emails ($id = '') {
-		$users = get_users_of_blog($id);
+	public static function admin_emails( $id = '' ) {
+		$users = get_users_of_blog( $id );	// Note: this is a deprecated WP function which should be replaced with get_users(), which, however, has quite more intricate syntax (and customisation!). (gwyneth 20230919)
 		$recipients = array();
 		foreach ($users as $user) :
 			$user_id = (isset($user->user_id) ? $user->user_id : $user->ID);

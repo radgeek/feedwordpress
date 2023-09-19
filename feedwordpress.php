@@ -881,6 +881,10 @@ class FeedWordPress {
 		foreach ( $feed_set as $feed_id)  :
 
 			$feed = $this->subscription( $feed_id );
+			// Try to catch a very unusual condition where the $feed comes as NULL (gwyneth 20230919)
+			if ( ! empty( $feed ) ) :
+				$this->diagnostic( 'update_schedule', "Feed ${$feed_id} returned an empty feed" );
+			endif;
 
 			// Has this process overstayed its welcome?
 			if (
@@ -2103,13 +2107,19 @@ class FeedWordPress {
 		return in_array( strtolower( trim( $q ) ), $affirmo );
 	} /* FeedWordPress::affirmative () */
 
-	# Internal debugging functions
-
-	static function diagnostic ($level, $out, $persist = null, $since = null, $mostRecent = null) {
+	/**
+	  * Internal debugging functions.
+	  *
+	  * @todo radgeek needs to document this better. What levels exist, and
+	  * how/where are they defined? (gwyneth 20230919)
+	  *
+	  * @global $feedwordpress_admin_footer
+	  */
+	static function diagnostic( $level, $out, $persist = null, $since = null, $mostRecent = null ) {
 		global $feedwordpress_admin_footer;
 
-		$output = get_option('feedwordpress_diagnostics_output', array());
-		$dlog = get_option('feedwordpress_diagnostics_log', array());
+		$output = get_option( 'feedwordpress_diagnostics_output', array() );
+		$dlog   = get_option( 'feedwordpress_diagnostics_log', array() );
 
 		$diagnostic_nesting = count( explode( ":", $level ) );
 
@@ -2152,12 +2162,12 @@ class FeedWordPress {
 			endforeach;
 		endif;
 
-		update_option('feedwordpress_diagnostics_log', $dlog);
-	} /* FeedWordPress::diagnostic () */
+		update_option( 'feedwordpress_diagnostics_log', $dlog );
+	} /* FeedWordPress::diagnostic() */
 
 	public function email_diagnostics_override () {
 		return ( $this->has_secret() and ! ! FeedWordPress::param( 'feedwordpress_email_diagnostics' ) );
-	} /* FeedWordPress::email_diagnostics_override () */
+	} /* FeedWordPress::email_diagnostics_override() */
 
 	public function has_emailed_diagnostics ($dlog) {
 		$ret = false;
@@ -2166,7 +2176,7 @@ class FeedWordPress {
 			$ret = true;
 		endif;
 		return $ret;
-	} /* FeedWordPress::has_emailed_diagnostics () */
+	} /* FeedWordPress::has_emailed_diagnostics() */
 
 	public function ready_to_email_diagnostics ($dlog) {
 		$ret = false;
@@ -2175,13 +2185,12 @@ class FeedWordPress {
 			$ret = true;
 		endif;
 		return $ret;
-	} /* FeedWordPress::ready_to_email_diagnostics () */
+	} /* FeedWordPress::ready_to_email_diagnostics() */
 
 	/**
 	 * Emails a diagnostic log to the WP administrator.
-	 	 *
-	 * @param  Array $params See @wp_parse_args()
 	 *
+	 * @param  Array $params See @wp_parse_args()
 	 */
 	public function email_diagnostic_log( $params = array() ) {
 		$params = wp_parse_args( $params, array(

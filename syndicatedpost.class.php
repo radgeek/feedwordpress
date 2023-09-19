@@ -988,7 +988,7 @@ class SyndicatedPost {
 		if ( isset( $this->item['enclosure#'] ) ) :
 			// Loop through enclosure, enclosure#2, enclosure#3, ....
 			for ( $i = 1; $i <= $this->item['enclosure#']; $i++ ) :
-				$eid = ( ($i > 1) ? "#{$i}" : "" );	// this was set as #{$id} — was that a typo? (gwyneth 20230919)
+				$eid = ( ( $i > 1 ) ? "#{$i}" : "" );	// this was set as #{$id} — was that a typo? (gwyneth 20230919)
 
 				// Does it match the type we want?
 				if ( preg_match($type, $this->item["enclosure{$eid}@type"] ) ) :
