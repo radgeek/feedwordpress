@@ -35,7 +35,7 @@ function fwp_release_pings() {
 	$diag_message = null;
 	if ( $fwp_held_ping ) :
 		if  ( function_exists( 'wp_schedule_single_event') ) :
-			if ( wp_schedule_single_event( time(), 'do_pings' ) ) :;
+			if ( wp_schedule_single_event( time(), 'do_pings' ) ) :
 				$diag_message = 'scheduled release of pings';
 			else :
 				$diag_message = 'scheduling release of pings failed';
