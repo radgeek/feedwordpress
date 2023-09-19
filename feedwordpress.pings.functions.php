@@ -51,7 +51,7 @@ function fwp_release_pings() {
 	if ( ! is_null( $diag_message ) ) :
 		FeedWordPress::diagnostic(
 			'syndicated_posts:do_pings',
-			"FeedWordPress ${diag_message}, fwp_held_ping=" . json_encode( $fwp_held_ping )
+			"FeedWordPress ${diag_message}, fwp_held_ping=" . json_encode( $fwp_held_ping )	// isn't this _always_ null? (gwyneth 20230919)
 		);
 	endif;
 } /* function fwp_release_pings() */
