@@ -21,8 +21,11 @@ class FeedWordPie_File extends WP_SimplePie_File {
 	 *
 	 * @uses FeedWordPress::diagnostic()
 	 * @uses MyPHP::val()
+	 *
+	 * @global $feedwordpress
+	 * @global $wp_version
 	 */
-	public function __construct ($url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
+	public function __construct( $url, $timeout = 10, $redirects = 5, $headers = null, $useragent = null, $force_fsockopen = false) {
 		global $feedwordpress;
 		global $wp_version;
 
@@ -56,10 +59,11 @@ class FeedWordPie_File extends WP_SimplePie_File {
 			if ( SIMPLEPIE_USERAGENT != $this->useragent ) :
 				$args['user-agent'] = $this->useragent;
 			else :
-				$args['user-agent'] = apply_filters( 'feedwordpress_user_agent',
+				$args['user-agent'] = apply_filters(
+					'feedwordpress_user_agent',
 					'FeedWordPress/' . FEEDWORDPRESS_VERSION
 					. ' (aggregator:feedwordpress; WordPress/' . $wp_version
-					. ' + '.SIMPLEPIE_NAME . '/' . SIMPLEPIE_VERSION
+					. ' + ' . SIMPLEPIE_NAME . '/' . SIMPLEPIE_VERSION
 					. '; Allow like Gecko; +http://feedwordpress.radgeek.com/) at '
 					. feedwordpress_display_url( get_bloginfo( 'url' ) ),
 					$this
@@ -78,9 +82,9 @@ class FeedWordPie_File extends WP_SimplePie_File {
 				$args['password']       = $source->password();
 			endif;
 
-			FeedWordPress::diagnostic( 'updated_feeds:http', "HTTP [$url] &#8668; " . esc_html( MyPHP::val( $args ) ) );
+			FeedWordPress::diagnostic( 'updated_feeds:http', "HTTP [$url] &lceil; " . esc_html( MyPHP::val( $args ) ) );
 			$res = wp_remote_request( $url, $args );
-			FeedWordPress::diagnostic( 'updated_feeds:http', "HTTP [$url] &#8669; " . esc_html( MyPHP::val( $res ) ) );
+			FeedWordPress::diagnostic( 'updated_feeds:http', "HTTP [$url] &rceil; " . esc_html( MyPHP::val( $res ) ) );
 
 			if ( is_wp_error( $res ) ) :
 				$this->error   = 'WP HTTP Error: ' . $res->get_error_message();
@@ -104,7 +108,7 @@ class FeedWordPie_File extends WP_SimplePie_File {
 		 * hosting environment.
 		 */
 		else :
-			$this->error = __( 'FeedWordPress only allows http or https URLs' );
+			$this->error = __( 'FeedWordPress only allows HTTP or HTTPS URL schemes' );
 			$this->success = false;
 		endif;
 

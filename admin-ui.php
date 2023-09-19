@@ -673,7 +673,9 @@ function fwp_links_table_rows_file_size( $o_s_link ) {
 	if ( is_null( $o_s_link->setting( 'update/error' ) ) ) :
 
 		if ( ! is_null( $o_s_link->setting( 'link/filesize' ) ) ) :
-			$mesg_file_size_lines[] = size_format( $o_s_link->setting( 'link/filesize' ) ) . __( ' total' );
+			// size_format() _can_ return false, so we check for that first with the ternary operator (gwyneth 20230918)
+			$mesg_file_size_lines[] = ( size_format( $o_s_link->setting( 'link/filesize' ) ) ?: __( 'unknown bytes' ) )
+				. __( ' total' );
 		endif;
 
 	endif;
@@ -718,7 +720,7 @@ function fwp_links_table_rows_next_update( $o_s_link ) {
 				printf( ' [%d ' . __( 'minute' ) . '%s]', intval( $interval ), esc_html( _s( $interval ) ) );
 			endif;
 		else :
-			printf( __( 'Scheduled to be checked for updates every ' ) . '%d' . __( 'minute' ) . '%s',
+			printf( __( 'Scheduled to be checked for updates every ' ) . '%d ' . __( 'minute' ) . '%s.',
 				intval( $ttl ),
 				esc_html( _s( $ttl ) ) );
 			?>
@@ -728,8 +730,7 @@ function fwp_links_table_rows_next_update( $o_s_link ) {
 			<?php
 			if ( $o_s_link->setting( 'update/xml' ) ) :
 				?>
-				 <?php _e( 'using a standard' ); ?> <code style="font-size: inherit; padding: 0; background: transparent">&lt;<?php print esc_html( $o_s_link->setting( 'update/xml' ) ); ?>&gt;</code> <?php _e( 'element' ); ?>
-				<?php
+				 <?php _e( 'using a standard' ); ?> <code style="font-size: inherit; padding: 0; background: transparent">&lt;<?php print esc_html( $o_s_link->setting( 'update/xml' ) ); ?>&gt;</code> <?php _e( 'element' ); // Note: the tricky php tags placed here try to avoid a space before the period. (gwyneth 20230918)
 			endif;
 		endif;
 	else :

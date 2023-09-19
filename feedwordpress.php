@@ -217,6 +217,8 @@ function feedwordpress_deactivate() {
  * @param  int|string $quantity Quantity in bytes to be displayed. Can be a string that only includes numeric digits.
  *
  * @return string Formatted string with quantity and unit.
+ *
+ * @deprecated use the WordPress built-in `size_format()` function instead! (gwyneth 20230918)
  */
 function debug_out_human_readable_bytes( $quantity ) {
 	if ( ! is_numeric( $quantity ) ) :
@@ -234,12 +236,12 @@ function debug_out_human_readable_bytes( $quantity ) {
 }
 
 function debug_out_feedwordpress_footer() {
-	if (FeedWordPressDiagnostic::is_on('memory_usage')) :
-		if (function_exists('memory_get_usage')) :
-			FeedWordPress::diagnostic ('memory_usage', "Memory: Current usage: ".debug_out_human_readable_bytes(memory_get_usage()));
+	if ( FeedWordPressDiagnostic::is_on('memory_usage') ) :
+		if ( function_exists('memory_get_usage') ) :
+			FeedWordPress::diagnostic( 'memory_usage', "Memory: Current usage: " . size_format( memory_get_usage() ) );
 		endif;
-		if (function_exists('memory_get_peak_usage')) :
-			FeedWordPress::diagnostic ('memory_usage', "Memory: Peak usage: ".debug_out_human_readable_bytes(memory_get_peak_usage()));
+		if ( function_exists('memory_get_peak_usage') ) :
+			FeedWordPress::diagnostic('memory_usage', "Memory: Peak usage: " . size_format( memory_get_peak_usage() ) );
 		endif;
 	endif;
 } /* debug_out_feedwordpress_footer() */
