@@ -19,32 +19,45 @@ function fwp_hold_pings () {
 	endif;
 }
 
-function fwp_release_pings () {
+/**
+ * Attempts to schedule an immediate ping via the event scheduler,
+ * falling back to direct ping if scheduler isn't available.
+ *
+ * @uses wp_schedule_single_event()
+ * @uses generic_ping()
+ * @uses FeedWordPress::diagnostic()
+ *
+ * @global $fwp_held_ping
+ */
+function fwp_release_pings() {
 	global $fwp_held_ping;
 
 	$diag_message = null;
-	if ($fwp_held_ping):
-		if (function_exists('wp_schedule_single_event')) :
-			wp_schedule_single_event(time(), 'do_pings');
-			$diag_message = 'scheduled release of pings';
+	if ( $fwp_held_ping ) :
+		if  ( function_exists( 'wp_schedule_single_event') ) :
+			if ( wp_schedule_single_event( time(), 'do_pings' ) ) :;
+				$diag_message = 'scheduled release of pings';
+			else :
+				$diag_message = 'scheduling release of pings failed';
+			endif;
 		else :
-			generic_ping($fwp_held_ping);
+			generic_ping( $fwp_held_ping );
 			$diag_message = 'released pings';
 		endif;
 	endif;
-	
+
 	$fwp_held_ping = NULL;	// NULL: not holding pings anymore
-	
-	if ( !is_null($diag_message)) :
+
+	if ( ! is_null( $diag_message ) ) :
 		FeedWordPress::diagnostic(
 			'syndicated_posts:do_pings',
-			"FeedWordPress ${diag_message}, fwp_held_ping=".json_encode($fwp_held_ping)
+			"FeedWordPress ${diag_message}, fwp_held_ping=" . json_encode( $fwp_held_ping )
 		);
 	endif;
-}
+} /* function fwp_release_pings() */
 
 function fwp_do_pings () {
-	global $fwp_held_ping;
+	global $fwp_held_ping, $post_id;
 
 	if ( !is_null($fwp_held_ping) and $post_id) : // Defer until we're done updating
 		$fwp_held_ping = $post_id;
@@ -75,7 +88,7 @@ function fwp_publish_post_hook ($post_id) {
 
 		// Defer sending out pings until we finish updating
 		$fwp_held_ping = $post_id;
-		
+
 		FeedWordPress::diagnostic(
 			'syndicated_posts:do_pings',
 			"FeedWordPress intercepted a post event, fwp_held_ping=".json_encode($fwp_held_ping)

@@ -46,20 +46,49 @@ class FeedWordPressDiagnostic {
 		endforeach;
 	} /* FeedWordPressDiagnostic::feed_error() */
 
+	/**
+	 * Returns an array with the list of administrator emails for this site.
+	 *
+	 * @param  int|string  $id  Current blog ID (for multisite installations).
+	 *
+	 * @return array       Array with all email addresses for this blog.
+	 *
+	 * @uses get_users_of_blog()
+	 *
+	 * @note This uses the deprecated WP function `get_users_of_blog()`, which
+	 * should be replaced with `get_users()`, which, however, has quite more
+	 * intricate syntax (and customisation!).
+	 *
+	 * It might be even possible to retrieve everything in a single call:
+	 * ```
+	 *   return get_users(
+	 *   	array(
+	 *   		'role__in'       => 'administrator',
+	 *   		'capability__in' => 'administrator',
+	 *   		'fields'         => 'user_email',
+	 *   		'count_total'    => false				// no need to count them; improves performance.
+	 *   	)
+	 *   );
+	 * ```
+	 *
+	 * Alternatively, the function `admin_emails()` may simply be marked as deprecated and
+	 * `get_users()` used instead. This requires debugging! (gwyneth 20230919)
+	 */
 	public static function admin_emails( $id = '' ) {
-		$users = get_users_of_blog( $id );	// Note: this is a deprecated WP function which should be replaced with get_users(), which, however, has quite more intricate syntax (and customisation!). (gwyneth 20230919)
+		//
+		$users = get_users_of_blog( $id );
 		$recipients = array();
-		foreach ($users as $user) :
-			$user_id = (isset($user->user_id) ? $user->user_id : $user->ID);
-			$dude = new WP_User($user_id);
-			if ($dude->has_cap('administrator')) :
-				if ($dude->user_email) :
+		foreach ( $users as $user ) :
+			$user_id = ( isset( $user->user_id ) ? $user->user_id : $user->ID );
+			$dude = new WP_User( $user_id );
+			if ( $dude->has_cap('administrator') ) :
+				if ( $dude->user_email ) :
 					$recipients[] = $dude->user_email;
 				endif;
 			endif;
 		endforeach;
 		return $recipients;
-	}
+	} /* FeedWordPressDiagnostic::admin_emails() */
 
 	public static function noncritical_bug ($varname, $var, $line, $file = NULL) {
 		if (FEEDWORDPRESS_DEBUG) : // halt only when we are doing debugging

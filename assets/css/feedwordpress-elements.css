@@ -617,7 +617,7 @@ li#toplevel_page_feedwordpress-syndication .wp-menu-image img {
 	margin-top: 0;	/* added this for good measure */
 }
 
-/* This is to avoid that Dashicons get underlines! */
+/* This is to avoid that Dashicons get underlines! (gwyneth 20210718) */
 .fwp-no-underline, .fwp-no-underline:hover {
 	text-decoration: none;
 }
