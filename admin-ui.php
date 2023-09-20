@@ -15,8 +15,8 @@
  */
 
 $dir = dirname( __FILE__ );
-require_once "${dir}/feedwordpressadminpage.class.php";
-require_once "${dir}/feedwordpresssettingsui.class.php";
+require_once "{$dir}/feedwordpressadminpage.class.php";
+require_once "{$dir}/feedwordpresssettingsui.class.php";
 
 /**
  * Prints the class="..." attribute (if any) for an HTML form element
@@ -91,6 +91,7 @@ function fwp_checked_flag( /* mixed */ $arg = null, $key = null ) {
 	fwp_selected_flag( $arg, $key, 'checked' );
 } /* fwp_checked_flag() */
 
+if ( ! function_exists( '_s' ) ) :
 /**
  * Retrieves a plural or singular form of a string based on the supplied number.
  *
@@ -98,6 +99,9 @@ function fwp_checked_flag( /* mixed */ $arg = null, $key = null ) {
  * a number is singular or plural. Very similar to WordPress l10n.php _n(),
  * but designed for a nice short form in the
  * default case (provide "s" when plural, "" otherwise).
+ *
+ * @note This function *may* have been defined elsewhere; also, consider
+ * using WordPress's own `_n()` function and derivatives. (gwyneth 20230920)
  *
  * @param int    $n        The counter to determine singular or plural form.
  * @param string $plural   The text to use if the counter is plural.
@@ -108,7 +112,8 @@ function fwp_checked_flag( /* mixed */ $arg = null, $key = null ) {
 function _s( $n = 0, $plural = 's', $singular = '' ) {
 	$is_singular = ( is_numeric( $n ) && intval( $n ) === 1 );
 	return ( $is_singular ? $singular : $plural );
-}
+} /* _s() */
+endif;
 
 /**
  * Outputs a status message for the aggregate results of polling a set of feeds.
@@ -200,10 +205,10 @@ function fwp_tags_box( $tags, $object, $params = array() ) {
 		$params['textarea_name'] = "tax_input[$tax_name]";
 	endif;
 	if ( is_null( $params['textarea_id'] ) ) :
-		$params['textarea_id'] = "tax-input-${tax_name}";
+		$params['textarea_id'] = "tax-input-{$tax_name}";
 	endif;
 	if ( is_null( $params['input_id'] ) ) :
-		$params['input_id'] = "new-tag-${tax_name}";
+		$params['input_id'] = "new-tag-{$tax_name}";
 	endif;
 	if ( is_null( $params['input_name'] ) ) :
 		$params['input_name'] = "newtag[$tax_name]";

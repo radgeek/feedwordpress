@@ -996,7 +996,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	}
 
 	function display_feedfinder () {
-		global $wpdb;
 		$lookup = FeedWordPress::param( 'lookup' );
 
 		$auth = FeedWordPress::param( 'link_rss_auth_method' );
@@ -1239,25 +1238,31 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				endif;
 
 				// Do some more diagnostics if the API for it is available.
-				if (function_exists('_wp_http_get_object')) :
+				// Note to @radgeek: consider using a hook instead: https://developer.wordpress.org/reference/hooks/http_api_transports/ (gwyneth 20230920)
+				if ( function_exists( '_wp_http_get_object' ) ) :
 					$httpObject = _wp_http_get_object();
 
+					/*
+					// _getTransport() was totally deprecated (gwyneth 20230920)
 					if (is_callable(array($httpObject, '_getTransport'))) :
+
 						$transports = $httpObject->_getTransport();
 
 						print "<h4>".__('HTTP Transports available').":</h4>\n";
 						print "<ol>\n";
 						print "<li>".implode("</li>\n<li>", array_map('get_class', $transports))."</li>\n";
 						print "</ol>\n";
-					elseif (is_callable(array($httpObject, '_get_first_available_transport'))) :
+					else
+					*/
+					if ( is_callable( array( $httpObject, '_get_first_available_transport' ) ) ) :
 						$transport = $httpObject->_get_first_available_transport(
 							array(),
 							$url
 						);
 
-						print "<h4>".__("HTTP Transport").":</h4>\n";
+						print "<h4>" . __("HTTP Transport") . ":</h4>\n";
 						print "<ol>\n";
-						print "<li>".MyPHP::val($transport)."</li>\n";
+						print "<li>" . MyPHP::val($transport) . "</li>\n";
 						print "</ol>\n";
 					endif;
 

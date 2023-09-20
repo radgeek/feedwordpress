@@ -19,6 +19,7 @@ class FeedWordPressAdminPage {
 	var $dispatch = NULL;
 	var $filename = NULL;
 	var $pagenames = array();
+	var $boxes_by_methods = array();	// did I delete this by mistake? (gwyneth 20230920)
 
 	/**
 	 * Construct the admin page object.
@@ -289,8 +290,6 @@ class FeedWordPressAdminPage {
 	} /* FeedWordPressAdminPage::admin_page_href () */
 
 	public function display_feed_settings_page_links ($params = array()) {
-		global $fwp_path;
-
 		$params = wp_parse_args($params, array(
 			'before' => '',
 			'between' => ' | ',
@@ -576,8 +575,6 @@ class FeedWordPressAdminPage {
 	} /* FeedWordPressAdminPage::close_sheet () */
 
 	public function setting_radio_control ($localName, $globalName, $options, $params = array()) {
-		global $fwp_path;
-
 		$params = wp_parse_args(
 			$params,
 			array(
