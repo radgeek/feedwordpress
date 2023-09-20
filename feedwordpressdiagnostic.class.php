@@ -33,6 +33,7 @@ class FeedWordPressDiagnostic {
 
 			if ( $span >= ( $hours * 60 * 60 ) ) :
 				$since = date( 'r', $error['since'] );
+				/** @var string  Never used. */
 				$mostRecent = date( 'r', $error['ts'] );	// never used?... (gwyneth 20230919)
 				FeedWordPress::diagnostic(
 					'updated_feeds:errors:persistent',
@@ -75,7 +76,7 @@ class FeedWordPressDiagnostic {
 	 * `get_users()` used instead. This requires debugging! (gwyneth 20230919)
 	 */
 	public static function admin_emails( $id = '' ) {
-		//
+		// deprecated, see comment on the function description! (gwyneth 20230919)
 		$users = get_users_of_blog( $id );
 		$recipients = array();
 		foreach ( $users as $user ) :

@@ -630,7 +630,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		endif;
 		// Hey ho, let's go...
 		?>
-		<!-- Page: <? echo $page; ?> Box: <? echo $box ?: '(empty)'; ?> -->
 		<div style="float: left; background: /* #F5F5F5 */ white; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url( plugins_url( /* "feedwordpress.png" */ "assets/images/icon.svg", __FILE__ ) ); ?>" width="36px" height="36px" alt="FeedWordPress Logo" /></a></div>
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;"><?php _e( 'Managed by' ); ?><a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
 		<?php print esc_html(FEEDWORDPRESS_VERSION); ?>.</p>
@@ -720,7 +719,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		$formHref = sprintf( '%s&amp;visibility=%s', $hrefPrefix, urlencode($visibility) );
 		?>
 		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-		<!-- Page: <? echo $page ?> Box: <? echo $box ?: '(empty)'; ?> -->
 		<div class="tablenav">
 
 		<div id="add-multiple-uri" class="hide-if-js">
@@ -866,7 +864,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 	 */
 	function bleg_thanks( $page, $box = NULL ) {
 		?>
-		<!-- Page: <? echo $page; ?> Box: <? echo $box ?: '(empty)'; ?> -->
 		<div class="donation-thanks">
 		<h4><?php _e( 'Thank you!' ); ?></h4>
 		<p><?php _e( '<strong>Thank you</strong> for your contribution to <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a> development.
@@ -894,7 +891,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		?>
 <script type="text/javascript">
 /* <![CDATA[ */
-	// Note: Flattr changed their business model and doesn+t offer this service any more as of June 2023
+	// Note: Flattr changed their business model and doesn't offer this service any more as of June 2023
     (function() {
         var s = document.createElement( 'script' ), t = document.getElementsByTagName( 'script' )[0];
         s.type = 'text/javascript';
@@ -903,7 +900,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
         t.parentNode.insertBefore( s, t );
     })();
 /* ]]> */</script>
-<!-- Page is: <? echo $page; ?> Box is: <? echo $box ?: '(empty)'; ?> -->
 <div class="donation-form">
 <h4><?php _e( 'Consider a Donation to FeedWordPress' ); ?></h4>
 <form action="https://www.paypal.com/cgi-bin/webscr" accept-charset="UTF-8" method="post"><div>

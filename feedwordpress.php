@@ -1101,7 +1101,7 @@ class FeedWordPress {
 			endif;
 
 			// Make sure we have a post corresponding to this ID.
-			$post = $post_type = $post_type_object = null;
+			$post = $post_type = $post_type_object = null;		// whatever $post_type_object might be, it's not being used! (gwyneth 20230920)
 			if ( $post_id ) :
 				$post = get_post( $post_id );
 			endif;

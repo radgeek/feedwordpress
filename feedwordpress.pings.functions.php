@@ -11,7 +11,7 @@ $fwp_held_ping = NULL;
 
 function fwp_hold_pings() {
 	global $fwp_held_ping;
-	if ( is_null ( $fwp_held_ping ) ):
+	if ( is_null ( $fwp_held_ping ) ) :
 		$fwp_held_ping = 0;	// 0: ready to hold pings; none yet received
 		FeedWordPress::diagnostic(
 			'syndicated_posts:do_pings',

@@ -553,8 +553,8 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	/**
 	 * Displays the advanced settings box on the FWP dashboard page.
 	 *
-	 * @param  object     $page  Current page object (?).
-	 * @param  mixed|null $box   A box inside this object.
+	 * @param  FeedWordPressFeedsPage  $page  A page object, unused.
+	 * @param  mixed|null              $box   A box inside this object, unused.
 	 */
 	function advanced_settings_box( $page, $box = NULL ) {
 		?>
@@ -642,13 +642,13 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$feedwordpress->httpauth->methods_available(),
 		);
 
-		$linkRssAuthId = sanitize_html_class( 'link-rss-authentication' . $slug );
+		$linkRssAuthId        = sanitize_html_class( 'link-rss-authentication' . $slug );
 		$linkRssCredentialsId = sanitize_html_class( 'link-rss-authentication-credentials' . $slug );
-		$linkRssAuthMethodId = sanitize_html_class( 'link-rss-authentication-method' . $slug );
+		$linkRssAuthMethodId  = sanitize_html_class( 'link-rss-authentication-method' . $slug );
 
 		if ( count( $authMethods ) > 1 ) : /* More than '-' */
 		?>
-		<div class="link-rss-authentication" id="<?php print esc_attr($linkRssAuthId); ?>">
+		<div class="link-rss-authentication" id="<?php print esc_attr( $linkRssAuthId ); ?>">
 		<table>
 		<tbody>
 		<tr class="link-rss-authentication-credentials" id="<?php print esc_attr( $linkRssCredentialsId ); ?>">
@@ -674,7 +674,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		jQuery('<td><a class="add-remove remove-it" id="link-rss-userpass-remove<?php print esc_attr( $slug ); ?>" href="#"><span class="x">(X)</span> <?php _e( 'Remove' ); ?></a></td>')
 			.appendTo('#<?php print esc_attr( $linkRssCredentialsId ); ?>' )
 			.click( feedAuthenticationMethodUnPress );
-		jQuery( '#link-rss-auth-method<?php print esc_attr($slug); ?>' ).change( feedAuthenticationMethod );
+		jQuery( '#link-rss-auth-method<?php print esc_attr( $slug ); ?>' ).change( feedAuthenticationMethod );
 		feedAuthenticationMethod( {
 			init: true,
 			node: jQuery( '#<?php print esc_attr( $linkRssAuthId ); ?>' )
@@ -741,6 +741,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$hardcode['url']         = get_option( 'feedwordpress_hardcode_url' );
 		endif;
 
+		/** @var bool  Hide authentication (unused). */
 		$hideAuth = false;
 
 		$username = $this->setting( 'http username', NULL );

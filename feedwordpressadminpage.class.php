@@ -240,11 +240,18 @@ class FeedWordPressAdminPage {
 		<?php
 	} /* FeedWordPressAdminPage::stamp_link_id () */
 
-	public function these_posts_phrase () {
-		if ($this->for_feed_settings()) :
-			$phrase = __('posts from this feed');
+	/**
+	 * Returns a short explanation of what posts we have here,
+	 * either posts from this feed or syndicated posts.
+	 *
+	 * @return string  True corresponds to posts from this feed,
+	 *                 false to syndicated posts.
+	 */
+	public function these_posts_phrase() {
+		if ( $this->for_feed_settings() ) :
+			$phrase = __( 'posts from this feed' );
 		else :
-			$phrase = __('syndicated posts');
+			$phrase = __( 'syndicated posts' );
 		endif;
 		return $phrase;
 	} /* FeedWordPressAdminPage::these_posts_phrase() */

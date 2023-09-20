@@ -20,7 +20,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		$this->dispatch = 'feedwordpress_admin_page_posts';
 		$this->filename = __FILE__;
 		$this->updatedPosts = new UpdatedPostsControl($this);
-		
+
 		$this->pagenames = array(
 			'default' => 'Posts',
 			'settings-update' => 'Syndicated posts',
@@ -52,7 +52,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 		$this->updatedPosts->accept_POST();
 		if ($this->for_feed_settings()) :
-			$alter = array ();
+			// $alter = array();	// this appears elsewhere, too, also unused, and possibly removed as well (gwyneth 20230920)
 
 			$this->link->settings['postmeta'] = serialize($custom_settings);
 
@@ -78,7 +78,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 					endif;
 				endif;
 			endforeach;
-			
+
 			if ( ! is_null( FeedWordPress::post('syndicated_post_type', null, 'text' ) ) ) :
 				if ( FeedWordPress::post( 'syndicated_post_type', null, 'text' ) == 'default' ) :
 					unset($this->link->settings['syndicated post type']);
@@ -92,11 +92,11 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			if ( ! is_null( FeedWordPress::post( 'feed_post_status', null ) ) ) :
 
 				update_option('feedwordpress_syndicated_post_status', FeedWordPress::post( 'feed_post_status', null, 'text' ) );
-				
+
 			endif;
 
 			update_option('feedwordpress_custom_settings', serialize($custom_settings));
-			
+
 			$sMungePermalink = FeedWordPress::post('munge_permalink', null, 'text' );
 			$sUseAggregatorSourceData = FeedWordPress::post( 'use_aggregator_source_data', null, 'text' );
 			$sFormattingFilters = FeedWordPress::post('formatting_filters', null, 'text' );
@@ -116,7 +116,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			if ( ! is_null( $sMungeCommentsFeedLinks ) ) :
 				update_option('feedwordpress_munge_comments_feed_links', $sMungeCommentsFeedLinks );
 			endif;
-			
+
 			if ( $sFeedCommentStatus == 'open' ) :
 				update_option('feedwordpress_syndicated_comment_status', 'open');
 			else :
@@ -170,7 +170,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	 * @uses FeedWordPressPostsPage::these_posts_phrase()
 	 * @uses FeedWordPress::syndicated_status()
 	 * @uses SyndicatedLink::syndicated_status()
-	 */ 
+	 */
 	/*static*/ function publication_box ($page, $box = NULL) {
 		$thesePosts = $page->these_posts_phrase();
 		$postSelector = array(
@@ -184,7 +184,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			$postSelector[$index] = sprintf(__($value), $thesePosts);
 			$labels[$index] = __(str_replace(' %s', '', strtolower(strtok($value, ';'))));
 		endforeach;
-		
+
 		$params = array(
 		'input-name' => 'feed_post_status',
 		'setting-default' => NULL,
@@ -206,21 +206,21 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 		<?php $page->updatedPosts->display(); ?>
 		</table>
-	
+
 		<?php
 	} /* FeedWordPressPostsPage::publication_box () */
-	
+
 	/**
 	 * Outputs "Formatting" settings box
 	 *
 	 * @since 2009.0713
-	 * @param object $page of class FeedWordPressPostsPage tells us whether this is
-	 *	a page for one feed's settings or for global defaults
+	 * @param FeedWordPressPostsPage  $page  of class FeedWordPressPostsPage tells us whether this is
+	 *	                                     a page for one feed's settings or for global defaults
 	 * @param array $box
 	 *
-	 */ 
-	function formatting_box ($page, $box = NULL) {
-		$thesePosts = $page->these_posts_phrase();
+	 */
+	function formatting_box( $page, $box = NULL ) {
+		$thesePosts = $page->these_posts_phrase();		// result unused, why? (gwyneth 20230920)
 
 		if ($page->for_feed_settings()) :
 			$formatting_filters = null;
@@ -245,7 +245,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		  </td></tr>
 
 		<?php endif; ?>
-		
+
 		<tr><th scope="row">Relative URIs:</th>
 		<td><p>If link or image in a syndicated post from <code><?php print esc_html($url); ?></code>
 		refers to a partial URI like <code>/about</code>, where should
@@ -270,13 +270,13 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			'resolve relative', 'resolve_relative',
 			$options, $params
 		);
-		?>		
+		?>
 		</td></tr>
 
 		</table>
 		<?php
 	} /* FeedWordPressPostsPage::formatting_box() */
-	
+
 	/**
 	 * Output "Links" settings box
 	 *
@@ -301,7 +301,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		<table class="edit-form narrow">
 		<tr><th  scope="row">Permalinks point to:</th>
 		<td><?php
-		
+
 		$params = array(
 			'setting-default' => 'default',
 			'global-setting-default' => 'yes',
@@ -314,7 +314,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		?>
 
 		</td></tr>
-		
+
 		<?php if ( ! $page->for_feed_settings()) : ?>
 		<tr><th scope="row">Posts from aggregator feeds:</th>
 		<td><ul class="options">
@@ -346,7 +346,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			'ping' => array('label' => __('Pings'), 'accept' => 'Accept pings'),
 		);
 		$onThesePosts = 'on '.$page->these_posts_phrase();
-		
+
 		$mcflSettings = array(
 			"yes" => __('Point to comment feeds from the original website (when provided by the syndicated feed)'),
 			"no" => __('Point to local comment feeds on this website'),
@@ -385,7 +385,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		?>
 		<table class="edit-form narrow">
 		<?php foreach ($whatsits as $what => $how) : ?>
-		  
+
 		  <tr><th scope="row"><?php print esc_html($how['label']); ?>:</th>
 		  <td><?php
 		  	$this->setting_radio_control(
@@ -393,9 +393,9 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		  		$settings[$what], $params[$what]
 		  	);
 		  ?></td></tr>
-		  
+
 		<?php endforeach; ?>
-		
+
 		  <tr><th scope="row"><?php _e('Comment feeds'); ?></th>
 		  <td><p>When WordPress feeds and templates link to comments
 		  feeds for <?php print esc_html($page->these_posts_phrase()); ?>, the
@@ -410,7 +410,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 		<?php
 	} /* FeedWordPressPostsPage::comments_and_pings_box() */
-	
+
 	/*static*/ function custom_post_settings ($page = NULL) {
 		if (is_null($page)) :
 			$page = $this;
@@ -425,14 +425,14 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		if ($custom_settings and !is_array($custom_settings)) :
 			$custom_settings = unserialize($custom_settings);
 		endif;
-		
+
 		if ( !is_array($custom_settings)) :
 			$custom_settings = array();
 		endif;
 
 		return $custom_settings;
 	} /* FeedWordPressPostsPage::custom_post_settings() */
-	
+
 	/**
 	 * Output "Custom Post Settings" settings box
 	 *
@@ -458,7 +458,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		$testerButton = '<br/><button id="xpath-test-%d"'
 			.'class="xpath-test"'
 			.'>test expression</button>';
-		foreach ($custom_settings as $key => $value) : 
+		foreach ($custom_settings as $key => $value) :
 		?>
 		  <tr style="vertical-align:top">
 		    <th width="30%" scope="row"><input type="hidden" name="notes[<?php echo esc_attr($i); ?>][key0]" value="<?php echo esc_html($key); ?>" />
@@ -494,12 +494,10 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	} /* FeedWordPressPostsPage::custom_post_settings_box() */
 
 	function custom_post_types_box ($page, $box = NULL) {
-		global $fwp_path;
-		
-		// local: syndicated post type // default NULL
+		// local: syndicated post type  // default NULL
 		// global: syndicated_post_type // default 'post'
 		// default-input-value => 'default'
-		
+
 		// Get all custom post types
 		$post_types = get_post_types(array(
 		'_builtin' => false,
@@ -510,12 +508,12 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		foreach ($post_types as $post_type) :
 			$ul[$post_type->name] = __($post_type->labels->name);
 		endforeach;
-		
+
 		$params = array(
 			'global-setting-default' => 'post',
 			'default-input-value' => 'default',
 		);
-		
+
 		// Hey, ho, let's go...
 		?>
 		<table class="edit-form narrow">
@@ -534,7 +532,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		</table>
 		<?php
 	} /* FeedWordPressPostsPage::custom_post_types_box() */
-	
+
 	public function boilerplate_box ($page, $box = NULL) {
 		if ($page->for_feed_settings()) :
 			$attrib = isset($page->link->settings['boilerplate rules'])
@@ -547,7 +545,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		endif;
 		$hookOrder = intval($page->setting('boilerplate hook order', FEEDWORDPRESS_BOILERPLATE_DEFAULT_HOOK_ORDER));
 ?>
-	<style type="text/css">	
+	<style type="text/css">
 	.boilerplate-help-box {
 		float: right;
 		width: 300px;
@@ -575,7 +573,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		margin-bottom: 5px;
 		border-bottom: 1px dotted black;
 	}
-	
+
 	</style>
 
 	<div class="boilerplate-help-box">
@@ -595,7 +593,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	<dt><code>[original-link]text[/original-link]</code></dt>
 	<dd>A link to the <em>original post</em> back on the source website,
 	using <code>text</code> as the link text.</dd>
-	
+
 	<dt><code>[original-url]</code></dt>
 	<dd>URL of the <em>original post</em> back on the source website</dd>
 
@@ -604,7 +602,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 	<dt><code>[author-name]</code></dt>
 	<dd>Name of the author who wrote the post</dd>
-	
+
 	<dt><code>[feed-setting key="setting-name"]</code></dt>
 	<dd>Value of a custom feed setting (named <code>setting-name</code>) for the feed</dd>
 	</dl>
@@ -644,7 +642,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 <option value="title"<?php fwp_selected_flag($selected, 'title' ); ?>>title</option>
 <option value="post"<?php fwp_selected_flag( $selected, 'post' ); ?>>content</option>
 <option value="excerpt"<?php fwp_selected_flag( $selected, 'excerpt' ); ?>>excerpt</option>
-</select> of 
+</select> of
 <?php print esc_html($syndicatedPosts); ?>: <textarea style="vertical-align: top; width: 40%;" rows="2" cols="30" class="boilerplate-template" id="boilerplate-<?php print esc_attr($index); ?>-template" name="boilerplate[<?php print esc_attr($index); ?>][template]"><?php print esc_html($line['template']); ?></textarea></li>
 <?php
 			endif;
@@ -687,7 +685,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 					dummy[element]['el'].attr('id', newIdPrefix+'-'+element);
 					dummy[element]['el'].attr('name', newNamePrefix+'['+element+']');
 				}
-	
+
 				var newLi = $('#'+newIdPrefix+'-li').clone(/*events=*/ true);
 				//newLi.attr('id', null);
 				newLi.removeClass('hide-if-js');
@@ -733,7 +731,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		'custom_post_settings_box' => __('Custom Post Settings (to apply to each syndicated post)'),
 		'custom_post_types_box' => ('Custom Post Types (advanced database settings)'),
 		);
-		
+
 		parent::display();
 	 } /* FeedWordPressPostsPage::display () */
 

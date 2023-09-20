@@ -9,6 +9,16 @@ $fwp_credentials = NULL;
  * @extends WP_SimplePie_File
  */
 class FeedWordPie_File extends WP_SimplePie_File {
+
+	/**
+ 	* Timeout.
+ 	*
+ 	* @var int How long the connection should stay open in seconds.
+ 	*
+ 	* @see WP_SimplePie_File
+ 	*/
+	public $timeout = 10;
+
 	/**
 	 * Class constructor.
 	 *

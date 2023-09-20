@@ -15,20 +15,22 @@ require_once dirname(__FILE__) . '/syndicatedpostxpathquery.class.php';
  * @version 2017.1018
  */
 class SyndicatedPost {
-	var $item = null;	// MagpieRSS representation
-	var $entry = null;	// SimplePie_Item representation
+	/** @var MagpieRSS|null  MagpieRSS representation. */
+	var $item = null;
+	/**  @var SimplePie_Item|null  SimplePie_Item representation. */
+	var $entry = null;
 
 	var $link = null;
 	var $feed = null;
 	var $feedmeta = null;
 
-	var $xmlns = array ();
+	var $xmlns = array();
 
-	var $post = array ();
+	var $post  = array();
 
-	var $named = array ();
-	var $preset_terms = array ();
-	var $feed_terms = array ();
+	var $named = array();
+	var $preset_terms = array();
+	var $feed_terms = array();
 
 	var $_freshness = null;
 	var $_wp_id = null;
@@ -53,7 +55,7 @@ class SyndicatedPost {
 			$this->entry = $item['simplepie'];
 			$this->item = $item['magpie'];
 			$item = $item['magpie'];
-		elseif ( is_a($item, 'SimplePie_Item') ) :
+		elseif ( is_a( $item, 'SimplePie_Item' ) ) :
 			$this->entry = $item;
 
 			// convert to Magpie for compat purposes
@@ -1616,7 +1618,7 @@ class SyndicatedPost {
 			FeedWordPressDiagnostic::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
 		endif;
 
-		$freshness = $this->freshness();		// how strange, this is never used... (gwyneth 20230919)
+		$freshness = $this->freshness();		// see above: this sets WP DB id in the process (gwyneth 20230919)
 		if ($this->has_fresh_content()) :
 			$this->secure_author_id();
 		endif;
@@ -1706,8 +1708,6 @@ class SyndicatedPost {
 	} /* function SyndicatedPost::store () */
 
 	function insert_post ($update = false, $freshness = 2) {
-		global $wpdb;
-
 		$dbpost = $this->normalize_post(/*new=*/ true);
 
 		$ret = null;
