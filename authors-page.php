@@ -274,8 +274,9 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 		global $wpdb;
 
 		$to = FeedWordPress::post( 'fix_mismatch_to' );
-		if ( 'newuser' === $fix_to ) :	// will _always_ be false, since $fix_to is not called from anywhere (gwyneth 20230915)
-			$newuser_name = trim( FeedWordPress::post('fix_mismatch_to_newuser', '' ) );
+//		if ( 'newuser' === $fix_to ) :	// will _always_ be false, since $fix_to is not called from anywhere (gwyneth 20230915)
+		if ( 'newuser' === $to ) :	// probably this is what was intended! (gwyneth 20230920)
+			$newuser_name = trim( FeedWordPress::post( 'fix_mismatch_to_newuser', '' ) );
 			$to = fwp_insert_new_user( $newuser_name );
 		endif;
 
@@ -310,7 +311,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 					WHERE ({$wpdb->posts}.id IN $post_set
 					$parent_in_clause)
 					");
-					$this->mesg = sprintf(__("Re-assigned %d {$posts}."), $N);
+					$this->mesg = sprintf(__("Re-assigned %d ${posts}."), $N);
 
 				// ... and kill them all
 				elseif ('filter'==$to) :
@@ -318,7 +319,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 						wp_delete_post($post_id);
 					endforeach;
 
-					$this->mesg = sprintf(__("Deleted %d {$posts}."), $N);
+					$this->mesg = sprintf(__("Deleted %d ${posts}."), $N);
 				endif;
 			else :
 				$this->mesg = __("Couldn't find any posts that matched your criteria.");
