@@ -20,7 +20,7 @@ class FeedWordPressSettingsUI {
 			$fwp = preg_quote( FeedWordPress::path() );
 			$admin_page = (
 				is_admin()
-				and preg_match( "|^${fwp}/|", MyPHP::request( 'page' ) )
+				and preg_match( "|^{$fwp}/|", MyPHP::request( 'page' ) )
 			);
 		endif;
 		return $admin_page;
@@ -130,7 +130,7 @@ class FeedWordPressSettingsUI {
 	static public function get_template_part( $slug, $name = null, $type = null, $args = array() ) {
 		global $feedwordpress;
 
-		do_action( "feedwordpress_get_template_part_${slug}", $slug, $name, $type, $args );
+		do_action( "feedwordpress_get_template_part_{$slug}", $slug, $name, $type, $args );
 
 		$templates = array();
 		$name = (string) $name;
@@ -138,13 +138,13 @@ class FeedWordPressSettingsUI {
 
 		$ext = ".php";
 		if ( strlen( $type ) > 0 ):
-			$ext = ".${type}${ext}";
+			$ext = ".{$type}${ext}";
 		endif;
 
 		if ( strlen( $name ) > 0 ) :
-			$templates[] = "${slug}-${name}${ext}";
+			$templates[] = "{$slug}-${name}${ext}";
 		endif;
-		$templates[] = "${slug}${ext}";
+		$templates[] = "{$slug}${ext}";
 
 		do_action( "feedwordpress_get_template_part", $slug, $name, $type, $args );
 

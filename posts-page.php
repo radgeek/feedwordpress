@@ -371,7 +371,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 				'closed' => sprintf(__("Don't ".strtolower($how['accept'])." %s"), __($onThesePosts)),
 			);
 			$params[$what] = array(
-			'input-name' => "feed_${what}_status",
+			'input-name' => "feed_{$what}_status",
 			'setting-default' => NULL,
 			'global-setting-default' => FeedWordPress::syndicated_status($what, /*default=*/ 'closed'),
 			'labels' => array(
@@ -389,7 +389,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		  <tr><th scope="row"><?php print esc_html($how['label']); ?>:</th>
 		  <td><?php
 		  	$this->setting_radio_control(
-		  		"$what status", "syndicated_${what}_status",
+		  		"$what status", "syndicated_{$what}_status",
 		  		$settings[$what], $params[$what]
 		  	);
 		  ?></td></tr>

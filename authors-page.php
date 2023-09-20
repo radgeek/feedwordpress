@@ -310,7 +310,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 					WHERE ({$wpdb->posts}.id IN $post_set
 					$parent_in_clause)
 					");
-					$this->mesg = sprintf(__("Re-assigned %d ${posts}."), $N);
+					$this->mesg = sprintf(__("Re-assigned %d {$posts}."), $N);
 
 				// ... and kill them all
 				elseif ('filter'==$to) :
@@ -318,7 +318,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 						wp_delete_post($post_id);
 					endforeach;
 
-					$this->mesg = sprintf(__("Deleted %d ${posts}."), $N);
+					$this->mesg = sprintf(__("Deleted %d {$posts}."), $N);
 				endif;
 			else :
 				$this->mesg = __("Couldn't find any posts that matched your criteria.");

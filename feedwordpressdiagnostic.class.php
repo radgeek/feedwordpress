@@ -25,7 +25,7 @@ class FeedWordPressDiagnostic {
 			$mesg = esc_html( $mesg );
 			FeedWordPress::diagnostic(
 				'updated_feeds:errors',
-				"Feed Error: [${url}] update returned error: $mesg"
+				"Feed Error: [{$url}] update returned error: $mesg"
 			);
 
 			$hours = get_option( 'feedwordpress_diagnostics_persistent_errors_hours', 2 );
@@ -36,8 +36,8 @@ class FeedWordPressDiagnostic {
 				$mostRecent = date( 'r', $error['ts'] );	// never used?... (gwyneth 20230919)
 				FeedWordPress::diagnostic(
 					'updated_feeds:errors:persistent',
-					"Feed Update Error: [${url}] returning errors"
-					." since ${since}:<br/><code>$mesg</code>",
+					"Feed Update Error: [{$url}] returning errors"
+					." since {$since}:<br/><code>$mesg</code>",
 					$url,
 					$error['since'],
 					$error['ts']
@@ -100,9 +100,9 @@ class FeedWordPressDiagnostic {
 		global $wp_version;
 
 		if ( !is_null($file)) :
-			$location = "line # ${line} of ".basename($file);
+			$location = "line # {$line} of ".basename($file);
 		else :
-			$location = "line # ${line}";
+			$location = "line # {$line}";
 		endif;
 
 		print '<p><strong>Critical error:</strong> There may be a bug in FeedWordPress. Please <a href="'.FEEDWORDPRESS_AUTHOR_CONTACT.'">contact the author</a> and paste the following information into your e-mail:</p>';

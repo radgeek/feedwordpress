@@ -207,10 +207,10 @@ class SyndicatedPost {
 					if ( ! is_null( $value ) ) :
 						if ( 'title' == $what ) : $key = 'syndication_source';
 						elseif ( 'feed' == $what ) : $key = 'syndication_feed';
-						else : $key = "syndication_source_${what}";
+						else : $key = "syndication_source_{$what}";
 						endif;
 
-						$sourcemeta["${key}_original"] = apply_filters(
+						$sourcemeta["{$key}_original"] = apply_filters(
 							'syndicated_item_original_source_' . $what,
 							$value,
 							$this
@@ -1533,7 +1533,7 @@ class SyndicatedPost {
 
 				// Allow FWP add-on filters to control the taxonomies we use to search for a term
 				$taxonomies = apply_filters("syndicated_post_terms_match", $taxonomies, $what, $this);
-				$taxonomies = apply_filters("syndicated_post_terms_match_${what}", $taxonomies, $this);
+				$taxonomies = apply_filters("syndicated_post_terms_match_{$what}", $taxonomies, $this);
 
 				// Allow FWP add-on filters to control with greater precision what happens on unmatched
 				$unmatched = apply_filters("syndicated_post_terms_unfamiliar",
@@ -1612,13 +1612,11 @@ class SyndicatedPost {
 	 * @uses SyndicatedPost::secure_author_id
 	 */
 	public function store () {
-		global $wpdb;
-
 		if ($this->filtered()) : // This should never happen.
 			FeedWordPressDiagnostic::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
 		endif;
 
-		$freshness = $this->freshness();
+		$freshness = $this->freshness();		// how strange, this is never used... (gwyneth 20230919)
 		if ($this->has_fresh_content()) :
 			$this->secure_author_id();
 		endif;
@@ -1860,11 +1858,10 @@ class SyndicatedPost {
 	/**
 	 * SyndicatedPost::normalize_post()
 	 *
-	 * @param bool $new If true, this post is to be inserted anew. If false, it is an update of an existing post.
+	 * @param bool $new If true, this post is to be inserted anew. If false, it is an update of an existing post. (Unused)
 	 * @return array A normalized representation of the post ready to be inserted into the database or sent to the WordPress API functions
 	 */
-	function normalize_post ($new = true)
-	{
+	function normalize_post( $new = true ) {
 		$out = $this->post;
 
 		$fullPost = $out['post_title'].$out['post_content'];
@@ -2024,21 +2021,19 @@ EOM;
 	 *
 	 * @param int $revision_id The revision ID to fix up meta-data
 	 */
-	function fix_revision_meta ($revision_id) {
-		global $wpdb;
-
-		$post_author = (int) $this->post['post_author'];
+	function fix_revision_meta( $revision_id ) {
+		$post_author = (int) $this->post['post_author'];	// is this a global? And if it is, where is it defined? (gwyneth 20230919)
 
 		$revision_id = (int) $revision_id;
 
 		// Let's fix the author.
-		set_post_field('post_author', $this->post['post_author'], $revision_id);
+		set_post_field( 'post_author', $this->post['post_author'], $revision_id );
 
 		// Let's fix the GUID to a dummy URL with the update hash.
-		set_post_field('guid', 'http://feedwordpress.radgeek.com/?rev='.$this->update_hash(), $revision_id);
+		set_post_field( 'guid', 'http://feedwordpress.radgeek.com/?rev=' . $this->update_hash(), $revision_id );
 
 		// Let's fire an event for add-ons and filters
-		do_action('syndicated_post_fix_revision_meta', $revision_id, $this);
+		do_action( 'syndicated_post_fix_revision_meta', $revision_id, $this );
 
 	} /* SyndicatedPost::fix_revision_meta () */
 

@@ -51,7 +51,7 @@ define( 'FEEDWORDPRESS_DEFAULT_CHECKIN_INTERVAL', DEFAULT_UPDATE_PERIOD / 10 );
 // Dependencies: modules packaged with FeedWordPress plugin.
 /** @var string Path to parent directory */
 $dir = dirname( __FILE__ );
-require_once "${dir}/externals/myphp/myphp.class.php";
+require_once "{$dir}/externals/myphp/myphp.class.php";
 
 /** @var bool|string Set to either true or 'yes' if debugging is set. */
 $feedwordpress_debug = FeedWordPress::param( 'feedwordpress_debug', get_option( 'feedwordpress_debug' ) );
@@ -115,7 +115,7 @@ foreach ( $wpCoreDependencies as $unit => $fileSlug ) :
 
 	$dependencyMet = ( ('class' == $unitType ) ? class_exists( $unitName ) : function_exists( $unitName ) );
 	if ( ! $dependencyMet ) :
-		$phpFileName = ABSPATH . WPINC . "/${fileSlug}.php";
+		$phpFileName = ABSPATH . WPINC . "/{$fileSlug}.php";
 		if ( file_exists( $phpFileName ) ) :
 			require_once $phpFileName;
 		else :
@@ -131,27 +131,27 @@ endif;
 
 // Dependencies: modules packaged with FeedWordPress plugin
 $dir = dirname( __FILE__ );
-require_once "${dir}/feedwordpressadminpage.class.php";
-require_once "${dir}/feedwordpresssettingsui.class.php";
-require_once "${dir}/feedwordpressdiagnostic.class.php";
-require_once "${dir}/admin-ui.php";
-require_once "${dir}/template-functions.php";
-require_once "${dir}/feedwordpresssyndicationpage.class.php";
-require_once "${dir}/compatability.php"; // Legacy API
-require_once "${dir}/syndicatedpost.class.php";
-require_once "${dir}/syndicatedlink.class.php";
-require_once "${dir}/feedwordpresshtml.class.php";
-require_once "${dir}/inspectpostmeta.class.php";
-require_once "${dir}/syndicationdataqueries.class.php";
-require_once "${dir}/extend/SimplePie/feedwordpie.class.php";
-require_once "${dir}/extend/SimplePie/feedwordpie_cache.class.php";
-require_once "${dir}/extend/SimplePie/feedwordpie_item.class.php";
-require_once "${dir}/extend/SimplePie/feedwordpie_file.class.php";
-require_once "${dir}/extend/SimplePie/feedwordpie_parser.class.php";
-require_once "${dir}/extend/SimplePie/feedwordpie_content_type_sniffer.class.php";
-require_once "${dir}/feedwordpressrpc.class.php";
-require_once "${dir}/feedwordpresshttpauthenticator.class.php";
-require_once "${dir}/feedwordpresslocalpost.class.php";
+require_once "{$dir}/feedwordpressadminpage.class.php";
+require_once "{$dir}/feedwordpresssettingsui.class.php";
+require_once "{$dir}/feedwordpressdiagnostic.class.php";
+require_once "{$dir}/admin-ui.php";
+require_once "{$dir}/template-functions.php";
+require_once "{$dir}/feedwordpresssyndicationpage.class.php";
+require_once "{$dir}/compatability.php"; // Legacy API
+require_once "{$dir}/syndicatedpost.class.php";
+require_once "{$dir}/syndicatedlink.class.php";
+require_once "{$dir}/feedwordpresshtml.class.php";
+require_once "{$dir}/inspectpostmeta.class.php";
+require_once "{$dir}/syndicationdataqueries.class.php";
+require_once "{$dir}/extend/SimplePie/feedwordpie.class.php";
+require_once "{$dir}/extend/SimplePie/feedwordpie_cache.class.php";
+require_once "{$dir}/extend/SimplePie/feedwordpie_item.class.php";
+require_once "{$dir}/extend/SimplePie/feedwordpie_file.class.php";
+require_once "{$dir}/extend/SimplePie/feedwordpie_parser.class.php";
+require_once "{$dir}/extend/SimplePie/feedwordpie_content_type_sniffer.class.php";
+require_once "{$dir}/feedwordpressrpc.class.php";
+require_once "{$dir}/feedwordpresshttpauthenticator.class.php";
+require_once "{$dir}/feedwordpresslocalpost.class.php";
 
 ####################################################################################
 ## GLOBAL PARAMETERS ###############################################################
@@ -232,7 +232,7 @@ function debug_out_human_readable_bytes( $quantity ) {
 		$quantity = floor( $quantity / 1024 );
 		$magnitude = array_shift( $orders );
 	endwhile;
-	return "${quantity} ${magnitude}";
+	return "{$quantity} ${magnitude}";
 }
 
 function debug_out_feedwordpress_footer() {
@@ -442,16 +442,16 @@ function syndication_comments_feed_link ($link) {
 	return $link;
 } /* function syndication_comments_feed_link() */
 
-	require_once("${dir}/feedwordpress.pings.functions.php");
+	require_once("{$dir}/feedwordpress.pings.functions.php");
 
-	require_once("${dir}/feedwordpress.wp-admin.post-edit.functions.php");
+	require_once("{$dir}/feedwordpress.wp-admin.post-edit.functions.php");
 
 ################################################################################
 ## class FeedWordPressBoilerplateReformatter ###################################
 ################################################################################
 
-require_once("${dir}/feedwordpressboilerplatereformatter.class.php");
-require_once("${dir}/feedwordpressboilerplatereformatter.shortcode.functions.php");
+require_once("{$dir}/feedwordpressboilerplatereformatter.class.php");
+require_once("{$dir}/feedwordpressboilerplatereformatter.shortcode.functions.php");
 
 ################################################################################
 ## class FeedWordPress #########################################################
@@ -2227,7 +2227,7 @@ class FeedWordPress {
 									$cell = date('j-M-y, h:i a', $cell);
 								endif;
 								$class = strtolower(preg_replace('/\s+/', '-', $col));
-								$body .= "<td class=\"$class\">${cell}</td>";
+								$body .= "<td class=\"$class\">{$cell}</td>";
 							endforeach;
 							$body .= "</tr>\n";
 						endforeach;
@@ -2372,7 +2372,7 @@ EOMAIL;
 
 	public function plugin_dir_path ($path = '') {
 		$dir = plugin_dir_path( __FILE__ );
-		$file_path = "${dir}${path}";
+		$file_path = "{$dir}${path}";
 		return apply_filters( "feedwordpress_plugin_dir_path", $file_path );
 	} /* FeedWordPress::plugin_dir_path () */
 

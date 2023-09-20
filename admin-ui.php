@@ -610,9 +610,9 @@ function fwp_links_table_rows_errors_since( $the_error ) {
  */
 function fwp_links_table_rows_last_updated( $o_s_link ) {
 	if ( ! is_null( $o_s_link->setting( 'update/last' ) ) ) :
-		esc_html_e( 'Last checked ') . esc_html( fwp_time_elapsed( $o_s_link->setting( 'update/last' ) ) );
+		print __( 'Last checked ') . esc_html( fwp_time_elapsed( $o_s_link->setting( 'update/last' ) ) );
 	else :
-		esc_html_e( 'None yet' );
+		print __( 'None yet' );
 	endif;
 
 	$ttl = $o_s_link->setting( 'update/ttl' );
@@ -673,10 +673,19 @@ function fwp_links_table_rows_file_size( $o_s_link ) {
 	if ( is_null( $o_s_link->setting( 'update/error' ) ) ) :
 
 		if ( ! is_null( $o_s_link->setting( 'link/filesize' ) ) ) :
-			// size_format() _can_ return false, so we check for that first with the ternary operator (gwyneth 20230918)
-			$mesg_file_size_lines[] = ( size_format( $o_s_link->setting( 'link/filesize' ) ) ?: __( 'unknown bytes' ) )
-				. __( ' total' );
+			// size_format() _can_ return false, so we check for that first (gwyneth 20230918)
+			$formatted_bytes = size_format( $o_s_link->setting( 'link/filesize' ) );
+			if ( $formatted_bytes ) :
+				$mesg_file_size_lines[] = $formatted_bytes . '&nbsp;' . __( 'total' );
+			else:
+				$mesg_file_size_lines[] = __( '(invalid number of bytes)' );
+			endif;
+			FeedWordPress::diagnostic( 'link/filesize', 'File size for this link was reported as being `' . $o_s_link->setting( 'link/filesize' ) . '\'' );
+		else :
+			$mesg_file_size_lines[] = __( '(unknown bytes)' );
+			FeedWordPress::diagnostic( 'link/filesize', 'No error, but link/filesize reported NULL bytes.' );
 		endif;
+
 
 	endif;
 

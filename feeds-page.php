@@ -1223,7 +1223,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		else:
 			foreach ($finder as $url => $ff) :
 				$url = esc_html($url);
-				print "<h3>Searched for feeds at ${url}</h3>\n";
+				print "<h3>Searched for feeds at {$url}</h3>\n";
 				print "<p><strong>".__('Error').":</strong> ".__("FeedWordPress couldn't find any feeds at").' <code><a href="'.htmlspecialchars($lookup).'">'.htmlspecialchars($lookup).'</a></code>';
 				print ". ".__('Try another URL').".</p>";
 
