@@ -232,7 +232,7 @@ function debug_out_human_readable_bytes( $quantity ) {
 		$quantity = floor( $quantity / 1024 );
 		$magnitude = array_shift( $orders );
 	endwhile;
-	return "{$quantity} ${magnitude}";
+	return "{$quantity} {$magnitude}";
 }
 
 function debug_out_feedwordpress_footer() {
@@ -2372,7 +2372,7 @@ EOMAIL;
 
 	public function plugin_dir_path ($path = '') {
 		$dir = plugin_dir_path( __FILE__ );
-		$file_path = "{$dir}${path}";
+		$file_path = "{$dir}{$path}";
 		return apply_filters( "feedwordpress_plugin_dir_path", $file_path );
 	} /* FeedWordPress::plugin_dir_path () */
 

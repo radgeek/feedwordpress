@@ -138,13 +138,13 @@ class FeedWordPressSettingsUI {
 
 		$ext = ".php";
 		if ( strlen( $type ) > 0 ):
-			$ext = ".{$type}${ext}";
+			$ext = ".{$type}{$ext}";
 		endif;
 
 		if ( strlen( $name ) > 0 ) :
-			$templates[] = "{$slug}-${name}${ext}";
+			$templates[] = "{$slug}-{$name}{$ext}";
 		endif;
-		$templates[] = "{$slug}${ext}";
+		$templates[] = "{$slug}{$ext}";
 
 		do_action( "feedwordpress_get_template_part", $slug, $name, $type, $args );
 
