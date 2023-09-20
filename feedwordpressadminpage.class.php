@@ -15,6 +15,7 @@ class FeedWordPressAdminPage {
 	protected $updated = false;
 	protected $mesg = NULL;
 
+	/** @var SyndicatedLink|null  An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings. */
 	var $link = NULL;
 	var $dispatch = NULL;
 	var $filename = NULL;
@@ -24,7 +25,7 @@ class FeedWordPressAdminPage {
 	/**
 	 * Construct the admin page object.
 	 *
-	 * @param mixed $link An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings
+	 * @param mixed $link An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings.
 	 */
 	public function __construct( $page = 'feedwordpressadmin', $link = NULL ) {
 		$this->link = $link;
@@ -65,7 +66,8 @@ class FeedWordPressAdminPage {
 		do_action($this->dispatch.'_post', null, $this);
 	}
 
-	public function update_feed () {
+
+	public function update_feed() {
 		global $feedwordpress;
 
 		add_action('feedwordpress_check_feed', 'update_feeds_mention');
@@ -114,60 +116,91 @@ class FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressAdminPage::save_settings () */
 
-	public function for_feed_settings () { return (is_object($this->link) and method_exists($this->link, 'found') and $this->link->found()); }
-	public function for_default_settings () { return ! $this->for_feed_settings(); }
 
-	public function setting ($names, $fallback_value = NULL, $params = array()) {
-		if ( !is_array($params)) :
-			$params = array('default' => $params);
+	public function for_feed_settings() {
+		return ( is_object( $this->link ) and method_exists( $this->link, 'found' ) and $this->link->found() );
+	} /* FeedWordPressAdminPage */
+
+	public function for_default_settings () {
+		return ! $this->for_feed_settings();
+	} /* FeedWordPressAdminPage */
+
+	/**
+	 * Attempts to retrieve a setting for a feed.
+	 *
+	 * @param  string|array  $names  Either a string with the name of the feed,
+	 *                               or an associative array where the 'feed' parameter
+	 *                               indicates the feed.
+	 * @param  string|null   $fallback_value  Fallback option value, if everything fails.
+	 * @param  Array         $params  List of attributes.
+	 *
+	 * @return mixed  Retrieved option from settings.
+	 */
+	public function setting( $names, $fallback_value = NULL, $params = array() ) {
+		if ( ! is_array( $params ) ) :
+			$params = array( 'default' => $params );
 		endif;
-		$params = shortcode_atts(array(
-		'default' => 'default',
-		'fallback' => true,
-		), $params);
+		$params = shortcode_atts( array(
+			'default'  => 'default',
+			'fallback' => true,
+			),
+		$params );
 
-		if (is_string($names)) :
-			$feed_name = $names;
-			$global_name = 'feedwordpress_'.preg_replace('![\s/]+!', '_', $names);
+		if ( is_string( $names ) ) :
+			$feed_name   = $names;
+			$global_name = 'feedwordpress_' . preg_replace( '![\s/]+!', '_', $names );
 		else :
-			$feed_name = $names['feed'];
-			$global_name = 'feedwordpress_'.$names['global'];
+			$feed_name   = $names['feed'];
+			$global_name = 'feedwordpress_' . $names['global'];
 		endif;
 
-		if ($this->for_feed_settings()) : // Check feed-specific setting first; fall back to global
-			if ( ! $params['fallback']) : $global_name = NULL; endif;
-			$ret = $this->link->setting($feed_name, $global_name, $fallback_value, $params['default']);
+		if ( $this->for_feed_settings() ) : // Check feed-specific setting first; fall back to global
+			if ( ! $params['fallback'] ) :
+				$global_name = NULL;
+			endif;
+			$ret = $this->link->setting( $feed_name, $global_name, $fallback_value, $params['default'] );
 		else : // Check global setting
-			$ret = get_option($global_name, $fallback_value);
+			$ret = get_option( $global_name, $fallback_value );
 		endif;
 		return $ret;
-	}
+	} /* FeedWordPressAdminPage::setting() */
 
-	public function update_setting ($names, $value, $default = 'default') {
-		if (is_string($names)) :
-			$feed_name = $names;
-			$global_name = 'feedwordpress_'.preg_replace('![\s/]+!', '_', $names);
+	/**
+	 * Updates feed settings.
+	 *
+	 * @see setting()
+	 *
+	 * @param  string|array  $names    Either a string with the name of the feed,
+	 *                                 or an associative array where the 'global' parameter
+	 *                                 indicates the feed.
+	 * @param  string|null   $value    Setting value to update.
+	 * @param  string        $default  Setting default option (defaults to 'default').
+	 */
+	public function update_setting( $names, $value, $default = 'default' ) {
+		if ( is_string( $names ) ) :
+			$feed_name   = $names;
+			$global_name = 'feedwordpress_' . preg_replace( '![\s/]+!', '_', $names );
 		else :
-			$feed_name = $names['feed'];
-			$global_name = 'feedwordpress_'.$names['global'];
+			$feed_name   = $names['feed'];
+			$global_name = 'feedwordpress_' . $names['global'];
 		endif;
 
-		if ($this->for_feed_settings()) : // Update feed-specific setting
-			$this->link->update_setting($feed_name, $value, $default);
+		if ( $this->for_feed_settings() )  : // Update feed-specific setting
+			$this->link->update_setting( $feed_name, $value, $default );
 		else : // Update global setting
-			update_option($global_name, $value);
+			update_option( $global_name, $value );
 		endif;
-	} /* FeedWordPressAdminPage::update_setting () */
+	} /* FeedWordPressAdminPage::update_setting() */
 
-	public function save_requested () {
+	public function save_requested() {
 		return ! ( is_null( MyPHP::post('save') ) && is_null( MyPHP::post('submit') ) );
 	}
-	public function update_requested () {
+
+	public function update_requested() {
 		return ( strlen( MyPHP::post('update', '') ) > 0 );
 	}
 
-	public function submitted_link_id () {
-
+	public function submitted_link_id() {
 		// Presume global unless we get a specific link ID
 		$link_id = NULL;
 

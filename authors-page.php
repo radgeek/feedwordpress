@@ -30,7 +30,6 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 	/**
 	 * Refreshes the author list and optionally sort it with the natural
 	 * alphanumeric sort algorithm.
-	 *
 	 */
 	function refresh_author_list() {
 		$this->authorlist = fwp_author_list();
@@ -41,8 +40,15 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 		endif;
 	} /* FeedWordPressAuthorsPage::refresh_author_list) */
 
+	/**
+	 * Displays the page box for the syndicated authors.
+	 *
+	 * @param  FeedWordPressAuthorsPage  $page  FWP dashboard page.
+	 * @param  string|null               $box   Page box (unused).
+	 */
 	/*static*/ function syndicated_authors_box( $page, $box = NULL ) {
-		$link = $page->link;
+		/** @var SyndicatedLink|null  An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings. */
+		$link = $page->link;	// unused? (gwyneth 20230920)
 		$unfamiliar = array( 'create' => '','default' => '','filter' => '' );
 
 		if ( $page->for_feed_settings() ) :
@@ -53,14 +59,14 @@ class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 		endif;
 		$unfamiliar[$key] = true;
 
-		$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
+		$match_author_by_email = ! ( 'yes' == get_option( "feedwordpress_do_not_match_author_by_email" ) );
 		$null_emails = FeedWordPress::null_email_set();
 
 		// Hey ho, let's go...
 		?>
 <table class="form-table">
 <?php
-if ($page->for_default_settings()) :
+if ( $page->for_default_settings() ) :
 ?>
 <tr><th>Unmatched authors</th>
 <td><span>Authors who haven&rsquo;t been syndicated before</span>
@@ -171,7 +177,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
     <option value="site-default"<?php fwp_selected_flag($unfamiliar, 'site-default'); ?>>are handled according to the default for all feeds</option>
 <?php endif; ?>
     <option value="create"<?php fwp_selected_flag($unfamiliar, 'create'); ?>>will have a new author account created for them</option>
-    <?php foreach ($page->authorlist as $author_id => $author_name) : ?>
+    <?php foreach ( $page->authorlist as $author_id => $author_name ) : ?>
       <option value="<?php echo esc_attr($author_id); ?>"<?php fwp_selected_flag($unfamiliar, $author_id); ?>>will have their posts attributed to <?php echo esc_html($author_name); ?></option>
     <?php endforeach; ?>
     <option value="newuser">will have their posts attributed to a user named ...</option>
@@ -188,7 +194,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 </tr>
 <?php endif; ?>
 
-<?php if ($page->for_default_settings()) : ?>
+<?php if ( $page->for_default_settings() ) : ?>
 <tr>
 <th scope="row">Matching Authors</th>
 <td><ul style="list-style: none; margin: 0; padding: 0;">
@@ -205,8 +211,14 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 </tbody>
 </table>
 		<?php
-	} /* FeedWordPressAuthorsPage::syndicated_authors_box () */
+	} /* FeedWordPressAuthorsPage::syndicated_authors_box() */
 
+	/**
+	 * Displays a box for fixing mismatched authors.
+	 *
+	 * @param  FeedWordPressAuthorsPage  $page  FWP dashboard page.
+	 * @param  string|null               $box   Page box (unused).
+	 */
 	/*static*/ function fix_authors_box( $page, $box = NULL )
 	{
 		?>
@@ -363,7 +375,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 	 */
 	function save_settings () {
 		if ($this->for_feed_settings()) :
-			$alter = array();
+			// $alter = array();	// what is this array? It's never used. (gwyneth 20230920)
 
 			// Unfamiliar author rule
 			$unfamiliar_author = FeedWordPress::post( 'unfamiliar_author' );
