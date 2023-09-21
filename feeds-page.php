@@ -530,10 +530,9 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$article = __( 'a' );
 		endif;
 		?>
-		<p><?php _e( 'Wait no more than
-		than' ); ?> <input name="fetch_timeout" type="number" min="0" size="3" value="<?php print esc_attr( $timeout ); ?>" />
-		<?php _e( 'second(s) when trying to fetch '); print esc_html( $article ); _(' feed to check for updates. '); ?></p>
-		<p><?php _e( 'If ' ); print esc_html( $article ); _(' source&rsquo;s web server does not respond before time runs
+		<p><?php _e( 'Wait no more than' ); ?> <input name="fetch_timeout" type="number" min="0" size="3" value="<?php print esc_attr( $timeout ); ?>" />
+		<?php _e( 'second(s) when trying to fetch '); print esc_html( $article ); _e(' feed to check for updates. '); ?></p>
+		<p><?php _e( 'If ' ); print esc_html( $article ); _e(' source&rsquo;s web server does not respond before time runs
 		out, FeedWordPress will skip over the source and try again during the next update cycle.' ); ?></p>
 		<?php
 	} /* FeedWordPressFeedsPage::fetch_timeout_setting() */
@@ -554,8 +553,8 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	/**
 	 * Displays the advanced settings box on the FWP dashboard page.
 	 *
-	 * @param  object     $page  Current page object (?).
-	 * @param  mixed|null $box   A box inside this object.
+	 * @param  FeedWordPressFeedsPage  $page  A page object, unused.
+	 * @param  mixed|null              $box   A box inside this object, unused.
 	 */
 	function advanced_settings_box( $page, $box = NULL ) {
 		?>
@@ -643,13 +642,13 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$feedwordpress->httpauth->methods_available(),
 		);
 
-		$linkRssAuthId = sanitize_html_class( 'link-rss-authentication' . $slug );
+		$linkRssAuthId        = sanitize_html_class( 'link-rss-authentication' . $slug );
 		$linkRssCredentialsId = sanitize_html_class( 'link-rss-authentication-credentials' . $slug );
-		$linkRssAuthMethodId = sanitize_html_class( 'link-rss-authentication-method' . $slug );
+		$linkRssAuthMethodId  = sanitize_html_class( 'link-rss-authentication-method' . $slug );
 
 		if ( count( $authMethods ) > 1 ) : /* More than '-' */
 		?>
-		<div class="link-rss-authentication" id="<?php print esc_attr($linkRssAuthId); ?>">
+		<div class="link-rss-authentication" id="<?php print esc_attr( $linkRssAuthId ); ?>">
 		<table>
 		<tbody>
 		<tr class="link-rss-authentication-credentials" id="<?php print esc_attr( $linkRssCredentialsId ); ?>">
@@ -675,7 +674,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		jQuery('<td><a class="add-remove remove-it" id="link-rss-userpass-remove<?php print esc_attr( $slug ); ?>" href="#"><span class="x">(X)</span> <?php _e( 'Remove' ); ?></a></td>')
 			.appendTo('#<?php print esc_attr( $linkRssCredentialsId ); ?>' )
 			.click( feedAuthenticationMethodUnPress );
-		jQuery( '#link-rss-auth-method<?php print esc_attr($slug); ?>' ).change( feedAuthenticationMethod );
+		jQuery( '#link-rss-auth-method<?php print esc_attr( $slug ); ?>' ).change( feedAuthenticationMethod );
 		feedAuthenticationMethod( {
 			init: true,
 			node: jQuery( '#<?php print esc_attr( $linkRssAuthId ); ?>' )
@@ -742,6 +741,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 			$hardcode['url']         = get_option( 'feedwordpress_hardcode_url' );
 		endif;
 
+		/** @var bool  Hide authentication (unused). */
 		$hideAuth = false;
 
 		$username = $this->setting( 'http username', NULL );
@@ -821,7 +821,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		jQuery('<td><a href="#" class="add-remove link-rss-params-remove"><span class="x">(X)</span> <?php _e( 'Remove' ); ?></a></td>' ).insertAfter( '.link-rss-params-value-cell' );
 
 		jQuery( '#link-rss-params-new' ).hide();
-		jQuery( '<a class="add-remove" id="link-rss-params-add" href="#">+ <?php _e( 'Add a query parameter' ); ?></a>').insertAfter( '#link-rss-params' );
+		jQuery( '<a class="add-remove" id="link-rss-params-add" href="#"><span class="dashicons dashicons-plus fwp-no-underline"></span> <?php _e( 'Add a query parameter' ); ?></a>').insertAfter( '#link-rss-params' );
 		jQuery( '#link-rss-params-add' ).click( function () {
 			var next = jQuery( '#link-rss-params-num' ).val();
 			var newRow = jQuery( '#link-rss-params-new' ).clone().attr( 'id', 'link-rss-params-' + next );
@@ -997,7 +997,6 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 	}
 
 	function display_feedfinder () {
-		global $wpdb;
 		$lookup = FeedWordPress::param( 'lookup' );
 
 		$auth = FeedWordPress::param( 'link_rss_auth_method' );
@@ -1224,7 +1223,7 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 		else:
 			foreach ($finder as $url => $ff) :
 				$url = esc_html($url);
-				print "<h3>Searched for feeds at ${url}</h3>\n";
+				print "<h3>Searched for feeds at {$url}</h3>\n";
 				print "<p><strong>".__('Error').":</strong> ".__("FeedWordPress couldn't find any feeds at").' <code><a href="'.htmlspecialchars($lookup).'">'.htmlspecialchars($lookup).'</a></code>';
 				print ". ".__('Try another URL').".</p>";
 
@@ -1240,25 +1239,31 @@ class FeedWordPressFeedsPage extends FeedWordPressAdminPage {
 				endif;
 
 				// Do some more diagnostics if the API for it is available.
-				if (function_exists('_wp_http_get_object')) :
+				// Note to @radgeek: consider using a hook instead: https://developer.wordpress.org/reference/hooks/http_api_transports/ (gwyneth 20230920)
+				if ( function_exists( '_wp_http_get_object' ) ) :
 					$httpObject = _wp_http_get_object();
 
+					/*
+					// _getTransport() was totally deprecated (gwyneth 20230920)
 					if (is_callable(array($httpObject, '_getTransport'))) :
+
 						$transports = $httpObject->_getTransport();
 
 						print "<h4>".__('HTTP Transports available').":</h4>\n";
 						print "<ol>\n";
 						print "<li>".implode("</li>\n<li>", array_map('get_class', $transports))."</li>\n";
 						print "</ol>\n";
-					elseif (is_callable(array($httpObject, '_get_first_available_transport'))) :
+					else
+					*/
+					if ( is_callable( array( $httpObject, '_get_first_available_transport' ) ) ) :
 						$transport = $httpObject->_get_first_available_transport(
 							array(),
 							$url
 						);
 
-						print "<h4>".__("HTTP Transport").":</h4>\n";
+						print "<h4>" . __("HTTP Transport") . ":</h4>\n";
 						print "<ol>\n";
-						print "<li>".MyPHP::val($transport)."</li>\n";
+						print "<li>" . MyPHP::val($transport) . "</li>\n";
 						print "</ol>\n";
 					endif;
 

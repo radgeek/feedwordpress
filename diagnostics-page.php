@@ -373,13 +373,13 @@ function clone_http_test_args_keyvalue_prototype () {
 	<tr>
 	<td>
 	<div id="http-test-args">
-	<div id="http-test-args-keyvalue-prototype" class="http-test-args-keyvalue"><label>Args:
+	<div id="http-test-args-keyvalue-prototype" class="http-test-args-keyvalue"><label><?php _e( 'Args' ); ?>:
 	<input type="text" class='http_test_args_key' name="http_test_args_key[0]" value="" placeholder="key" /></label>
 	<label>= <input type="text" class='http_test_args_value' name="http_test_args_value[0]" value="" placeholder="value" /></label>
 	</div>
 	</div>
 	</td>
-	<td><a href="#http-test-args" onclick="return clone_http_test_args_keyvalue_prototype();">+ Add</a></td>
+	<td><a href="#http-test-args" onclick="return clone_http_test_args_keyvalue_prototype();"><span class="dashicons dashicons-plus fwp-no-underline"></span> <?php _e( 'Add' ); ?></a></td>
 	</tr>
 	</table>
 	</td>
@@ -388,13 +388,13 @@ function clone_http_test_args_keyvalue_prototype () {
 	<tr>
 	<th>XPath:</th>
 	<td><div><input type="text" name="http_test_xpath" value="<?php print esc_attr($xpath); ?>" placeholder="xpath-like query" /></div>
-	<div><p>Leave blank to test HTTP, fill in to test a query.</p></div>
+	<div><p><?php _e( 'Leave blank to test HTTP, fill in to test a query.' ); ?></p></div>
 	</td>
 	</tr>
 
 	<?php if (isset($page->test_html['http_test'])) : ?>
 	<tr>
-	<th scope="row">RESULTS:</th>
+	<th scope="row"><?php _e( 'RESULTS:' ); ?></th>
 	<td>
 	<div>URL: <code><?php print esc_html($page->test_html['url']); ?></code></div>
 	<div style="position: relative">

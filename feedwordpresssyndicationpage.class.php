@@ -205,7 +205,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 				// $link_list has previously been sanitized for html by self::requested_link_ids_sql
 				$targets = $wpdb->get_results("
 				SELECT * FROM $wpdb->links
-				WHERE link_id IN ${link_list}
+				WHERE link_id IN {$link_list}
 				");
 				if ( is_array( $targets ) ) :
 					foreach ($targets as $target) :
@@ -630,7 +630,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		endif;
 		// Hey ho, let's go...
 		?>
-		<!-- Page: <? echo $page; ?> Box: <? echo $box ?: '(empty)'; ?> -->
 		<div style="float: left; background: /* #F5F5F5 */ white; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url( plugins_url( /* "feedwordpress.png" */ "assets/images/icon.svg", __FILE__ ) ); ?>" width="36px" height="36px" alt="FeedWordPress Logo" /></a></div>
 		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;"><?php _e( 'Managed by' ); ?><a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
 		<?php print esc_html(FEEDWORDPRESS_VERSION); ?>.</p>
@@ -720,7 +719,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		$formHref = sprintf( '%s&amp;visibility=%s', $hrefPrefix, urlencode($visibility) );
 		?>
 		<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-		<!-- Page: <? echo $page ?> Box: <? echo $box ?: '(empty)'; ?> -->
 		<div class="tablenav">
 
 		<div id="add-multiple-uri" class="hide-if-js">
@@ -866,7 +864,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 	 */
 	function bleg_thanks( $page, $box = NULL ) {
 		?>
-		<!-- Page: <? echo $page; ?> Box: <? echo $box ?: '(empty)'; ?> -->
 		<div class="donation-thanks">
 		<h4><?php _e( 'Thank you!' ); ?></h4>
 		<p><?php _e( '<strong>Thank you</strong> for your contribution to <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a> development.
@@ -894,7 +891,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		?>
 <script type="text/javascript">
 /* <![CDATA[ */
-	// Note: Flattr changed their business model and doesn+t offer this service any more as of June 2023
+	// Note: Flattr changed their business model and doesn't offer this service any more as of June 2023
     (function() {
         var s = document.createElement( 'script' ), t = document.getElementsByTagName( 'script' )[0];
         s.type = 'text/javascript';
@@ -903,7 +900,6 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
         t.parentNode.insertBefore( s, t );
     })();
 /* ]]> */</script>
-<!-- Page is: <? echo $page; ?> Box is: <? echo $box ?: '(empty)'; ?> -->
 <div class="donation-form">
 <h4><?php _e( 'Consider a Donation to FeedWordPress' ); ?></h4>
 <form action="https://www.paypal.com/cgi-bin/webscr" accept-charset="UTF-8" method="post"><div>
@@ -919,21 +915,21 @@ support, and documentation.' ); ?></p>
 <div id="flattr-paypal">
 
 <div class="hovered-component" style="display: inline-block; vertical-align: bottom">
-<a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>"><img src="<?php print esc_url( plugins_url('/'.FeedWordPress::path('assets/images/btc-qr-128px.png') ) ); ?>" alt="Donate" /></a>
-<div><a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>">via bitcoin<span class="hover-on pop-over" style="background-color: #ddffdd; padding: 5px; color: black; border-radius: 5px;">bitcoin:<?php print esc_html(FEEDWORDPRESS_BLEG_BTC); ?></span></a></div>
+<a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>"><img src="<?php print esc_url( plugins_url('/'.FeedWordPress::path('assets/images/btc-qr-128px.png') ) ); ?>" alt="<?php _e( 'Donate' ); ?>" /></a>
+<div><a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>"><?php _e( 'via' ); ?> bitcoin<span class="hover-on pop-over" style="background-color: #ddffdd; padding: 5px; color: black; border-radius: 5px;">bitcoin:<?php print esc_html( FEEDWORDPRESS_BLEG_BTC ); ?></span></a></div>
 </div>
 
 <div style="display: inline-block; vertical-align: bottom">
-<input type="image" name="submit" src="<?php print esc_url(plugins_url('/' . FeedWordPress::path('assets/images/paypal-donation-64px.png' ) ) ); ?>" style="width: 128px; height: 128px;" alt="Donate via PayPal" />
-<input type="hidden" name="business" value="<?php print esc_attr(FEEDWORDPRESS_BLEG_PAYPAL); ?>"  />
+<input type="image" name="submit" src="<?php print esc_url( plugins_url( '/' . FeedWordPress::path('assets/images/paypal-donation-64px.png' ) ) ); ?>" style="width: 128px; height: 128px;" alt="<?php _e( 'Donate via PayPal' ); ?>" />
+<input type="hidden" name="business" value="<?php print esc_attr( FEEDWORDPRESS_BLEG_PAYPAL ); ?>"  />
 <input type="hidden" name="cmd" value="_xclick"  />
-<input type="hidden" name="item_name" value="FeedWordPress donation"  />
+<input type="hidden" name="item_name" value="<?php _e( 'FeedWordPress donation' ); ?>"  />
 <input type="hidden" name="no_shipping" value="1"  />
-<input type="hidden" name="return" value="<?php print esc_attr($this->admin_page_href(basename($this->filename), array('paid' => 'yes'))); ?>"  />
+<input type="hidden" name="return" value="<?php print esc_attr( $this->admin_page_href( basename( $this->filename ), array( 'paid' => 'yes' ) ) ); ?>"  />
 <input type="hidden" name="currency_code" value="USD" />
 <input type="hidden" name="notify_url" value="http://feedwordpress.radgeek.com/ipn/donation"  />
 <input type="hidden" name="custom" value="1"  />
-<div>via PayPal</div>
+<div><?php _e( 'via PayPal' ); ?></div>
 </div> <!-- style="display: inline-block" -->
 
 </div> <!-- id="flattr-paypal" -->
@@ -948,29 +944,29 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 
 <div class="sod-off">
 <form style="text-align: center" action="<?php print esc_url( $this->form_action() ); ?>" method="POST"><div>
-<input class="button" type="submit" name="maybe_later" value="<?php _e( "Maybe Later" ); ?>/>
-<input class="button" type="submit" name="go_away" value="<?php _e( "Dismiss" ); ?>/>
+<input class="button" type="submit" name="maybe_later" value="<?php _e( 'Maybe Later' ); ?>"/>
+<input class="button" type="submit" name="go_away" value="<?php _e( 'Dismiss' ); ?>"/>
 </div></form>
 </div>
 </div> <!-- class="donation-form" -->
 		<?php
-	} /* FeedWordPressSyndicationPage::bleg_box () */
+	} /* FeedWordPressSyndicationPage::bleg_box() */
 
 	/**
 	 * Override the default display of a save-settings button and replace
 	 * it with nothing.
 	 */
-	function interstitial () {
+	function interstitial() {
 		/* NOOP */
 	} /* FeedWordPressSyndicationPage::interstitial() */
 
-	function multidelete_page () {
+	function multidelete_page() {
 		global $wpdb;
 
 		// If this is a POST, validate source and user credentials
-		FeedWordPressCompatibility::validate_http_request(/*action=*/ 'feedwordpress_feeds', /*capability=*/ 'manage_links');
+		FeedWordPressCompatibility::validate_http_request( /*action=*/ 'feedwordpress_feeds', /*capability=*/ 'manage_links' );
 
-		if (MyPHP::post('submit')==FWP_CANCEL_BUTTON) :
+		if ( MyPHP::post( 'submit' ) == FWP_CANCEL_BUTTON ) :
 			return true; // Continue without further ado.
 		endif;
 
@@ -1079,7 +1075,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 			// $link_list has previously been sanitized for html by self::requested_link_ids_sql
 			$targets = $wpdb->get_results("
 				SELECT * FROM $wpdb->links
-				WHERE link_id IN ${link_list}
+				WHERE link_id IN {$link_list}
 				");
 	?>
 	<form action="<?php print esc_url( $this->form_action() ); ?>" method="post">
@@ -1198,7 +1194,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 			// $link_list has previously been sanitized for html by self::requested_link_ids_sql
 			$targets = $wpdb->get_results("
 				SELECT * FROM $wpdb->links
-				WHERE link_id IN ${link_list}
+				WHERE link_id IN {$link_list}
 				");
 	?>
 	<form action="<?php print esc_url( $this->form_action() ); ?>" method="post">
@@ -1380,7 +1376,7 @@ function fwp_dashboard_update_if_requested ($object) {
 				$display_uri = esc_html(feedwordpress_display_url($uri));
 				$uri = esc_html($uri);
 				echo "<li><p>" . __( "<strong>Error:</strong> There was a problem updating " )
-				. "<code><a href=\"$uri\">${display_uri}</a></code></p></li>\n";
+				. "<code><a href=\"$uri\">{$display_uri}</a></code></p></li>\n";
 			endif;
 		endforeach;
 		echo "</ul>\n";

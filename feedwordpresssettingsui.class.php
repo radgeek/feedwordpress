@@ -20,7 +20,7 @@ class FeedWordPressSettingsUI {
 			$fwp = preg_quote( FeedWordPress::path() );
 			$admin_page = (
 				is_admin()
-				and preg_match( "|^${fwp}/|", MyPHP::request( 'page' ) )
+				and preg_match( "|^{$fwp}/|", MyPHP::request( 'page' ) )
 			);
 		endif;
 		return $admin_page;
@@ -46,11 +46,23 @@ class FeedWordPressSettingsUI {
 	static function admin_styles() {
 		?>
 		<style type="text/css">
+		/*
 		#feedwordpress-admin-feeds .link-rss-params-remove .x, .feedwordpress-admin .remove-it .x {
 			background: url(<?php print admin_url( 'images/xit.gif' ) ?>) no-repeat scroll 0 0 transparent;
 		}
 		#feedwordpress-admin-feeds .link-rss-params-remove:hover .x, .feedwordpress-admin .remove-it:hover .x {
 			background: url(<?php print admin_url( 'images/xit.gif' ) ?>) no-repeat scroll -10px 0 transparent;
+		}
+		*/
+		#feedwordpress-admin-feeds .link-rss-params-remove .x, .feedwordpress-admin .remove-it .x {
+			content: "\f153"; /* dashicons-dismiss */
+			color: var(--wp-components-color-foreground,#1e1e1e);
+			background-color: var(--wp-components-color-background);
+		}
+		#feedwordpress-admin-feeds .link-rss-params-remove:hover .x, .feedwordpress-admin .remove-it:hover .x {
+			content: "\f153"; /* dashicons-dismiss */
+			color: var(--wp-components-color-accent);
+			background-color: var(--wp-components-color-background);
 		}
 
 		/* Note: the old images referred here were deprecated around 2009 or so and are *not*
@@ -118,7 +130,7 @@ class FeedWordPressSettingsUI {
 	static public function get_template_part( $slug, $name = null, $type = null, $args = array() ) {
 		global $feedwordpress;
 
-		do_action( "feedwordpress_get_template_part_${slug}", $slug, $name, $type, $args );
+		do_action( "feedwordpress_get_template_part_{$slug}", $slug, $name, $type, $args );
 
 		$templates = array();
 		$name = (string) $name;
@@ -126,13 +138,13 @@ class FeedWordPressSettingsUI {
 
 		$ext = ".php";
 		if ( strlen( $type ) > 0 ):
-			$ext = ".${type}${ext}";
+			$ext = ".{$type}{$ext}";
 		endif;
 
 		if ( strlen( $name ) > 0 ) :
-			$templates[] = "${slug}-${name}${ext}";
+			$templates[] = "{$slug}-{$name}{$ext}";
 		endif;
-		$templates[] = "${slug}${ext}";
+		$templates[] = "{$slug}{$ext}";
 
 		do_action( "feedwordpress_get_template_part", $slug, $name, $type, $args );
 

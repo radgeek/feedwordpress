@@ -51,7 +51,7 @@ define( 'FEEDWORDPRESS_DEFAULT_CHECKIN_INTERVAL', DEFAULT_UPDATE_PERIOD / 10 );
 // Dependencies: modules packaged with FeedWordPress plugin.
 /** @var string Path to parent directory */
 $dir = dirname( __FILE__ );
-require_once "${dir}/externals/myphp/myphp.class.php";
+require_once "{$dir}/externals/myphp/myphp.class.php";
 
 /** @var bool|string Set to either true or 'yes' if debugging is set. */
 $feedwordpress_debug = FeedWordPress::param( 'feedwordpress_debug', get_option( 'feedwordpress_debug' ) );
@@ -115,7 +115,7 @@ foreach ( $wpCoreDependencies as $unit => $fileSlug ) :
 
 	$dependencyMet = ( ('class' == $unitType ) ? class_exists( $unitName ) : function_exists( $unitName ) );
 	if ( ! $dependencyMet ) :
-		$phpFileName = ABSPATH . WPINC . "/${fileSlug}.php";
+		$phpFileName = ABSPATH . WPINC . "/{$fileSlug}.php";
 		if ( file_exists( $phpFileName ) ) :
 			require_once $phpFileName;
 		else :
@@ -131,27 +131,27 @@ endif;
 
 // Dependencies: modules packaged with FeedWordPress plugin
 $dir = dirname( __FILE__ );
-require_once "${dir}/feedwordpressadminpage.class.php";
-require_once "${dir}/feedwordpresssettingsui.class.php";
-require_once "${dir}/feedwordpressdiagnostic.class.php";
-require_once "${dir}/admin-ui.php";
-require_once "${dir}/template-functions.php";
-require_once "${dir}/feedwordpresssyndicationpage.class.php";
-require_once "${dir}/compatability.php"; // Legacy API
-require_once "${dir}/syndicatedpost.class.php";
-require_once "${dir}/syndicatedlink.class.php";
-require_once "${dir}/feedwordpresshtml.class.php";
-require_once "${dir}/inspectpostmeta.class.php";
-require_once "${dir}/syndicationdataqueries.class.php";
-require_once "${dir}/extend/SimplePie/feedwordpie.class.php";
-require_once "${dir}/extend/SimplePie/feedwordpie_cache.class.php";
-require_once "${dir}/extend/SimplePie/feedwordpie_item.class.php";
-require_once "${dir}/extend/SimplePie/feedwordpie_file.class.php";
-require_once "${dir}/extend/SimplePie/feedwordpie_parser.class.php";
-require_once "${dir}/extend/SimplePie/feedwordpie_content_type_sniffer.class.php";
-require_once "${dir}/feedwordpressrpc.class.php";
-require_once "${dir}/feedwordpresshttpauthenticator.class.php";
-require_once "${dir}/feedwordpresslocalpost.class.php";
+require_once "{$dir}/feedwordpressadminpage.class.php";
+require_once "{$dir}/feedwordpresssettingsui.class.php";
+require_once "{$dir}/feedwordpressdiagnostic.class.php";
+require_once "{$dir}/admin-ui.php";
+require_once "{$dir}/template-functions.php";
+require_once "{$dir}/feedwordpresssyndicationpage.class.php";
+require_once "{$dir}/compatability.php"; // Legacy API
+require_once "{$dir}/syndicatedpost.class.php";
+require_once "{$dir}/syndicatedlink.class.php";
+require_once "{$dir}/feedwordpresshtml.class.php";
+require_once "{$dir}/inspectpostmeta.class.php";
+require_once "{$dir}/syndicationdataqueries.class.php";
+require_once "{$dir}/extend/SimplePie/feedwordpie.class.php";
+require_once "{$dir}/extend/SimplePie/feedwordpie_cache.class.php";
+require_once "{$dir}/extend/SimplePie/feedwordpie_item.class.php";
+require_once "{$dir}/extend/SimplePie/feedwordpie_file.class.php";
+require_once "{$dir}/extend/SimplePie/feedwordpie_parser.class.php";
+require_once "{$dir}/extend/SimplePie/feedwordpie_content_type_sniffer.class.php";
+require_once "{$dir}/feedwordpressrpc.class.php";
+require_once "{$dir}/feedwordpresshttpauthenticator.class.php";
+require_once "{$dir}/feedwordpresslocalpost.class.php";
 
 ####################################################################################
 ## GLOBAL PARAMETERS ###############################################################
@@ -214,32 +214,34 @@ function feedwordpress_deactivate() {
 /**
  * Divides bytes into units of higher magnitude (e.g KB, MB, etc).
  *
- * @param  int|string $quantity Quantity in bytes to be displayed. Can be a string that only includes numeric digots.
+ * @param  int|string $quantity Quantity in bytes to be displayed. Can be a string that only includes numeric digits.
  *
  * @return string Formatted string with quantity and unit.
+ *
+ * @deprecated use the WordPress built-in `size_format()` function instead! (gwyneth 20230918)
  */
 function debug_out_human_readable_bytes( $quantity ) {
 	if ( ! is_numeric( $quantity ) ) :
 		return __( "(wrong quantity)" );
 	endif;
-	$quantity = (int) $quantity;
+	$quantity = intval( $quantity );
 	$magnitude = 'B';
 	/** @var array Two-letter abbreviations of the units in increasing magnitude. */
 	$orders = array( 'KB', 'MB', 'GB', 'TB' );
-	while ( ($quantity > ( 1024 * 100 ) ) and ( count( $orders ) > 0 ) ) :
+	while ( ( $quantity > ( 1024 * 100 ) ) and ( count( $orders ) > 0 ) ) :
 		$quantity = floor( $quantity / 1024 );
 		$magnitude = array_shift( $orders );
 	endwhile;
-	return "${quantity} ${magnitude}";
+	return "{$quantity} {$magnitude}";
 }
 
 function debug_out_feedwordpress_footer() {
-	if (FeedWordPressDiagnostic::is_on('memory_usage')) :
-		if (function_exists('memory_get_usage')) :
-			FeedWordPress::diagnostic ('memory_usage', "Memory: Current usage: ".debug_out_human_readable_bytes(memory_get_usage()));
+	if ( FeedWordPressDiagnostic::is_on('memory_usage') ) :
+		if ( function_exists('memory_get_usage') ) :
+			FeedWordPress::diagnostic( 'memory_usage', "Memory: Current usage: " . size_format( memory_get_usage() ) );
 		endif;
-		if (function_exists('memory_get_peak_usage')) :
-			FeedWordPress::diagnostic ('memory_usage', "Memory: Peak usage: ".debug_out_human_readable_bytes(memory_get_peak_usage()));
+		if ( function_exists('memory_get_peak_usage') ) :
+			FeedWordPress::diagnostic('memory_usage', "Memory: Peak usage: " . size_format( memory_get_peak_usage() ) );
 		endif;
 	endif;
 } /* debug_out_feedwordpress_footer() */
@@ -440,16 +442,16 @@ function syndication_comments_feed_link ($link) {
 	return $link;
 } /* function syndication_comments_feed_link() */
 
-	require_once("${dir}/feedwordpress.pings.functions.php");
+	require_once("{$dir}/feedwordpress.pings.functions.php");
 
-	require_once("${dir}/feedwordpress.wp-admin.post-edit.functions.php");
+	require_once("{$dir}/feedwordpress.wp-admin.post-edit.functions.php");
 
 ################################################################################
 ## class FeedWordPressBoilerplateReformatter ###################################
 ################################################################################
 
-require_once("${dir}/feedwordpressboilerplatereformatter.class.php");
-require_once("${dir}/feedwordpressboilerplatereformatter.shortcode.functions.php");
+require_once("{$dir}/feedwordpressboilerplatereformatter.class.php");
+require_once("{$dir}/feedwordpressboilerplatereformatter.shortcode.functions.php");
 
 ################################################################################
 ## class FeedWordPress #########################################################
@@ -879,6 +881,10 @@ class FeedWordPress {
 		foreach ( $feed_set as $feed_id)  :
 
 			$feed = $this->subscription( $feed_id );
+			// Try to catch a very unusual condition where the $feed comes as NULL (gwyneth 20230919)
+			if ( ! empty( $feed ) ) :
+				$this->diagnostic( 'update_schedule', "Feed " .  $feed_id . " returned an empty feed" );
+			endif;
 
 			// Has this process overstayed its welcome?
 			if (
@@ -1095,7 +1101,7 @@ class FeedWordPress {
 			endif;
 
 			// Make sure we have a post corresponding to this ID.
-			$post = $post_type = $post_type_object = null;
+			$post = $post_type = $post_type_object = null;		// whatever $post_type_object might be, it's not being used! (gwyneth 20230920)
 			if ( $post_id ) :
 				$post = get_post( $post_id );
 			endif;
@@ -2101,13 +2107,19 @@ class FeedWordPress {
 		return in_array( strtolower( trim( $q ) ), $affirmo );
 	} /* FeedWordPress::affirmative () */
 
-	# Internal debugging functions
-
-	static function diagnostic ($level, $out, $persist = null, $since = null, $mostRecent = null) {
+	/**
+	  * Internal debugging functions.
+	  *
+	  * @todo radgeek needs to document this better. What levels exist, and
+	  * how/where are they defined? (gwyneth 20230919)
+	  *
+	  * @global $feedwordpress_admin_footer
+	  */
+	static function diagnostic( $level, $out, $persist = null, $since = null, $mostRecent = null ) {
 		global $feedwordpress_admin_footer;
 
-		$output = get_option('feedwordpress_diagnostics_output', array());
-		$dlog = get_option('feedwordpress_diagnostics_log', array());
+		$output = get_option( 'feedwordpress_diagnostics_output', array() );
+		$dlog   = get_option( 'feedwordpress_diagnostics_log', array() );
 
 		$diagnostic_nesting = count( explode( ":", $level ) );
 
@@ -2150,12 +2162,12 @@ class FeedWordPress {
 			endforeach;
 		endif;
 
-		update_option('feedwordpress_diagnostics_log', $dlog);
-	} /* FeedWordPress::diagnostic () */
+		update_option( 'feedwordpress_diagnostics_log', $dlog );
+	} /* FeedWordPress::diagnostic() */
 
 	public function email_diagnostics_override () {
 		return ( $this->has_secret() and ! ! FeedWordPress::param( 'feedwordpress_email_diagnostics' ) );
-	} /* FeedWordPress::email_diagnostics_override () */
+	} /* FeedWordPress::email_diagnostics_override() */
 
 	public function has_emailed_diagnostics ($dlog) {
 		$ret = false;
@@ -2164,7 +2176,7 @@ class FeedWordPress {
 			$ret = true;
 		endif;
 		return $ret;
-	} /* FeedWordPress::has_emailed_diagnostics () */
+	} /* FeedWordPress::has_emailed_diagnostics() */
 
 	public function ready_to_email_diagnostics ($dlog) {
 		$ret = false;
@@ -2173,13 +2185,12 @@ class FeedWordPress {
 			$ret = true;
 		endif;
 		return $ret;
-	} /* FeedWordPress::ready_to_email_diagnostics () */
+	} /* FeedWordPress::ready_to_email_diagnostics() */
 
 	/**
 	 * Emails a diagnostic log to the WP administrator.
-	 	 *
-	 * @param  Array $params See @wp_parse_args()
 	 *
+	 * @param  Array $params See @wp_parse_args()
 	 */
 	public function email_diagnostic_log( $params = array() ) {
 		$params = wp_parse_args( $params, array(
@@ -2216,7 +2227,7 @@ class FeedWordPress {
 									$cell = date('j-M-y, h:i a', $cell);
 								endif;
 								$class = strtolower(preg_replace('/\s+/', '-', $col));
-								$body .= "<td class=\"$class\">${cell}</td>";
+								$body .= "<td class=\"$class\">{$cell}</td>";
 							endforeach;
 							$body .= "</tr>\n";
 						endforeach;
@@ -2361,7 +2372,7 @@ EOMAIL;
 
 	public function plugin_dir_path ($path = '') {
 		$dir = plugin_dir_path( __FILE__ );
-		$file_path = "${dir}${path}";
+		$file_path = "{$dir}{$path}";
 		return apply_filters( "feedwordpress_plugin_dir_path", $file_path );
 	} /* FeedWordPress::plugin_dir_path () */
 
