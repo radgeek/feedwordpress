@@ -92,7 +92,7 @@ class FeedWordPressDiagnostic {
 	} /* FeedWordPressDiagnostic::admin_emails() */
 
 	public static function noncritical_bug ($varname, $var, $line, $file = NULL) {
-		if (FEEDWORDPRESS_DEBUG) : // halt only when we are doing debugging
+		if ( FEEDWORDPRESS_DEBUG ) : // halt only when we are doing debugging
 			self::critical_bug($varname, $var, $line, $file);
 		endif;
 	} /* FeedWordPressDiagnostic::noncritical_bug () */
