@@ -3,6 +3,7 @@ class FeedWordPressParsedPostMeta {
 	var $s, $ptr, $ptrEOS;
 	var $delims, $delimCount, $delimPtr;
 	var $paren;
+	var $anchor;	// I have no idea what it's for, but it's referred from the one-liner methods... (gwyneth 20230920)
 
 	var $parsed = NULL;
 
@@ -13,11 +14,11 @@ class FeedWordPressParsedPostMeta {
 
 	function reset () {
 		$this->parsed = NULL;
-		
+
 		$this->ptr = 0;
 		$this->paren = 0;
 		$this->ptrEOS = strlen($this->s);
-	
+
 		$this->delimCount['CDATA'] = preg_match_all('/\$/', $this->s, $this->delims['CDATA'], PREG_OFFSET_CAPTURE);
 		$this->delimPtr['CDATA'] = 0;
 
@@ -45,14 +46,14 @@ class FeedWordPressParsedPostMeta {
 		endif;
 		return $next;
 	}
-	
+
 	function substitute_terms ($post, $piece, $values = NULL) {
-		$terms = array();
+		$terms = array();	// never used. (gwyneth 20230920)
 		if ('EXPR'==$piece[0]) :
 			// Parameter stored in $piece[1]
 			$param = $piece[1];
 			if (is_string($param)) :
-				if (!isset($values[$param])) :
+				if ( !isset($values[$param])) :
 					$values[$param] = $post->query($param);
 				endif;
 				$term = $param;
@@ -60,11 +61,11 @@ class FeedWordPressParsedPostMeta {
 			else :
 				list($results, $term, $values) = $this->substitute_terms($post, $piece[1], $values);
 			endif;
-			
+
 			// Filtering function, if any, stored in $piece[2]
 			if (isset($piece[2])) :
 				$filter = $post->substitution_function(trim(strtolower($piece[2])));
-				if (!is_null($filter)) :
+				if ( !is_null($filter)) :
 					foreach ($results as $key => $result) :
 						$results[$key] = $filter($result);
 					endforeach;
@@ -74,7 +75,7 @@ class FeedWordPressParsedPostMeta {
 					);
 				endif;
 			endif;
-			
+
 		elseif ('CDATA'==$piece[0]) :
 			// Literal string stored in $piece[1]
 			$results = array($piece[1]);
@@ -87,21 +88,21 @@ class FeedWordPressParsedPostMeta {
 		if (is_null($in)) :
 			$in = $this->get();
 		endif;
-		
+
 		if (count($in) > 0) :
 			$out = array();
-	
+
 			// Init. results set if not already initialized.
 			if (is_null($scratchpad)) :
 				$scratchpad = array(array('', array()));
 			endif;
-			
+
 			// Grab the first
 			$piece = array_shift($in);
 
 			foreach ($scratchpad as $key => $scratch) :
 				$line = $scratch[0];
-				$element_values = $scratch[1]; 
+				$element_values = $scratch[1];
 
 				switch ($piece[0]) :
 				case 'CDATA' :
@@ -115,16 +116,16 @@ class FeedWordPressParsedPostMeta {
 
 				$constrained_values = $element_values;
 				foreach ($subs as $sub) :
-					
+
 					if (isset($term)) :
 						$constrained_values[$term] = array($sub);
 					endif;
-				
+
 					$out[] = array($line . $sub, $constrained_values);
 				endforeach;
-				
+
 			endforeach;
-			
+
 			if (count($in) > 0) :
 				$out = $this->do_substitutions($post, $in, $out);
 			endif;
@@ -140,23 +141,23 @@ class FeedWordPressParsedPostMeta {
 				endif;
 			endforeach;
 		endif;
-		
+
 		return $out;
 	}
-		
+
 	function get ($idx = NULL) {
 		$ret = $this->parse();
 		if ($idx) : $ret = $ret[$idx]; endif;
-		
+
 		return $ret;
 	}
-	
+
 	function parse () {
 		if (is_null($this->parsed)) :
 			$out = array();
-			
+
 			$this->reset();
-			while (!$this->EOS()) :
+			while ( ! $this->EOS()) :
 				switch ($this->look()) :
 				case '$' :
 					$this->ptr++;
@@ -166,7 +167,7 @@ class FeedWordPressParsedPostMeta {
 					$out[] = $this->CDATA();
 				endswitch;
 			endwhile;
-			
+
 			$this->parsed = $out;
 		endif;
 		return $this->parsed;
@@ -182,11 +183,11 @@ class FeedWordPressParsedPostMeta {
 		$ret = array(__FUNCTION__);
 		$paren0 = $this->paren;
 		$this->drop();
-		
+
 		$ptr0 = $this->ptr;
 
 		$complete = false;
-		while (!$this->EOS() and !$complete) :
+		while ( ! $this->EOS() and ! $complete) :
 			$tok = $this->look();
 			switch ($tok) :
 			case '(' :
@@ -198,7 +199,7 @@ class FeedWordPressParsedPostMeta {
 
 				// And indent us one level in.
 				$this->paren++;
-				
+
 				$delta = $this->EXPR();
 				if (isset($delta[2])) :
 					$ret[1] = $delta;
@@ -239,7 +240,7 @@ class FeedWordPressParsedPostMeta {
 					$this->ptr++;
 				endif;
 				break;
-			
+
 			case '$' :
 				if ($ptr0 == $this->ptr) :
 					// This is an escaped literal $
@@ -262,12 +263,12 @@ class FeedWordPressParsedPostMeta {
 					$next = $this->nextDelim('EXPR');
 
 					// Skip ahead to the next potentially interesting character.
-					if (!is_null($next)) :
+					if ( !is_null($next)) :
 						$this->ptr = $next;
 					else :
 						$this->ptr = $this->ptrEOS;
 					endif;
-				
+
 				endif;
 			endswitch;
 		endwhile;

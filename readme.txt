@@ -8,7 +8,7 @@ Stable tag: 2022.0222
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-FeedWordPress syndicates content from feeds you choose into your WordPress weblog. 
+FeedWordPress syndicates content from feeds you choose into your WordPress weblog.
 
 == Description ==
 
@@ -18,7 +18,7 @@ FeedWordPress syndicates content from feeds you choose into your WordPress weblo
 
 FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content from feeds that you choose into your WordPress weblog, and then the content it syndicates appears as a series of special posts in your WordPress posts database. If you syndicate several feeds then you can use WordPress's posts database and templating engine as the back-end of an aggregation ("planet") website. It was developed, originally, as a utility/hobby project, because I needed a more flexible replacement for [Planet][] for aggregator sites that I administered.
 
-[Planet]: http://www.planetplanet.org/
+[Planet]: https://web.archive.org/web/20051029095046/http://www.planetplanet.org/
 
 FeedWordPress is designed with flexibility, ease of use, and ease of configuration in mind. You'll need a working installation of WordPress (version [4.5][] or later), and it helps to have SFTP or FTP access to your web host. The ability to create cron jobs on your web host is helpful but not required.
 
@@ -35,33 +35,40 @@ To use FeedWordPress, you will need:
 
 = New Installations =
 
-1.	Download the FeedWordPress installation package and extract the files on your computer. 
+1.	Download the FeedWordPress installation package and extract the files on your computer.
 
 2.	Create a new directory named `feedwordpress` in the `wp-content/plugins` directory of your WordPress installation. Use an FTP or SFTP client to upload the contents of your FeedWordPress archive to the new directory that you just created on your web host.
 
 3.	Log in to the WordPress Dashboard and activate the FeedWordPress plugin.
 
 4.	Once the plugin is activated, a new **Syndication** section should appear in your WordPress admin menu. Click here to add new syndicated feeds, set up configuration options, and determine how FeedWordPress will check for updates. For help, see the [FeedWordPress Quick Start][] page.
-	
+
 [FeedWordPress Quick Start]: http://feedwordpress.radgeek.com/wiki/quick-start
 
 = Upgrades =
 
 To *upgrade* an existing installation of FeedWordPress to the most recent release:
 
-1.	Download the FeedWordPress installation package and extract the files on your computer. 
+1.	Download the FeedWordPress installation package and extract the files on your computer.
 
 2.	Upload the new PHP files to `wp-content/plugins/feedwordpress`, overwriting any existing FeedWordPress files that are there.
-	
+
 3.	Log in to your WordPress administrative interface immediately in order to see whether there are any further tasks that you need to perform to complete the upgrade.
 
-4.	Enjoy your newer and hotter installation of FeedWordPress
+4.	Enjoy your newer and hotter installation of FeedWordPress!
 
 == Using and Customizing FeedWordPress ==
 
 FeedWordPress has many options which can be accessed through the WordPress Dashboard, and a lot of functionality accessible programmatically through WordPress templates or plugins. For further documentation of the ins and outs, see the documentation at the [FeedWordPress project homepage][].
 
   [FeedWordPress project homepage]: http://feedwordpress.radgeek.com/
+
+== Screenshots ==
+
+1. Syndicated Sites Settings
+2. Dashboard widget for Syndicated Sources
+3. Feed and Update Settings (single feed)
+4. Feed and Update Settings (defaults for all feeds)
 
 == Changelog ==
 
@@ -89,9 +96,9 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	<strong>deprecated</strong> since version 5.6.0", and/or "Message: ./cache is not writable. Make sure you've set the
 	correct relative or absolute path, and that the location is server-writable."
 
-*	Fixes PHP warning for "count(): Parameter must be an array or an object that implements Countable in 
+*	Fixes PHP warning for "count(): Parameter must be an array or an object that implements Countable in
     .../wp-content/plugins/feedwordpress/feedwordpress.php on line 1566"
-	
+
 *	Miscellaneous fixes for other missing variable and global warnings.
 
 *	Code cleanup and reorganization to allow better modularization of error messages, warning dialogs, and extended text.
@@ -113,7 +120,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 *	FEED PARSING FAULT TOLERANCE. If FeedWordPress fails to parse a feed using normal XML functions, it will attempt to convert any named entities that may be causing a problem, and then try to parse again. Props to @inanimatt for utility functions that help make the code go.
 
 *	PAUSING UPDATES. In Syndication > Feeds & Updates, you can now instruct FeedWordPress to temporarily pause or resume updating feeds -- whatever update method you are using, you can put new updates on hold for a while so that you can fiddle with setings, run tests, or do whatever you need to do before allowing updates to resume.
- 
+
 *	CODE MODERNIZATION, PHP 7.x COMPATIBILITY AND CLEANUP AND REORGANIZATION. I have been dusting out nooks and crannies in the code and hiving more functionality off into discrete modules. A number of FeedWordPress users have also offered pull requests to eliminate bothersome PHP notices and warnings related to PHP 7.x compatibility -- in particular removing uses of deprecated `each()` functions, and avoiding use of `count()` on null values -- which I have rolled into the main branch release. Props to @manzoorwanijk, @tristanleboss, @martinburchell and @oppiansteve
 
 = 2017.1020 =
@@ -138,7 +145,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 
 *	PARTIAL FIX FOR 2X DUPLICATE POSTS APPEARING ON DUAL HTTP/HTTPS SITES: Some users reported an issue in which their FeedWordPress sites, which are over both insecure HTTP and over HTTPS, would pick up exactly 2 copies of every post or almost every post from certain feeds, and where the guids for each of the pair of duplicate posts would look exactly alike, except for a difference in the protocol, for example:
 
-		http://www.example.com/?guid=c1cd28da39e8d7babcf6499983aca545 
+		http://www.example.com/?guid=c1cd28da39e8d7babcf6499983aca545
 		https://www.example.com/?guid=c1cd28da39e8d7babcf6499983aca545
 
 	... where www.example.com is the server that your own copy of FeedWordPress is installed. This release of FeedWordPress normalizes post guid prefixes so as to avoid or limit the scope of this problem.
@@ -152,7 +159,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 *	WORDPRESS BACKWARD COMPATIBILITY FOR VERSIONS [4.5, 4.7]: This change fixes a fatal PHP error (on some web server configurations you'd see the message "Fatal error: require_once(): Failed opening required '[...]/wp-includes/class-wp-feed-cache.php'" on others, you might just see an HTTP 500 Internal Server Error or a blank page) when using FeedWordPress with versions of WordPress before 4.7. A	change that I introduced to avoid a code module that had been deprecated in version 4.7 ended up relying on code modules that were only introduced as of version 4.7; so now, instead, FeedWordPress attempts to detect which modules the current version of the WordPress core makes available, and load the right modules depending on your WordPress version.
 
 	In theory, up to this point, FeedWordPress supported any version of WordPress from version 3.0 onward. In practice, version 3.0 was released over 6 years ago, and I can realistically commit only to testing out new	releases of FeedWordPress with a few prior versions of WordPress; so I've updated the "Requires at least" field to version 4.5, the first major release issued in 2016. If you've really got to use FeedWordPress with older versions of WordPress, it will probably still work with any moderately modern release of WordPress, but I won't promise to keep it working with releases of WordPress that are more than about a year old.
-	
+
 = 2016.1211 =
 
 *	WORDPRESS COMPATIBILITY: Tested with new versions of WordPress up to 4.7.
@@ -172,21 +179,21 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 *	FILTERS AND ADD-ONS: Globals $fwp_channel and $fwp_feedmeta REMOVED. These global variables, originally introduced to allow filters access to information about the source feed in `syndicated_item` filters were deprecated 6+ years ago. If you have any filters or add-ons which still depend on these global variables, you've been using obsolete techniques and you should see about fixing them to access data about the source feed using the SyndicatedPost::link element instead. For documentation, see	the FeedWordPress documentation wiki at <http://feedwordpress.radgeek.com/wiki/syndicatedpost> and <http://feedwordpress.radgeek.com/wiki/syndicatedlink>.
 
 *	BUGFIX: Syndication > Diagnostics HTTP diagnostic test widget was broken due to a dumb error on my part. Now fixed.
-	
+
 *	SMALL CODING CHANGES: Lots of small changes to code organization, incorporation of some PHP 5.x coding conventions, etc.
 
 = 2015.0514 =
 
 *	IMPORTANT SECURITY UPDATE: This version includes two important fixes for potential security vulnerabilities reported to me through support channels.
-	
+
 	The first is a common problem across several plugins due to an ambiguity in the WordPress documentation and a change in the behavior of WordPress's built-in add_query_arg() and remove_query_arg() functions which could, under certain low-probability conditions, allow for potential XSS attack vectors. This fixes issue # 39 reported at <https://github.com/radgeek/feedwordpress/issues/39> Thanks to github.com/quassy
-	
+
 	The second fixes a security vulnerability that was reported to me privately (thanks to Adrián M. F.) which, under other low-probability conditions, could allow for SQL insertion attacks by a malicious user with access to login credentials, which would compromise data security.
 
 	It is *IMPORTANT* and worth your while to upgrade FeedWordPress as soon as possible in order to eliminate these vulnerabilities. If you have any questions or if there is something blocking you from making the upgrade which you need my help with, don't hesitate to get in touch.
 
 *	ADMIN UI BUGFIX: "Update Now" button in feeds setting pages should now work once again instead of causing a PHP fatal error. See <https://github.com/radgeek/feedwordpress/issues/46>
-	
+
 *	SEVERAL OTHER SMALL BUG FIXES. See <https://github.com/radgeek/feedwordpress/issues/32> <https://github.com/radgeek/feedwordpress/issues/30> <https://github.com/radgeek/feedwordpress/issues/29> etc.
 
 = 2014.0805 =
@@ -196,17 +203,17 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 * 	COMPATIBILITY/BUGFIX: Many users saw odd characters, especially "n," appearing in posts in versions of WordPress from 3.6 on, due to a change in when the API expects HTML data for posts to be slashed and when it does not. This has been fixed, so that the junk characters should no longer appear, regardless of your version of WordPress.
 
 *	BUGFIX: A bug preventing FWP from saving categories assigned under Syndication > Categories & Tags has been fixed.
-	
+
 *	BUGFIX: Post-editing related metaboxes should now show up when you edit items of any post type, including custom types, not only normal WordPress	posts.
-	
+
 *	BUGFIX: A bug in the admin UI that caused the "Alternative Feeds" / "Find Feeds" box to throw a permissions error has been fixed.
-	
+
 *	BUGFIX: A bug preventing proper mapping of categories and other terms in 2013.0504 has been fixed.
-	
+
 *	BUGFIX: A number of small fixes contributed through Github by Flynsarmy	should eliminate PHP warnings for many users on several methods that are	called as static methods within FeedWordPress.
 
 = 2013.0504 =
-	
+
 *	BUGFIX: PHP 5.4 compatibility -- includes some more extensive fixes to compatibility issues with PHP 5.4's handling of global variables
 
 *	DIAGNOSTICS: New diagnostics settings added to help track behavior of terms (categories, post tags, etc.) for syndicated posts.
@@ -218,17 +225,17 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 = 2012.0503 =
 
 *	BUGFIX: Works properly again with WordPress installations that use a MySQL table name prefix other than the default `wp_` prefix.
-	
+
 *	BUGFIX: Includes a couple of significant PHP 5.4 compatibility fixes. Now that PHP 5.4 is more widely deployed, Diagnostics will now also show PHP version and some other potentially useful troubleshooting	information.
 
 *	ADMIN UI: Better indicates your options when deleting a syndicated post	so as to let you know whether it will be Trashed (and thus not resyndicated) or Erased (and thus potentially resyndicated)
-	
+
 *	ADMIN UI: Adds an AJAXy Test Expression button to allow live testing of sample results from expressions in Custom Post Settings.
 
 = 2012.1218 =
 
 *	WORDPRESS VISUAL EDITOR FIXED. There was an unlisted change in the 2012.1212 release which had the effect of disabling the WordPress Visual Editor for all posts syndicated by FeedWordPress. Many users reported this as a bug. It was actually a deliberate decision -- a crappy way to try to deal with a crappy situation. (Many users had previously reported a "bug" in which all the paragraph or line breaks seemed to be stripped out of their syndicated posts; the issue turned out to be that the Visual Editor was stripping out `<p>` and `<br/>` tags on the assumption that the resulting post would be sent through standard WordPress formatting filters. But under default settings, posts syndicated by FWP deliberately bypass WordPress formatting filters.) In any case, this version adopts a more flexible compromise. *If* FeedWordPress is set up to bypass WordPress formatting filters (as it is by default), *then* the Visual Editor will be disabled for syndicated posts (since using it would produce incorrect results). If on the other hand FeedWordPress is set up to expose syndicated posts to WordPress formatting filters (as it usually is for those using the Visual Editor to manually edit posts), then the Visual Editor tab will be re-enabled for syndicated posts.
-	
+
 * 	BUG FIX: PERMALINKS REWRITTEN FOR CUSTOM POST TYPES AS WELL AS NORMAL
 	WORDPRESS POSTS. If you had WordPress set up to syndicate incoming posts
 	to a custom post type (under Syndication > Posts & Links), and asked
@@ -239,7 +246,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	has been fixed: all post types will now have permalinks rewritten unless
 	you request for permalinks to point to the local copy on your aggregator
 	site.
-	
+
 *	BUG FIX: ELIMINATES "PHP Fatal error: Call to a member function
 	setting() on a non-object...." Some changes to the in-memory caching of
 	information about feed subscriptions could result in a fatal PHP error
@@ -257,7 +264,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	bugs in the appearance and animation of category checkboxes (for
 	example, the checkbox used to select categories for syndicated posts on
 	the Syndication > Categories & Tags settings page) have been fixed.
-	
+
 = 2012.1212 =
 
 *	WORDPRESS 3.5 COMPATIBILITY: This release has been tested for compatibility
@@ -293,7 +300,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	for syndicated posts, but when syndicated posts are updated, they will
 	retain the slug that they had at the time of the update; any manual
 	changes to the post slug should be preserved.
-	
+
 *	USER-AGENT STRING: FeedWordPress now sends a distinctive User-Agent
 	string identifying itself, and noting that it is a feed aggregator.
 
@@ -330,7 +337,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	password for accessing the feed, then select the authentication method. (If
 	you're not sure which method your feed provider uses, try Basic first.)
 	Save Changes, and syndicate away.
-	
+
 	NOTE: HTTP Digest support requires the curl module for PHP. If you are not
 	sure whether this module has been installed, contact your web hosting
 	provider to check.
@@ -373,7 +380,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	existing static page was mistaken for an older version of the new incoming
 	syndicated post, which was then stored as a new revision of the original
 	page. The bug that caused these mistaken identities has been fixed.
-	
+
 *	BUGFIX: UNWANTED AUTOMATIC PAGE-LOAD-BASED UPDATES NO LONGER A NUISANCE.
 	Some users encountered a bug in which FeedWordPress would adopt an automatic
 	page-load-based update method, even if they had requested that it not do
@@ -392,7 +399,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	provides considerably more data to understand update scheduling, when
 	specific scheduling decisions are made because of, e.g., requests from the
 	feed producer.
-	
+
 * 	FEED UPDATE SCHEDULING IMPROVEMENTS: ENFORCEABLE "MINIMUM INTERVAL" SETTING
 	TO SPACE OUT UPDATES. Some feeds request specific update schedules, using
 	standard elements such as sy:updateFrequency and rss:ttl. Normally,
@@ -411,7 +418,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	sped up to meet the indicated update schedule. Now, they can do this, by
 	using the new "Minimum Interval" setting in Syndication --> Feeds &
 	Updates..
-	
+
 = 2011.0706 =
 
 *	WP 3.2 COMPATIBILITY: ELIMINATES FATAL ERROR "Call to undefined method
@@ -430,7 +437,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	always, involving a scan over the MD5(post_guid) column of the table). The
 	code that prepares MySQL queries for previously-syndicated checks has been
 	revised to eliminate the MD5(post_guid) scan entirely, and to significantly
-	improve performance by eliminating other unnecessary clauses. 	
+	improve performance by eliminating other unnecessary clauses.
 
 *	BUGFIX: NO LONGER DESTROYS STICKY POSTS. Previous versions could destroy
 	(or, more precisely, replace the content of) sticky posts due to some
@@ -452,7 +459,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	been extended to handle URIs that were filtered because of leading or
 	trailing whitespace, in addition to URIs that were filtered because of
 	unapproved schemes.
-	
+
 *	WP 3.1.3 COMPAT / BUGFIX: RELATIVE URLS IN GUIDS NO LONGER PRODUCE DUPLICATE
 	POSTS. The work-around for handling filtered URIs in guid elements has now
 	been extended to handle URIs that were altered without being filtered out
@@ -522,7 +529,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 *	AUTHOR LISTS: Lists of authors presented on the Author settings pages
 	should now be easier to scan through, with author names arranged in
 	alphabetical order.
-	
+
 *	FEED ITEM DATE PARSING: More tweaks to make date-time handling more
 	resilient when feeds provide broken or weird values for the timestamps
 	on syndicated items. FWP will now attempt to work around unparseable
@@ -532,10 +539,10 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	name in addition to display_name; when creating user record, also fills
 	in some best-guess values for nickname, firstname and lastname. Also
 	properly picks up Atom 1.0 author/uri data from feed.
-	
+
 *	COMPATIBILITY: FeedWordPress has been successfully tested for
 	compatibility with recent releases of WordPress, up to version 3.1.2.
-	
+
 = 2011.0211 =
 
 *	BUGFIX: DUPLICATE POSTS WHEN GUIDS ARE TOO LONG: When feeds included
@@ -558,7 +565,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	changes to a subscription (for example, to pull in all the previous
 	items from a web service, before settling down to pulling in only newly
 	updated items).
-	
+
 *	DIAGNOSTICS SYSTEM: Added several new diagnostics which are useful in
 	troubleshooting, and established a framework for add-on modules to hook
 	in with their own diagnostic messages.
@@ -566,14 +573,14 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 *	UI: Adjusted some internal coding, which should allow for settings
 	pages and add-ons to properly display multiple category pickers on a
 	single settings page.
-	
+
 *	PHP4 COMPATIBILITY TWEAKS: This version makes some tweaks to the handling
 	of object references which should improve compatibility with older
 	versions of PHP. (Although, I should note, web hosts that still force
 	you to run under PHP 4 -- in 2011! -- are *bad web hosts*.)
 
 *	IMPROVED PERFORMANCE: This version eliminates a *major* performance drag
-	that shows up on sites with large numbers of users (due to some poor 
+	that shows up on sites with large numbers of users (due to some poor
 	decisions about where to place a user query, which caused the user table
 	to be scanned frequently when it did not need to be). If you experienced
 	serious problems with CPU load or slow database performance under
@@ -598,7 +605,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	Categories should be correctly assigned to all posts, regardless of
 	whether they were added from manual updates, cron jobs, or automatic
 	updates.
-	
+
 = 2010.0903 =
 
 *	WORDPRESS 3 REQUIRED: Please note that this release of FeedWordPress
@@ -619,7 +626,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	Sources has undergone significant changes and corrections since
 	2010.0623, and two independent sources who had been having this problem
 	confirm that they no longer encounter it with the updated version. For
-	the time being, I am going to declare this bug squashed. 
+	the time being, I am going to declare this bug squashed.
 
 *	BUGFIX: MORE PROTECTION AGAINST FATAL ERRORS FROM PLUGGABLE VERSIONS OF
 	SimplePie: FeedWordPress now takes some precautions that should help to
@@ -648,7 +655,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	adding multiple feeds at once, using either a copy-and-pasted list, or
 	else an OPML file. Go to Syndication --> Syndicated Sources and check
 	out the two new buttons underneath the New Source input box. When you
-	have to add a number of feeds at once, this can save you considerable 
+	have to add a number of feeds at once, this can save you considerable
 	time and trouble.
 
 *	IMPROVED HANDLING OF AUTHORS WITH DUPLICATE E-MAIL ADDRESS AND AUTHORS
@@ -662,7 +669,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	authors' account names or in their e-mail addresses, which should result
 	in significantly better results in mapping author names to WordPress
 	user accounts.
-	
+
 *	MAPPING CATEGORIES ON SYNDICATED POSTS TO TAGS NOW BETTER SUPPORTED:
 	In previous versions, the only way for the Categories provided by a
 	syndicated feed to be mapped into Post Tags was to instruct FWP to
@@ -674,12 +681,12 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	importing the post; when the syndicated category matches a pre-existing
 	tag, the incoming post will be tagged with that tag, without creating
 	a local Post Category.
-	
+
 *	REL-TAG MICROFORMAT SUPPORT FOR INLINE TAGS: Syndicated posts that
 	contain inline tags, marked up using the Rel-Tag microformat
 	<http://microformats.org/wiki/rel-tag>, are now tagged with the tags
 	provided by Rel-Tag format links.
-	
+
 *	MUCH GREATER CONTROL OVER CATEGORY AND TAG MAPPING: This is partly the
 	result of building in support for a potentially endless set of custom
 	taxonomies (see below), but in general there has been a great deal of
@@ -702,7 +709,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	to feed incoming posts into any custom feed type that you wish, and to
 	map categories and tags from the feed to custom taxonomies as well as
 	to the standard Category and Tag taxonomies.
-	
+
 *	STORING NAMESPACED CUSTOM FEED ELEMENTS IN POST CUSTOM FIELDS: If you
 	would like to use FeedWordPress's support for storing custom meta-data
 	from feed elements in the custom fields for a post (for example, to
@@ -731,7 +738,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	FeedWordPress through PHP filters or add-on modules. Fuller
 	documentation will be put up at the Wiki at feedwordpress.radgeek.org
 	soon.
-	
+
 = 2010.0623 =
 
 *	WORDPRESS 3.0 COMPATIBILITY / AUTHOR MAPPING INTERFACE ISSUES: I
@@ -740,7 +747,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	from being created correctly and author mapping rules from being set up
 	correctly. These partly had to do with new restrictions on user account
 	creation introduced in WordPress 3.0; anyway, they should now be fixed.
-	
+
 *	MORE EFFICIENT SYNDICATED URL LOOKUPS: Several users noticed that the
 	bug fix introduced in 2010.0528 for compatibility with post-listing
 	plugins caused a lot more queries to the database in order to look up
@@ -766,12 +773,12 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	section of the Syndicated Sources page. (As a side benefit, if you've
 	accidentally, or only temporarily, turned off the subscription to a
 	feed, it is now much easier to restore the feed to being active, or to
-	delete it permanently, if you prefer. 
+	delete it permanently, if you prefer.
 
 *	UI: FEED FINDER / SWITCH FEED INTERFACE IMPROVEMENTS: changes to styling
 	and options for the feed finder / switch feed, which should now make it
 	easier, in some cases, to find alternative feeds, and make interface
-	options more clearly visible. 
+	options more clearly visible.
 
 *	FILTERS: `syndicated_item_published` and `syndicated_item_updated` NOW
 	PROPERLY AFFECT THE DATING OF POSTS. These filters used to affect some
@@ -833,8 +840,8 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	hooks to write filters or add-ons which directly change the post date
 	and most-recently-updated timestamps on incoming syndicated posts. Props
 	to niska for pointing out where the filters needed to be applied in
-	order to change WordPress's internal timestamps for incoming posts. 
-	
+	order to change WordPress's internal timestamps for incoming posts.
+
 = 2010.0531 =
 
 *	PERMALINK / CUSTOM FIELDS PROBLEM RESOLVED: An issue in 2010.0528 caused
@@ -877,7 +884,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	rather than the MagpieRSS arrays, but the MagpieRSS arrays will still
 	be available and older filters should continue to work as they have in
 	the past.
-	
+
 *	COMPATIBILITY WITH WORDPRESS 2.9.x and 3.0: This release has been tested
 	for the existing WordPress 2.9.x branch and with the upcoming release of
 	WordPress 3.0. 	Changes in the user interface JavaScript between WordPress
@@ -905,7 +912,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	a feed: Feeds & Updates, Posts & Links, Authors, Categories & Tags,
 	and Back End handling of the database and diagnostic information.
 	Extensive new interface hooks allow add-on modules to significantly
-	change or extend the FeedWordPress admin interface and workflow. 
+	change or extend the FeedWordPress admin interface and workflow.
 
 *	STORING INFORMATION FROM THE FEED IN CUSTOM FIELDS: Many users
 	have written to request the ability to store information from elements
@@ -962,7 +969,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	should hopefully avoid most or all error conditions that have resulted
 	in articles being erroneously dated to the dawn of the Unix epoch
 	(31 December 1969 or 1 January 1970).
-	
+
 *	FULL-TEXT "EXCERPTS" NOW PROPERLY SHORTENED. Based on a straightforward
 	reading of the existing RSS specs, it's reasonable for the
 	rss:description element to be read as a plaintext summary or excerpt for
@@ -998,7 +1005,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	<http://feedwordpress.radgeek.com/wiki/add-ons-and-filters>
 
 *	FILTER API: A number of new utility methods have been added to the
-	SyndicatedPost 	class to make it easier for filters and add-ons to 
+	SyndicatedPost 	class to make it easier for filters and add-ons to
 
 *	FILTER API: Globals $fwp_channel and $fwp_feedmeta DEPRECATED. These
 	global variables, originally introduced to allow filters access to
@@ -1072,19 +1079,19 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	through the FeedFinder interface, FeedWordPress would fail and display
 	an HTTP request failure diagnostic message. The subtle bug has been
 	fixed, and with it, most of these errors should now be eliminated.
-	
+
 	Be sure to upgrade your MagpieRSS to the most recent MagpieRSS version
 	after you have insalled FeedWordPress 2009.0618, or this bug fix will
 	not take effect.
 
-= 2009.0613 = 
+= 2009.0613 =
 
 *	INTERFACE/BUGFIX: WORDPRESS 2.8 CATEGORY BOX FIX. Thanks to a subtle
 	change in class names between the WordPress 2.7 and 2.8 stylesheets,
 	category boxes in the FeedWordPress settings interface tended to overflow
 	and have a lot of messy-looking overlapping text under WordPress 2.8.
 	This has now been fixed.
-	
+
 *	FeedFinder FAILURE DIAGNOSTICS: When FWP's FeedFinder fails to find any
 	feeds at a given URL (for example, when you are trying to add a
 	subscription through the administrative interface and you run into an
@@ -1114,7 +1121,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	Feed Settings subpages have been cleaned up and simplified, and now only
 	link to the appropriate subpages for options that can be set in the
 	Posts, Authors, or Categories & Tags subpages.
-	
+
 *	FEATURE: ADD CUSTOM SETTINGS TO EACH SYNDICATED POST: FeedWordPress has
 	long had an interface for creating custom settings for each syndicated
 	*feed* which could be retrieved in templates using the `get_feed_meta()`
@@ -1304,7 +1311,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	blog, upgrading FeedWordPress will prevent it from re-occurring in the
 	future, but you still need to do two other things to fix the existing
 	problem on your blog.
-	
+
 	First, for each feed where posts have been mis-attributed, you need to
 	change the existing author mapping rules to re-map a a syndicated
 	author's name to the proper target account. Go to **Syndication -->
@@ -1312,7 +1319,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	and then change the settings under the "Syndicated Authors" section.
 	(You will probably need to select "will be assigned to a new user..." to
 	create a new user account with the appropriate name.)
-	
+
 	Second, for each feed where posts have been mis-attributed, you need to
 	re-assign already-syndicated posts that were mis-attributed to the
 	correct author. You can do that from **Syndication --> Authors** by
@@ -1334,7 +1341,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	source of a post is the aggregator feed itself, or you can have it
 	report that the source of a post is the original source that the
 	aggregator originally syndicated the post from.
-	
+
 	By default, FeedWordPress will report the aggregator, not the original
 	source, as the source of a syndicated item.
 
@@ -1350,7 +1357,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	time limit of 25 seconds or so should provide plenty of time for updates
 	while allowing a cushion of time for other, non-update-related functions
 	to do their work.)
-	
+
 	If feed updates are interrupted by the time limit, FeedWordPress uses
 	some simple load balancing features to make sure that updates to other
 	feeds will not be blocked by the time-hogging feed, and will also make
@@ -1417,7 +1424,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	now, you can also have FeedWordPress (4) create a new *tag* with that
 	name. This option can be set site-wide under Syndication --> Options,
 	or it can be set on a feed-by-feed basis in a feed's Edit screen.
-	
+
 	In addition, you can now set particular tags to apply to all incoming
 	syndicated posts, under Syndication --> Options, or you can set tags
 	to apply to all incoming syndicated posts from a particular feed in that
@@ -1437,7 +1444,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 
 * 	`<atom:source>` ELEMENTS NOW INCLUDED IN ATOM FEED: Atom 1.0 provides
 	a standard method for aggregators to indicate information about the original source of
-	a syndicated post, using the `<atom:source>` element. FeedWordPress now 
+	a syndicated post, using the `<atom:source>` element. FeedWordPress now
 	introduces standard `<atom:source>` elements including the title, homepage, and
 	feed URI of the source from which a syndicated post was syndicated. Cf.
 	<http://www.atomenabled.org/developers/syndication/atom-format-spec.php#element.source>
@@ -1481,7 +1488,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	recently broke the existing behavior by changing host names for their
 	feeds from del.icio.us to feeds.delicious.com. Version 0.993 accounts
 	for the new host name and un-breaks the tag splitting.
-	
+
 = 0.992 =
 
 *	AUTHOR RE-MAPPING: FeedWordPress now offers considerable control over
@@ -1499,7 +1506,7 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 	posts by particular users, and to control what will happen when
 	FeedWordPress encounters a post by an unrecognized user on that
 	particular feed.
-	
+
 *	BUG RELATED TO URIS CONTAINING AMPERSAND CHARACTERS FIXED: A bug in
 	WordPress 2.x's handling of URIs in Blogroll links created problems for
 	updating any feeds whose URIs included an ampersand character, such as
@@ -1646,7 +1653,7 @@ provides compatability with WordPress 2.2.x and 2.3.x.
 	feed from which an item is syndicated using the $post->feed and the
 	$post->feedmeta elements (where $post is the name of the second
 	parameter).
-	
+
 	NOTE THAT THE OLD GLOBAL VARIABLES ARE STILL AVAILABLE, for the time
 	being at least, so existing filters will not break with the upgrade.
 	They should be considered deprecated, however, and may be eliminated in
@@ -1817,7 +1824,7 @@ between version 0.98 of WordPress and the recently released WordPress 2.1.
 	they'd have at least one familiar category (the category or categories
 	you were applying), and that would get all posts past the filter no
 	matter what categories they were originally from.
-	
+
 	Well, no longer. You can still apply categories to all syndicated posts
 	(using either Syndication --> Options, or the feed-level settings under
 	Links --> Syndicated). But these categories are not applied to the post
@@ -1846,9 +1853,9 @@ between version 0.98 of WordPress and the recently released WordPress 2.1.
 	data formerly located under the `uri` and `name` fields is now located
 	under the `link/uri` field and the `link/name` field, respectively. Note
 	also that you can access the link ID number for any given feed under the
-	global $fwp_feedmeta['link/id'] (in plugins) or 
+	global $fwp_feedmeta['link/id'] (in plugins) or
 	get_feed_meta('link/id') (in a template in post contexts).
-	
+
 *	FEATURE: the settings for individual feeds can now be edited using a
         humane interface (where formerly you had to tweak key-value pairs in the
 	Link Notes section). To edit settings for a feed, pick the feed that you
@@ -1894,7 +1901,7 @@ between version 0.98 of WordPress and the recently released WordPress 2.1.
 	randomly for each feed, in a period between 30 minutes and 2 hours (so
 	as to stagger updates over time rather than polling all of the feeds at once. However, the length of time between updates can also be set
 	directly by the feed, which brings us to ...
-	
+
 *	FEATURE: FeedWordPress now respects the settings in the `ttl` and
 	Syndication Module RSS elements. Feeds with these elements set will not
 	be polled any more frequently than they indicate with these feeds unless
@@ -1920,9 +1927,9 @@ between version 0.98 of WordPress and the recently released WordPress 2.1.
 	automatically updated from the feed channel link on each update). To
 	set the URI manually, put a line like this in the Link Notes section
 	of a feed:
-	
+
 		hardcode url: yes
-	
+
 	You can also instruct FeedWordPress to use hardcoded URIs by default
 	on all feeds using Options --> Syndication
 
@@ -1943,35 +1950,35 @@ between version 0.98 of WordPress and the recently released WordPress 2.1.
 *	FEATURE: You can now set global defaults as to whether or not FeedWordPress will update the Link Name and Link Description settings for feeds automatically from the feed title and feed tagline. (By default, it does, as it has in past versions.) Whether this behavior is turned on or off, you can still override the default behavior using feed settings of `hardcode name: yes`, `hardcode name: no`, `hardcode description: yes`, or `hardcode description: no`.
 
 *	FEATURE: Users can now provide one or several "aliases" for an author, just as they can for a category. For example, to make FeedWordPress treat posts by "Joseph Cardinal Ratzinger" and "Pope Benedict XVI" as by the same author, edit the user profile for Pope Benedict XVI and add a line like this to the "User profile" field:
-	
+
 		a.k.a.: Joseph Cardinal Ratzinger
-	
+
 	You can add several aliases, each on a line by itself. You can also add any other text you like to the Profile without interfering with the aliases.
-	
+
 *	FEATURE: Users can now choose how to handle syndicated posts that are in unfamiliar categories or by unfamiliar authors (i.e., categories or authors whose names are not yet in the WordPress database). By default, FeedWordPress will (as before) create a new category (or new author) and use it for the current post and any future posts. This behavior can be changed, either for all feeds or for one or another particular feed.
-	
+
 	There are now three different options for an unfamiliar author: (1) FeedWordPress can create a new author account and attribute the syndicated post to the new account; (2) FeedWordPress can attribute the post to an author if the author's name is familiar, and to a 	default author (currently, this means the Site Administrator account) if it is not; (3) FeedWordPress can drop posts by	unfamiliar authors and syndicate only posts by authors who are already in the database.
-	
+
 	There are, similarly, two different options for an unfamiliar category: (1) FeedWordPress can create new categories and place the syndicated post in them; (2) FeedWordPress can drop the unfamiliar categories and place syndicated posts only in categories that it is already familiar with. In addition, FeedWordPress 0.95 lets you choose whether posts that are in *no* familiar categories should be syndicated (and placed in the default category for the blog) or simply dropped.
-	
+
 	You can set the default behavior for both authors and categories using the settings in Options --> Syndication. You can also set different behavior for specific feeds by adding the `unfamiliar author` and / or `unfamiliar categories` settings to the Link Notes section of a feed:
-	
+
 		unfamiliar author: (create|default|filter)
 		unfamiliar categories: (create|default|filter)
-	
+
 	A setting of `unfamiliar author: create` will make FeedWordPress create new authors to match unfamiliar author names *for this feed alone*. A setting of `unfamiliar author: default` will make it assign posts from unfamiliar authors to the default user account. A setting of `unfamiliar author: filter` will cause all posts (from this feed alone) to be dropped unless they are by an author already listed in the database. Similiarly, `unfamiliar categories: create` will make FeedWordPress create new categories to match unfamiliar category names *for this feed alone*; `unfamiliar categories:	default` will cause it to drop any unfamiliar category names; and `unfamiliar categories: filter` will cause it to *both* drop any unfamiliar category names *and* to only syndicate posts that are placed in one or more familiar categories.
-	
+
 	These two new features allow users to do some coarse-grained filtering without having to write a PHP filter. Specifically, they offer an easy way for you to filter feeds by category or by author. Suppose, for example, that you only wanted to syndicate posts that your contributors place in the "Llamas" category. You could do so by setting up your installation of WordPress so that the only category in the database is "Llamas," and then use Options --> Syndication to set "Unfamiliar categories" to "don't create new categories and don't syndicate posts unless they match at least one familiar category". Now, when you update, only posts in the "Llamas" category will be syndicated by FeedWordPress.
-	
+
 	Similarly, if you wanted to filter one particular feed so that only posts by (for example) the author "Earl J. Llama" were syndicated to your site, you could do so by creating a user account for Earl J. Llama, then adding the following line to the settings for the feed in Link Notes:
-	
+
 		unfamiliar author: filter
-	
+
 	This will cause any posts from this feed that are not authored by Earl J. Llama to be discarded, and only the posts by Earl J. Llama will be syndicated. (If the setting is used on one specific feed, it will not affect how posts from other feeds are syndicated.)
-	
+
 == License ==
 
-The FeedWordPress plugin is copyright © 2005-2017 by Charles Johnson. It uses code derived or translated from:
+The FeedWordPress plugin is copyright © 2005-2021 by Charles Johnson. It uses code derived or translated from:
 
 -	[wp-rss-aggregate.php][] by [Kellan Elliot-McCrea](kellan@protest.net)
 -	[SimplePie][] feed parser by Ryan Parman, Geoffrey Sneddon, Ryan McCue, et al.

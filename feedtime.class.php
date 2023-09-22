@@ -14,7 +14,7 @@
  * then pull the timestamp:
  *
  * 	$time = new FeedTime($s);
- *	if (!$time->failed()) :
+ *	if ( ! $time->failed()) :
  * 		$ts = $time->timestamp();
  *	else :
  *		// ...
@@ -64,14 +64,14 @@ class FeedTime {
 
 	function timestamp () {
 		$unix = NULL;
-		if (!$this->failed()) :
+		if ( ! $this->failed()) :
 			$unix = $this->ts;
 		endif;
 		return $unix;
 	} /* FeedTime::timestamp() */
 
 	function failed () {
-		return (!is_numeric($this->ts) or !$this->ts or ($this->ts <= 0));
+		return ( !is_numeric($this->ts) or ! $this->ts or ($this->ts <= 0));
 	} /* FeedTime::failed() */
 	
 	/**

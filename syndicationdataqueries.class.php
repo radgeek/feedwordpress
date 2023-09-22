@@ -28,7 +28,7 @@ class SyndicationDataQueries {
 	} /* SyndicationDataQueries::parse_query () */
 
 	function pre_get_posts ($q) {
-		//
+		// Is this a stub? Nothing is used... (gwyneth 20230920)
 	}
 
 	function posts_request ($sql, $query) {
@@ -57,7 +57,7 @@ class SyndicationDataQueries {
 					$seek[] = $nGuid;
 					$seek[] = SyndicatedPost::alternative_guid($guid);
 				endif;
-				
+
 				// Escape to prevent frak-ups, injections, etc.
 				$seek = array_map('esc_sql', $seek);
 

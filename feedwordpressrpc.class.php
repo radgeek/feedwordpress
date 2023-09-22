@@ -7,7 +7,7 @@ class FeedWordPressRPC {
 	public function __construct () {
 		add_filter('xmlrpc_methods', array($this, 'xmlrpc_methods'));
 	}
-	
+
 	function xmlrpc_methods ($args = array()) {
 		$args['weblogUpdates.ping'] = array($this, 'ping');
 		$args['feedwordpress.subscribe'] = array($this, 'subscribe');
@@ -16,19 +16,19 @@ class FeedWordPressRPC {
 		$args['feedwordpress.nuke'] = array($this, 'nuke');
 		return $args;
 	}
-	
+
 	function ping ($args) {
 		global $feedwordpress;
-		
+
 		$delta = @$feedwordpress->update($args[1]);
 		if (is_null($delta)):
 			return array('flerror' => true, 'message' => "Sorry. I don't syndicate <$args[1]>.");
 		else:
-		$mesg = array();
+		$mesg = array();	// unused? (gwyneth 20230920)
 			return array('flerror' => false, 'message' => "Thanks for the ping.".fwp_update_set_results_message($delta));
 		endif;
 	}
-	
+
 	function validate (&$args) {
 		global $wp_xmlrpc_server;
 
@@ -37,9 +37,10 @@ class FeedWordPressRPC {
 		$password = $wp_xmlrpc_server->escape(array_shift($args));
 
 		$ret = array();
-		if ( !$user = $wp_xmlrpc_server->login($username, $password) ) :
+		// $user is unused. Is it just a return value, or should it be stored somewhere? (gwyneth 20230920)
+		if ( ! $user = $wp_xmlrpc_server->login($username, $password) ) :
 			$ret = $wp_xmlrpc_server->error;
-		elseif (!current_user_can('manage_links')) :
+		elseif ( !current_user_can('manage_links')) :
 			$ret = new IXR_Error(401, 'Sorry, you cannot change the subscription list.');
 		endif;
 		return $ret;
@@ -52,13 +53,22 @@ class FeedWordPressRPC {
 			foreach ($args as $arg) :
 				$finder = new FeedFinder($arg, /*verify=*/ false, /*fallbacks=*/ 1);
 				$feeds = array_values(array_unique($finder->find()));
-				
+
 				if (count($feeds) > 0) :
+					// $link_id is never used, possibly because it's just a discardable return value. However,
+					// it _can_ return a WP_Error, so it might make sense to check for it? (gwyneth 20230920)
 					$link_id = FeedWordPress::syndicate_link(
 						/*title=*/ feedwordpress_display_url($feeds[0]),
 						/*homepage=*/ $feeds[0],
 						/*feed=*/ $feeds[0]
 					);
+					// just to make sure! (gwyneth 20230920)
+					if ( is_wp_error( $link_id ) ) :
+						FeedWordPress::diagnostic(
+							'fwp-rpc/subscribe',
+							implode( '|', $link_id->get_error_messages() )
+						);
+					endif;
 					$ret[] = array(
 						'added',
 						$feeds[0],
@@ -74,21 +84,21 @@ class FeedWordPressRPC {
 		endif;
 		return $ret;
 	} /* FeedWordPressRPC::subscribe () */
-	
+
 	function unsubscribe ($method, $args) {
 		$ret = $this->validate($args);
 		if (is_array($ret)) : // Success
 			// The remaining params are feed URLs
 			foreach ($args as $arg) :
 				$link_id = FeedWordPress::find_link($arg);
-				
-				if (!$link_id) :
+
+				if ( ! $link_id) :
 					$link_id = FeedWordPress::find_link($arg, 'link_url');
 				endif;
-				
+
 				if ($link_id) :
 					$link = new SyndicatedLink($link_id);
-					
+
 					$link->{$method}();
 					$ret[] = array(
 						'deactivated',
@@ -104,15 +114,15 @@ class FeedWordPressRPC {
 		endif;
 		return $ret;
 	} /* FeedWordPress::unsubscribe () */
-	
+
 	function deactivate ($args) {
 		return $this->unsubscribe('deactivate', $args);
 	} /* FeedWordPressRPC::deactivate () */
-	
+
 	function delete ($args) {
 		return $this->unsubscribe('delete', $args);
 	} /* FeedWordPressRPC::delete () */
-	
+
 	function nuke ($args) {
 		return $this->unsubscribe('nuke', $args);
 	} /* FeedWordPressRPC::nuke () */

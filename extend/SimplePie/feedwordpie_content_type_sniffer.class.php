@@ -1,5 +1,5 @@
 <?php
-if (!class_exists('SimplePie_Content_Type_Sniffer')) :
+if ( !class_exists('SimplePie_Content_Type_Sniffer')) :
 	require_once(ABSPATH . WPINC . '/class-simplepie.php');
 endif;
 
@@ -14,7 +14,7 @@ class FeedWordPie_Content_Type_Sniffer extends SimplePie_Content_Type_Sniffer {
 		$contentType = null;
 		$charset = null;
 		if (isset($this->file->headers['content-type'])) :
-			if (!is_array($this->file->headers['content-type'])) :
+			if ( !is_array($this->file->headers['content-type'])) :
 				$this->file->headers['content-type'] = array($this->file->headers['content-type']);
 			endif;
 
@@ -35,12 +35,12 @@ class FeedWordPie_Content_Type_Sniffer extends SimplePie_Content_Type_Sniffer {
 			endforeach;
 				
 			$outHeader = array();
-			if (!is_null($contentType)) :
+			if ( !is_null($contentType)) :
 				$outHeader[] = $contentType;
 			else :
 				$outHeader[] = 'text/xml'; // Generic
 			endif;
-			if (!is_null($charset)) :
+			if ( !is_null($charset)) :
 				$outHeader[] = $charset;
 			endif;
 			

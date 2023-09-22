@@ -5,16 +5,21 @@
  * @uses SimplePie_Misc
  */
 
-if (!class_exists('SimplePie')) :
-	require_once(ABSPATH . WPINC . '/class-simplepie.php');
+if ( ! class_exists( 'SimplePie' ) ) :
+	require_once ABSPATH . WPINC . '/class-simplepie.php';
 endif;
-require_once(dirname(__FILE__).'/feedwordpresshtml.class.php');
+require_once dirname( __FILE__ ) . '/feedwordpresshtml.class.php';
 
+/**
+ * FeedFinder attempts to get all possible RSS/Atom feeds from a site.
+ *
+ * @see SimplePie_Misc
+ */
 class FeedFinder {
 	var $uri = NULL;
 	var $credentials = NULL;
 	var $_cache_uri = NULL;
-	
+
 	var $verify = FALSE;
 	var $fallbacks = 3;
 
@@ -29,7 +34,7 @@ class FeedFinder {
 		'text/xml',
 		'application/atom+xml',
 		'application/x.atom+xml',
-                'application/x-atom+xml'
+        'application/x-atom+xml',
 	);
 	var $_feed_markers = array('\\<feed', '\\<rss', 'xmlns="http://purl.org/rss/1.0');
 	var $_html_markers = array('\\<html');
@@ -41,7 +46,7 @@ class FeedFinder {
 		if (is_bool($params)) :
 			$params = array("verify" => $params);
 		endif;
-		
+
 		$params = wp_parse_args($params, array(
 			"verify" => true,
 			"authentication" => NULL,
@@ -54,7 +59,7 @@ class FeedFinder {
 		"username" => $params['username'],
 		"password" => $params['password'],
 		);
-		
+
 		$this->uri = $uri; $this->verify = $verify;
 		$this->fallbacks = $fallbacks;
 	} /* FeedFinder::FeedFinder () */
@@ -69,14 +74,14 @@ class FeedFinder {
 		"username" => NULL,
 		"password" => NULL,
 		));
-		
+
 		// Equivalents
 		if ($params['authentication']=='-') :
 			$params['authentication'] = NULL;
 			$params['username'] = NULL;
 			$params['password'] = NULL;
 		endif;
-		
+
 		// Set/reset
 		if ($params['authentication'] != -1) :
 			$this->credentials = array(
@@ -85,9 +90,9 @@ class FeedFinder {
 			"password" => $params['password'],
 			);
 		endif;
-		
+
 		$ret = array ();
-		if (!is_null($this->data($uri))) :
+		if ( !is_null($this->data($uri))) :
 			if ($this->is_opml($uri)) :
 				$href = $this->_opml_rss_uris();
 			else :
@@ -97,19 +102,19 @@ class FeedFinder {
 					// Assume that we have HTML or XHTML (even if we don't, who's
 					// it gonna hurt?) Autodiscovery is the preferred method.
 					$href = $this->_link_rel_feeds();
-					
+
 					// ... but we'll also take the little orange buttons
 					if ($this->fallbacks > 0) :
 						$href = array_merge($href, $this->_a_href_feeds(TRUE));
 					endif;
-					
+
 					// If all that failed, look harder
 					if ($this->fallbacks > 1) :
 						if (count($href) == 0) :
 							$href = $this->_a_href_feeds(FALSE);
 						endif;
 					endif;
-					
+
 					// Our search may turn up duplicate URIs. We only need to do
 					// any given URI once. Props to Camilo <http://projects.radgeek.com/2008/12/14/feedwordpress-20081214/#comment-20090122160414>
 					$href = array_unique($href);
@@ -120,7 +125,7 @@ class FeedFinder {
 					$href = array_merge($href, $this->_url_manipulation_feeds());
 				endif;
 			endif;
-			
+
 			$href = array_unique($href);
 
 			// Verify feeds and resolve relative URIs
@@ -141,7 +146,7 @@ class FeedFinder {
 				new WP_Error('http_request_failed', '401 Not authorized', array("uri" => $this->uri, "status" => 401)),
 			), $ret);
 		endif;
-		
+
 		return array_values($ret);
 	} /* FeedFinder::find () */
 
@@ -154,11 +159,11 @@ class FeedFinder {
 		$this->uri = 'tag:localhost';
 		$this->_data = $data;
 	} /* FeedFinder::upload_data () */
-	
+
 	function status ($uri = NULL) {
 		$this->_get($uri);
-		
-		if (!is_wp_error($this->_response) and isset($this->_response['response']['code'])) :
+
+		if ( !is_wp_error($this->_response) and isset($this->_response['response']['code'])) :
 			$ret = $this->_response['response']['code'];
 		else :
 			$ret = NULL;
@@ -177,11 +182,11 @@ class FeedFinder {
 		endif;
 		return $message;
 	}
-	
+
 	function is_401 ($uri = NULL) {
 		return (intval($this->status($uri))==401);
 	} /* FeedFinder::is_401 () */
-	
+
 	function is_feed ($uri = NULL) {
 		$data = $this->data($uri);
 
@@ -243,7 +248,7 @@ class FeedFinder {
 		// Really we should parse the XML and use the structure to
 		// return something intelligent to programs that want to use it
 		// Oh babe! maybe some day...
-		
+
 		$opml = $this->data();
 
 		$rx = FeedWordPressHTML::attributeRegex('outline', 'xmlUrl');
@@ -299,7 +304,7 @@ class FeedFinder {
 			else :
 				$newQuery = NULL;
 			endif;
-			
+
 			if (isset($bits['path']) and (strlen($bits['path']) > 0)) :
 				$newPath = preg_replace('!([/.])(rss2?|atom|rdf)!i', '$1'.$format, $bits['path']);
 			else :
@@ -315,19 +320,19 @@ class FeedFinder {
 				endif;
 				$credentials .= '@';
 			endif;
-			
+
 			// Variations on a theme
 			$newUrl[0] = (''
 				.(isset($bits['scheme']) ? $bits['scheme'].':' : '')
 				.(isset($bits['host']) ? '//'.$credentials.$bits['host'] : '')
-				.(!is_null($newPath) ? $newPath : '')
-				.(!is_null($newQuery) ? '?'.$newQuery : '')
+				.( !is_null($newPath) ? $newPath : '')
+				.( !is_null($newQuery) ? '?'.$newQuery : '')
 				.(isset($bits['fragment']) ? '#'.$bits['fragment'] : '')
 			);
 			$newUrl[1] = (''
 				.(isset($bits['scheme']) ? $bits['scheme'].':' : '')
 				.(isset($bits['host']) ? '//'.$credentials.$bits['host'] : '')
-				.(!is_null($newPath) ? $newPath : '')
+				.( !is_null($newPath) ? $newPath : '')
 				.(isset($bits['query']) ? '?'.$bits['query'] : '')
 				.(isset($bits['fragment']) ? '#'.$bits['fragment'] : '')
 			);
@@ -335,7 +340,7 @@ class FeedFinder {
 				.(isset($bits['scheme']) ? $bits['scheme'].':' : '')
 				.(isset($bits['host']) ? '//'.$credentials.$bits['host'] : '')
 				.(isset($bits['path']) ? $bits['path'] : '')
-				.(!is_null($newQuery) ? '?'.$newQuery : '')
+				.( !is_null($newQuery) ? '?'.$newQuery : '')
 				.(isset($bits['fragment']) ? '#'.$bits['fragment'] : '')
 			);
 			$href = array_merge($href, $newUrl);
@@ -345,7 +350,7 @@ class FeedFinder {
 
 	function _tags ($tag) {
 		$html = $this->data();
-    
+
 		// search through the HTML, save all <link> tags
 		// and store each link's attributes in an associative array
 		preg_match_all('/<'.$tag.'\s+(.*?)\s*\/?>/si', $html, $matches);

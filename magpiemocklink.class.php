@@ -39,7 +39,7 @@ class MagpieMockLink extends SyndicatedLink {
 	} /* function MagpieMockLink::uri() */
 
 	function homepage ($fromFeed = true) {
-		return (!is_wp_error($this->simplepie) ? $this->simplepie->get_link() : null);
+		return ( !is_wp_error($this->simplepie) ? $this->simplepie->get_link() : null);
 	} /* function MagpieMockLink::homepage () */
 
 	function save_settings ($reload = false) {

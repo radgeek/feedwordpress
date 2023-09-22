@@ -75,7 +75,7 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 	public function what_requested () {
 		return FeedWordPress::post( 'feedwordpress_diagnostics_do' );
 	}
-	
+
 	function accept_POST () {
 		if ( self::save_requested() || self::do_requested() ) :
 
@@ -126,46 +126,47 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 
 		<tbody>
 		<tr>
-		<th scope="row">Version:</th>
-		<td>You are using FeedWordPress version <strong><?php print FEEDWORDPRESS_VERSION; ?></strong>.</td>
+		<th scope="row"><?php _e( 'Version:' ); ?></th>
+		<td><?php _e( 'You are using FeedWordPress version' ); ?> <strong><?php print FEEDWORDPRESS_VERSION; ?></strong>.</td>
 		</tr>
 
 		<tr>
-		<th scope="row">Hosting Environment:</th>
+		<th scope="row"><?php _e( 'Hosting Environment:' ); ?></th>
 		<td><ul style="margin-top: 0; padding-top: 0;">
-		<li><em>WordPress:</em> version <?php print esc_html( $wp_version ); ?></li>
-		<li><em>SimplePie:</em> version <?php print esc_html( SIMPLEPIE_VERSION ); ?></li>
+		<li><em>WordPress:</em> <?php _e( 'version' ); ?> <?php print esc_html( $wp_version ); ?></li>
+		<li><em>SimplePie:</em> <?php _e( 'version' ); ?> <?php print esc_html( SIMPLEPIE_VERSION ); ?></li>
 		<?php if ( function_exists( 'phpversion' ) ) : ?>
-		<li><em>PHP:</em> version <?php print esc_html( phpversion() ); ?></li>
+		<li><em><?php _e( 'PHP:' ); ?></em> <?php _e( 'version' ); ?> <?php print esc_html( phpversion() ); ?></li>
 		<?php endif; ?>
-		<?php if (function_exists( 'apache_get_version' )) : ?>
-		<li><sem>Web Server:</em> <?php print esc_html( apache_get_version() ); ?></li>
+		<?php if ( function_exists( 'apache_get_version' ) ) : ?>
+		<li><em><?php _e( 'Web Server:' ); ?></em> <?php print esc_html( apache_get_version() ); ?></li>
 		<?php endif; ?>
+		<?php if ( ! empty( $_SERVER['SERVER_SIGNATURE'] ) ) : ?>
+		<li><em><?php _e( 'Web Server signature:' ); ?></em> <?php print esc_html( $_SERVER['SERVER_SIGNATURE'] ); ?></li>
+		<?php endif; ?>
+		<li><em><?php _e( 'Hosted on:' ); ?></em> <?php print esc_html( php_uname( 'a' ) ); ?></li>
 		</ul>
 		</td>
 		</tr>
 
 		<tr>
-		<th scope="row">Link Category:</th>
-		<td><?php if (!is_wp_error($link_category_id)) :
-			$term = get_term($link_category_id, 'link_category');
-		?><p>Syndicated feeds are
-		kept in link category #<?php print esc_html( $term->term_id ); ?>, <strong><?php print esc_html( $term->name ); ?></strong>.</p>
+		<th scope="row"><?php _e( 'Link Category:' ); ?></th>
+		<td><?php if ( ! is_wp_error( $link_category_id ) ) :
+			$term = get_term( $link_category_id, 'link_category' );
+		?><p><?php _e( 'Syndicated feeds are kept in link category' ); ?> #<?php print esc_html( $term->term_id ); ?>, <strong><?php print esc_html( $term->name ); ?></strong>.</p>
 		<?php else : ?>
-		<p><strong>FeedWordPress has been unable to set up a valid Link Category
-		for syndicated feeds.</strong> Attempting to set one up returned an
-		<code><?php $link_category_id->get_error_code(); ?></code> error with this
-		additional data:</p>
+		<p><strong><?php _e( 'FeedWordPress has been unable to set up a valid Link Category for syndicated feeds.' ); ?></strong> <?php _e( 'Attempting to set one up returned an' ); ?>
+		<code><?php $link_category_id->get_error_code(); ?></code> <?php _e( 'error with this additional data:' ); ?></p>
 		<table>
 		<tbody>
 		<tr>
-		<th scope="row">Message:</th>
+		<th scope="row"><?php _e( 'Message:' ); ?></th>
 		<td><?php print esc_html( $link_category_id->get_error_message() ); ?></td>
 		</tr>
-		<?php $data = $link_category_id->get_error_data(); if (!empty($data)) : ?>
+		<?php $data = $link_category_id->get_error_data(); if ( ! empty( $data ) ) : ?>
 		<tr>
-		<th scope="row">Auxiliary Data:</th>
-		<td><pre><?php print esc_html(MyPHP::val($link_category_id->get_error_data())); ?></pre></td>
+		<th scope="row"><?php _e( 'Auxiliary Data:' ); ?></th>
+		<td><pre><?php print esc_html( MyPHP::val( $link_category_id->get_error_data() ) ); ?></pre></td>
 		</tr>
 		<?php endif; ?>
 		</table>
@@ -174,27 +175,25 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 
 		<tr>
 		<th scope="row"><?php _e('Secret Key:'); ?></th>
-		<td><input type="text" name="feedwordpress_secret_key" value="<?php print esc_attr($feedwordpress->secret_key()); ?>" />
-		<p class="setting-description">This is used to control access to some diagnostic testing functions. You can change it to any string you want,
-		but only tell it to people you trust to help you troubleshoot your
-		FeedWordPress installation. Keep it secret&#8212;keep it safe.</p></td>
+		<td><input type="text" name="feedwordpress_secret_key" value="<?php print esc_attr( $feedwordpress->secret_key() ); ?>" />
+		<p class="setting-description"><?php _e( 'This is used to control access to some diagnostic testing functions. You can change it to any string you want, but only tell it to people you trust to help you troubleshoot your FeedWordPress installation. Keep it secret&mdash;keep it safe.' ); ?></p></td>
 		</tr>
 		</table>
 
 		<?php
 	} /* FeedWordPressDiagnosticsPage::info_box () */
 
-	static function diagnostics_box ($page, $box = NULL) {
+	static function diagnostics_box( $page, $box = NULL ) {
 		$settings = array();
-		$settings['debug'] = (get_option('feedwordpress_debug')=='yes');
+		$settings['debug'] = ( get_option( 'feedwordpress_debug' ) == 'yes' );
 
-		$diagnostics_output = get_option('feedwordpress_diagnostics_output', array());
+		$diagnostics_output = get_option( 'feedwordpress_diagnostics_output', array() );
 
 		$users = fwp_author_list();
 
-		$ded = get_option('feedwordpress_diagnostics_email_destination', 'admins');
+		$ded = get_option( 'feedwordpress_diagnostics_email_destination', 'admins' );
 
-		if (preg_match('/^mailto:(.*)$/', $ded, $ref)) :
+		if (preg_match( '/^mailto:(.*)$/', $ded, $ref ) ) :
 			$ded_addy = $ref[1];
 		else :
 			$ded_addy = NULL;
@@ -204,16 +203,16 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		?>
 <table class="edit-form">
 <tr style="vertical-align: top">
-<th scope="row">Debugging mode:</th>
+<th scope="row"><?php _e( 'Debugging mode:' ); ?></th>
 <td><select name="feedwordpress_debug" size="1">
-<option value="yes"<?php echo ($settings['debug'] ? ' selected="selected"' : ''); ?>>on</option>
-<option value="no"<?php echo ($settings['debug'] ? '' : ' selected="selected"'); ?>>off</option>
+<option value="yes"<?php echo ( $settings['debug'] ? ' selected="selected"' : '' ); ?>><?php _e( 'on' ); ?></option>
+<option value="no"<?php echo ( $settings['debug'] ? '' : ' selected="selected"' ); ?>><?php _e( 'off' ); ?></option>
 </select>
 
-<p>When debugging mode is <strong>ON</strong>, FeedWordPress displays many
+<p><?php _e( 'When debugging mode is <strong>ON</strong>, FeedWordPress displays many
 diagnostic error messages, warnings, and notices that are ordinarily suppressed,
 and turns off all caching of feeds. Use with caution: this setting is useful for
-testing but absolutely inappropriate for a production server.</p>
+testing but absolutely inappropriate for a production server.' ); ?></p>
 
 </td>
 </tr>
@@ -225,11 +224,11 @@ testing but absolutely inappropriate for a production server.</p>
 <li><input type="checkbox" name="diagnostics_output[]" value="echo" <?php print (in_array('echo', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Echo in web browser as they are issued</label></li>
 <li><input type="checkbox" name="diagnostics_output[]" value="echo_in_cronjob" <?php print (in_array('echo_in_cronjob', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Echo to output when they are issued during an update cron job</label></li>
 <li><input type="checkbox" name="diagnostics_output[]" value="email" <?php print (in_array('email', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Send a daily email digest to:</label> <select name="diagnostics_email_destination" id="diagnostics-email-destination" size="1">
-<option value="admins"<?php if ('admins'==$ded) : ?> selected="selected"<?php endif; ?>>the site administrators</option>
+<option value="admins"<?php if ( 'admins' == $ded ) : ?> selected="selected"<?php endif; ?>>the site administrators</option>
 <?php foreach ($users as $id => $name) : ?>
 <option value="user:<?php print (int) $id; ?>"<?php if (sprintf('user:%d', (int) $id)==$ded) : ?> selected="selected"<?php endif; ?>><?php print esc_html($name); ?></option>
 <?php endforeach; ?>
-<option value="mailto"<?php if (!is_null($ded_addy)) : ?> selected="selected"<?php endif; ?>>another e-mail address...</option>
+<option value="mailto"<?php if ( !is_null($ded_addy)) : ?> selected="selected"<?php endif; ?>>another e-mail address...</option>
 </select>
 <input type="email" id="diagnostics-email-destination-address" name="diagnostics_email_destination_address" value="<?php print esc_attr( $ded_addy ); ?>" placeholder="email address" /></li>
 </ul></td>
@@ -244,7 +243,7 @@ testing but absolutely inappropriate for a production server.</p>
 		'mailto',
 		'inline'
 	);
-	jQuery('#diagnostics-email-destination').change ( function () {
+	jQuery( '#diagnostics-email-destination' ).change ( function () {
 		contextual_appearance(
 			'diagnostics-email-destination',
 			'diagnostics-email-destination-address',
@@ -257,9 +256,17 @@ testing but absolutely inappropriate for a production server.</p>
 		<?php
 	} /* FeedWordPressDiagnosticsPage::diagnostics_box () */
 
+	/**
+	 * Shows the box for the many possible update options.
+	 *
+	 * @param  type $page description
+	 * @param  type $box description
+	 *
+	 * @return void  description
+	 */
 	static function updates_box ($page, $box = NULL) {
-		$hours = get_option('feedwordpress_diagnostics_persistent_errors_hours', 2);
-		$fields = apply_filters('feedwordpress_diagnostics', array(
+		$hours = get_option( 'feedwordpress_diagnostics_persistent_errors_hours', 2 );
+		$fields = apply_filters( 'feedwordpress_diagnostics', array(
 			'Update Diagnostics' => array(
 				'update_schedule:check' => 'whenever a FeedWordPress checks in on the update schedule',
 				'updated_feeds' => 'as each feed is checked for updates',
@@ -267,6 +274,7 @@ testing but absolutely inappropriate for a production server.</p>
 				'feed_items' => 'as each syndicated item is considered on the feed',
 				'memory_usage' => 'indicating how much memory was used',
 			),
+			// Note: the embedded HTML gets filtered out, so this might require some refactoring. (gwyneth 20230917)
 			'Feed Retrieval' => array(
 				'updated_feeds:errors:persistent' => 'when attempts to update a feed have resulted in errors</label> <label>for at least <input type="number" min="1" max="360" step="1" name="diagnostics_persistent_error_hours" value="'.$hours.'" /> hours',
 				'updated_feeds:errors' => 'any time FeedWordPress encounters any errors while checking a feed for updates',
@@ -285,16 +293,16 @@ testing but absolutely inappropriate for a production server.</p>
 				'syndicated_posts:categories:test' => 'as FeedWordPress checks for the familiarity of feed categories and tags',
 				'syndicated_posts:static_meta_data' => 'providing meta-data about syndicated posts in the Edit Posts interface',
 			),
-		), $page);
+		), $page );
 
-		foreach ($fields as $section => $items) :
-			foreach ($items as $key => $label) :
+		foreach ( $fields as $section => $items ) :
+			foreach ( $items as $key => $label ) :
 				$checked[$key] = '';
 			endforeach;
 		endforeach;
 
-		$diagnostics_show = get_option('feedwordpress_diagnostics_show', array());
-		if (is_array($diagnostics_show)) : foreach ($diagnostics_show as $thingy) :
+		$diagnostics_show = get_option( 'feedwordpress_diagnostics_show', array() );
+		if ( is_array( $diagnostics_show ) ) : foreach ( $diagnostics_show as $thingy ) :
 			$checked[$thingy] = ' checked="checked"';
 		endforeach; endif;
 
@@ -304,12 +312,12 @@ testing but absolutely inappropriate for a production server.</p>
 	<?php foreach ($fields as $section => $ul) : ?>
 	  <tr>
 	  <th scope="row"><?php print esc_html($section); ?>:</th>
-	  <td><p>Show a diagnostic message...</p>
+	  <td><p><?php _e( 'Show a diagnostic message...' ); ?></p>
 	  <ul class="options">
 	  <?php foreach ($ul as $key => $label) : ?>
 	    <li><label><input
 	    	type="checkbox" name="diagnostics_show[]"
-	    	value="<?php print esc_html($key); ?>"
+	    	value="<?php print esc_html( $key ); ?>"
 	    	<?php fwp_selected_flag( $checked, $key, "checked" ); ?> />
 	    <?php print esc_html( $label ); ?></label></li>
 	  <?php endforeach; ?>
@@ -324,7 +332,7 @@ testing but absolutely inappropriate for a production server.</p>
 		$url = FeedWordPress::param( 'http_test_url' );
 		$method = FeedWordPress::param( 'http_test_method' );
 		$xpath = FeedWordPress::param( 'http_test_xpath' );
-		
+
 		$aMethods = array(
 			'wp_remote_request',
 			'FeedWordPie_File',
@@ -365,13 +373,13 @@ function clone_http_test_args_keyvalue_prototype () {
 	<tr>
 	<td>
 	<div id="http-test-args">
-	<div id="http-test-args-keyvalue-prototype" class="http-test-args-keyvalue"><label>Args:
+	<div id="http-test-args-keyvalue-prototype" class="http-test-args-keyvalue"><label><?php _e( 'Args' ); ?>:
 	<input type="text" class='http_test_args_key' name="http_test_args_key[0]" value="" placeholder="key" /></label>
 	<label>= <input type="text" class='http_test_args_value' name="http_test_args_value[0]" value="" placeholder="value" /></label>
 	</div>
 	</div>
 	</td>
-	<td><a href="#http-test-args" onclick="return clone_http_test_args_keyvalue_prototype();">+ Add</a></td>
+	<td><a href="#http-test-args" onclick="return clone_http_test_args_keyvalue_prototype();"><span class="dashicons dashicons-plus fwp-no-underline"></span> <?php _e( 'Add' ); ?></a></td>
 	</tr>
 	</table>
 	</td>
@@ -380,13 +388,13 @@ function clone_http_test_args_keyvalue_prototype () {
 	<tr>
 	<th>XPath:</th>
 	<td><div><input type="text" name="http_test_xpath" value="<?php print esc_attr($xpath); ?>" placeholder="xpath-like query" /></div>
-	<div><p>Leave blank to test HTTP, fill in to test a query.</p></div>
+	<div><p><?php _e( 'Leave blank to test HTTP, fill in to test a query.' ); ?></p></div>
 	</td>
 	</tr>
-	
+
 	<?php if (isset($page->test_html['http_test'])) : ?>
 	<tr>
-	<th scope="row">RESULTS:</th>
+	<th scope="row"><?php _e( 'RESULTS:' ); ?></th>
 	<td>
 	<div>URL: <code><?php print esc_html($page->test_html['url']); ?></code></div>
 	<div style="position: relative">
@@ -472,7 +480,7 @@ function clone_http_test_args_keyvalue_prototype () {
 				endif;
 				break;
 			endswitch;
-			
+
 			$this->test_html['url']       = $url;
 			$this->test_html['http_test'] = esc_html( MyPHP::val($out) );
 		endif;

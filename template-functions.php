@@ -26,7 +26,7 @@ function is_syndicated ($id = NULL) {
  * @param string $url provides the URL to display
  * @param int $before a number of characters to preserve from the beginning of the URL if it must be shortened
  * @param int $after a number of characters to preserve from the end of the URL if it must be shortened
- * @return string containing an abbreviated display form of the URL (e.g.: `feedwordpress.radgeek.net/feed`) 
+ * @return string containing an abbreviated display form of the URL (e.g.: `feedwordpress.radgeek.net/feed`)
  */
 function feedwordpress_display_url ($url, $before = 60, $after = 0) {
 	$bits = parse_url($url);
@@ -44,7 +44,7 @@ function feedwordpress_display_url ($url, $before = 60, $after = 0) {
 		.(isset($bits['query'])?'?'.$bits['query']:'');
 
 	if (strlen($url) > ($before+$after)) :
-		$url = substr($url, 0, $before).'.'.substr($url, 0 - $after, $after);
+		$url = substr($url, 0, $before).'&hellip;'.substr($url, 0 - $after, $after);
 	endif;
 
 	return $url;
@@ -141,12 +141,12 @@ function the_syndication_permalink ($id = NULL) {
  *
  * @since 2010.0217
  */
-function get_local_permalink ($id = NULL) {
+function get_local_permalink ( $id = NULL ) {
 	global $feedwordpress_the_original_permalink;
 
 	// get permalink, and thus activate filter and force global to be filled
 	// with original URL.
-	$url = get_permalink($id);
+	$url = get_permalink( $id );
 	return $feedwordpress_the_original_permalink;
 } /* get_local_permalink() */
 
@@ -161,7 +161,7 @@ function get_local_permalink ($id = NULL) {
  *
  * @since 2010.0217
  */
-function the_local_permalink ($id = NULL) {
-	print apply_filters('the_permalink', get_local_permalink($id));
+function the_local_permalink ( $id = NULL ) {
+	print apply_filters( 'the_permalink', get_local_permalink( $id ) );
 } /* function the_local_permalink() */
 

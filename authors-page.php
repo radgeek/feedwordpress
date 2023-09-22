@@ -1,61 +1,79 @@
 <?php
-require_once(dirname(__FILE__) . '/admin-ui.php');
+require_once dirname(__FILE__) . '/admin-ui.php';
 
 class FeedWordPressAuthorsPage extends FeedWordPressAdminPage {
 	var $authorlist = NULL;
 	var $rule_count = 0;
-	
+
+	/**
+	 * Class constructor
+	 *
+	 * @param  int  $link  ID of the feed in the Links.
+	 */
 	public function __construct( $link = -1 ) {
-		if (is_numeric($link) and -1 == $link) :
+		if ( is_numeric( $link ) and -1 == $link ) :
 			$link = $this->submitted_link();
 		endif;
 
-		parent::__construct('feedwordpressauthors', $link);
+		parent::__construct( 'feedwordpressauthors', $link );
 		$this->refresh_author_list();
 		$this->dispatch = 'feedwordpress_author_settings';
 		$this->filename = __FILE__;
 
 		$this->pagenames = array(
-			'default' => 'Authors',
+			'default'         => 'Authors',
 			'settings-update' => 'Syndicated Authors',
-			'open-sheet' => 'Syndicated Author',
+			'open-sheet'      => 'Syndicated Author',
 		);
-	}
-	
-	function refresh_author_list () {
+	} /* construct() */
+
+	/**
+	 * Refreshes the author list and optionally sort it with the natural
+	 * alphanumeric sort algorithm.
+	 */
+	function refresh_author_list() {
 		$this->authorlist = fwp_author_list();
 
 		// Case-insensitive "natural" alphanumeric sort. Preserves key/value associations.
-		if (function_exists('natcasesort')) : natcasesort($this->authorlist); endif;
-	}
-	
-	/*static*/ function syndicated_authors_box ($page, $box = NULL) {
-		$link = $page->link;
-		$unfamiliar = array ('create' => '','default' => '','filter' => '');
+		if ( function_exists( 'natcasesort' ) ) :
+			natcasesort( $this->authorlist );
+		endif;
+	} /* FeedWordPressAuthorsPage::refresh_author_list) */
 
-		if ($page->for_feed_settings()) :
-			$key = $this->link->setting('unfamiliar author', NULL, 'site-default');
+	/**
+	 * Displays the page box for the syndicated authors.
+	 *
+	 * @param  FeedWordPressAuthorsPage  $page  FWP dashboard page.
+	 * @param  string|null               $box   Page box (unused).
+	 */
+	/*static*/ function syndicated_authors_box( $page, $box = NULL ) {
+		/** @var SyndicatedLink|null  An object of class {@link SyndicatedLink} if created for one feed's settings, NULL if created for global default settings. */
+		$link = $page->link;	// unused? (gwyneth 20230920)
+		$unfamiliar = array( 'create' => '','default' => '','filter' => '' );
+
+		if ( $page->for_feed_settings() ) :
+			$key = $this->link->setting( 'unfamiliar author', NULL, 'site-default' );
 			$unfamiliar['site-default'] = '';
 		else :
 			$key = FeedWordPress::on_unfamiliar('author');
 		endif;
 		$unfamiliar[$key] = true;
 
-		$match_author_by_email = !('yes' == get_option("feedwordpress_do_not_match_author_by_email"));
+		$match_author_by_email = ! ( 'yes' == get_option( "feedwordpress_do_not_match_author_by_email" ) );
 		$null_emails = FeedWordPress::null_email_set();
 
 		// Hey ho, let's go...
 		?>
 <table class="form-table">
 <?php
-if ($page->for_default_settings()) :
+if ( $page->for_default_settings() ) :
 ?>
 <tr><th>Unmatched authors</th>
-<td><span>Authors who haven&#8217;t been syndicated before</span>
+<td><span>Authors who haven&rsquo;t been syndicated before</span>
   <select style="max-width: 27.0em" id="unfamiliar-author" name="unfamiliar_author" onchange="contextual_appearance('unfamiliar-author', 'unfamiliar-author-newuser', 'unfamiliar-author-default', 'newuser', 'inline');">
     <option value="create"<?php fwp_selected_flag($unfamiliar, 'create'); ?>>will have a new author account created for them</option>
     <?php foreach ($page->authorlist as $author_id => $author_name) :
-		if (!isset($unfamiliar[$author_id])) : $unfamiliar[$author_id] = false; endif;
+		if ( !isset($unfamiliar[$author_id])) : $unfamiliar[$author_id] = false; endif;
 	?>
       <option value="<?php echo esc_attr($author_id); ?>"<?php fwp_selected_flag($unfamiliar, $author_id); ?>>will have their posts attributed to <?php echo esc_html($author_name); ?></option>
     <?php endforeach; ?>
@@ -96,7 +114,7 @@ name="author_rules_action[all]" onchange="contextual_appearance('author-rules-al
   <span class="author-rules-newuser" id="author-rules-all-newuser">named
   <input type="text" name="author_rules_newuser[all]" value="" /></span></p></li>
 <li><p><input type="radio" name="author_rules_name[all]" value=""
-<?php if (!isset($map['name']['*'])) : ?>
+<?php if ( !isset($map['name']['*'])) : ?>
 	checked="checked"
 <?php endif; ?>
 /> Attribute posts to authors based on automatic mapping rules. (Blank out a
@@ -124,7 +142,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
     <option value="newuser">will be assigned to a new user...</option>
     <option value="filter"<?php fwp_selected_flag('filter'==$author_action); ?>>get filtered out</option>
   </select>
-  
+
   <span class="author-rules-newuser" id="<?php echo esc_attr($authorRulesId); ?>-newuser">named <input type="text" name="author_rules_newuser[]" value="" /></span>
   </td>
 </tr>
@@ -145,7 +163,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
       <option value="newuser">will be assigned to a new user...</option>
       <option value="filter">get filtered out</option>
     </select>
-   
+
    <span id="add-author-rule-newuser">named <input type="text" name="add_author_rule_newuser" value="" /></span>
    </td>
 </tr>
@@ -159,7 +177,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
     <option value="site-default"<?php fwp_selected_flag($unfamiliar, 'site-default'); ?>>are handled according to the default for all feeds</option>
 <?php endif; ?>
     <option value="create"<?php fwp_selected_flag($unfamiliar, 'create'); ?>>will have a new author account created for them</option>
-    <?php foreach ($page->authorlist as $author_id => $author_name) : ?>
+    <?php foreach ( $page->authorlist as $author_id => $author_name ) : ?>
       <option value="<?php echo esc_attr($author_id); ?>"<?php fwp_selected_flag($unfamiliar, $author_id); ?>>will have their posts attributed to <?php echo esc_html($author_name); ?></option>
     <?php endforeach; ?>
     <option value="newuser">will have their posts attributed to a user named ...</option>
@@ -176,7 +194,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 </tr>
 <?php endif; ?>
 
-<?php if ($page->for_default_settings()) : ?>
+<?php if ( $page->for_default_settings() ) : ?>
 <tr>
 <th scope="row">Matching Authors</th>
 <td><ul style="list-style: none; margin: 0; padding: 0;">
@@ -193,9 +211,16 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 </tbody>
 </table>
 		<?php
-	} /* FeedWordPressAuthorsPage::syndicated_authors_box () */
-	
-	/*static*/ function fix_authors_box ($page, $box = NULL) {
+	} /* FeedWordPressAuthorsPage::syndicated_authors_box() */
+
+	/**
+	 * Displays a box for fixing mismatched authors.
+	 *
+	 * @param  FeedWordPressAuthorsPage  $page  FWP dashboard page.
+	 * @param  string|null               $box   Page box (unused).
+	 */
+	/*static*/ function fix_authors_box( $page, $box = NULL )
+	{
 		?>
 		<table class="form-table">
 		<tbody>
@@ -203,8 +228,8 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 		<th scope="row">Fixing mis-matched authors:</th>
 		<td><p style="margin: 0.5em 0px">Take all the posts from this feed attributed to
 		<select name="fix_mismatch_from">
-		<?php foreach ($page->authorlist as $author_id => $author_name) : ?>
-		      <option value="<?php echo esc_attr($author_id); ?>"><?php echo esc_html($author_name); ?></option>
+		<?php foreach ( $page->authorlist as $author_id => $author_name ) : ?>
+		      <option value="<?php echo esc_attr( $author_id ); ?>"><?php echo esc_html( $author_name ); ?></option>
 		<?php endforeach; ?>
 		</select>
 		and instead
@@ -223,9 +248,9 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 		</tbody>
 		</table>
 		<?php
-	} /* FeedWordPressAuthorsPage::fix_authors_box () */
+	} /* FeedWordPressAuthorsPage::fix_authors_box() */
 
-	function display () {
+	function display() {
 		$this->boxes_by_methods = array(
 		'syndicated_authors_box' => __('Syndicated Authors'),
 		'fix_authors_box' => __('Reassign Authors'),
@@ -256,25 +281,39 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 <?php 		endif;
 	} /* FeedWordPressAuthorsPage::display () */
 
-	public function fix_mismatch_requested () {
+	/**
+	 * Checks if a mismatch fix was requested.
+	 *
+	 * @return  bool  True if a fix was requested and not empty.
+	 */
+	public function fix_mismatch_requested() {
+		/** @var string|null */
 		$fix = FeedWordPress::post( 'fix_mismatch' );
-		return ( ! is_null( $fix ) && strlen( $fix ) > 0 );
-	}
-	
-	function accept_POST () {
+		return ( ! is_null( $fix ) && strlen( $fix ) > 0 );	// possibly the same as `( ! empty( $fix ) )`.
+	} /* FeedWordPressAuthorsPage::fix_mismatch_requested() */
+
+	/**
+	 * If a mismatch fix was requested, handles it here;
+	 * else sends it to the parent class for processing.
+	 */
+	public function accept_POST() {
 		if ( self::fix_mismatch_requested() ) :
 			$this->fix_mismatch();
 		else :
 			parent::accept_POST();
 		endif;
-	}
+	} /* FeedWordPressAuthorsPage::accept_POST() */
 
-	function fix_mismatch () {
+	/**
+	 * Fixes an author mismatch.
+	 */
+	function fix_mismatch() {
 		global $wpdb;
 
 		$to = FeedWordPress::post( 'fix_mismatch_to' );
-		if ( 'newuser' === $fix_to ) :
-			$newuser_name = trim( FeedWordPress::post('fix_mismatch_to_newuser', '' ) );
+//		if ( 'newuser' === $fix_to ) :	// will _always_ be false, since $fix_to is not called from anywhere (gwyneth 20230915)
+		if ( 'newuser' === $to ) :	// probably this is what was intended! (gwyneth 20230920)
+			$newuser_name = trim( FeedWordPress::post( 'fix_mismatch_to_newuser', '' ) );
 			$to = fwp_insert_new_user( $newuser_name );
 		endif;
 
@@ -291,45 +330,52 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 			AND {$wpdb->postmeta}.meta_value = '{$this->link->id}'
 			AND {$wpdb->posts}.post_author = '{$from}'
 			");
-			
-			if (count($post_ids) > 0) :
-				$N = count($post_ids);
-				$posts = 'post'.(($N==1) ? '' : 's');
+
+			if ( count( $post_ids ) > 0 ) :
+				$N = count( $post_ids );
+
+				// $posts = 'post'.(($N==1) ? '' : 's');	// Wordpress has _n() for plurals... (gwyneth 20230920)
+				$posts = sprintf( _n( '%s post', '%s posts', $N, 'text-domain' ), number_format_i18n( $N ) );
 
 				// Re-assign them all to the correct author
-				if (is_numeric($to)) : // re-assign to a particular user
-					$post_set = "(".implode(",", $post_ids).")";
-					
+				if ( is_numeric( $to ) ) : // re-assign to a particular user
+					$post_set = "(" . implode( ",", $post_ids ) . ")";
+
 					// Getting the revisions too, if there are any
 					$parent_in_clause = "OR {$wpdb->posts}.post_parent IN $post_set";
-					
+
 					$wpdb->query("
-					UPDATE {$wpdb->posts}
-					SET post_author='{$to}'
-					WHERE ({$wpdb->posts}.id IN $post_set
-					$parent_in_clause)
+						UPDATE {$wpdb->posts}
+						SET post_author='{$to}'
+						WHERE ({$wpdb->posts}.id IN $post_set
+						$parent_in_clause)
 					");
-					$this->mesg = sprintf(__("Re-assigned %d ${posts}."), $N);
+					// $this->mesg = sprintf(__("Re-assigned %d {$posts}."), $N);	// see comment abpve
+					$this->mesg = __( "Re-assigned " ) . $posts;
 
 				// ... and kill them all
-				elseif ('filter'==$to) :
-					foreach ($post_ids as $post_id) :
-						wp_delete_post($post_id);
+				elseif ( 'filter' == $to ) :
+					foreach ( $post_ids as $post_id ) :
+						wp_delete_post( $post_id );
 					endforeach;
-			
-					$this->mesg = sprintf(__("Deleted %d ${posts}."), $N);
+
+					$this->mesg = __( "Deleted " ) . $posts;
 				endif;
 			else :
 				$this->mesg = __("Couldn't find any posts that matched your criteria.");
 			endif;
 		endif;
 		$this->updated = false;
-	}
+	} /* FeedWordPressAuthorsPage::fix_mismatch() */
 
+	/**
+	 * Presumably saves settings...
+	 *
+	 * @return void  description
+	 */
 	function save_settings () {
-
 		if ($this->for_feed_settings()) :
-			$alter = array ();
+			// $alter = array();	// what is this array? It's never used. (gwyneth 20230920)
 
 			// Unfamiliar author rule
 			$unfamiliar_author = FeedWordPress::post( 'unfamiliar_author' );
@@ -345,7 +391,7 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 					);
 				endif;
 			endif;
-			
+
 			// Handle author mapping rules
 			$author_rules_name = FeedWordPress::post( 'author_rules_name' );
 			$author_rules_action = FeedWordPress::post('author_rules_action' );
@@ -355,11 +401,11 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 						$author_rules_name = array(
 							'all' => $author_rules_name['all'],
 						);
-						
+
 						// Erase all the rest.
 					endif;
 				endif;
-				
+
 				unset($this->link->settings['map authors']);
 				foreach ($author_rules_name as $key => $name) :
 					// Normalize for case and whitespace
@@ -424,9 +470,9 @@ name to delete the rule. Fill in a new name at the bottom to create a new rule.)
 
 		parent::save_settings();
 		$this->refresh_author_list();
-	}
+	} /* FeedWordPressAuthorsPage::save_settings() */
+
 } /* class FeedWordPressAuthorsPage */
 
-	$authorsPage = new FeedWordPressAuthorsPage;
-	$authorsPage->display();
-
+$authorsPage = new FeedWordPressAuthorsPage;
+$authorsPage->display();

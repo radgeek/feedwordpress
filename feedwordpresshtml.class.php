@@ -18,7 +18,7 @@ class FeedWordPressHTML {
 
 	static function attributeMatch ($matches) {
 		for ($i = 0; $i <= 12; $i++) :
-			if (!isset($matches[$i])) :
+			if ( !isset($matches[$i])) :
 				$matches[$i] = '';
 			endif;
 		endfor;
@@ -59,7 +59,7 @@ class FeedWordPressHTML {
 
 	static function tagWithAttributeMatch ($matches, $closing = true) {
 		for ($i = 0; $i <= 21; $i++) :
-			if (!isset($matches[$i])) :
+			if ( !isset($matches[$i])) :
 				$matches[$i] = '';
 			endif;
 		endfor;

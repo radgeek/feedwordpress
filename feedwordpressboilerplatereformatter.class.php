@@ -9,7 +9,7 @@
  *
  * @version 2020.0120
  */
- 
+
 class FeedWordPressBoilerplateReformatter {
 	var $id, $element;
 
@@ -39,15 +39,15 @@ class FeedWordPressBoilerplateReformatter {
 		endforeach;
 
 		$template = do_shortcode($template);
-		
+
 		// Unregister shortcodes.
 		foreach ($codes as $code => $method) :
 			remove_shortcode($code);
 		endforeach;
-		
+
 		return $template;
 	}
-	
+
 	function source_name ($atts) {
 		$param = shortcode_atts(array(
 		'original' => NULL,
@@ -70,11 +70,14 @@ class FeedWordPressBoilerplateReformatter {
 			$ret = $this->source_url($atts);
 			break;
 		default :
-			$param = shortcode_atts(array(
-			'original' => NULL,
-			), $atts);
+			/** @var array  Never used. */
+			$param = shortcode_atts(
+				array(
+					'original' => NULL,
+				),
+				$atts );
 			if ('title' == $this->element) :
-				$ret = $this->source_name($atts);
+				$ret = $this->source_name( $atts );
 			else :
 				$ret = '<a href="'.htmlspecialchars($this->source_url($atts)).'">'.htmlspecialchars($this->source_name($atts)).'</a>';
 			endif;
@@ -116,7 +119,7 @@ class FeedWordPressBoilerplateReformatter {
 						.'title="Read other posts by '.esc_html($authordata->display_name).'">'
 						.$ret
 						.'</a>';
-				endif;			
+				endif;
 			endif;
 		endswitch;
 		return $ret;

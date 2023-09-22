@@ -10,7 +10,7 @@ class SyndicatedPostXPathQuery {
 	private $feed_type;
 	private $xmlns;
 	private $urlHash = array();
-	
+
 	/**
 	 * SyndicatedPostXPathQuery::__construct
 	 *
@@ -22,14 +22,14 @@ class SyndicatedPostXPathQuery {
 		if (is_string($args)) :
 			$args = array("path" => $args);
 		endif;
-		
+
 		$args = wp_parse_args($args, array(
 		"path" => "",
 		));
 
 		$this->setPath($args['path']);
 	} /* SyndicatedPostXPathQuery::__construct() */
-	
+
 	/**
 	 * SyndicatedPostXPathQuery::getPath
 	 *
@@ -43,7 +43,7 @@ class SyndicatedPostXPathQuery {
 
 			return ($args['parsed'] ? $this->parsedPath : $this->path);
 	} /* SyndicatedPostXPathQuery::getPath () */
-	
+
 	/**
 	 * SyndicatedPostXPathQuery::setPath
 	 *
@@ -51,7 +51,7 @@ class SyndicatedPostXPathQuery {
 	 */
 	public function setPath ($path) {
 		$this->urlHash = array();
-		
+
 		$this->path = $path;
 
 	 	// Allow {url} notation for namespaces. URLs will contain : and /, so...
@@ -65,11 +65,11 @@ class SyndicatedPostXPathQuery {
 		endforeach;
 
 		$path = $this->parsePath(/*cur=*/ $path, /*orig=*/ $path);
-		
+
 		$this->parsedPath = $path;
 
 	} /* SyndicatedPostXPathQuery::setPath() */
-	
+
 	/**
 	 * SyndicatedPostXPathQuery::snipSlug
 	 *
@@ -90,7 +90,7 @@ class SyndicatedPostXPathQuery {
 		endif;
 		return $slug;
 	} /* SyndicatedPostXPathQuery::snipSlug () */
-	
+
 	/**
 	 * SyndicatedPostXPathQuery::parsePath ()
 	 *
@@ -104,7 +104,7 @@ class SyndicatedPostXPathQuery {
 			$pp = $path;
 		else :
 			$pp = array();
-			
+
 			// Okay let's parse this thing.
 			$n = 0; $start = 0; $state = 'slug';
 			while ($state != '$') :
@@ -118,9 +118,9 @@ class SyndicatedPostXPathQuery {
 				$n++;
 				// don't include the slash in our next slug
 				$start = $n;
-				
+
 				$state = (($n < strlen($path)) ? 'slug' : '$');
-				
+
 				break;
 			case 'brackets' :
 
@@ -133,7 +133,7 @@ class SyndicatedPostXPathQuery {
 				// now, chase the ]
 				$depth = 1;
 				$n++; $start = $n;
-				
+
 				// find the end of the [square-bracketed] expression
 				while ($depth > 0 and $n != '') :
 					$tok = ((strlen($path) > $n) ? $path[$n] : '');
@@ -163,13 +163,13 @@ class SyndicatedPostXPathQuery {
 					$oFilter->verb = 'has';
 					$oFilter->query = $this->parsePath($bracketed, $rootPath);
 					$pp[] = $oFilter;
-				
+
 					$start = $n;
-					
+
 					$state = 'slash-expected';
 				endif;
 				break;
-				
+
 			case 'slash-expected' :
 				$tok = ((strlen($path) > $n) ? $path[$n] : '');
 				if ($tok == '/' or $tok == '') :
@@ -201,7 +201,7 @@ class SyndicatedPostXPathQuery {
 		endif;
 		return $pp;
 	} /* SyndicatedPostXPathQuery::parsePath() */
-	
+
 	/**
 	 * SyndicatedPostXPathQuery::match
 	 *
@@ -210,7 +210,7 @@ class SyndicatedPostXPathQuery {
 	 */
 	public function match ($r = array()) {
 		$path = $this->parsedPath;
-		
+
 		$r = wp_parse_args($r, array(
 		"type" => SIMPLEPIE_TYPE_ATOM_10,
 		"xmlns" => array(),
@@ -222,7 +222,7 @@ class SyndicatedPostXPathQuery {
 
 		$this->feed_type = $r['type'];
 		$this->xmlns = $r['xmlns'];
-		
+
 		// Start out with a get_item_tags query.
 		$node = '';
 		while (strlen($node)==0 and !is_null($node)) :
@@ -237,7 +237,7 @@ class SyndicatedPostXPathQuery {
 		endif;
 
 		$matches = $data;
-		while (!is_null($node)) :
+		while ( !is_null($node)) :
 			if (is_object($node) OR strlen($node) > 0) :
 				list($axis, $element) = $this->xpath_name_and_axis($node);
 				if ('self'==$axis) :
@@ -254,23 +254,23 @@ class SyndicatedPostXPathQuery {
 							"parent" => $r['parent'],
 							"format" => "object",
 						));
-						
+
 						// when format = 'object' we should get back
 						// a sparse array of arrays, with indices = indices
 						// from the input array, each element = an array of
 						// one or more matching elements
-	
+
 						if ($element->verb = 'has' and is_array($result)) :
 
 							$results = array();
 							foreach (array_keys($result) as $a) :
 								$results[$a] = $matches[$a];
 							endforeach;
-							
+
 							$matches = $results;
 							$data = $matches;
 						endif;
-												
+
 					elseif (is_numeric($node)) :
 
 						// according to W3C, sequence starts at position 1, not 0
@@ -281,15 +281,15 @@ class SyndicatedPostXPathQuery {
 						else :
 							$data = array();
 						endif;
-						
+
 						$matches = array($idx => $data);
 					endif;
-					
+
 				else :
 					$matches = array();
 
 					foreach ($data as $idx => $datum) :
-						if (!is_string($datum) and isset($datum[$axis])) :
+						if ( !is_string($datum) and isset($datum[$axis])) :
 							foreach ($datum[$axis] as $ns => $elements) :
 								if (isset($elements[$element])) :
 									// Potential match.
@@ -297,7 +297,7 @@ class SyndicatedPostXPathQuery {
 									if (is_string($elements[$element])) : // Attribute
 										$addenda = array($elements[$element]);
 										$contexts = array($datum);
-									
+
 									// Element
 									else :
 										$addenda = $elements[$element];
@@ -335,10 +335,10 @@ class SyndicatedPostXPathQuery {
 				$matches[$idx] = $datum;
 			endif;
 		endforeach;
-		
+
 		return $matches;
 	} /* SyndicatedPostXPathQuery::match() */
-	
+
 	public function xpath_default_namespace () {
 		// Get the default namespace.
 		$type = $this->feed_type;
@@ -359,7 +359,8 @@ class SyndicatedPostXPathQuery {
 	} /* SyndicatedPostXPathQuery::xpath_default_namespace() */
 
 	public function xpath_name_and_axis ($node) {
-		$ns = NULL; $element = NULL;
+		// $ns = NULL; 		// Was unused. (gwyneth 20230920)
+		$element = NULL;
 
 		$axis = 'child'; // "In effect, `child` is the default axis."
 		if (is_object($node) and property_exists($node, 'verb')):
@@ -394,8 +395,10 @@ class SyndicatedPostXPathQuery {
 	} /* SyndicatedPostXPathQuery::xpath_name_and_axis () */
 
 	public function xpath_possible_namespaces ($node, $datum = array()) {
-		$ns = NULL; $element = NULL;
+		$ns = NULL;
+		// $element = NULL;	// reverse of before: now it's the $element that's never used (gwyneth 20230920)
 
+		// Is $attr really the correct thing to assign to? It's never used... (gwyneth 20230920)
 		if (substr($node, 0, 1)=='@') :
 			$attr = '@'; $node = substr($node, 1);
 		else :

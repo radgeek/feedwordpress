@@ -385,9 +385,9 @@ function feedAuthenticationMethod (params) {
 	value: null,
 	node: jQuery(this)
 	}, params);
-	
+
 	var speed = (s.init ? 0 : 'slow');
-	
+
 	var elDiv = jQuery(s.node).closest('.link-rss-authentication');
 	var elTable = elDiv.find('table');
 	var elMethod = elTable.find('.link-rss-auth-method');
@@ -397,13 +397,13 @@ function feedAuthenticationMethod (params) {
 	if (s.value != null) {
 		elMethod.val(s.value);
 	}
-	
+
 	if (elMethod.val()=='-') {
 		elTable.hide(speed, function () {
 			// Just in case. Make sure that we don't duplicate.
 			elLink.remove();
-			
-			jQuery('<a style="display: none" class="add-remove link-rss-userpass-use" href="#">+ Uses username/password</a>')
+
+			jQuery('<a style="display: none" class="add-remove link-rss-userpass-use" href="#"><span class="dashicons dashicons-plus fwp-no-underline"></span> Uses username/password</a>')
 				.insertAfter(elTable)
 				.click(feedAuthenticationMethodPress)
 				.show(speed);
@@ -413,18 +413,18 @@ function feedAuthenticationMethod (params) {
 		elTable.show(speed);
 	} /* if */
 } /* function feedAuthenticationMethod () */
- 
+
 /**
- * Admin interface: Live category and tag boxes 
+ * Admin interface: Live category and tag boxes
  */
- 
+
 jQuery(document).ready( function($) {
 	// Category boxes
 	$('.feedwordpress-category-div').each( function () {
 		var this_id = $(this).attr('id');
 		var catAddBefore, catAddAfter;
 		var taxonomyParts, taxonomy, settingName;
-		
+
 		taxonomyParts = this_id.split('-');
 		taxonomyParts.shift();	taxonomyParts.shift();
 		taxonomy = taxonomyParts.join('-');
@@ -432,9 +432,9 @@ jQuery(document).ready( function($) {
 		settingName = taxonomy + '_tab';
 		if ( taxonomy == 'category' )
 			settingName = 'cats';
-			
+
 		// No need to worry about tab stuff for our purposes
-			
+
 		// Ajax Cat
 		var containerId = $(this).attr('id');
 		var checkboxId = $(this).find('.categorychecklist').attr('id');
@@ -446,9 +446,9 @@ jQuery(document).ready( function($) {
 		$(this).find('.add-categorychecklist-category-add').click( function() {
 			$(this).parent().children('.new'+taxonomy).focus();
 		} );
-		
+
 		catAddBefore = function (s) {
-			if ( !$('#'+newCatId).val() )
+			if ( ! $('#'+newCatId).val() )
 				return false;
 			s.data += '&' + $( ':checked', '#'+checkboxId ).serialize();
 			return s;
@@ -456,11 +456,11 @@ jQuery(document).ready( function($) {
 		catAddAfter = function (r, s) {
 			// Clear out input box
 			$('.new' + taxonomy, '#'+this_id).val('');
-			
+
 			// Clear out parent dropbox
 			var sup, drop = $('.new' + taxonomy + '-parent', '#'+this_id);
 			var keep = $('.new' + taxonomy, '#'+this_id);
-			
+
 			if ( 'undefined' != s.parsed.responses[0] && (sup = s.parsed.responses[0].supplemental.newcat_parent) ) {
 				sup = sup.replace(/id=['"]new[^'"]*_parent['"]/g, 'id="' + keep.attr('id') + '-parent"');
 				drop.before(sup);
@@ -468,7 +468,7 @@ jQuery(document).ready( function($) {
 				drop.remove();
 			}
 		};
-		
+
 		$('#' + checkboxId).fwpList({
 			alt: '',
 			elementbox: taxAdderId,
@@ -476,7 +476,7 @@ jQuery(document).ready( function($) {
 			addBefore: catAddBefore,
 			addAfter: catAddAfter
 		});
-		
+
 		$(this).find('.category-add-toggle').click( function () {
 			$('#' + taxAdderId).toggleClass('wp-hidden-children');
 			$('#' + newCatId).focus();
@@ -491,7 +491,7 @@ function fwp_feedspiper () {
 	var data = {
 		action: 'fwp_feeds'
 	};
-	
+
 	return jQuery.ajax({
 		type: "POST",
 		url: ajaxurl,
@@ -504,7 +504,7 @@ function fwp_feedcontentspiper (feed_id, callbackOK, callbackFail) {
 		action: 'fwp_feedcontents',
 		feed_id: feed_id
 	};
-	
+
 	jQuery.ajax({
 		type: "POST",
 		url: ajaxurl,
@@ -516,10 +516,10 @@ function fwp_feedcontentspiper (feed_id, callbackOK, callbackFail) {
 
 function fwp_feedcontentspicker (feed_id, destination, pickCallback, closeCallback) {
 	var picker_id = 'fwp-feed-contents-picker-' + feed_id;
-	
+
 	jQuery('<div class="fwp-feed-contents-picker" style="display: none;" id="'+picker_id+'"><p>Loading...</p></div>').insertAfter(destination);
 	jQuery('#'+picker_id).show(500);
-	
+
 	fwp_feedcontentspiper(feed_id, function (response) {
 		var ul = '<h4>Using post...</h4><ul>';
 		for (var i=0; i < response.length; i++) {
@@ -558,10 +558,10 @@ function fwp_feedcontentspicker (feed_id, destination, pickCallback, closeCallba
 function fwp_feedspicker (destination, pickCallback, closeCallback) {
 	var dabber = jQuery(destination).attr('id');
 	var picker_id = 'fwp-feeds-picker-' + dabber;
-	
+
 	jQuery('<div class="fwp-feeds-picker" style="display: none;" id="'+picker_id+'"><p>Loading...</p></div>').insertAfter(destination);
 	jQuery('#'+picker_id).show(500);
-	
+
 	fwp_feedspiper()
 	.done(function (response) {
 		var ul = '<h4>Using subscription...</h4><ul>';
@@ -574,7 +574,7 @@ function fwp_feedspicker (destination, pickCallback, closeCallback) {
 		ul += '<a class="fwp-feeds-picker-close" href="#" id="fwp-feeds-picker-' + dabber + '-close">x</a>';
 
 		jQuery('#fwp-feeds-picker-' + dabber).html(ul);;
-		
+
 		// Set up event handlers.
 		jQuery('#fwp-feeds-picker-' + dabber + '-close').click(function (e) {
 			jQuery('#fwp-feeds-picker-' + dabber).hide(500, function () { jQuery('#fwp-feeds-picker-' + dabber).remove(); });
@@ -588,9 +588,9 @@ function fwp_feedspicker (destination, pickCallback, closeCallback) {
 			jQuery('#fwp-feeds-picker-' + dabber).hide(500, function () {
 				jQuery('#fwp-feeds-picker-' + dabber).remove();
 			});
-			
+
 			var feed_id = jQuery(this).attr('href').replace(/^#feed-/, '');
-			
+
 			if (typeof(pickCallback)=='function') {
 				pickCallback(feed_id, jQuery(this));
 			}
@@ -610,7 +610,7 @@ function fwp_xpathtest_ajax (expression, feed_id, post_id) {
 	feed_id: feed_id,
 	post_id: post_id
 	};
-			
+
 	return jQuery.ajax({
 		type: "GET",
 		url: ajaxurl,
@@ -626,7 +626,7 @@ function fwp_xpathtest_fail (response, result_id, destination) {
 function fwp_xpathtest_ok (response, result_id, destination) {
 	var dabber = jQuery(destination).attr('id');
 	var resultsHtml = '<ul>';
-	
+
 	if (response.results instanceof Array) {
 		for (var i = 0; i < response.results.length; i++) {
 			resultsHtml += '<li>result['+(i+1).toString()+'] = <code>'+response.results[i]+'</code></li>';
@@ -635,19 +635,19 @@ function fwp_xpathtest_ok (response, result_id, destination) {
 		resultsHtml += '<li>result = <code>' + response.results + '</code></li>';
 	} /* if */
 	resultsHtml += '</ul>';
-	
+
 	jQuery('<div class="fwp-xpath-test-results" style="display: none;" id="'+result_id+'"><h4>'+response.expression+'</h4>'+resultsHtml+'</code> <a class="fwp-xpath-test-results-close">x</a></div>').insertAfter(destination);
-	
-	var link_id = 'fwp-xpath-test-results-post-'+dabber; 
+
+	var link_id = 'fwp-xpath-test-results-post-'+dabber;
 	if (jQuery('#'+link_id).length > 0) {
 		jQuery('#'+link_id).attr('href', response.guid).html(response.post_title);
 	} else {
 		jQuery('<div id="contain-'+link_id+'" class="fwp-xpath-test-results-post fwp-xpath-test-setting">Using post: <a id="'+link_id+'" href="'+response.guid+'"> '+response.post_title+'</a> (<a href="#" class="fwp-xpath-test-results-post-change">reset</a>)</div>').insertAfter('#'+result_id);
 	} /* if */
-	
+
 	jQuery('#'+result_id).find('.fwp-xpath-test-results-close').click(function (e) {
 		e.preventDefault();
-		
+
 		jQuery('#'+result_id).hide(500, function () { jQuery(this).remove(); });
 		return false;
 	});
@@ -663,42 +663,42 @@ function fwp_xpathtest_ok (response, result_id, destination) {
 function fwp_xpathtest (expression, destination, feed_id) {
 	var dabber = jQuery(destination).attr('id');
 	var result_id = 'fwp-xpath-test-results-'+dabber;
-	var preset_post_id = 'fwp-xpath-test-results-post-'+dabber; 
+	var preset_post_id = 'fwp-xpath-test-results-post-'+dabber;
 	var post_id = jQuery('#'+preset_post_id).attr('href');
-	
+
 	// Clear out any previous results.
 	jQuery('#'+result_id).remove();
-	
+
 	if (jQuery('#xpath-test-feed-id-'+dabber).length > 0) {
-		feed_id = jQuery('#xpath-test-feed-id-'+dabber).val();		
+		feed_id = jQuery('#xpath-test-feed-id-'+dabber).val();
 	}
-	
+
 	if ('*' == feed_id) {
-	
+
 		fwp_feedspicker(destination, function (feed_id, a) {
 			var href = a.attr('href');
 			var text = a.text();
-			
+
 			jQuery('<div class="fwp-xpath-test-feed-id fwp-xpath-test-setting" id="contain-xpath-test-feed-id-'+dabber+'">Using sub: <a href="'+href+'">'+text+'</a><input type="hidden" id="xpath-test-feed-id-'+dabber+'" name="xpath_test_feed_id" value="'+feed_id+'" /> (<a href="#" class="fwp-xpath-test-feed-id-change">reset</a>)</div>').insertAfter(destination);
-			
+
 			jQuery('#contain-xpath-test-feed-id-'+dabber).find('.fwp-xpath-test-feed-id-change').click(function (e) {
 				e.preventDefault();
-				
+
 				// If there is a post set, we need to reset that
 				console.log(('#contain-fwp-xpath-test-results-post-'+dabber), jQuery('#contain-fwp-xpath-test-results-post-'+dabber));
 				jQuery('#contain-fwp-xpath-test-results-post-'+dabber).remove();
-				
+
 				// Show yourself out.
 				jQuery('#contain-xpath-test-feed-id-'+dabber).remove();
 				return false;
 			});
-			
+
 			// Now recursively call the function in order to force
 			// a post-picker.
 			fwp_xpathtest(expression, destination, feed_id);
 		});
 	}
-	
+
 	// Check for a pre-selected post GUID.
 	else if (post_id) {
 		fwp_xpathtest_ajax(expression, feed_id, post_id)
@@ -710,10 +710,10 @@ function fwp_xpathtest (expression, destination, feed_id) {
 		fwp_feedcontentspicker(feed_id, destination, function (feed_id, post_id) {
 			fwp_xpathtest_ajax(expression, feed_id, post_id)
 			.done( function (response) { fwp_xpathtest_ok(response, result_id, destination); } )
-			.fail( function (response) { fwp_xpathtest_fail(response, result_id, destination); } );			
+			.fail( function (response) { fwp_xpathtest_fail(response, result_id, destination); } );
 		});
 	}
-	
+
 }
 
 jQuery(document).ready(function($){
@@ -723,11 +723,11 @@ jQuery(document).ready(function($){
 
 			// Pull the local expression from the text box
 			var expr = jQuery(this).closest('tr').find('textarea').val();
-			
+
 			// Check to see if we are on a Feed settings page or
 			// on the global settings page;
 			var feed_id = jQuery('input[name="save_link_id"]').val();
-			
+
 			fwp_xpathtest(expr, jQuery(this), feed_id);
 			return false;
 		});
@@ -745,7 +745,7 @@ jQuery(document).ready(function($){
 		function () { this.form.submit(); }
 	);
 	$('#fwpfs-button').css( 'display', 'none' );
-	
+
 	$('table.twofer td.active input[type="radio"], table.twofer td.inactive input[type="radio"]').each( function () {
 		$(this).click( function () {
 			var name = $(this).attr('name');
@@ -753,13 +753,13 @@ jQuery(document).ready(function($){
 			table.find('td').removeClass('active').addClass('inactive');
 			table.find('td:has(input[name="'+name+'"]:checked)').removeClass('inactive').addClass('active');
 		} );
-		
+
 		var name = $(this).attr('name');
 		var table = $(this).closest('table');
 		table.find('td').removeClass('active').addClass('inactive');
 		table.find('td:has(input[name="'+name+'"]:checked)').removeClass('inactive').addClass('active');
 	} );
-	
+
 	$('#turn-on-multiple-sources').click ( function () {
 		$('#add-single-uri').hide();
 		$('#add-multiple-uri').show(600);
