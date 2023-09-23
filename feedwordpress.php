@@ -2067,13 +2067,20 @@ class FeedWordPress {
 		return $duration;
 	}
 
-	static public function cache_lifetime ($duration) {
+	/**
+	 * Tries to return our own defined cache lifetime, if set; if not.
+	 * falls back to the WordPress default (which is passed to this function).
+	 *
+	 * @param  int $duration  WordPress default cache lifetime duration (as a fallback), in seconds.
+	 * @return int            Set duration, or the WordPress default (in seconds).
+	 */
+	static public function cache_lifetime( $duration ) {
 		// Check for explicit setting of a lifetime duration
-		if (defined('FEEDWORDPRESS_CACHE_LIFETIME')) :
+		if ( defined( 'FEEDWORDPRESS_CACHE_LIFETIME' ) ) :
 			$duration = FEEDWORDPRESS_CACHE_LIFETIME;
 
 		// Fall back to the cache freshness duration
-		elseif (defined('FEEDWORDPRESS_CACHE_AGE')) :
+		elseif ( defined( 'FEEDWORDPRESS_CACHE_AGE' ) ) :
 			$duration = FEEDWORDPRESS_CACHE_AGE;
 		endif;
 
@@ -2081,9 +2088,25 @@ class FeedWordPress {
 		return $duration;
 	} /* FeedWordPress::cache_lifetime () */
 
-	# Utility functions for handling text settings
-	static function get_field( $f, $setting = null ) {
+	/*
+	 * Utility functions for handling text settings.
+	 */
 
+	/**
+	 * Returns the settings (value) for a field (key), if the first
+	 * parameter is an array; if a string was passed, returns the
+	 * string instead.
+	 *
+	 * @note This is a rather awkward way to do this; the function is
+	 * only called on the two functions `negative()` and `affirmative()`,
+	 * which could be totally rewritten in a much simpler way — unless
+	 * I'm missing something! (gwyneth 20230922)
+	 *
+	 * @param  array|string  $f        Associative array with key/value pairs _or_ a simple string.
+	 * @param  string|null   $setting  Either the field name (key) for a setting, or NULL.
+	 * @return string|null   Returns either a valid string (if a setting was found) or NULL otherwise.
+	 */
+	static function get_field( $f, $setting = null ) {
 		$ret = $f;
 		if ( ! is_null( $setting ) ) :
 			$ret = null;
@@ -2092,19 +2115,51 @@ class FeedWordPress {
 			endif;
 		endif;
 		return $ret;
-
 	} /* FeedWordPress::get_field () */
 
-	static function negative ($f, $setting = null) {
-		$nego = array ('n', 'no', 'f', 'false');
+	/**
+	 * Checks if the passed parameter is one of the "negative" values.
+	 *
+	 * @note This static method is never used.
+	 *
+	 * @param  array|string  $f        Associative array with key/value pairs _or_ a simple string.
+	 * @param  string|null   $setting  Either the field name (key) for a setting, or NULL.
+	 * @return bool                    Returns TRUE if the field being tested is negative, FALSE otherwise.
+	 */
+	static function negative( $f, $setting = null ) {
+		$nego = array( 'n', 'no', 'f', 'false' );	// why not `0` as well? (gwyneth 20230922) @see affirmative()
 		$q = self::get_field( $f, $setting );
-		return in_array( strtolower( trim( $q ) ), $nego );
+		// Check first if `$q` is empty or, worse, null, so that `trim()` below
+		// doesn't give an error (gwyneth 20230922).
+		if ( ! empty( $q ) ) :
+			return in_array( strtolower( trim( $q ) ), $nego );
+		endif;
+		// A null/empty check above is undefined; all we can say is that it is NOT negative,
+		// so we return FALSE! (gwyneth 20230922)
+		return FALSE;
 	} /* FeedWordPress::negative () */
 
-	static function affirmative ($f, $setting = null) {
-		$affirmo = array ('y', 'yes', 't', 'true', 1);
+	/**
+	 * Checks if the passed parameter is one of the "affirmative" values.
+	 *
+	 * @note A sparsely used method which might benefit from some code refactoring.
+	 * Most notably, it treats variable types _very_ loosely for my taste! (gwyneth 20230922)
+	 *
+	 * @param  array|string  $f        Associative array with key/value pairs _or_ a simple string.
+	 * @param  string|null   $setting  Either the field name (key) for a setting, or NULL.
+	 * @return bool                    Returns TRUE if the field being tested is affirmative, FALSE otherwise.
+	 */
+	static function affirmative( $f, $setting = null ) {
+		$affirmo = array('y', 'yes', 't', 'true', 1 );
 		$q = self::get_field( $f, $setting );
-		return in_array( strtolower( trim( $q ) ), $affirmo );
+		// Check first if `$q` is empty or, worse, null, so that `trim()` below
+		// doesn't give an error (gwyneth 20230922).
+		if ( ! empty( $q ) ) :
+			return in_array( strtolower( trim( $q ) ), $affirmo );
+		endif;
+		// A null/empty check above is undefined; all we can say is that it is NOT affirmative,
+		// so we return FALSE! (gwyneth 20230922)
+		return FALSE;
 	} /* FeedWordPress::affirmative () */
 
 	/**
@@ -2113,9 +2168,22 @@ class FeedWordPress {
 	  * @todo radgeek needs to document this better. What levels exist, and
 	  * how/where are they defined? (gwyneth 20230919)
 	  *
+	  * @note Diagnostics can be sent out to different loggers (stderr, file-based
+	  *       logging, dialogue boxes, error sent by email, etc...) and this method
+	  *       will attempt to contact the correct one.
+	  *
+	  * @param  string      $level       Error level, in a structured way (usually `class/method`).
+	  * @param  string      $out         Error message to output.
+	  * @param  mixed|null  $persist     Probably checks if the error is transitory or persistent.
+	  * @param  mixed|null  $since       Probably the date (or a timestamp?) of the first occurrence of this error.
+	  * @param  mixed|null  $mostRecent  Probably the date (or a timestamp?) of the most recent occurence of this error.
+	  *
 	  * @global $feedwordpress_admin_footer
+	  * @uses error_log()
+	  * @uses get_option()
+	  * @uses update_option()
 	  */
-	static function diagnostic( $level, $out, $persist = null, $since = null, $mostRecent = null ) {
+	static function diagnostic($level, $out, $persist = null, $since = null, $mostRecent = null) {
 		global $feedwordpress_admin_footer;
 
 		$output = get_option( 'feedwordpress_diagnostics_output', array() );
@@ -2126,34 +2194,35 @@ class FeedWordPress {
 		if (FeedWordPressDiagnostic::is_on($level)) :
 			foreach ($output as $method) :
 				switch ($method) :
-				case 'echo' :
-					if ( !self::update_requested()) :
-						echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.$out."</pre></div>\n";
-					endif;
-					break;
-				case 'echo_in_cronjob' :
-					if (self::update_requested()) :
-						echo self::log_prefix() . ' ' . esc_html( $out ) . "\n";
-					endif;
-					break;
-				case 'admin_footer' :
-					$feedwordpress_admin_footer[] = $out;
-					break;
-				case 'error_log' :
-					error_log(self::log_prefix() . ' ' . $out);
-					break;
-				case 'email' :
+					case 'echo' :
+						if ( !self::update_requested()) :
+							echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.$out."</pre></div>\n";
+						endif;
+						break;
+					case 'echo_in_cronjob' :
+						if (self::update_requested()) :
+							echo self::log_prefix() . ' ' . esc_html( $out ) . "\n";
+						endif;
+						break;
+					case 'admin_footer' :
+						$feedwordpress_admin_footer[] = $out;
+						break;
+					case 'error_log' :
+						error_log(self::log_prefix() . ' ' . $out);
+						break;
+					case 'email' :
+						if (is_null($persist)) :
+							$sect = 'occurrent';
+							$hook = (isset($dlog['mesg'][$sect]) ? count($dlog['mesg'][$sect]) : 0);
+							$line = array("Time" => time(), "Message" => $out);
+						else :
+							$sect = 'persistent';
+							$hook = md5($level."\n".$persist);
+							$line = array("Since" => $since, "Message" => $out, "Most Recent" => $mostRecent);
+						endif;
 
-					if (is_null($persist)) :
-						$sect = 'occurrent';
-						$hook = (isset($dlog['mesg'][$sect]) ? count($dlog['mesg'][$sect]) : 0);
-						$line = array("Time" => time(), "Message" => $out);
-					else :
-						$sect = 'persistent';
-						$hook = md5($level."\n".$persist);
-						$line = array("Since" => $since, "Message" => $out, "Most Recent" => $mostRecent);
-					endif;
-
+					// Is this the default case?! If not, this code will very likely _never_ run! (gwyneth 20230922)
+					// @see PHP Manual for switch()
 					if ( !isset($dlog['mesg'])) : $dlog['mesg'] = array(); endif;
 					if ( !isset($dlog['mesg'][$sect])) : $dlog['mesg'][$sect] = array(); endif;
 
