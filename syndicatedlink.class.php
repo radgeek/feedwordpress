@@ -130,7 +130,14 @@ class SyndicatedLink {
 		return ('yes'==$this->setting("update/pause", "update_pause", 'no'));
 	} /* SyndicatedLink::pause_updates () */
 
-	public function poll ($crash_ts = NULL) {
+	/**
+	 * Polls all feeds to see if they are ready for updating.
+	 *
+	 * @param  int|null  $crash_ts  (Optional) timestamp for testing if feed should be updated.
+	 *
+	 * @return array  Returns an associative array with keys 'new' (new posts), 'updated' (existing posts that were updated), and 'stored' (unknown).
+	 */
+	public function poll( $crash_ts = NULL ) {
 		global $wpdb;
 
 		$url = $this->uri(array('add_params' => true, 'fetch' => true));
@@ -138,7 +145,8 @@ class SyndicatedLink {
 
 		$this->fetch();
 
-		$new_count = NULL;
+		// $new_count = NULL;
+		$new_count = array(); // it's better to allocate as an empty array, saves some error-checking later on
 
 		$resume = ('yes'==$this->setting('update/unfinished'));
 		if ($resume) :
@@ -272,10 +280,11 @@ class SyndicatedLink {
 								if ( $new !== false ) $new_count[$new]++;
 							endif;
 
-							if ( !is_null($crash_ts) and (time() > $crash_ts)) :
+							if ( ! is_null( $crash_ts ) and ( time() > $crash_ts ) ) :
 								$crashed = true;
 								break;
 							endif;
+							// What if $crash_ts _is_ null? What happens then? (gwyneth 20230924)
 						endif;
 
 						unset($post);
