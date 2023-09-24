@@ -1041,29 +1041,36 @@ class FeedWordPress {
 		return ($this->has_secret() and FeedWordPress::param( 'force_update_feeds' ));
 	} /* FeedWordPress::force_update_all () */
 
-	public function stale () {
-		if ( !is_null($this->automatic_update_hook())) :
+	/**
+	 * Checks if the feed is stale, avoiding simultaneous updates.
+	 *
+	 * @return  bool  True if feed is stale, false otherwise,
+	 */
+	public function stale() {
+		/** @var  bool  Set the default return value here, because of scoping issues; just to be sure something valid is returned. (gwyneth 20230924) */
+		$ret = false;
+
+		if ( ! is_null( $this->automatic_update_hook() ) ) :
 			// Do our best to avoid possible simultaneous
 			// updates by getting up-to-the-minute settings.
 
-			$last = $this->last_update_all();
+			$last = $this->last_update_all() ?? false;	// never trust these return values! (gwyneth 20230924)
 
 			// If we haven't updated all yet, give it a time window
-			if (false === $last) :
-				$ret = false;
-				update_option('feedwordpress_last_update_all', time());
+			if ( false === $last ) :
+				update_option( 'feedwordpress_last_update_all', time() );
 
 			// Otherwise, check against freshness interval
-			elseif (is_numeric($last)) : // Expect a timestamp
-				$freshness = get_option('feedwordpress_freshness');
-				if (false === $freshness) : // Use default
+			elseif ( is_numeric( $last ) ) : // Expect a timestamp
+				$freshness = get_option( 'feedwordpress_freshness' ) ?? false;	// If we get a NULL, turn it into false. (gwyneth 20230924)
+				if ( false === $freshness ) : // Use default
 					$freshness = FEEDWORDPRESS_FRESHNESS_INTERVAL;
 				endif;
-				$ret = ( (time() - $last) > $freshness );
+				$ret = ( ( time() - $last ) > $freshness );
 
 			// This should never happen.
 			else :
-				FeedWordPressDiagnostic::critical_bug('FeedWordPress::stale::last', $last, __LINE__, __FILE__);
+				FeedWordPressDiagnostic::critical_bug( 'FeedWordPress::stale::last', $last, __LINE__, __FILE__ );
 			endif;
 
 		else :
@@ -1683,8 +1690,11 @@ class FeedWordPress {
 		return $ret;
 	} /* FeedWordPress::update_requested_url() */
 
-	public function auto_update () {
-		if ($this->stale()) :
+	/**
+	 * Checks if the feed is stale (i.e. no freshness) and requests an update.
+	 */
+	public function auto_update() {
+		if ( $this->stale() ) :
 			$this->update();
 		endif;
 	} /* FeedWordPress::auto_update () */
