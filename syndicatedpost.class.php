@@ -378,11 +378,21 @@ class SyndicatedPost {
 		return $this->entry->get_title();
 	} /* SyndicatedPost::title () */
 
-	public function content ($params = array())
+	/**
+	 * Extracts content from Atom/RSS feeds and deals with tricky edge cases.
+	 *
+	 * @param  Array $params  Filter parameters to include everything.
+	 *
+	 * @return string|null    The extracted content (which could be null if error).
+	 */
+	public function content( $params = array() )
 	{
-		$params = wp_parse_args($params, array(
-		"full only" => false,
-		));
+		$params = wp_parse_args(
+			$params,
+			array(
+				"full only" => false,
+			)
+		);
 
 		$content = NULL;
 
@@ -393,38 +403,39 @@ class SyndicatedPost {
 		// SimplePie_Item::get_content() with content-only set to TRUE
 		// and some sanitization in effect. -CJ 1jul14
 
+		// Changed isset() with ! empty(), because we have no idea if these are
+		// set but not empty (thus breaking class variable checks). (gwyneth 20231017)
+
 		// atom:content, standard method of providing full HTML content
 		// in Atom feeds.
-		if (isset($this->item['atom_content'])) :
+		if ( ! empty( $this->item['atom_content'] ) ) :
 			$content = $this->item['atom_content'];
-		elseif (isset($this->item['atom']['atom_content'])) :
+		elseif ( ! empty( $this->item['atom']['atom_content'] ) ) :
 			$content = $this->item['atom']['atom_content'];
 
 		// Some exotics: back in the day, before widespread convergence
 		// on content:encoding, some RSS feeds took advantage of XML
 		// namespaces to use an inline xhtml:body or xhtml:div element
 		// for full-content HTML. (E.g. Sam Ruby's feed, IIRC.)
-		elseif (isset($this->item['xhtml']['body'])) :
+		elseif ( ! empty( $this->item['xhtml']['body'] ) ) :
 			$content = $this->item['xhtml']['body'];
-		elseif (isset($this->item['xhtml']['div'])) :
+		elseif ( ! empty( $this->item['xhtml']['div'] ) ) :
 			$content = $this->item['xhtml']['div'];
 
 		// content:encoded, most common method of providing full HTML in
 		// RSS 2.0 feeds.
-		elseif (isset($this->item['content']['encoded']) and $this->item['content']['encoded']):
+		elseif ( ! empty( $this->item['content']['encoded']) and $this->item['content']['encoded'] ) :
 			$content = $this->item['content']['encoded'];
 
 		// Fall back on elements that sometimes may contain full HTML
 		// but sometimes not.
-		elseif ( ! $params['full only']) :
-
+		elseif ( ! $params['full only'] ) :	// hopefully this won't crash here (gwyneth 20231017)
 			// description element is sometimes used for full HTML
 			// sometimes for summary text in RSS. (By the letter of
 			// the standard, it should just be for summary text.)
-			if (isset($this->item['description'])) :
+			if ( ! empty($this->item['description'] ) ) :
 				$content = $this->item['description'];
 			endif;
-
 		endif;
 
 		return $content;
