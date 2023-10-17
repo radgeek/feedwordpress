@@ -827,7 +827,7 @@ class FeedWordPress {
 	    WordPress store.
 
 	@param string|null $uri Either the URI of the feed to poll, the URI of the (human-readable) website whose feed you want to poll, or null.
-	@param mixed|null $crash_ts Unknown purpose.
+	@param mixed|null $crash_ts Unknown purpose (probably it's a timestamp).
 	@return array|null Associative array, with 'new' => # of new posts added during update, and 'updated' => # of old posts that were updated. If both are zero, there was no change since çast update.
 	*/
 	public function update( $uri = null, $crash_ts = null ) {
@@ -851,7 +851,7 @@ class FeedWordPress {
 		do_action( 'feedwordpress_update', $uri );
 
 		if ( is_null( $crash_ts ) ) :
-			$crash_ts = $this->crash_ts();
+			$crash_ts = $this->crash_ts();	// the problem is that this can return null as well... (gwyneth 20230924)
 		endif;
 
 		// Randomize order for load balancing purposes
@@ -936,9 +936,9 @@ class FeedWordPress {
 	 *
 	 * @todo is returning null advisable? (gwyneth 20230916)
 	 *
-	 * @param  int|null $default Default value, called when the corresponding FWP option is not set.
+	 * @param  int|null  $default  Default value, called when the corresponding FWP option is not set.
 	 *
-	 * @return int|null
+	 * @return int|null  Allegedly it's a timestamp, or possibly null.
 	 */
 	public function crash_ts( $default = null ) {
 		$crash_dt = (int) get_option( 'feedwordpress_update_time_limit', 0 );

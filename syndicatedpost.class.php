@@ -1233,7 +1233,7 @@ class SyndicatedPost {
 	 *	1 = post already syndicated, but needs to be updated to latest
 	 *	2 = post has not yet been syndicated; needs to be created
 	 */
-	function freshness ($format = 'number') {
+	function freshness( $format = 'number' ) {
 
 		if ($this->filtered()) : // This should never happen.
 			FeedWordPressDiagnostic::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
