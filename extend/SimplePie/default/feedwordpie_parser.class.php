@@ -15,7 +15,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 
 		// reset libxml parser
 		xml_parser_free($xml);
-				
+
 		$xml = xml_parser_create_ns($this->encoding, $this->separator);
 		xml_parser_set_option($xml, XML_OPTION_SKIP_WHITE, 1);
 		xml_parser_set_option($xml, XML_OPTION_CASE_FOLDING, 0);
@@ -24,12 +24,21 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 		xml_set_element_handler($xml, 'tag_open', 'tag_close');
 		xml_set_start_namespace_decl_handler($xml, 'start_xmlns');
 	}
-	
+
+	/**
+	 * Parses a SimplePie object.
+	 *
+	 * @param  mixed $data Data to be encoded.
+	 * @param  string $encoding Encoding type (UTF-8 preferred).
+	 * @param  string $url URL to contact.
+	 *
+	 * @return boolean Parse succeeded or not.
+	 */
 	public function parse (&$data, $encoding, $url = '')
 	{
-		
+
 		$data = apply_filters('feedwordpress_parser_parse', $data, $encoding, $this, $url);
-		
+
 		if (class_exists('DOMXpath') && function_exists('Mf2\parse')) {
 			$doc = new DOMDocument();
 			@$doc->loadHTML($data);
@@ -43,7 +52,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 				return $this->parse_microformats($data, $url);
 			}
 		}
-		
+
 		// Use UTF-8 if we get passed US-ASCII, as every US-ASCII character is a UTF-8 character
 		if (strtoupper($encoding) === 'US-ASCII')
 		{
@@ -102,6 +111,12 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 		if ($xml_is_sane === null)
 		{
 			$parser_check = xml_parser_create();
+			// PHP 8.X now returns an object, not a resource, which is set
+			// to false if something went wrong. (gwyneth 20240208)
+			if (false === $parser_check)
+			{
+				return false;
+			}
 			xml_parse_into_struct($parser_check, '<foo>&amp;</foo>', $values);
 			xml_parser_free($parser_check);
 			$xml_is_sane = isset($values[0]['value']);
@@ -111,6 +126,11 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 		if ($xml_is_sane)
 		{
 			$xml = xml_parser_create_ns($this->encoding, $this->separator);
+			// See comment above.
+			if (false === $xml)
+			{
+				return false;
+			}
 			xml_parser_set_option($xml, XML_OPTION_SKIP_WHITE, 1);
 			xml_parser_set_option($xml, XML_OPTION_CASE_FOLDING, 0);
 			xml_set_object($xml, $this);
@@ -176,9 +196,9 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 						}
 						$attributes[$attrName] = $xml->value;
 					}
-					
+
 					$this->do_scan_attributes_namespaces($attributes);
-					
+
 					$this->tag_open(null, $tagName, $attributes);
 					if ($empty)
 					{
@@ -203,7 +223,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 
 		return true;
 	} /* FeedWordPie_Parser::parse() */
-	
+
 	public function do_xml_parse_attempt ($xml, $data) {
 		xml_set_start_namespace_decl_handler($xml, 'start_xmlns');
 
@@ -215,10 +235,10 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 			$data = substr($data, $endOfJunk);
 			$data = trim($data);
 			$this->reset_parser($xml);
-			
+
 			$parseResults = xml_parse($xml, $data, true);
 		endif;
-			
+
 		$badEntity = (xml_get_error_code($xml) == 26);
 		if ( ! $parseResults and $badEntity) :
 			// There was an entity that libxml couldn't understand.
@@ -236,7 +256,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 			$data
 		);
 		return $result;
-			
+
 	}
 
 	public function do_scan_attributes_namespaces ($attributes) {
@@ -248,7 +268,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 			endif;
 		endforeach;
 	}
-	
+
 	var $xmlns_stack = array();
 	var $xmlns_current = array();
 	function tag_open ($parser, $tag, $attributes) {
@@ -259,7 +279,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 		endif;
 		return $ret;
 	}
-	
+
 	function tag_close($parser, $tag) {
 		if ($this->current_xhtml_construct < 0) :
 			$this->xmlns_current = array_pop($this->xmlns_stack);
@@ -267,7 +287,7 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 		$ret = parent::tag_close($parser, $tag);
 		return $ret;
 	}
-	
+
 	function start_xmlns ($parser, $prefix, $uri) {
 		if ( ! $prefix) :
 			$prefix = '';
@@ -275,22 +295,22 @@ class FeedWordPie_Parser extends SimplePie_Parser {
 		if ($this->current_xhtml_construct < 0) :
 			$this->xmlns_current[$prefix] = $uri;
 		endif;
-		
+
 		return true;
 	} /* FeedWordPie_Parser::start_xmlns() */
 
-	/* html_convert_entities($string) -- convert named HTML entities to 
+	/* html_convert_entities($string) -- convert named HTML entities to
  	 * XML-compatible numeric entities. Adapted from code by @inanimatt:
 	 * https://gist.github.com/inanimatt/879249
 	 */
 	public function html_convert_entities($string) {
-		return preg_replace_callback('/&([a-zA-Z][a-zA-Z0-9]+);/S', 
+		return preg_replace_callback('/&([a-zA-Z][a-zA-Z0-9]+);/S',
 			array($this, 'convert_entity'), $string);
 	}
 
 	/* Swap HTML named entity with its numeric equivalent. If the entity
  	 * isn't in the lookup table, this function returns a blank, which
-	 * destroys the character in the output - this is probably the 
+	 * destroys the character in the output - this is probably the
 	 * desired behaviour when producing XML. Adapted from code by @inanimatt:
 	 * https://gist.github.com/inanimatt/879249
 	 */
