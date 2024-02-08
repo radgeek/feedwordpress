@@ -44,6 +44,10 @@ class SyndicatedPost {
 	 *
 	 * @param array $item The item syndicated from the feed.
 	 * @param SyndicatedLink $source The feed it was syndicated from.
+	 *
+	 * @uses FeedWordPress
+	 * @uses FeedWordPress::diagnostic()
+	 * @uses MagpieFromSimplePie
 	 */
 	public function __construct( $item, $source )
 	{
@@ -317,16 +321,18 @@ class SyndicatedPost {
 	 * @param string $path
 	 * @returns array of string values representing contents of matching
 	 * elements or attributes
+	 *
+	 * @uses SyndicatedPostXPathQuery
 	 */
 	 public function query ($path) {
-		$xq = new SyndicatedPostXPathQuery(array("path" => $path));
+		$xpathQuery = new SyndicatedPostXPathQuery(array("path" => $path));
 
 		$feedChannel = array_merge(
 			$this->get_feed_root_element(),
 			$this->get_feed_channel_elements()
 		);
 
-		$matches = $xq->match(array(
+		$matches = $xpathQuery->match(array(
 		"type" => $this->link->simplepie->get_type(),
 		"xmlns" => $this->xmlns,
 		"map" => array(
@@ -1284,9 +1290,21 @@ class SyndicatedPost {
 
 			$old_post = NULL;
 			if ( $q->have_posts() ) :
-				while ( $q->have_posts() ) : $q->the_post();
-					if ( get_post_type( $q->post->ID ) == $this->post['post_type'] ):
-						$old_post = $q->post;
+				while ( $q->have_posts() ) :
+					/** FIXME: Apparently, this can be called outside a hook; as such,
+					  * some functionality might not be loaded, namely, get_userdata() on the returned post.
+					  * This will invariably give a fatal error and abort the script.
+					  * I have no idea how to fix this, so, for now, I'm just avoiding this case and
+					  * logging it (gwyneth 20240208)
+				      */
+					if ( function_exists( 'get_userdata' ) ) :
+						$q->the_post();
+						if ( get_post_type( $q->post->ID ) == $this->post['post_type'] ):
+							$old_post = $q->post;
+						endif;
+					else :
+						FeedWordPressDiagnostic::noncritical_bug( 'freshness: loop encountered outside hook', $this, __LINE__, __FILE__ );
+						error_log( 'freshness: loop encountered outside hook on ' . __FILE__ . ' (' __LINE__ . ')' );
 					endif;
 				endwhile;
 			endif;
