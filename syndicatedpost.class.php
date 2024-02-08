@@ -1304,7 +1304,7 @@ class SyndicatedPost {
 						endif;
 					else :
 						FeedWordPressDiagnostic::noncritical_bug( 'freshness: loop encountered outside hook', $this, __LINE__, __FILE__ );
-						error_log( 'freshness: loop encountered outside hook on ' . __FILE__ . ' (' __LINE__ . ')' );
+						error_log( 'freshness: loop encountered outside hook on ' . __FILE__ . ' (' . __LINE__ . ')' );
 					endif;
 				endwhile;
 			endif;
