@@ -2192,46 +2192,58 @@ EOM;
 	 * @param string $new_status Unused action parameter.
 	 * @param string $old_status Unused action parameter.
 	 * @param object $post The database record for the post just inserted.
+	 *
+	 * @uses FeedWordPress::diagnostic()
 	 */
-	function add_rss_meta($new_status, $old_status, $post) {
+	function add_rss_meta( $new_status, $old_status, $post ) {
 		global $wpdb;
-		if ($new_status!='inherit') : // Bail if we are creating a revision.
-			FeedWordPress::diagnostic('syndicated_posts:meta_data', 'Adding post meta-data: {'.implode(", ", array_keys($this->post['meta'])).'}');
+		if ( 'inherit' != $new_status ) : // Bail if we are creating a revision.
+			FeedWordPress::diagnostic(
+				'syndicated_posts:meta_data',
+				'Adding post meta-data: {'
+				. implode( ", ", array_keys( $this->post['meta']) )
+				. '}'
+			);
 
-			if ( is_array($this->post) and isset($this->post['meta']) and is_array($this->post['meta']) ) :
+			if ( is_array( $this->post ) and isset( $this->post['meta'] ) and is_array( $this->post['meta'] ) ) :
 				$postId = $post->ID;
 
 				// Aggregated posts should NOT send out pingbacks.
 				// WordPress 2.1-2.2 claim you can tell them not to
 				// using $post_pingback, but they don't listen, so we
 				// make sure here.
-				$result = $wpdb->query("
-				DELETE FROM $wpdb->postmeta
-				WHERE post_id='$postId' AND meta_key='_pingme'
-				");
+				$result = $wpdb->query( "
+					DELETE FROM $wpdb->postmeta
+					WHERE post_id='$postId' AND meta_key='_pingme'
+				" );
 
 				foreach ( $this->post['meta'] as $key => $values ) :
-					$eKey = esc_sql($key);
+					$eKey = esc_sql( $key );
 
 					// If this is an update, clear out the old
 					// values to avoid duplication.
-					$result = $wpdb->query("
-					DELETE FROM $wpdb->postmeta
-					WHERE post_id='$postId' AND meta_key='$eKey'
-					");
+					$result = $wpdb->query( "
+						DELETE FROM $wpdb->postmeta
+						WHERE post_id='$postId' AND meta_key='$eKey'
+					" );
 
 					// Allow for either a single value or an array
-					if ( !is_array($values)) $values = array($values);
+					if ( ! is_array( $values ) ) {
+						$values = array( $values );
+					}
 					foreach ( $values as $value ) :
-					FeedWordPress::diagnostic('syndicated_posts:meta_data', "Adding post meta-datum to post [$postId]: [$key] = ".MyPHP::val($value, /*no newlines=*/ true));
-						add_post_meta($postId, $key, $value, /*unique=*/ false);
+						FeedWordPress::diagnostic(
+							'syndicated_posts:meta_data',
+							"Adding post meta-datum to post [$postId]: [$key] = "
+							. MyPHP::val( $value, /*no newlines=*/ true )
+						);
+						add_post_meta( $postId, $key, $value, /*unique=*/ false );
 					endforeach;
 				endforeach;
 
-				if ( $result === false)
-				{
+				if ( false === $result ) :
 					error_log( "delete query failed: " . $wpdb->last_error );
-				}
+				endif;
 			endif;
 		endif;
 	} /* SyndicatedPost::add_rss_meta () */
