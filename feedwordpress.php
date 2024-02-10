@@ -1221,8 +1221,17 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::all_admin_notices () */
 
-	public function process_retirements ($delta) {
-		update_option('feedwordpress_process_zaps', 1);
+	/**
+	 * Retires old posts in the absence of a non-incremental feed.
+	 *
+	 * TODO: Why is $delta returned unchanged? (gwyneth 20240210)
+	 *
+	 * @param  mixed $delta  Whatever this is, it's not used and is returned without change...
+	 *
+	 * @return mixed The value of $delta (unchanged?)
+	 */
+	public function process_retirements( $delta ) {
+		update_option( 'feedwordpress_process_zaps', 1 );
 
 		return $delta;
 	}
