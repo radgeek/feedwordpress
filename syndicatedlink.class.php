@@ -428,7 +428,7 @@ class SyndicatedLink {
 		        )
 	    	);
         } catch ( Exception $e ) {
-            error_log( 'Creating a new WP_Query for processing retirements failed; is_user_logged_in() cannot be called at this stage; actual exception was: ',  $e->getMessage(), "\n";
+            error_log( 'Creating a new WP_Query for processing retirements failed; is_user_logged_in() cannot be called at this stage; actual exception was: ',  $e->getMessage(), "\n" );
             return $delta;  // I have no idea if this is the expected result or not... (gwyneth 20240210)
         }
         if ( $q->have_posts() ) :
