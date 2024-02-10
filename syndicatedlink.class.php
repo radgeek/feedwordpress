@@ -417,15 +417,20 @@ class SyndicatedLink {
 			'[DEBUG] \$this->id is now: ' . $this->id ?? '(most likely BROKEN)'
 		);
 
-        $q = new WP_Query(
-			array(
-        		'fields'				=> '_synfrom',
-        		'post_status__not'		=> 'fwpretired',
-        		'ignore_sticky_posts'	=> true,
-        		'meta_key'				=> '_feedwordpress_retire_me_' . $this->id,
-        		'meta_value'			=> '1',
-		    )
-		);
+        try {
+            $q = new WP_Query(
+			    array(
+        		    'fields'				=> '_synfrom',
+        		    'post_status__not'		=> 'fwpretired',
+        		    'ignore_sticky_posts'	=> true,
+        		    'meta_key'				=> '_feedwordpress_retire_me_' . $this->id,
+        		    'meta_value'			=> '1',
+		        )
+	    	);
+        } catch ( Exception $e ) {
+            error_log( 'Creating a new WP_Query for processing retirements failed; is_user_logged_in() cannot be called at this stage; actual exception was: ',  $e->getMessage(), "\n";
+            return $delta;  // I have no idea if this is the expected result or not... (gwyneth 20240210)
+        }
         if ( $q->have_posts() ) :
             foreach ( $q->posts as $p ) :
                 $old_status = $p->post_status;
