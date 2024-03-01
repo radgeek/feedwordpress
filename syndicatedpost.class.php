@@ -1303,6 +1303,11 @@ class SyndicatedPost {
 						.')'
 					);
 
+				elseif (apply_filters('syndicated_item_force_update', false, $this->item, $old_post)) :
+					$updated = true;
+					$updatedReason = ' is being force updated';
+					$live = true;
+
 				// The date does not indicate a new revision, so
 				// let's check the hash.
 				else :

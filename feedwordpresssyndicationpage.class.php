@@ -15,6 +15,7 @@ require_once dirname(__FILE__) . '/feedfinder.class.php';
 define( 'FWP_PROJECT_WEBSITE_URL', 'https://fwpplugin.com/' );
 
 define( 'FWP_UPDATE_CHECKED',	'Update Checked' );
+define( 'FWP_FORCE_UPDATE_CHECKED', 'Force Update Checked' );
 define( 'FWP_UNSUB_CHECKED',	'Unsubscribe' );
 define( 'FWP_DELETE_CHECKED',	'Delete' );
 define( 'FWP_RESUB_CHECKED',	'Re-subscribe' );
@@ -205,9 +206,14 @@ $visibility = $visibility !== null ? $visibility : '';
 		endif;
 
 		$update_set = array();
+		$update_single_action = false;
+
 		if ( $fwp_update_invoke != 'get' ) :
 			if  ( is_array( MyPHP::post( 'link_ids' ) )
-			and ( MyPHP::post( 'action' ) == FWP_UPDATE_CHECKED ) ) :
+			and (
+				(MyPHP::post('action')==FWP_UPDATE_CHECKED)
+				or (MyPHP::post('action')==FWP_FORCE_UPDATE_CHECKED)
+			)) :
 				// Get single link ID or multiple link IDs from REQUEST parameters
 				// if available. Sanitize values for MySQL.
 				$link_list = $this->requested_link_ids_sql();
@@ -232,12 +238,20 @@ $visibility = $visibility !== null ? $visibility : '';
 
 				$targets_keys = array_keys( $targets );
 				$first_key = reset( $targets_keys );
+				$update_single_action = $targets[$first_key];
+
 				if ( !is_numeric( $first_key) ) : // URLs in keys
 					$targets = $targets_keys;
 				endif;
 				$update_set = $targets;
 			endif;
 		endif;
+
+		if (MyPHP::post('action')==FWP_FORCE_UPDATE_CHECKED or $update_single_action === 'Force Update Now'):
+			echo "<p>Force Updating feeds.</p>";
+			add_filter('syndicated_item_force_update', '__return_true');
+		endif;
+
 		return $update_set;
 	}
 
@@ -858,6 +872,7 @@ $visibility = $visibility !== null ? $visibility : '';
 		<input class="button-secondary" type="submit" name="action" value="<?php print esc_attr( FWP_DELETE_CHECKED ); ?>" />
 		<?php else : ?>
 		<input class="button-secondary" type="submit" name="action" value="<?php print esc_attr( FWP_UPDATE_CHECKED ); ?>" />
+		<input class="button-primary" type="submit" name="action" value="<?php print esc_attr(FWP_FORCE_UPDATE_CHECKED); ?>" style="background:#EE0606" />
 		<input class="button-secondary delete" type="submit" name="action" value="<?php print esc_attr( FWP_UNSUB_CHECKED ); ?>" />
 		<?php endif ; ?>
 		</div> <!-- class="alignleft" -->
