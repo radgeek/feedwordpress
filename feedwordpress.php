@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2022.0222
+Version: 2024.0428
 Author: C. Johnson
 Author URI: https://feedwordpress.radgeek.com/contact/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2022.0222
+ * @version 2024.0428
  */
 
 # This plugin uses code derived from:
@@ -23,15 +23,15 @@ License: GPL
 # -	Github contributors @Flynsarmy, @BandonRandon, @david-robinson-practiceweb,
 # 	@daidais, @thegreatmichael, @stedaniels, @alexiskulash, @quassy, @zoul0813,
 # 	@timmmmyboy, @vobornik, @inanimatt, @tristanleboss, @martinburchell,
-#   @bigalownz, and @oppiansteve
+# 	@bigalownz, @oppiansteve, and @GwynethLlewelyn
 # according to the terms of the GNU General Public License.
 
 ####################################################################################
 ## CONSTANTS & DEFAULTS ############################################################
 ####################################################################################
 
-define ('FEEDWORDPRESS_VERSION', '2022.0222');
-define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contact' );
+define ('FEEDWORDPRESS_VERSION', '2024.0428');
+define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'https://feedwordpress.radgeek.com/contact' );
 
 if ( ! defined( 'FEEDWORDPRESS_BLEG' ) ) :
 	define ( 'FEEDWORDPRESS_BLEG', true );
@@ -280,19 +280,19 @@ function feedwordpress_item_feed_data () {
 	if (is_syndicated()) :
 ?>
 <source>
-	<title><?php print htmlspecialchars(get_syndication_source()); ?></title>
-	<link rel="alternate" type="text/html" href="<?php print htmlspecialchars(get_syndication_source_link()); ?>" />
-	<link rel="self" href="<?php print htmlspecialchars(get_syndication_feed()); ?>" />
+	<title><?php print esc_html( get_syndication_source() ); ?></title>
+	<link rel="alternate" type="text/html" href="<?php print esc_url( get_syndication_source_link() ); ?>" />
+	<link rel="self" href="<?php print esc_url( get_syndication_feed() ); ?>" />
 <?php
 	$id = get_syndication_feed_guid();
-	if (strlen($id) > 0) :
+	if ( strlen( $id ) > 0 ) :
 ?>
-	<id><?php print htmlspecialchars($id); ?></id>
+	<id><?php print esc_xml( $id ); ?></id>
 <?php
 	endif;
 	$updated = get_feed_meta('feed/updated');
-	if (strlen($updated) > 0) : ?>
-	<updated><?php print esc_xml($updated); ?></updated>
+	if ( strlen( $updated ) > 0 ) : ?>
+	<updated><?php print esc_xml( $updated ); ?></updated>
 <?php
 	endif;
 ?>
@@ -1112,19 +1112,19 @@ class FeedWordPress {
 			$p = get_post( $post_id );
 
 			if ( ! $post ) :
-				wp_die( __( 'The item you are trying to zap no longer exists.' ) );
+				wp_die( esc_html__( 'The item you are trying to zap no longer exists.' ) );
 			endif;
 
 			if ( ! current_user_can( 'delete_post', $post_id ) ) :
-				wp_die( __( 'You are not allowed to zap this item.' ) );
+				wp_die( esc_html__( 'You are not allowed to zap this item.' ) );
 			endif;
 
 			if ( $user_id = wp_check_post_lock( $post_id ) ) :
 				if ( is_numeric( $user_id ) and function_exists( 'get_userdata' ) ) :
 					$user = get_userdata( (int) $user_id );
-					wp_die( sprintf( __( 'You cannot retire this item. %s is currently editing.' ), $user->display_name ) );
+					wp_die( esc_html( sprintf( __( 'You cannot retire this item. %s is currently editing.' ), $user->display_name ) ) );
 				else :
-					wp_die( __( 'You cannot retire this item. Someone is currently editing.' ) );
+					wp_die( esc_html__( 'You cannot retire this item. Someone is currently editing.' ) );
 				endif;
 			endif;
 
@@ -1651,10 +1651,10 @@ class FeedWordPress {
 
 				foreach ($byTime as $time => $querySet) :
 					foreach ($querySet as $query) :
-						print "[".(sprintf('%4.4f', $time/1000.0)) . "ms] $query\n";
+						printf( '[%s ms] %s', esc_html( sprintf( '%4.4f', $time/1000.0 ) ), esc_html( $query ) ) . "\n";
 					endforeach;
 				endforeach;
-				echo self::log_prefix()."$wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of "; timer_stop(1); print " seconds.";
+				echo esc_html( self::log_prefix()."$wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of " ); timer_stop(1); print " seconds.";
 			endif;
 
 			debug_out_feedwordpress_footer();
@@ -2127,13 +2127,13 @@ class FeedWordPress {
 			foreach ($output as $method) :
 				switch ($method) :
 				case 'echo' :
-					if ( !self::update_requested()) :
-						echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.$out."</pre></div>\n";
+					if ( !( self::update_requested() || wp_doing_ajax() ) ) :
+						echo "<div><pre><strong>Diag".esc_html( str_repeat('====', $diagnostic_nesting-1) ).'|</strong> '. esc_html( $out )."</pre></div>\n";
 					endif;
 					break;
 				case 'echo_in_cronjob' :
 					if (self::update_requested()) :
-						echo self::log_prefix() . ' ' . esc_html( $out ) . "\n";
+						echo esc_html( self::log_prefix() ) . ' ' . esc_html( $out ) . "\n";
 					endif;
 					break;
 				case 'admin_footer' :

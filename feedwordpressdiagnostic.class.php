@@ -106,7 +106,7 @@ class FeedWordPressDiagnostic {
 			$location = "line # {$line}";
 		endif;
 
-		print '<p><strong>Critical error:</strong> There may be a bug in FeedWordPress. Please <a href="'.FEEDWORDPRESS_AUTHOR_CONTACT.'">contact the author</a> and paste the following information into your e-mail:</p>';
+		print '<p><strong>Critical error:</strong> There may be a bug in FeedWordPress. Please <a href="'.esc_url( FEEDWORDPRESS_AUTHOR_CONTACT ) .'">contact the author</a> and paste the following information into your e-mail:</p>';
 		print "\n<pre>";
 		print "Triggered at " . esc_html($location) . "\n";
 		print "FeedWordPress: " . esc_html( FEEDWORDPRESS_VERSION ) . "\n";

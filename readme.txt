@@ -3,8 +3,8 @@ Contributors: C. Johnson
 Donate link: http://feedwordpress.radgeek.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
-Tested up to: 5.9
-Stable tag: 2022.0222
+Tested up to: 6.5.2
+Stable tag: 2024.0428
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,14 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 4. Feed and Update Settings (defaults for all feeds)
 
 == Changelog ==
+
+= 2024.0428 =
+
+*	IMPORTANT SECURITY FIX: This version includes an important fix for a security vulnerability reported to me through Wordfence and WordPress support channels.
+
+    Vulnerability CVE-2024-0839 allowed for an insecure Direct Object Reference which could allow contents of Private, Pending, or otherwise non-Published post objects to be accessed by an attacker possessing or generating the internal guid URI of the post object. This vulnerability has been eliminated in the current version; to protect your site's security PLEASE BE SURE TO UPGRADE AS SOON AS POSSIBLE to version 2024.0428 or later, via the WordPress Plugin Repository or via Github.
+
+*	ADDITIONAL COMPATIBILITY FIXES AND CODE CLEANUP: This version includes numerous fixes to improve compatibility fixes for ongoing new releases of PHP, and does some additional code clean-up to remove some obsolete methods of generating output, and to do a better job of sanitizing input and escaping output in the FeedWordPress administrative dashboard. It features numerous fixes and improvements contributed by user @GwynethLlewelyn and several new hooks allowing for translation of interface elements.
 
 = 2022.0222 =
 

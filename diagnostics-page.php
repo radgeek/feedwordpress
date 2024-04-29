@@ -126,46 +126,46 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 
 		<tbody>
 		<tr>
-		<th scope="row"><?php _e( 'Version:' ); ?></th>
-		<td><?php _e( 'You are using FeedWordPress version' ); ?> <strong><?php print FEEDWORDPRESS_VERSION; ?></strong>.</td>
+		<th scope="row"><?php esc_html_e( 'Version:' ); ?></th>
+		<td><?php esc_html_e( 'You are using FeedWordPress version' ); ?> <strong><?php print esc_html( FEEDWORDPRESS_VERSION ); ?></strong>.</td>
 		</tr>
 
 		<tr>
-		<th scope="row"><?php _e( 'Hosting Environment:' ); ?></th>
+		<th scope="row"><?php esc_html_e( 'Hosting Environment:' ); ?></th>
 		<td><ul style="margin-top: 0; padding-top: 0;">
-		<li><em>WordPress:</em> <?php _e( 'version' ); ?> <?php print esc_html( $wp_version ); ?></li>
-		<li><em>SimplePie:</em> <?php _e( 'version' ); ?> <?php print esc_html( SIMPLEPIE_VERSION ); ?></li>
+		<li><em>WordPress:</em> <?php esc_html_e( 'version' ); ?> <?php print esc_html( $wp_version ); ?></li>
+		<li><em>SimplePie:</em> <?php esc_html_e( 'version' ); ?> <?php print esc_html( SIMPLEPIE_VERSION ); ?></li>
 		<?php if ( function_exists( 'phpversion' ) ) : ?>
-		<li><em><?php _e( 'PHP:' ); ?></em> <?php _e( 'version' ); ?> <?php print esc_html( phpversion() ); ?></li>
+		<li><em><?php esc_html_e( 'PHP:' ); ?></em> <?php esc_html_e( 'version' ); ?> <?php print esc_html( phpversion() ); ?></li>
 		<?php endif; ?>
 		<?php if ( function_exists( 'apache_get_version' ) ) : ?>
-		<li><em><?php _e( 'Web Server:' ); ?></em> <?php print esc_html( apache_get_version() ); ?></li>
+		<li><em><?php esc_html_e( 'Web Server:' ); ?></em> <?php print esc_html( apache_get_version() ); ?></li>
 		<?php endif; ?>
 		<?php if ( ! empty( $_SERVER['SERVER_SIGNATURE'] ) ) : ?>
-		<li><em><?php _e( 'Web Server signature:' ); ?></em> <?php print esc_html( $_SERVER['SERVER_SIGNATURE'] ); ?></li>
+		<li><em><?php esc_html_e( 'Web Server signature:' ); ?></em> <?php print esc_html( $_SERVER['SERVER_SIGNATURE'] ); ?></li>
 		<?php endif; ?>
-		<li><em><?php _e( 'Hosted on:' ); ?></em> <?php print esc_html( php_uname( 'a' ) ); ?></li>
+		<li><em><?php esc_html_e( 'Hosted on:' ); ?></em> <?php print esc_html( php_uname( 'a' ) ); ?></li>
 		</ul>
 		</td>
 		</tr>
 
 		<tr>
-		<th scope="row"><?php _e( 'Link Category:' ); ?></th>
+		<th scope="row"><?php esc_html_e( 'Link Category:' ); ?></th>
 		<td><?php if ( ! is_wp_error( $link_category_id ) ) :
 			$term = get_term( $link_category_id, 'link_category' );
-		?><p><?php _e( 'Syndicated feeds are kept in link category' ); ?> #<?php print esc_html( $term->term_id ); ?>, <strong><?php print esc_html( $term->name ); ?></strong>.</p>
+		?><p><?php esc_html_e( 'Syndicated feeds are kept in link category' ); ?> #<?php print esc_html( $term->term_id ); ?>, <strong><?php print esc_html( $term->name ); ?></strong>.</p>
 		<?php else : ?>
-		<p><strong><?php _e( 'FeedWordPress has been unable to set up a valid Link Category for syndicated feeds.' ); ?></strong> <?php _e( 'Attempting to set one up returned an' ); ?>
-		<code><?php $link_category_id->get_error_code(); ?></code> <?php _e( 'error with this additional data:' ); ?></p>
+		<p><strong><?php esc_html_e( 'FeedWordPress has been unable to set up a valid Link Category for syndicated feeds.' ); ?></strong> <?php esc_html_e( 'Attempting to set one up returned an' ); ?>
+		<code><?php $link_category_id->get_error_code(); ?></code> <?php esc_html_e( 'error with this additional data:' ); ?></p>
 		<table>
 		<tbody>
 		<tr>
-		<th scope="row"><?php _e( 'Message:' ); ?></th>
+		<th scope="row"><?php esc_html_e( 'Message:' ); ?></th>
 		<td><?php print esc_html( $link_category_id->get_error_message() ); ?></td>
 		</tr>
 		<?php $data = $link_category_id->get_error_data(); if ( ! empty( $data ) ) : ?>
 		<tr>
-		<th scope="row"><?php _e( 'Auxiliary Data:' ); ?></th>
+		<th scope="row"><?php esc_html_e( 'Auxiliary Data:' ); ?></th>
 		<td><pre><?php print esc_html( MyPHP::val( $link_category_id->get_error_data() ) ); ?></pre></td>
 		</tr>
 		<?php endif; ?>
@@ -174,9 +174,9 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		</tr>
 
 		<tr>
-		<th scope="row"><?php _e('Secret Key:'); ?></th>
+		<th scope="row"><?php esc_html_e('Secret Key:'); ?></th>
 		<td><input type="text" name="feedwordpress_secret_key" value="<?php print esc_attr( $feedwordpress->secret_key() ); ?>" />
-		<p class="setting-description"><?php _e( 'This is used to control access to some diagnostic testing functions. You can change it to any string you want, but only tell it to people you trust to help you troubleshoot your FeedWordPress installation. Keep it secret&mdash;keep it safe.' ); ?></p></td>
+		<p class="setting-description"><?php esc_html_e( 'This is used to control access to some diagnostic testing functions. You can change it to any string you want, but only tell it to people you trust to help you troubleshoot your FeedWordPress installation. Keep it secret&mdash;keep it safe.' ); ?></p></td>
 		</tr>
 		</table>
 
@@ -203,13 +203,13 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		?>
 <table class="edit-form">
 <tr style="vertical-align: top">
-<th scope="row"><?php _e( 'Debugging mode:' ); ?></th>
+<th scope="row"><?php esc_html_e( 'Debugging mode:' ); ?></th>
 <td><select name="feedwordpress_debug" size="1">
-<option value="yes"<?php echo ( $settings['debug'] ? ' selected="selected"' : '' ); ?>><?php _e( 'on' ); ?></option>
-<option value="no"<?php echo ( $settings['debug'] ? '' : ' selected="selected"' ); ?>><?php _e( 'off' ); ?></option>
+<option value="yes"<?php echo ( $settings['debug'] ? ' selected="selected"' : '' ); ?>><?php esc_html_e( 'on' ); ?></option>
+<option value="no"<?php echo ( $settings['debug'] ? '' : ' selected="selected"' ); ?>><?php esc_html_e( 'off' ); ?></option>
 </select>
 
-<p><?php _e( 'When debugging mode is <strong>ON</strong>, FeedWordPress displays many
+<p><?php esc_html_e( 'When debugging mode is <strong>ON</strong>, FeedWordPress displays many
 diagnostic error messages, warnings, and notices that are ordinarily suppressed,
 and turns off all caching of feeds. Use with caution: this setting is useful for
 testing but absolutely inappropriate for a production server.' ); ?></p>
@@ -312,7 +312,7 @@ testing but absolutely inappropriate for a production server.' ); ?></p>
 	<?php foreach ($fields as $section => $ul) : ?>
 	  <tr>
 	  <th scope="row"><?php print esc_html($section); ?>:</th>
-	  <td><p><?php _e( 'Show a diagnostic message...' ); ?></p>
+	  <td><p><?php esc_html_e( 'Show a diagnostic message...' ); ?></p>
 	  <ul class="options">
 	  <?php foreach ($ul as $key => $label) : ?>
 	    <li><label><input
@@ -365,7 +365,7 @@ function clone_http_test_args_keyvalue_prototype () {
 				print ' selected="selected"';
 			endif;
 		?>><?php
-			print $sMethod;
+			print esc_html( $sMethod );
 		?></option>
 	<?php endforeach; ?>
 	</select></div>
@@ -373,13 +373,13 @@ function clone_http_test_args_keyvalue_prototype () {
 	<tr>
 	<td>
 	<div id="http-test-args">
-	<div id="http-test-args-keyvalue-prototype" class="http-test-args-keyvalue"><label><?php _e( 'Args' ); ?>:
+	<div id="http-test-args-keyvalue-prototype" class="http-test-args-keyvalue"><label><?php esc_html_e( 'Args' ); ?>:
 	<input type="text" class='http_test_args_key' name="http_test_args_key[0]" value="" placeholder="key" /></label>
 	<label>= <input type="text" class='http_test_args_value' name="http_test_args_value[0]" value="" placeholder="value" /></label>
 	</div>
 	</div>
 	</td>
-	<td><a href="#http-test-args" onclick="return clone_http_test_args_keyvalue_prototype();"><span class="dashicons dashicons-plus fwp-no-underline"></span> <?php _e( 'Add' ); ?></a></td>
+	<td><a href="#http-test-args" onclick="return clone_http_test_args_keyvalue_prototype();"><span class="dashicons dashicons-plus fwp-no-underline"></span> <?php esc_html_e( 'Add' ); ?></a></td>
 	</tr>
 	</table>
 	</td>
@@ -388,13 +388,13 @@ function clone_http_test_args_keyvalue_prototype () {
 	<tr>
 	<th>XPath:</th>
 	<td><div><input type="text" name="http_test_xpath" value="<?php print esc_attr($xpath); ?>" placeholder="xpath-like query" /></div>
-	<div><p><?php _e( 'Leave blank to test HTTP, fill in to test a query.' ); ?></p></div>
+	<div><p><?php esc_html_e( 'Leave blank to test HTTP, fill in to test a query.' ); ?></p></div>
 	</td>
 	</tr>
 
 	<?php if (isset($page->test_html['http_test'])) : ?>
 	<tr>
-	<th scope="row"><?php _e( 'RESULTS:' ); ?></th>
+	<th scope="row"><?php esc_html_e( 'RESULTS:' ); ?></th>
 	<td>
 	<div>URL: <code><?php print esc_html($page->test_html['url']); ?></code></div>
 	<div style="position: relative">

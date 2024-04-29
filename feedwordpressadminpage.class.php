@@ -88,11 +88,11 @@ class FeedWordPressAdminPage {
 		print "</ul>";
 
 		if ( !is_null($delta)) :
-			echo "<p><strong>Update complete.</strong>".fwp_update_set_results_message($delta)."</p>";
+			echo "<p><strong>Update complete.</strong>".esc_html( fwp_update_set_results_message($delta) )."</p>";
 			echo "\n"; flush();
 		else :
 			$effectiveUrl  = esc_html($effectiveUrl);
-			echo "<p><strong>Error:</strong> There was a problem updating <a href=\"$effectiveUrl\">$displayUrl</a></p>\n";
+			echo '<p><strong>Error:</strong> There was a problem updating <a href="' . esc_url( $effectiveUrl ) . '">' . esc_html( $displayUrl ) . '</a></p>' . "\n";
 		endif;
 		print "</div>\n";
 		remove_action('feedwordpress_check_feed', 'update_feeds_mention');
@@ -236,7 +236,7 @@ class FeedWordPressAdminPage {
 	public function stamp_link_id ($field = null) {
 		if (is_null($field)) : $field = 'save_link_id'; endif;
 		?>
-	<input type="hidden" name="<?php print esc_attr($field); ?>" value="<?php print ($this->for_feed_settings() ? $this->link->id : '*'); ?>" />
+	<input type="hidden" name="<?php print esc_attr($field); ?>" value="<?php print esc_attr( ($this->for_feed_settings() ? $this->link->id : '*') ); ?>" />
 		<?php
 	} /* FeedWordPressAdminPage::stamp_link_id () */
 
@@ -357,9 +357,9 @@ class FeedWordPressAdminPage {
 			endif;
 		endif;
 
-		print $params['before']; $first = true;
+		$out_html = $params['before']; $first = true;
 		foreach ($links as $label => $link) :
-			if ( ! $first) :	print $params['between']; endif;
+			if ( ! $first) : $out_html .= $params['between']; endif;
 
 			if (isset($link['url'])) : MyPHP::url($link['url'], array("link_id" => $link_id));
 			else : $url = $this->admin_page_href($link['page'], array(), $sub);
@@ -367,24 +367,26 @@ class FeedWordPressAdminPage {
 			$url = esc_html($url);
 
 			if ($link['page']==basename($this->filename)) :
-				print "<strong>";
+				$out_html .= "<strong>";
 			else :
-				print "<a href=\"{$url}\">";
+				$out_html .= sprintf( '<a href="%s">', esc_url( $url ) );
 			endif;
 
-			if ($params['long']) : print esc_html(__($link['long']));
-			else : print esc_html(__($label));
+			if ($params['long']) : $out_html .= esc_html(__($link['long']));
+			else : $out_html .= esc_html(__($label));
 			endif;
 
 			if ($link['page']==basename($this->filename)) :
-				print "</strong>";
+				$out_html .= "</strong>";
 			else :
-				print "</a>";
+				$out_html .= "</a>";
 			endif;
 
 			$first = false;
 		endforeach;
-		print $params['after'];
+		$out_html .= $params['after'];
+		
+		print wp_kses( $out_html, 'post' );
 	} /* FeedWordPressAdminPage::display_feed_settings_page_links */
 
 	public function display_feed_select_dropdown() {
@@ -398,7 +400,7 @@ class FeedWordPressAdminPage {
 		  <option value="<?php print (int) $ddlink->link_id; ?>"<?php if ( !is_null($this->link) and ($this->link->id==$ddlink->link_id)) : ?> selected="selected"<?php endif; ?>><?php print esc_html($ddlink->link_name); ?></option>
 		<?php endforeach; endif; ?>
 		</select>
-		<input id="fwpfs-button" class="button" type="submit" name="go" value="<?php _e('Go') ?> &raquo;" /></li>
+		<input id="fwpfs-button" class="button" type="submit" name="go" value="<?php esc_attr_e('Go') ?> &raquo;" /></li>
 
 		<?php
 		$this->display_feed_settings_page_links(array(
@@ -732,9 +734,9 @@ class FeedWordPressAdminPage {
 			Use the site-wide setting</label>
 			<span class="current-setting">Currently:
 			<strong><?php if (is_callable($labels)) :
-				print call_user_func($labels, $globalSetting, $defaulted, $params);
+				print wp_kses( call_user_func( $labels, $globalSetting, $defaulted, $params ), 'post' );
 			elseif (is_null($labels)) :
-				print $globalSetting;
+				print esc_html( $globalSetting );
 			else :
 				$label = $labels[ $globalSetting ];
 				if ( preg_match( FWP_BOLD_PREFIX_REGEX, $label, $ref ) ) :
@@ -753,7 +755,7 @@ class FeedWordPressAdminPage {
 					value="no"
 					<?php if ( !is_null($defaultInputIdNo)) : ?>id="<?php print esc_attr( $defaultInputIdNo ); ?>" <?php endif; ?>
 					<?php fwp_checked_flag($defaulted, 'no'); ?> />
-				<?php _e('Do something different with this feed.'); ?></label>
+				<?php esc_html_e('Do something different with this feed.'); ?></label>
 			<?php endif;
 		endif;
 
@@ -775,7 +777,7 @@ class FeedWordPressAdminPage {
 				?>
 			<li><label><input type="radio" name="<?php print esc_attr( $inputName ); ?>"
 				value="<?php print esc_attr( $value ); ?>"
-				<?php print fwp_checked_flag($checked, $value); ?> />
+				<?php fwp_checked_flag($checked, $value); ?> />
 				<?php
 					if ( !is_null($prefix) ) :
 						printf( '<strong>%s</strong> ', esc_html( $prefix ) );
