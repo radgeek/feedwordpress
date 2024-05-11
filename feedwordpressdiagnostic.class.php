@@ -120,7 +120,11 @@ class FeedWordPressDiagnostic {
 
 	public static function is_on ($level) {
 		$show = get_option('feedwordpress_diagnostics_show', array());
-		return (in_array($level, $show));
+		if ( ! is_array( $show ) ) {
+			$show = array( $show );
+		}
+
+		return ( in_array( $level, $show ) );
 	} /* FeedWordPressDiagnostic::is_on () */
 
 } /* class FeedWordPressDiagnostic */

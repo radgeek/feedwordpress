@@ -4,7 +4,7 @@ Donate link: http://feedwordpress.radgeek.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
 Tested up to: 6.5.2
-Stable tag: 2024.0428
+Stable tag: 2024.0511
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,10 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 4. Feed and Update Settings (defaults for all feeds)
 
 == Changelog ==
+
+= 2024.0511 =
+
+* COMPATIBILITY FIX FOR "Uncaught TypeError: in_array()" ERROR: This version includes a fix to a fatal error that some users encountered with some versions of PHP 8. If after upgrading to a recent version of FeedWordPress, you encountered a message about a "critical error" or error messages indicating something like "Uncaught TypeError: in_array() Argument #2", then a couple of code changes in this version should hopefully resolve that error for you.
 
 = 2024.0428 =
 

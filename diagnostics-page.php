@@ -188,7 +188,10 @@ class FeedWordPressDiagnosticsPage extends FeedWordPressAdminPage {
 		$settings['debug'] = ( get_option( 'feedwordpress_debug' ) == 'yes' );
 
 		$diagnostics_output = get_option( 'feedwordpress_diagnostics_output', array() );
-
+		if ( ! is_array( $diagnostics_output ) ) {
+			$diagnostics_output = array( $diagnostics_output );
+		}
+		
 		$users = fwp_author_list();
 
 		$ded = get_option( 'feedwordpress_diagnostics_email_destination', 'admins' );
@@ -219,7 +222,7 @@ testing but absolutely inappropriate for a production server.' ); ?></p>
 <tr>
 <th scope="row">Diagnostics output:</th>
 <td><ul class="options">
-<li><input type="checkbox" name="diagnostics_output[]" value="error_log" <?php print (in_array('error_log', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Log in PHP error logs</label></li>
+<li><input type="checkbox" name="diagnostics_output[]" value="error_log" <?php print ( in_array( 'error_log', $diagnostics_output ) ? ' checked="checked"' : ''); ?> /> Log in PHP error logs</label></li>
 <li><input type="checkbox" name="diagnostics_output[]" value="admin_footer" <?php print (in_array('admin_footer', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Display in WordPress admin footer</label></li>
 <li><input type="checkbox" name="diagnostics_output[]" value="echo" <?php print (in_array('echo', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Echo in web browser as they are issued</label></li>
 <li><input type="checkbox" name="diagnostics_output[]" value="echo_in_cronjob" <?php print (in_array('echo_in_cronjob', $diagnostics_output) ? ' checked="checked"' : ''); ?> /> Echo to output when they are issued during an update cron job</label></li>
