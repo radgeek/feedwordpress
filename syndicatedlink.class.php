@@ -319,7 +319,7 @@ class SyndicatedLink {
 
 			$suffix = ($crashed ? 'crashed' : 'completed');
 			do_action('update_syndicated_feed_items', $this->id, $this);
-			do_action("update_syndicated_feed_items_${suffix}", $this->id, $this);
+			do_action("update_syndicated_feed_items_{$suffix}", $this->id, $this);
 
 			$this->update_setting('update/processed', $processed);
 			if (!$crashed) :
@@ -880,7 +880,7 @@ class SyndicatedLink {
 
 			// Now, run through and parse them all.
 			foreach ($this->postmeta[/*parsed=*/ false] as $key => $meta) :
-				$meta = apply_filters("syndicated_link_post_meta_${key}_pre", $meta, $this);
+				$meta = apply_filters("syndicated_link_post_meta_{$key}_pre", $meta, $this);
 				$this->postmeta[/*parsed=*/ false][$key] = $meta;
 				$this->postmeta[/*parsed=*/ true][$key] = new FeedWordPressParsedPostMeta($meta);
 			endforeach;

@@ -329,7 +329,7 @@ class FeedWordPressAdminPage {
 			if ($link['page']==basename($this->filename)) :
 				print "<strong>";
 			else :
-				print "<a href=\"${url}\">";
+				print "<a href=\"{$url}\">";
 			endif;
 
 			if ($params['long']) : print esc_html(__($link['long']));

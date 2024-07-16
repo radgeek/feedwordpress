@@ -207,10 +207,10 @@ class SyndicatedPost {
 					if (!is_null($value)) :
 						if ($what=='title') : $key = 'syndication_source';
 						elseif ($what=='feed') : $key = 'syndication_feed';
-						else : $key = "syndication_source_${what}";
+						else : $key = "syndication_source_{$what}";
 						endif;
 
-						$sourcemeta["${key}_original"] = apply_filters(
+						$sourcemeta["{$key}_original"] = apply_filters(
 							'syndicated_item_original_source_'.$what,
 							$value,
 							$this
@@ -1530,7 +1530,7 @@ class SyndicatedPost {
 
 				// Allow FWP add-on filters to control the taxonomies we use to search for a term
 				$taxonomies = apply_filters("syndicated_post_terms_match", $taxonomies, $what, $this);
-				$taxonomies = apply_filters("syndicated_post_terms_match_${what}", $taxonomies, $this);
+				$taxonomies = apply_filters("syndicated_post_terms_match_{$what}", $taxonomies, $this);
 
 				// Allow FWP add-on filters to control with greater precision what happens on unmatched
 				$unmatched = apply_filters("syndicated_post_terms_unfamiliar",

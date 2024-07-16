@@ -12,8 +12,8 @@
  */
 
 $dir = dirname(__FILE__);
-require_once("${dir}/feedwordpressadminpage.class.php");
-require_once("${dir}/feedwordpresssettingsui.class.php");
+require_once("{$dir}/feedwordpressadminpage.class.php");
+require_once("{$dir}/feedwordpresssettingsui.class.php");
 
 function fwp_update_set_results_message ($delta, $joiner = ';') {
 	$mesg = array();
@@ -68,10 +68,10 @@ function fwp_tags_box ($tags, $object, $params = array()) {
 		$params['textarea_name'] = "tax_input[$tax_name]";
 	endif;
 	if (is_null($params['textarea_id'])) :
-		$params['textarea_id'] = "tax-input-${tax_name}";
+		$params['textarea_id'] = "tax-input-{$tax_name}";
 	endif;
 	if (is_null($params['input_id'])) :
-		$params['input_id'] = "new-tag-${tax_name}";
+		$params['input_id'] = "new-tag-{$tax_name}";
 	endif;
 	if (is_null($params['input_name'])) :
 		$params['input_name'] = "newtag[$tax_name]";
@@ -260,7 +260,7 @@ function fwp_syndication_manage_page_links_table_rows ($links, $page, $visible =
 	<th class="check-column" scope="col"><input type="checkbox" /></th>
 <?php
 		foreach ($fwp_syndicated_sources_columns as $col) :
-			print "\t<th scope='col'>${col}</th>\n";
+			print "\t<th scope='col'>{$col}</th>\n";
 		endforeach;
 		print "</tr>\n";
 		print "</thead>\n";
