@@ -1408,7 +1408,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	$bleg_box_ready = apply_filters( 'feedwordpress_bleg_box_ready', $bleg_box_ready );
 	if ( FeedWordPress::post( 'paid' ) || ( FeedWordPress::param( 'test' ) == 'thanks' ) ) :
 		$object->bleg_thanks($object, $box);
-	elseif ($bleg_box_ready) :
+	elseif ($bleg_box_ready || ( FeedWordPress::param( 'test' ) == 'bleg' ) ) :
 		$object->bleg_box($object, $box);
 	endif;
 	?>

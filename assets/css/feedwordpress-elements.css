@@ -413,6 +413,10 @@ table.twofer td.secondary {
 	margin-right: 50%;
 	min-height: 355px;
 }
+#feedwordpress-admin-syndication #feedwordpress_update_box .inside {
+	display: flex;
+	flex-direction: row-reverse;
+}
 #feedwordpress-admin-syndication .donation-form,
 #feedwordpress-admin-syndication .donation-thanks {
 	background-color: #ffffcc;
@@ -420,11 +424,6 @@ table.twofer td.secondary {
 	padding: 0.5em 0.5em;
 	border-left: thin dashed #777777;
 	font-size: 70%;
-	position: absolute;
-	top: 0;
-	bottom: 0;
-	right: 0;
-	left: auto;
 	width: 50%;
 }
 #feedwordpress-admin-syndication .donation-thanks {

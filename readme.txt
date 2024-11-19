@@ -3,8 +3,8 @@ Contributors: C. Johnson
 Donate link: http://feedwordpress.radgeek.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
-Tested up to: 6.5.2
-Stable tag: 2024.0511
+Tested up to: 6.7
+Stable tag: 2024.1119
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,10 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 4. Feed and Update Settings (defaults for all feeds)
 
 == Changelog ==
+
+= 2024.1119 =
+
+* COMPATIBILITY FIX FOR WORDPRESS 6.7 (Fixes "Uncaught TypeError: Argument 1 passed to SimplePie\Cache\BaseDataCache::__construct() must implement interface SimplePie\Cache\Base" error after WordPress 6.7 upgrade): This version includes a fix to a critical compatibility issue with SimplePie 1.8.0+'s new requirements for namespaced classes and interfaces. (Updating to WordPress 6.7 also means that you get an update to a more recent version of SimplePie included with the platform; unfortunately, the new version of SimplePie introduces code changes which are no doubt a good idea in the long run, but which broke backward compatibility with the technique that FeedWordPress uses to extend SimplePie classes.) If you recently upgraded to WordPress 6.7 and noticed that FeedWordPress suddenly stopped updating, or that you started seeing messages about a "Critical issue" or fatal PHP errors in the interface or your error logs -- especially when attempting to check feeds for updates within the FeedWordPress admin interface -- then a quick upgrade to this point release should hopefully resolve that issue for you.
 
 = 2024.0511 =
 
