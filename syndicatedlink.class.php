@@ -867,22 +867,19 @@ endif;
 
 	public function password () {
 		return $this->setting('http password', 'http_password', NULL);
-	} /* SyndicatedLink::password () */
+	}/* SyndicatedLink::password () */
 
-	public function authentication_method() {
+public function authentication_method() {
+    // Retrieve the authentication method from settings
     $auth = $this->setting('http auth method', NULL);
-
-    // Check if $auth is either empty or set to '-' and reset it to NULL
+    
+    // If the value is '-' or empty, treat it as NULL
     if (empty($auth) || $auth === '-') {
         $auth = NULL;
     }
-
+    
     return $auth;
-	}
-		endif;
-		return $auth;
-	} /* SyndicatedLink::authentication_method () */
-
+} /* SyndicatedLink::authentication_method () */
 	var $postmeta = array();
 	public function postmeta ($params = array()) {
 		$params = wp_parse_args($params, /*defaults=*/ array(
