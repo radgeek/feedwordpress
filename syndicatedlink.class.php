@@ -364,7 +364,7 @@ class SyndicatedLink {
 	public function do_update_ttl() {
 		list( $ttl, $xml ) = $this->ttl( /*return element=*/ true );
 
-				// Check if $ttl is not null, then update settings accordingly
+// Check if $ttl is not null, then update settings accordingly
 if ($ttl !== null) :
     $this->update_setting('update/ttl', $ttl);
     $this->update_setting('update/xml', $xml);
@@ -389,6 +389,9 @@ $this->update_setting(
         $this
     )
 );
+
+	} /* SyndicatedLink::do_update_ttl () */
+
 
 	public function process_retirements ($delta) {
 		$q = new WP_Query(array(
