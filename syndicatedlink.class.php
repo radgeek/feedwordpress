@@ -365,28 +365,30 @@ class SyndicatedLink {
 		list( $ttl, $xml ) = $this->ttl( /*return element=*/ true );
 
 				// Check if $ttl is not null, then update settings accordingly
-          if ( ! is_null( $ttl ) ) :
-        $this->update_setting( 'update/ttl', $ttl );
-        $this->update_setting( 'update/xml', $xml );
-        $this->update_setting( 'update/timed', 'feed' );
+if ($ttl !== null) :
+    $this->update_setting('update/ttl', $ttl);
+    $this->update_setting('update/xml', $xml);
+    $this->update_setting('update/timed', 'feed');
 else :
     // If $ttl is null, use the default automatic ttl
     $ttl = $this->automatic_ttl();
-    $this->update_setting( 'update/ttl', $ttl );
-    $this->update_setting( 'update/xml', null ); // Explicit null is correct here
-    $this->update_setting( 'update/timed', 'automatically' );
+    $this->update_setting('update/ttl', $ttl);
+    $this->update_setting('update/xml', null); // Explicit null is correct here
+    $this->update_setting('update/timed', 'automatically');
 endif;
-		$this->update_setting( 'update/fudge', rand( 0, ( $ttl / 3 ) ) * 60 );
 
-		$this->update_setting(
-			'update/ttl',
-			apply_filters(
-				'syndicated_feed_ttl',
-				$this->setting( 'update/ttl' ),
-				$this
-			)
-		);
-	} /* SyndicatedLink::do_update_ttl () */
+// Update the 'fudge' setting, calculating a random value based on $ttl
+$this->update_setting('update/fudge', rand(0, ($ttl / 3)) * 60);
+
+// Apply any external filters to the 'update/ttl' setting
+$this->update_setting(
+    'update/ttl',
+    apply_filters(
+        'syndicated_feed_ttl',
+        $this->setting('update/ttl'),
+        $this
+    )
+);
 
 	public function process_retirements ($delta) {
 		$q = new WP_Query(array(
