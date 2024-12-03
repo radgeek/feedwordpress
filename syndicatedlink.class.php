@@ -869,10 +869,16 @@ endif;
 		return $this->setting('http password', 'http_password', NULL);
 	} /* SyndicatedLink::password () */
 
-	public function authentication_method () {
-		$auth = $this->setting('http auth method', NULL);
-		if (('-' == $auth) or (strlen($auth)==0)) :
-			$auth = NULL;
+	public function authentication_method() {
+    $auth = $this->setting('http auth method', NULL);
+
+    // Check if $auth is either empty or set to '-' and reset it to NULL
+    if (empty($auth) || $auth === '-') {
+        $auth = NULL;
+    }
+
+    return $auth;
+	}
 		endif;
 		return $auth;
 	} /* SyndicatedLink::authentication_method () */
