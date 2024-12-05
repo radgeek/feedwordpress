@@ -359,40 +359,38 @@ class SyndicatedLink {
 	} /* SyndicatedLink::poll() */
 
 	/**
-	 * Update the time to live of this link.
-	 */
-	public function do_update_ttl() {
-		list( $ttl, $xml ) = $this->ttl( /*return element=*/ true );
+	  * Update the time to live of this link.
+ */
+public function do_update_ttl(): void {
+    // Get ttl and xml elements, return them if available
+    list($ttl, $xml) = $this->ttl(true);
 
-// Check if $ttl is not null, then update settings accordingly
-if ($ttl !== null) :
-    $this->update_setting('update/ttl', $ttl);
-    $this->update_setting('update/xml', $xml);
-    $this->update_setting('update/timed', 'feed');
-else :
-    // If $ttl is null, use the default automatic ttl
-    $ttl = $this->automatic_ttl();
-    $this->update_setting('update/ttl', $ttl);
-    $this->update_setting('update/xml', null); // Explicit null is correct here
-    $this->update_setting('update/timed', 'automatically');
-endif;
+    // Check if ttl is not null
+    if (!is_null($ttl)) {
+        $this->update_setting('update/ttl', $ttl);
+        $this->update_setting('update/xml', $xml);
+        $this->update_setting('update/timed', 'feed');
+    } else {
+        // Fallback to automatic ttl if null
+        $ttl = $this->automatic_ttl();
+        $this->update_setting('update/ttl', $ttl);
+        $this->update_setting('update/xml', null); // Explicit null
+        $this->update_setting('update/timed', 'automatically');
+    }
 
-// Update the 'fudge' setting, calculating a random value based on $ttl
-$this->update_setting('update/fudge', rand(0, ($ttl / 3)) * 60);
+    // Adding a random fudge value (ensure it works across versions)
+    $this->update_setting('update/fudge', rand(0, (int)($ttl / 3)) * 60);
 
-// Apply any external filters to the 'update/ttl' setting
-$this->update_setting(
-    'update/ttl',
-    apply_filters(
-        'syndicated_feed_ttl',
-        $this->setting('update/ttl'),
-        $this
-    )
-);
-
-	} /* SyndicatedLink::do_update_ttl () */
-
-
+    // Apply filter to ttl (should be compatible with all PHP 8.x versions)
+    $this->update_setting(
+        'update/ttl',
+        apply_filters(
+            'syndicated_feed_ttl',
+            $this->setting('update/ttl'),
+            $this
+        )
+    );
+}/* SyndicatedLink::do_update_ttl () */
 	public function process_retirements ($delta) {
 		$q = new WP_Query(array(
 		'fields' => '_synfrom',
