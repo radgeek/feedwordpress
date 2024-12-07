@@ -359,34 +359,38 @@ class SyndicatedLink {
 	} /* SyndicatedLink::poll() */
 
 	/**
-	 * Update the time to live of this link.
-	 */
-	public function do_update_ttl() {
-		list( $ttl, $xml ) = $this->ttl( /*return element=*/ true );
+	  * Update the time to live of this link.
+ */
+public function do_update_ttl(): void {
+    // Get ttl and xml elements, return them if available
+    list($ttl, $xml) = $this->ttl(true);
 
-		if ( ! is_null( $ttl ) ) :
-			$this->update_setting( 'update/ttl',   $ttl);
-			$this->update_setting( 'update/xml',   $xml);
-			$this->update_setting( 'update/timed', 'feed');
-		else :
-			$ttl = $this->automatic_ttl();
-			$this->update_setting( 'update/ttl',   $ttl);
-			$this->update_setting( 'update/xml',   NULL);
-			$this->update_setting( 'update/timed', 'automatically');
-		endif;
+    // Check if ttl is not null
+    if (!is_null($ttl)) {
+        $this->update_setting('update/ttl', $ttl);
+        $this->update_setting('update/xml', $xml);
+        $this->update_setting('update/timed', 'feed');
+    } else {
+        // Fallback to automatic ttl if null
+        $ttl = $this->automatic_ttl();
+        $this->update_setting('update/ttl', $ttl);
+        $this->update_setting('update/xml', null); // Explicit null
+        $this->update_setting('update/timed', 'automatically');
+    }
 
-		$this->update_setting( 'update/fudge', rand( 0, ( $ttl / 3 ) ) * 60 );
+    // Adding a random fudge value (ensure it works across versions)
+    $this->update_setting('update/fudge', rand(0, (int)($ttl / 3)) * 60);
 
-		$this->update_setting(
-			'update/ttl',
-			apply_filters(
-				'syndicated_feed_ttl',
-				$this->setting( 'update/ttl' ),
-				$this
-			)
-		);
-	} /* SyndicatedLink::do_update_ttl () */
-
+    // Apply filter to ttl (should be compatible with all PHP 8.x versions)
+    $this->update_setting(
+        'update/ttl',
+        apply_filters(
+            'syndicated_feed_ttl',
+            $this->setting('update/ttl'),
+            $this
+        )
+    );
+}/* SyndicatedLink::do_update_ttl () */
 	public function process_retirements ($delta) {
 		$q = new WP_Query(array(
 		'fields' => '_synfrom',
@@ -866,16 +870,19 @@ class SyndicatedLink {
 
 	public function password () {
 		return $this->setting('http password', 'http_password', NULL);
-	} /* SyndicatedLink::password () */
+	}/* SyndicatedLink::password () */
 
-	public function authentication_method () {
-		$auth = $this->setting('http auth method', NULL);
-		if (('-' == $auth) or (strlen($auth)==0)) :
-			$auth = NULL;
-		endif;
-		return $auth;
-	} /* SyndicatedLink::authentication_method () */
-
+public function authentication_method() {
+    // Retrieve the authentication method from settings
+    $auth = $this->setting('http auth method', NULL);
+    
+    // If the value is '-' or empty, treat it as NULL
+    if (empty($auth) || $auth === '-') {
+        $auth = NULL;
+    }
+    
+    return $auth;
+} /* SyndicatedLink::authentication_method () */
 	var $postmeta = array();
 	public function postmeta ($params = array()) {
 		$params = wp_parse_args($params, /*defaults=*/ array(

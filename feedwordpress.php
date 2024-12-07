@@ -2100,11 +2100,22 @@ class FeedWordPress {
 		return in_array( strtolower( trim( $q ) ), $nego );
 	} /* FeedWordPress::negative () */
 
-	static function affirmative ($f, $setting = null) {
-		$affirmo = array ('y', 'yes', 't', 'true', 1);
-		$q = self::get_field( $f, $setting );
-		return in_array( strtolower( trim( $q ) ), $affirmo );
-	} /* FeedWordPress::affirmative () */
+	static function affirmative($f, $setting = null) {
+    // Defining possible affirmative values
+    $affirmo = ['y', 'yes', 't', 'true', 1];
+    
+    // Get the field value (presumably from some form or other input)
+    $q = self::get_field($f, $setting);
+    
+    // Ensure $q is treated properly even if it's null or not set
+    if ($q === null) {
+        return false;  // Or you can return false or other fallback as needed
+    }
+
+    // Check if the value, after trimming and converting to lowercase, is in the affirmative array
+    return in_array(strtolower(trim($q)), $affirmo, true); // The third argument `true` ensures strict type checking
+}
+ /* FeedWordPress::affirmative () */
 
 	/**
 	  * Internal debugging functions.
