@@ -416,17 +416,24 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 			$page = $this;
 		endif;
 
-		if ($page->for_feed_settings()) :
+		if (!empty($page->for_feed_settings())) :
 			$custom_settings = $page->link->setting("postmeta", NULL, array());
 		else :
 			$custom_settings = get_option('feedwordpress_custom_settings');
 		endif;
 
-		if ($custom_settings and !is_array($custom_settings)) :
-			$custom_settings = unserialize($custom_settings);
+		if (!empty($custom_settings) and !is_array($custom_settings) and (strlen($custom_settings) > 1)) :
+			// Catch edge case: $custom_settings exists, but it has only one byte.
+			// In such cases, unserialize() will fail. (gwyneth 20250111)
+			try {
+				$custom_settings = unserialize($custom_settings);
+			}
+			catch (Exception $e) {
+				$custom_settings = array();
+			}
 		endif;
 
-		if ( !is_array($custom_settings)) :
+		if (!is_array($custom_settings)) :
 			$custom_settings = array();
 		endif;
 
