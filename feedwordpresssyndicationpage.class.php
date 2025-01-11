@@ -688,7 +688,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 
 			<?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
 			<input type="hidden" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
-			<input style="vertical-align: middle;" type="image" src="<?php print esc_url(plugins_url('plus.png', __FILE__)); ?>" alt="<?php print esc_html(FWP_SYNDICATE_NEW); ?>" /></div>
+			<input style="vertical-align: middle;" type="image" src="<?php print esc_url(plugins_url('/assets/images/plus.png', __FILE__)); ?>" alt="<?php print esc_html(FWP_SYNDICATE_NEW); ?>" /></div>
 			</form>
 		</div> <!-- id="add-single-uri" -->
 
