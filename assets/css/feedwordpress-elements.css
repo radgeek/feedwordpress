@@ -396,11 +396,16 @@ table.twofer td.secondary {
 /*	These icons have been deprecated since 2013 or so;
 	see https://core.trac.wordpress.org/ticket/26119.
 	Nevertheless, we need proper sizing for the 'new' SVG.
-	(gwyneth 20210717) */
+	(gwyneth 20210717)
+	Also: added class for dashboard widget plus sign, which was missing.
+	(gwyneth 20250111)
+*/
 .feedwordpress-admin .icon32,
-.feedwordpress-admin .icon32 img {
+.feedwordpress-admin .icon32 img,
+input.feedwordpress-admin.icon32 {
 	width: 32px;
 	height: 32px;
+	display: inline;
 }
 
 #feedwordpress-admin-syndication .heads-up {
