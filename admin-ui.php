@@ -217,8 +217,8 @@ function fwp_tags_box( $tags, $object, $params = array() ) {
 		$params['id'] = $tax_name;
 	endif;
 
-	printf( /* $desc = */ '<p style="font-size:smaller;font-style:bold;margin:0\">' . __( 'Tag' ) . ' %s '
-		 . __( 'as' ) . '...</p>', esc_html( $object ) );
+	printf( /* $desc = */ '<p style="font-size:smaller;font-style:bold;margin:0\">' . esc_html__( 'Tag' ) . ' %s '
+		 . esc_html__( 'as' ) . '...</p>', esc_html( $object ) );
 	$helps        = __( 'Separate tags with commas.' );
 	$box['title'] = __( 'Tags' );
 	?>
@@ -304,7 +304,7 @@ function fwp_category_box( $checked, $object, $tags = array(), $params = array()
 <div id="<?php print esc_attr( $box_div_id ); ?>" class="feedwordpress-category-div">
 	<ul id="<?php print esc_attr( $tabs_ul_id ); ?>" class="category-tabs">
 	<li class="ui-tabs-selected tabs"><a href="#<?php print esc_attr( $all_tab_id ); ?>" tabindex="3"><?php esc_html_e( 'All posts' ); ?></a>
-	<p style="font-size:smaller;font-style:bold;margin:0"><?php _e( 'Give' ); ?> <?php print esc_html( $object ); ?> <?php _e( 'these' ); ?> <?php print esc_html( $o_tax_labels->name ); ?></p>
+	<p style="font-size:smaller;font-style:bold;margin:0"><?php esc_html_e( 'Give' ); ?> <?php print esc_html( $object ); ?> <?php esc_html_e( 'these' ); ?> <?php print esc_html( $o_tax_labels->name ); ?></p>
 	</li>
 	</ul>
 
@@ -367,7 +367,7 @@ function fwp_category_box( $checked, $object, $tags = array(), $params = array()
  */
 function update_feeds_mention( $feed ) {
 	printf(
-		'<li>' . __( 'Updating' ) . ' <cite>%s</cite> ' . __( 'from' ) . ' &lt;<a href="%s">%s</a>&gt; ...',
+		'<li>' . esc_html__( 'Updating' ) . ' <cite>%s</cite> ' . esc_html__( 'from' ) . ' &lt;<a href="%s">%s</a>&gt; ...',
 		esc_html( $feed['link/name'] ),
 		esc_url(  $feed['link/uri'] ),
 		esc_html( $feed['link/uri'] )
@@ -386,11 +386,11 @@ function update_feeds_finish( $feed, $added, $dt ) {
 	if ( is_wp_error( $added ) ) :
 		$mesgs = $added->get_error_messages();
 		foreach ( $mesgs as $mesg ) :
-			printf( '<br/><strong>' . __( 'Feed error' ) . ':</strong> <code>%s</code>', esc_html( $mesg ) );
+			printf( '<br/><strong>%s:</strong> <code>%s</code>', esc_html__( 'Feed error' ), esc_html( $mesg ) );
 		endforeach;
 		echo "</li>\n";
 	else :
-		printf( __(" completed in %d second%s") . "</li>\n", esc_html( $dt ), esc_html( _s( $dt ) ) );
+		printf( esc_html__(" completed in %d second%s") . "</li>\n", esc_html( $dt ), esc_html( _s( $dt ) ) );
 	endif;
 	flush();
 } /* update_feeds_finish() */
@@ -530,7 +530,7 @@ function fwp_syndication_manage_page_links_table_rows( $links, $page, $visible =
 				endif;
 				?>
 
-	<div><strong><?php _e( 'Actions' ); ?> &gt;</strong>
+	<div><strong><?php esc_html_e( 'Actions' ); ?> &gt;</strong>
 				<?php if ( $subscribed ) : ?>
 	<a href="<?php print esc_url( $page->admin_page_href( 'syndication.php', array( 'action' => 'feedfinder' ), $link ) ); ?>"><?php echo esc_html( $caption ); ?></a>
 				<?php else : ?>
@@ -551,7 +551,7 @@ function fwp_syndication_manage_page_links_table_rows( $links, $page, $visible =
 				<?php if ( strlen( $link->link_rss ) > 0 ) : ?>
 	<td><div><a href="<?php echo esc_html( $link->link_rss ); ?>"><?php echo esc_html( feedwordpress_display_url( $link->link_rss, 32 ) ); ?></a></div></td>
 				<?php else : ?>
-	<td class="feed-missing"><p><strong><?php _e( 'no feed assigned' ); ?></strong></p></td>
+	<td class="feed-missing"><p><strong><?php esc_html_e( 'no feed assigned' ); ?></strong></p></td>
 				<?php endif; ?>
 
 	<td><div style="float: right; padding-left: 10px">
@@ -571,7 +571,7 @@ function fwp_syndication_manage_page_links_table_rows( $links, $page, $visible =
 			endforeach;
 		else :
 			?>
-	<tr><td colspan="4"><p><?php _e( 'There are no websites currently listed for syndication.' ); ?></p></td></tr>
+	<tr><td colspan="4"><p><?php esc_html_e( 'There are no websites currently listed for syndication.' ); ?></p></td></tr>
 			<?php
 		endif;
 		?>
@@ -594,8 +594,8 @@ function fwp_links_table_rows_errors_since( $the_error ) {
 		$s_recent  = fwp_time_elapsed( $the_error['ts'] );
 		?>
 
-<div class="returning-errors"><p><strong><?php _e( 'Returning errors' ); ?></strong> <?php _e( 'since' ); ?> <?php print esc_html( $s_elapsed ); ?></p>
-<p><?php _e( 'Most recent' ); ?> (<?php print esc_html( $s_recent ); ?>):
+<div class="returning-errors"><p><strong><?php esc_html_e( 'Returning errors' ); ?></strong> <?php esc_html_e( 'since' ); ?> <?php print esc_html( $s_elapsed ); ?></p>
+<p><?php esc_html_e( 'Most recent' ); ?> (<?php print esc_html( $s_recent ); ?>):
 		<?php
 		foreach ( $the_error['object']->get_error_messages() as $mesg ) :
 			printf( '<br/><code>%s</code>', esc_html( $mesg ) );
@@ -615,9 +615,9 @@ function fwp_links_table_rows_errors_since( $the_error ) {
  */
 function fwp_links_table_rows_last_updated( $o_s_link ) {
 	if ( ! is_null( $o_s_link->setting( 'update/last' ) ) ) :
-		print __( 'Last checked ') . esc_html( fwp_time_elapsed( $o_s_link->setting( 'update/last' ) ) );
+		print esc_html__( 'Last checked ') . esc_html( fwp_time_elapsed( $o_s_link->setting( 'update/last' ) ) );
 	else :
-		print __( 'None yet' );
+		print esc_html__( 'None yet' );
 	endif;
 
 	$ttl = $o_s_link->setting( 'update/ttl' );
@@ -626,7 +626,7 @@ function fwp_links_table_rows_last_updated( $o_s_link ) {
 
 		if ( 'automatically' !== $o_s_link->setting( 'update/timed' ) ) :
 
-			print ' &middot; ' . __( 'Next') . ' ';
+			print ' &middot; ' . esc_html__( 'Next') . ' ';
 			print esc_html( fwp_relative_time_string( $next ) );
 
 		endif;
@@ -731,24 +731,25 @@ function fwp_links_table_rows_next_update( $o_s_link ) {
 			print esc_html( fwp_time_elapsed( $next ) );
 			if ( FEEDWORDPRESS_DEBUG ) :
 				$interval = ( ( $next - time() ) / 60 );
-				printf( ' [%d ' . __( 'minute' ) . '%s]', intval( $interval ), esc_html( _s( $interval ) ) );
+				printf( ' [%d %s%s]', intval( $interval ), esc_html__( 'minute' ), esc_html( _s( $interval ) ) );
 			endif;
 		else :
-			printf( __( 'Scheduled to be checked for updates every ' ) . '%d ' . __( 'minute' ) . '%s.',
+			printf( esc_html__( 'Scheduled to be checked for updates every ' ) . '%d %s%s.',
 				intval( $ttl ),
+				esc_html__( 'minute' ),
 				esc_html( _s( $ttl ) ) );
 			?>
 			</div>
 
-			<div style="size:0.9em; margin-top: 0.5em"><?php _e( 'This update schedule was requested by the feed provider' ); ?>
+			<div style="size:0.9em; margin-top: 0.5em"><?php esc_html_e( 'This update schedule was requested by the feed provider' ); ?>
 			<?php
 			if ( $o_s_link->setting( 'update/xml' ) ) :
 				?>
-				 <?php _e( 'using a standard' ); ?> <code style="font-size: inherit; padding: 0; background: transparent">&lt;<?php print esc_html( $o_s_link->setting( 'update/xml' ) ); ?>&gt;</code> <?php _e( 'element' ); // Note: the tricky php tags placed here try to avoid a space before the period. (gwyneth 20230918)
+				 <?php esc_html_e( 'using a standard' ); ?> <code style="font-size: inherit; padding: 0; background: transparent">&lt;<?php print esc_html( $o_s_link->setting( 'update/xml' ) ); ?>&gt;</code> <?php esc_html_e( 'element' ); // Note: the tricky php tags placed here try to avoid a space before the period. (gwyneth 20230918)
 			endif;
 		endif;
 	else :
-		_e( 'Scheduled for update as soon as possible' );
+		esc_html_e( 'Scheduled for update as soon as possible' );
 	endif;
 	print '.';
 	?>

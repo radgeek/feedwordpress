@@ -50,7 +50,7 @@ class InspectPostMeta {
 				foreach ($values as $value) :
 					print "<tr><th style='text-align: left' scope='row'>".esc_html($key);
 					if ($idx > 1) :
-						print "[$idx]";
+						print esc_html( sprintf( '[%d]', intval( $idx ) ) );
 					endif;
 					print ":</th> ";
 					print "<td><pre><code>".esc_html($value)."</code></pre>";

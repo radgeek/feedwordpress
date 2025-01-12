@@ -46,14 +46,6 @@ class FeedWordPressSettingsUI {
 	static function admin_styles() {
 		?>
 		<style type="text/css">
-		/*
-		#feedwordpress-admin-feeds .link-rss-params-remove .x, .feedwordpress-admin .remove-it .x {
-			background: url(<?php print admin_url( 'images/xit.gif' ) ?>) no-repeat scroll 0 0 transparent;
-		}
-		#feedwordpress-admin-feeds .link-rss-params-remove:hover .x, .feedwordpress-admin .remove-it:hover .x {
-			background: url(<?php print admin_url( 'images/xit.gif' ) ?>) no-repeat scroll -10px 0 transparent;
-		}
-		*/
 		#feedwordpress-admin-feeds .link-rss-params-remove .x, .feedwordpress-admin .remove-it .x {
 			content: "\f153"; /* dashicons-dismiss */
 			color: var(--wp-components-color-foreground,#1e1e1e);
@@ -69,13 +61,13 @@ class FeedWordPressSettingsUI {
 			part of the WordPress core any more; see https://core.trac.wordpress.org/ticket/20980
 			I have placed these missing images on the images folder instead (gwyneth 20210717) */
 		.fwpfs {
-			background-image: url(<?php /* print admin_url('images/fav.png'); */ echo plugins_url( 'assets/images/fav.png', __FILE__ ); ?>);
+			background-image: url(<?php echo esc_url( plugins_url( 'assets/images/fav.png', __FILE__ ) ); ?>);
 			background-repeat: repeat-x;
 			background-position: left center;
 			background-attachment: scroll;
 		}
 		.fwpfs.slide-down {
-			background-image: url(<?php /* print admin_url('images/fav-top.png'); */  echo plugins_url( 'assets/images/fav-top.png', __FILE__ ); ?>);
+			background-image: url(<?php echo esc_url( plugins_url( 'assets/images/fav-top.png', __FILE__ ) ); ?>);
 			background-position: 0 top;
 			background-repeat: repeat-x;
 		}

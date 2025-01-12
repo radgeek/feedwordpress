@@ -29,7 +29,7 @@ class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 		if ( is_array($li['label'] ) ) :
 			list( $a_href, $s_currently ) = $li['label'];
 			printf(
-				__('Use the <a href="%s">site-wide setting</a> <span class="current-setting">Currently: <strong>%s</strong></span>'),
+				'Use the <a href="%s">site-wide setting</a> <span class="current-setting">Currently: <strong>%s</strong></span>',
 				esc_url( $a_href ),
 				esc_html( $s_currently )
 			);
@@ -361,7 +361,7 @@ least one local <strong><?php $l = $li['labels']; print esc_html( $l->singular_n
 <tr>
 <th scope="row">Multiple categories:</th>
 <td>
-<input type="text" size="20" id="cat_split" name="cat_split" value="<?php if (isset($link->settings['cat_split'])) : echo htmlspecialchars($link->settings['cat_split']); endif; ?>" />
+<input type="text" size="20" id="cat_split" name="cat_split" value="<?php if ( isset( $link->settings['cat_split'] ) ) : echo esc_attr( $link->settings['cat_split'] ); endif; ?>" />
 <p class="setting-description">Enter a <a href="http://us.php.net/manual/en/reference.pcre.pattern.syntax.php">Perl-compatible regular expression</a> here if the feed provides multiple
 categories in a single category element. The regular expression should match
 the characters used to separate one category from the next. If the feed uses
@@ -472,7 +472,7 @@ blank.</p></td>
 			<?php if (count($globalCats) > 0) : ?>
 			  <ul class="current-setting">
 			  <?php foreach ($globalDogs as $dog) : ?>
-			    <li><?php $cat = get_term($dog, $tax); print $cat->name; ?></li>
+			    <li><?php $cat = get_term($dog, $tax); print esc_html( $cat->name ); ?></li>
 			  <?php endforeach; ?>
 			  </ul>
 			  </div>

@@ -33,7 +33,7 @@ class UpdatedPostsControl {
 		endif;
 	?>
 		<tr>
-		<th scope="row"><?php _e('Updated posts:') ?></th>
+		<th scope="row"><?php esc_html_e('Updated posts:') ?></th>
 		<td><p>When <?php print esc_html( $aFeed ); ?> includes updated content for
 		a post that was already syndicated, should the syndicated copy
 		of the post be updated to match the revised version?</p>

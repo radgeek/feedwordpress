@@ -106,7 +106,7 @@ class FeedWordPressCompatibility {
 		if ( 'POST' == strtoupper( $_SERVER['REQUEST_METHOD'] ) ) :
 			// Limit post by user capabilities
 			if ( ! is_null( $capability ) and ! current_user_can( $capability ) ) :
-				wp_die( __( 'Cheatin&rsquo; uh?' ) );
+				wp_die( esc_html__( 'Cheatin&rsquo; uh?' ) );
 			endif;
 
 			// If check_admin_referer() checks a nonce.
@@ -281,38 +281,38 @@ function fwp_upgrade_page() {
 		$ver = get_option( 'feedwordpress_version' );
 		if ( ! empty( $ver ) and FEEDWORDPRESS_VERSION != $ver ) :
 			echo "<div class=\"wrap\">\n";
-			echo "<h2>" . __( "Upgrading FeedWordPress..." ) . "</h2>";
+			echo "<h2>" . esc_html__( "Upgrading FeedWordPress..." ) . "</h2>";
 
 			$feedwordpress = new FeedWordPress;
 			$feedwordpress->upgrade_database( $ver );
-			echo "<p><strong>" . __( "Done!" ) . "</strong> " . __( "Upgraded database to version " ) . FEEDWORDPRESS_VERSION . ".</p>\n";
+			echo "<p><strong>" . esc_html__( "Done!" ) . "</strong> " . esc_html__( "Upgraded database to version " ) . esc_html( FEEDWORDPRESS_VERSION ) . ".</p>\n";
 			echo "<form action=\"\" method=\"get\">\n";
 			echo "<div class=\"submit\"><input type=\"hidden\" name=\"page\" value=\"syndication.php\" />";
 			echo "<input type=\"submit\" value=\"Continue &raquo;\" /></form></div>\n";
 			echo "</div>\n";
 			return;
 		else :
-			echo "<div class=\"updated\"><p>" . __( "Already at version " ) . FEEDWORDPRESS_VERSION . "!</p></div>";
+			echo "<div class=\"updated\"><p>" . esc_html__( "Already at version " ) . esc_html( FEEDWORDPRESS_VERSION ) . "!</p></div>";
 		endif;
 	endif;
 ?>
 <div class="wrap">
-<h2><?php _e( 'Upgrade FeedWordPress' ); ?></h2>
+<h2><?php esc_html_e( 'Upgrade FeedWordPress' ); ?></h2>
 
-<p><?php _e( 'It appears that you have installed FeedWordPress' ); ?>
-<?php echo FEEDWORDPRESS_VERSION; ?> <?php _e( 'as an upgrade to an existing installation of
+<p><?php esc_html_e( 'It appears that you have installed FeedWordPress' ); ?>
+<?php echo esc_html( FEEDWORDPRESS_VERSION ); ?> <?php esc_html_e( 'as an upgrade to an existing installation of
 FeedWordPress. That\'s no problem, but you will need to take a minute out first
 to upgrade your database: some necessary changes in how the software keeps
 track of posts and feeds will cause problems such as duplicate posts and broken
 templates if we were to continue without the upgrade.' ); ?></p>
 
-<p><?php _e( 'Note that most of FeedWordPress\'s functionality is temporarily disabled
+<p><?php esc_html_e( 'Note that most of FeedWordPress\'s functionality is temporarily disabled
 until we have successfully completed the upgrade. Everything should begin
 working as normal again once the upgrade is complete. There\'s extraordinarily
 little chance of any damage as the result of the upgrade, but if you\'re paranoid
 like me, you may want to back up your database before you proceed.' ); ?></p>
 
-<p><?php _e( 'This may take several minutes for a large installation.' ); ?></p>
+<p><?php esc_html_e( 'This may take several minutes for a large installation.' ); ?></p>
 
 <form action="" method="post">
 <?php FeedWordPressCompatibility::stamp_nonce( 'feedwordpress_upgrade' ); ?>

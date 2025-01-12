@@ -23,7 +23,7 @@ License: GPL
 # -	Github contributors @Flynsarmy, @BandonRandon, @david-robinson-practiceweb,
 # 	@daidais, @thegreatmichael, @stedaniels, @alexiskulash, @quassy, @zoul0813,
 # 	@timmmmyboy, @vobornik, @inanimatt, @tristanleboss, @martinburchell,
-#   @bigalownz, and @oppiansteve
+# 	@bigalownz, @oppiansteve, and @GwynethLlewelyn
 # according to the terms of the GNU General Public License.
 
 ####################################################################################
@@ -37,11 +37,10 @@ if ( ! defined( 'FEEDWORDPRESS_BLEG' ) ) :
 	define ( 'FEEDWORDPRESS_BLEG', true );
 endif;
 
-define( 'FEEDWORDPRESS_BLEG_BTC_pre_2020', '15EsQ9QMZtLytsaVYZUaUCmrkSMaxZBTso' );
-define( 'FEEDWORDPRESS_BLEG_BTC_2020', '1NB1ebYVb68Har4WijmE8gKnZ47NptCqtB' ); // 2020.0201
-define( 'FEEDWORDPRESS_BLEG_BTC', '1HCDdeGcR66EPxkPT2rbdTd1ezh27pmjPR' ); // 2021.0713
-
-define( 'FEEDWORDPRESS_BLEG_PAYPAL', '22PAJZZCK5Z3W' );
+define( 'FEEDWORDPRESS_BLEG_BTC_pre_2020',  '15EsQ9QMZtLytsaVYZUaUCmrkSMaxZBTso' );
+define( 'FEEDWORDPRESS_BLEG_BTC_2020',      '1NB1ebYVb68Har4WijmE8gKnZ47NptCqtB' ); // 2020.0201
+define( 'FEEDWORDPRESS_BLEG_BTC', 	    '1HCDdeGcR66EPxkPT2rbdTd1ezh27pmjPR' ); // 2021.0713
+define( 'FEEDWORDPRESS_BLEG_PAYPAL', 	    '22PAJZZCK5Z3W' );
 
 // Defaults
 define( 'DEFAULT_SYNDICATION_CATEGORY', 'Contributors' );
@@ -280,19 +279,19 @@ function feedwordpress_item_feed_data () {
 	if (is_syndicated()) :
 ?>
 <source>
-	<title><?php print htmlspecialchars(get_syndication_source()); ?></title>
-	<link rel="alternate" type="text/html" href="<?php print htmlspecialchars(get_syndication_source_link()); ?>" />
-	<link rel="self" href="<?php print htmlspecialchars(get_syndication_feed()); ?>" />
+	<title><?php print esc_html( get_syndication_source() ); ?></title>
+	<link rel="alternate" type="text/html" href="<?php print esc_url( get_syndication_source_link() ); ?>" />
+	<link rel="self" href="<?php print esc_url( get_syndication_feed() ); ?>" />
 <?php
 	$id = get_syndication_feed_guid();
-	if (strlen($id) > 0) :
+	if ( strlen( $id ) > 0 ) :
 ?>
-	<id><?php print htmlspecialchars($id); ?></id>
+	<id><?php print esc_xml( $id ); ?></id>
 <?php
 	endif;
 	$updated = get_feed_meta('feed/updated');
-	if (strlen($updated) > 0) : ?>
-	<updated><?php print esc_xml($updated); ?></updated>
+	if ( strlen( $updated ) > 0 ) : ?>
+	<updated><?php print esc_xml( $updated ); ?></updated>
 <?php
 	endif;
 ?>
@@ -1119,19 +1118,19 @@ class FeedWordPress {
 			$p = get_post( $post_id );
 
 			if ( ! $post ) :
-				wp_die( __( 'The item you are trying to zap no longer exists.' ) );
+				wp_die( esc_html__( 'The item you are trying to zap no longer exists.' ) );
 			endif;
 
 			if ( ! current_user_can( 'delete_post', $post_id ) ) :
-				wp_die( __( 'You are not allowed to zap this item.' ) );
+				wp_die( esc_html__( 'You are not allowed to zap this item.' ) );
 			endif;
 
 			if ( $user_id = wp_check_post_lock( $post_id ) ) :
 				if ( is_numeric( $user_id ) and function_exists( 'get_userdata' ) ) :
 					$user = get_userdata( (int) $user_id );
-					wp_die( sprintf( __( 'You cannot retire this item. %s is currently editing.' ), $user->display_name ) );
+					wp_die( esc_html( sprintf( __( 'You cannot retire this item. %s is currently editing.' ), $user->display_name ) ) );
 				else :
-					wp_die( __( 'You cannot retire this item. Someone is currently editing.' ) );
+					wp_die( esc_html__( 'You cannot retire this item. Someone is currently editing.' ) );
 				endif;
 			endif;
 
@@ -1667,10 +1666,10 @@ class FeedWordPress {
 
 				foreach ($byTime as $time => $querySet) :
 					foreach ($querySet as $query) :
-						print "[".(sprintf('%4.4f', $time/1000.0)) . "ms] $query\n";
+						printf( '[%s ms] %s', esc_html( sprintf( '%4.4f', $time/1000.0 ) ), esc_html( $query ) ) . "\n";
 					endforeach;
 				endforeach;
-				echo self::log_prefix()."$wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of "; timer_stop(1); print " seconds.";
+				echo esc_html( self::log_prefix()."$wpdb->num_queries queries. $mysqlTime seconds in MySQL. Total of " ); timer_stop(1); print " seconds.";
 			endif;
 
 			debug_out_feedwordpress_footer();
@@ -2168,18 +2167,22 @@ class FeedWordPress {
 	 * @param  string|null   $setting  Either the field name (key) for a setting, or NULL.
 	 * @return bool                    Returns TRUE if the field being tested is affirmative, FALSE otherwise.
 	 */
-	static function affirmative( $f, $setting = null ) {
-		$affirmo = array('y', 'yes', 't', 'true', 1 );
-		$q = self::get_field( $f, $setting );
-		// Check first if `$q` is empty or, worse, null, so that `trim()` below
-		// doesn't give an error (gwyneth 20230922).
-		if ( ! empty( $q ) ) :
-			return in_array( strtolower( trim( $q ) ), $affirmo );
-		endif;
-		// A null/empty check above is undefined; all we can say is that it is NOT affirmative,
-		// so we return FALSE! (gwyneth 20230922)
-		return FALSE;
-	} /* FeedWordPress::affirmative () */
+	static function affirmative($f, $setting = null) {
+    // Defining possible affirmative values
+    $affirmo = ['y', 'yes', 't', 'true', 1];
+
+    // Get the field value (presumably from some form or other input)
+    $q = self::get_field($f, $setting);
+
+    // Ensure $q is treated properly even if it's null or not set
+    if ( ! empty( $q ) ) {
+        return false;  // Or you can return false or other fallback as needed
+    }
+
+    // Check if the value, after trimming and converting to lowercase, is in the affirmative array
+    return in_array(strtolower(trim($q)), $affirmo, true); // The third argument `true` ensures strict type checking
+}
+ /* FeedWordPress::affirmative () */
 
 	/**
 	  * Internal debugging functions.
@@ -2213,32 +2216,32 @@ class FeedWordPress {
 		if (FeedWordPressDiagnostic::is_on($level)) :
 			foreach ($output as $method) :
 				switch ($method) :
-					case 'echo' :
-						if ( !self::update_requested()) :
-							echo "<div><pre><strong>Diag".str_repeat('====', $diagnostic_nesting-1).'|</strong> '.$out."</pre></div>\n";
-						endif;
-						break;
-					case 'echo_in_cronjob' :
-						if (self::update_requested()) :
-							echo self::log_prefix() . ' ' . esc_html( $out ) . "\n";
-						endif;
-						break;
-					case 'admin_footer' :
-						$feedwordpress_admin_footer[] = $out;
-						break;
-					case 'error_log' :
-						error_log(self::log_prefix() . ' ' . $out);
-						break;
-					case 'email' :
-						if (is_null($persist)) :
-							$sect = 'occurrent';
-							$hook = (isset($dlog['mesg'][$sect]) ? count($dlog['mesg'][$sect]) : 0);
-							$line = array("Time" => time(), "Message" => $out);
-						else :
-							$sect = 'persistent';
-							$hook = md5($level."\n".$persist);
-							$line = array("Since" => $since, "Message" => $out, "Most Recent" => $mostRecent);
-						endif;
+				case 'echo' :
+					if ( !( self::update_requested() || wp_doing_ajax() ) ) :
+						echo "<div><pre><strong>Diag".esc_html( str_repeat('====', $diagnostic_nesting-1) ).'|</strong> '. esc_html( $out )."</pre></div>\n";
+					endif;
+					break;
+				case 'echo_in_cronjob' :
+					if (self::update_requested()) :
+						echo esc_html( self::log_prefix() ) . ' ' . esc_html( $out ) . "\n";
+					endif;
+					break;
+				case 'admin_footer' :
+					$feedwordpress_admin_footer[] = $out;
+					break;
+				case 'error_log' :
+					error_log(self::log_prefix() . ' ' . $out);
+					break;
+				case 'email' :
+					if (is_null($persist)) :
+						$sect = 'occurrent';
+						$hook = (isset($dlog['mesg'][$sect]) ? count($dlog['mesg'][$sect]) : 0);
+						$line = array("Time" => time(), "Message" => $out);
+					else :
+						$sect = 'persistent';
+						$hook = md5($level."\n".$persist);
+						$line = array("Since" => $since, "Message" => $out, "Most Recent" => $mostRecent);
+					endif;
 
 					// Is this the default case?! If not, this code will very likely _never_ run! (gwyneth 20230922)
 					// @see PHP Manual for switch()
