@@ -4,7 +4,7 @@ Donate link: http://feedwordpress.radgeek.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
 Tested up to: 5.9
-Stable tag: 2022.0222
+Stable tag: 2025.0112
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,10 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 4. Feed and Update Settings (defaults for all feeds)
 
 == Changelog ==
+
+= 2025.0112 =
+
+*	ADDITIONAL CODE CLEANUP: This version does some additional code clean-up to remove some obsolete methods of generating output, and to do a better job of sanitizing input and escaping output in the FeedWordPress administrative dashboard.
 
 = 2022.0222 =
 

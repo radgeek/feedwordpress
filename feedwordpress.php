@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2022.0222
+Version: 2025.0112
 Author: C. Johnson
 Author URI: https://feedwordpress.radgeek.com/contact/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2022.0222
+ * @version 2025.0112
  */
 
 # This plugin uses code derived from:
@@ -30,8 +30,8 @@ License: GPL
 ## CONSTANTS & DEFAULTS ############################################################
 ####################################################################################
 
-define ('FEEDWORDPRESS_VERSION', '2022.0222');
-define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'http://feedwordpress.radgeek.com/contact' );
+define ('FEEDWORDPRESS_VERSION', '2025.0112');
+define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'https://fwpplugin.com/contact/' );
 
 if ( ! defined( 'FEEDWORDPRESS_BLEG' ) ) :
 	define ( 'FEEDWORDPRESS_BLEG', true );

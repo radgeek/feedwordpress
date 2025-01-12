@@ -148,7 +148,6 @@ class SyndicatedLink {
 
         $this->fetch();
 
-        // $new_count = NULL;
         $new_count = array(); // it's better to allocate as an empty array, saves some error-checking later on
 
         $resume = ('yes'==$this->setting('update/unfinished'));
@@ -377,17 +376,17 @@ class SyndicatedLink {
         list( $ttl, $xml ) = $this->ttl( /*return element=*/ true );
 
         if ( ! is_null( $ttl ) ) :
-            $this->update_setting( 'update/ttl',   $ttl);
-            $this->update_setting( 'update/xml',   $xml);
-            $this->update_setting( 'update/timed', 'feed');
+            $this->update_setting( 'update/ttl',   $ttl );
+            $this->update_setting( 'update/xml',   $xml );
+            $this->update_setting( 'update/timed', 'feed' );
         else :
             $ttl = $this->automatic_ttl();
-            $this->update_setting( 'update/ttl',   $ttl);
-            $this->update_setting( 'update/xml',   NULL);
-            $this->update_setting( 'update/timed', 'automatically');
+            $this->update_setting( 'update/ttl',   $ttl );
+            $this->update_setting( 'update/xml',   NULL );
+            $this->update_setting( 'update/timed', 'automatically' );
         endif;
 
-        $this->update_setting( 'update/fudge', rand( 0, ( $ttl / 3 ) ) * 60 );
+        $this->update_setting( 'update/fudge', rand( 0, (int)( $ttl / 3 ) ) * 60 );
 
         $this->update_setting(
             'update/ttl',
@@ -399,34 +398,34 @@ class SyndicatedLink {
         );
     } /* SyndicatedLink::do_update_ttl () */
 
-	/**
-	 * Retires old posts in the absence of a non-incremental feed.
-	 *
-	 * TODO: something here will sometimes cause WP_Query() to break (!). It seems to
-	 * be related to an invalid/non-existent user id. The code, however, seems fine. Just
-	 * added an extra diagnostic message in the case that $this->id seems incorrect.
-	 * (gwyneth 20231017)
-	 *
-	 * @param  mixed $delta  Whatever this is, it's not used and is returned without change...
-	 *
-	 * @return mixed The value of $delta (unchanged?)
-	 */
+    /**
+     * Retires old posts in the absence of a non-incremental feed.
+     *
+     * TODO: something here will sometimes cause WP_Query() to break (!). It seems to
+     * be related to an invalid/non-existent user id. The code, however, seems fine. Just
+     * added an extra diagnostic message in the case that $this->id seems incorrect.
+     * (gwyneth 20231017)
+     *
+     * @param  mixed $delta  Whatever this is, it's not used and is returned without change...
+     *
+     * @return mixed The value of $delta (unchanged?)
+     */
     public function process_retirements( $delta ) {
-		FeedWordPress::diagnostic(
-			'syndicated_posts:process_retirements',
-			'[DEBUG] \$this->id is now: ' . $this->id ?? '(most likely BROKEN)'
-		);
+        FeedWordPress::diagnostic(
+            'syndicated_posts:process_retirements',
+            '[DEBUG] \$this->id is now: ' . $this->id ?? '(most likely BROKEN)'
+        );
 
         try {
             $q = new WP_Query(
-			    array(
-        		    'fields'				=> '_synfrom',
-        		    'post_status__not'		=> 'fwpretired',
-        		    'ignore_sticky_posts'	=> true,
-        		    'meta_key'				=> '_feedwordpress_retire_me_' . $this->id,
-        		    'meta_value'			=> '1',
-		        )
-	    	);
+                array(
+                    'fields'				=> '_synfrom',
+                    'post_status__not'		=> 'fwpretired',
+                    'ignore_sticky_posts'	=> true,
+                    'meta_key'				=> '_feedwordpress_retire_me_' . $this->id,
+                    'meta_value'			=> '1',
+                )
+            );
         } catch ( Exception $e ) {
             error_log( 'Creating a new WP_Query for processing retirements failed; is_user_logged_in() cannot be called at this stage; actual exception was: ',  $e->getMessage(), "\n" );
             return $delta;  // I have no idea if this is the expected result or not... (gwyneth 20240210)
@@ -435,9 +434,9 @@ class SyndicatedLink {
             foreach ( $q->posts as $p ) :
                 $old_status = $p->post_status;
                 FeedWordPress::diagnostic(
-					'syndicated_posts:process_retirements',
-					'Retiring existing post # ' . $p->ID . ' "' . $p->post_title
-						.' " due to absence from a non-incremental feed.' );
+                    'syndicated_posts:process_retirements',
+                    'Retiring existing post # ' . $p->ID . ' "' . $p->post_title
+                        .' " due to absence from a non-incremental feed.' );
                 set_post_field( 'post_status', 'fwpretired', $p->ID );
                 wp_transition_post_status( 'fwpretired', $old_status, $p );
                 delete_post_meta( $p->ID, '_feedwordpress_retire_me_' . $this->id );
@@ -540,7 +539,7 @@ class SyndicatedLink {
         $this->delete();
     } /* SyndicatedLink::nuke () */
 
-    public function map_name_to_new_user ($name, $newuser_name) {
+    public function map_name_to_new_user( $name, $newuser_name ) {
         global $wpdb;
 
         if (strlen($newuser_name) > 0) :
@@ -798,7 +797,7 @@ class SyndicatedLink {
     /**
      * Merge current settings with array of additional data.
      *
-     * @param  array  $data          Settings to merge with.
+     * @param  array  $data       Settings to merge with.
      * @param  string $prefix     Hierarchical prefix (e.g. "feed/" as in "feed/a/b/c").
      * @param  string $separator  Hierarchy separator (e.g., '/').
      *
@@ -809,6 +808,14 @@ class SyndicatedLink {
         $this->settings = array_merge( $this->settings, $dd );
     } /* SyndicatedLink::merge_settings () */
 
+    /**
+     * Update an existing setting.
+     *
+     * @param  string $name       Key (name) of an existing setting.
+     * @param  string $value      New value for this seting.
+     * @param  string $default    If set equal to the $value, unsets this setting,
+     *                            restoring it to the default.
+     */
     public function update_setting( $name, $value, $default = 'default' ) {
         if ( !is_null( $value ) and $value != $default ) :
             $this->settings[ $name ] = $value;
@@ -817,12 +824,22 @@ class SyndicatedLink {
         endif;
     } /* SyndicatedLink::update_setting () */
 
-    public function is_non_incremental () {
-        return ('complete'==$this->setting('update_incremental', 'update_incremental', 'incremental'));
+    /**
+     * Check if the method of updating this RSS feed is incremental or complete.
+     *
+     * @return  bool  TRUE if complete, FALSE if incremental (or option not set).
+     */
+    public function is_non_incremental() {
+        return ( 'complete' == $this->setting( 'update_incremental', 'update_incremental', 'incremental' ) );
     } /* SyndicatedLink::is_non_incremental () */
 
-    public function get_feed_type () {
-        $type_code = $this->setting('link/feed_type');
+    /**
+     * Returns the type of the RSS feed, as seen by SimplePie.
+     *
+     * @return  string  Human-readable description of the type.
+     */
+    public function get_feed_type() {
+        $type_code = $this->setting( 'link/feed_type' );
 
         // list derived from: <http://simplepie.org/api/class-SimplePie.html>, retrieved 2020/01/18
         $bitmasks = array(
@@ -845,9 +862,9 @@ class SyndicatedLink {
         );
 
         $type = "Unknown or unsupported format";
-        foreach ($bitmasks as $format_flag => $format_string) :
-            if (is_numeric($format_flag)) : // Guard against failure of constants to be defined.
-                if ($type_code & $format_flag) :
+        foreach ( $bitmasks as $format_flag => $format_string ) :
+            if ( is_numeric( $format_flag ) )  : // Guard against failure of constants to be defined.
+                if ( $type_code & $format_flag ) :
                     $type = $format_string;
                     break; // foreach
                 endif;
@@ -857,7 +874,7 @@ class SyndicatedLink {
         return $type;
     } /* SyndicatedLink::get_feed_type () */
 
-    public function uri ($params = array()) {
+    public function uri($params = array()) {
         $params = wp_parse_args($params, array(
         'add_params' => false,
         'fetch' => false,
@@ -1222,7 +1239,7 @@ class SyndicatedLink {
      * @return array
      */
     public function category_ids ($post, $cats, $unfamiliar_category = 'create', $taxonomies = NULL, $params = array()) {
-        $singleton = (isset($params['singleton']) ? $params['singleton'] : true);
+        $singleton = (isset($params['singleton']) ? $params['singleton'] : true);   // shouldn't it be FALSE...? (gwyneth 20250112)
         $allowFilters = (isset($params['filters']) ? $params['filters'] : false);
 
         $catTax = 'category';
@@ -1319,4 +1336,3 @@ class SyndicatedLink {
         return $terms;
     } /* SyndicatedLink::category_ids () */
 } /* class SyndicatedLink */
-
