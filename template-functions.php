@@ -61,7 +61,7 @@ function get_syndication_source_link ($original = NULL, $id = NULL) {
 } /* function get_syndication_source_link() */
 
 function the_syndication_source_link ($original = NULL, $id = NULL) {
-	echo get_syndication_source_link($original, $id);
+	echo esc_url( get_syndication_source_link($original, $id) );
 } /* function the_syndication_source_link() */
 
 function get_syndication_source ($original = NULL, $id = NULL) {
@@ -70,7 +70,7 @@ function get_syndication_source ($original = NULL, $id = NULL) {
 } /* function get_syndication_source() */
 
 function the_syndication_source ($original = NULL, $id = NULL) {
-	echo get_syndication_source($original, $id);
+	echo esc_html( get_syndication_source($original, $id) );
 } /* function the_syndication_source () */
 
 function get_syndication_feed ($original = NULL, $id = NULL) {
@@ -79,16 +79,16 @@ function get_syndication_feed ($original = NULL, $id = NULL) {
 } /* function get_syndication_feed() */
 
 function the_syndication_feed ($original = NULL, $id = NULL) {
-	echo get_syndication_feed($original, $id);
+	echo esc_url( get_syndication_feed($original, $id) );
 } /* function the_syndication_feed() */
 
 function get_syndication_feed_guid ($original = NULL, $id = NULL) {
 	$p = new FeedWordPressLocalPost($id);
-	return $p->syndication_feed_guid($original);
+	return $p->syndication_feed_guid( $original );
 } /* function get_syndication_feed_guid () */
 
 function the_syndication_feed_guid ($original = NULL, $id = NULL) {
-	echo get_syndication_feed_guid($original, $id);
+	echo esc_html( get_syndication_feed_guid( $original, $id ) );
 } /* function the_syndication_feed_guid () */
 
 function get_syndication_feed_id ($id = NULL) {
@@ -97,7 +97,7 @@ function get_syndication_feed_id ($id = NULL) {
 } /* function get_syndication_feed_id () */
 
 function the_syndication_feed_id ($id = NULL) {
-	echo get_syndication_feed_id($id);
+	echo esc_html( get_syndication_feed_id($id) );
 } /* function the_syndication_feed_id () */
 
 function get_syndication_feed_object ($id = NULL) {
@@ -121,7 +121,7 @@ function get_syndication_permalink ($id = NULL) {
 } /* function get_syndication_permalink () */
 
 function the_syndication_permalink ($id = NULL) {
-	echo get_syndication_permalink($id);
+	echo esc_url( get_syndication_permalink($id) );
 } /* function the_syndication_permalink () */
 
 /**
@@ -162,6 +162,6 @@ function get_local_permalink ( $id = NULL ) {
  * @since 2010.0217
  */
 function the_local_permalink ( $id = NULL ) {
-	print apply_filters( 'the_permalink', get_local_permalink( $id ) );
+	print esc_url( apply_filters( 'the_permalink', get_local_permalink( $id ) ) );
 } /* function the_local_permalink() */
 

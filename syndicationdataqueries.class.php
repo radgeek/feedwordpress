@@ -11,8 +11,7 @@ class SyndicationDataQueries {
 	}
 
 	function init () {
-		global $wp;
-		$wp->add_query_var('guid');
+		// NOOP
 	}
 
 	function parse_query ($q) {

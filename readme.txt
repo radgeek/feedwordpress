@@ -3,8 +3,8 @@ Contributors: C. Johnson
 Donate link: http://feedwordpress.radgeek.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
-Tested up to: 5.9
-Stable tag: 2022.0222
+Tested up to: 6.7
+Stable tag: 2024.1119
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,22 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 4. Feed and Update Settings (defaults for all feeds)
 
 == Changelog ==
+
+= 2024.1119 =
+
+* COMPATIBILITY FIX FOR WORDPRESS 6.7 (Fixes "Uncaught TypeError: Argument 1 passed to SimplePie\Cache\BaseDataCache::__construct() must implement interface SimplePie\Cache\Base" error after WordPress 6.7 upgrade): This version includes a fix to a critical compatibility issue with SimplePie 1.8.0+'s new requirements for namespaced classes and interfaces. (Updating to WordPress 6.7 also means that you get an update to a more recent version of SimplePie included with the platform; unfortunately, the new version of SimplePie introduces code changes which are no doubt a good idea in the long run, but which broke backward compatibility with the technique that FeedWordPress uses to extend SimplePie classes.) If you recently upgraded to WordPress 6.7 and noticed that FeedWordPress suddenly stopped updating, or that you started seeing messages about a "Critical issue" or fatal PHP errors in the interface or your error logs -- especially when attempting to check feeds for updates within the FeedWordPress admin interface -- then a quick upgrade to this point release should hopefully resolve that issue for you.
+
+= 2024.0511 =
+
+* COMPATIBILITY FIX FOR "Uncaught TypeError: in_array()" ERROR: This version includes a fix to a fatal error that some users encountered with some versions of PHP 8. If after upgrading to a recent version of FeedWordPress, you encountered a message about a "critical error" or error messages indicating something like "Uncaught TypeError: in_array() Argument #2", then a couple of code changes in this version should hopefully resolve that error for you.
+
+= 2024.0428 =
+
+*	IMPORTANT SECURITY FIX: This version includes an important fix for a security vulnerability reported to me through Wordfence and WordPress support channels.
+
+    Vulnerability CVE-2024-0839 allowed for an insecure Direct Object Reference which could allow contents of Private, Pending, or otherwise non-Published post objects to be accessed by an attacker possessing or generating the internal guid URI of the post object. This vulnerability has been eliminated in the current version; to protect your site's security PLEASE BE SURE TO UPGRADE AS SOON AS POSSIBLE to version 2024.0428 or later, via the WordPress Plugin Repository or via Github.
+
+*	ADDITIONAL COMPATIBILITY FIXES AND CODE CLEANUP: This version includes numerous fixes to improve compatibility fixes for ongoing new releases of PHP, and does some additional code clean-up to remove some obsolete methods of generating output, and to do a better job of sanitizing input and escaping output in the FeedWordPress administrative dashboard. It features numerous fixes and improvements contributed by user @GwynethLlewelyn and several new hooks allowing for translation of interface elements.
 
 = 2022.0222 =
 

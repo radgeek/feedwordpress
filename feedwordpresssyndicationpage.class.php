@@ -12,6 +12,8 @@ require_once dirname(__FILE__) . '/feedfinder.class.php';
 ## ADMIN MENU ADD-ONS: implement Dashboard management pages ####################
 ################################################################################
 
+define( 'FWP_PROJECT_WEBSITE_URL', 'https://fwpplugin.com/' );
+
 define( 'FWP_UPDATE_CHECKED',	'Update Checked' );
 define( 'FWP_UNSUB_CHECKED',	'Unsubscribe' );
 define( 'FWP_DELETE_CHECKED',	'Delete' );
@@ -106,7 +108,15 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		endif;
 		// this may be output into HTML, and it should really only ever be Y or N...
 		$sVisibility = FeedWordPress::param( 'visibility', $defaultVisibility );
-		$visibility = preg_replace( '/[^YyNn]+/', '', $sVisibility );
+		// Ensure $sVisibility is treated as a string
+$sVisibility = (string) $sVisibility;
+
+// Apply preg_replace to remove unwanted characters
+$visibility = preg_replace('/[^YyNn]+/', '', $sVisibility);
+
+// If preg_replace fails or returns null, ensure $visibility is an empty string
+$visibility = $visibility !== null ? $visibility : '';
+
 
 		return ( strlen( $visibility ) > 0 ? $visibility : $defaultVisibility );
 	} /* FeedWordPressSyndicationPage::visibility_toggle() */
@@ -438,15 +448,15 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 
 			<div id="multiadd-status">
 			<p><img src="<?php print esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" alt="" />
-			<?php _e( 'Looking up feed information...' ); ?></p>
+			<?php esc_html_e( 'Looking up feed information...' ); ?></p>
 			</div>
 
 			<div id="multiadd-buttons">
-			<input type="submit" class="button" name="cancel" value="<?php _e( FWP_CANCEL_BUTTON ); ?>" />
-			<input type="submit" class="button-primary" value="<?php _e( 'Subscribe to selected sources →' ); ?>" />
+			<input type="submit" class="button" name="cancel" value="<?php esc_html_e( FWP_CANCEL_BUTTON ); ?>" />
+			<input type="submit" class="button-primary" value="<?php esc_html_e( 'Subscribe to selected sources →' ); ?>" />
 			</div>
 
-			<p><?php _e( 'Here are the feeds that FeedWordPress has discovered from the addresses that you provided. To opt out of a subscription, unmark the checkbox next to the feed.' ); ?></p>
+			<p><?php esc_html_e( 'Here are the feeds that FeedWordPress has discovered from the addresses that you provided. To opt out of a subscription, unmark the checkbox next to the feed.' ); ?></p>
 
 			<?php
 			print "<ul id=\"multiadd-list\">\n"; flush();
@@ -630,43 +640,43 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		endif;
 		// Hey ho, let's go...
 		?>
-		<div style="float: left; background: /* #F5F5F5 */ white; padding-top: 5px; padding-right: 5px;"><a href="<?php print $this->form_action(); ?>"><img src="<?php print esc_url( plugins_url( /* "feedwordpress.png" */ "assets/images/icon.svg", __FILE__ ) ); ?>" width="36px" height="36px" alt="FeedWordPress Logo" /></a></div>
-		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;"><?php _e( 'Managed by' ); ?><a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>
-		<?php print esc_html(FEEDWORDPRESS_VERSION); ?>.</p>
-		<?php if (FEEDWORDPRESS_BLEG) : ?>
-		<p class="info" style="margin-top: 0px; font-style: italic; font-size: 75%; color: #666;"><?php _e( 'If you find this tool useful for your daily work, you can
-		contribute to ongoing support and development with
-		<a href="http://feedwordpress.radgeek.com/donate/">a modest donation</a>.' ); ?></p>
+		<div style="float: left; background: /* #F5F5F5 */ white; padding-top: 5px; padding-right: 5px;"><a href="<?php print esc_url( $this->form_action() ); ?>"><img src="<?php print esc_url( plugins_url( /* "feedwordpress.png" */ "assets/images/icon.svg", __FILE__ ) ); ?>" width="36px" height="36px" alt="FeedWordPress Logo" /></a></div>
+		<p class="info" style="margin-bottom: 0px; border-bottom: 1px dotted black;"><?php esc_html_e( 'Managed by' ); ?><a href="<?php print esc_url( FWP_PROJECT_WEBSITE_URL ); ?>">FeedWordPress</a>
+		<?php print esc_html( FEEDWORDPRESS_VERSION ); ?>.</p>
+		<?php if ( FEEDWORDPRESS_BLEG ) : ?>
+		<p class="info" style="margin-top: 0px; font-style: italic; font-size: 75%; color: #666;"><?php esc_html_e( 'If you find this tool useful for your daily work, you can
+		contribute to ongoing support and development with '); ?>
+		<a href="<?php print esc_url( FWP_PROJECT_WEBSITE_URL ); ?>donate/"><?php esc_html_e('a modest donation'); ?></a>.</p>
 		<br style="clear: left;" />
 		<?php endif; ?>
 
 		<div class="feedwordpress-actions">
 		<h4>Updates</h4>
 		<ul class="options">
-		<li><strong><?php _e( 'Scheduled:' ); ?></strong> <?php print esc_html($update_setting); ?>
-		(<a href="<?php print esc_url($this->form_action('feeds-page.php')); ?>"><?php _e( 'change setting' ); ?></a>)</li>
+		<li><strong><?php esc_html_e( 'Scheduled:' ); ?></strong> <?php print esc_html($update_setting); ?>
+		(<a href="<?php print esc_url($this->form_action('feeds-page.php')); ?>"><?php esc_html_e( 'change setting' ); ?></a>)</li>
 
 		<li><?php if ( !is_null($lastUpdate)) : ?>
-		<strong><?php _e( 'Last checked:' );?></strong> <?php print esc_html(fwp_time_elapsed($lastUpdate)); ?>
+		<strong><?php esc_html_e( 'Last checked:' );?></strong> <?php print esc_html(fwp_time_elapsed($lastUpdate)); ?>
 		<?php else : ?>
-		<strong><?php _e( 'Last checked:' );?>&nbsp;</strong><?php _e( 'none yet' ); ?>
+		<strong><?php esc_html_e( 'Last checked:' );?>&nbsp;</strong><?php esc_html_e( 'none yet' ); ?>
 		<?php endif; ?>	</li>
 
 		</ul>
 		</div>
 
 		<div class="feedwordpress-stats">
-		<h4><?php _e( 'Subscriptions' ); ?></h4>
+		<h4><?php esc_html_e( 'Subscriptions' ); ?></h4>
 		<table>
 		<tbody>
 		<tr class="first">
 		<td class="first b b-active"><a href="<?php print esc_url($activeHref); ?>"><?php print esc_html(count($sources['Y'])); ?></a></td>
-		<td class="t active"><a href="<?php print esc_url($activeHref); ?>"><?php _e( 'Active' ); ?></a></td>
+		<td class="t active"><a href="<?php print esc_url($activeHref); ?>"><?php esc_html_e( 'Active' ); ?></a></td>
 		</tr>
 
 		<tr>
 		<td class="b b-inactive"><a href="<?php print esc_url($inactiveHref); ?>"><?php print esc_html(count($sources['N'])); ?></a></td>
-		<td class="t inactive"><a href="<?php print esc_url($inactiveHref); ?>"><?php _e( 'Inactive' ); ?></a></td>
+		<td class="t inactive"><a href="<?php print esc_url($inactiveHref); ?>"><?php esc_html_e( 'Inactive' ); ?></a></td>
 		</tr>
 		</table>
 		</div>
@@ -674,21 +684,20 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		<div id="add-single-uri">
 			<?php if (count($sources['Y']) > 0) : ?>
 			<form id="check-for-updates" action="<?php print esc_url( $this->form_action() ); ?>" method="POST">
-			<div class="container"><input type="submit" class="button-primary" name"update" value="<?php print esc_attr(FWP_CHECK_FOR_UPDATES); ?>" />
-			<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
-			<input type="hidden" name="update_uri" value="*" /></div>
+  			<div class="container"><input type="submit" class="button-primary" name"update" value="<?php print esc_attr(FWP_CHECK_FOR_UPDATES); ?>" />
+  			<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
+  			<input type="hidden" name="update_uri" value="*" /></div>
 			</form>
 			<?php endif; ?>
 
 			<form id="syndicated-links" action="<?php print esc_url( $this->form_action() ); // TODO: needs to be checked, because it doesn't seem to be defined properly (gwyneth 20230915) ?>" method="post">
-			<div class="container"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
-			<label for="add-uri">Add:
-			<input type="text" name="lookup" id="add-uri" placeholder="Source URL"
-			value="Source URL" style="width: 55%;" /></label>
-
-			<?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
-			<input type="hidden" name="action" value="<?php print FWP_SYNDICATE_NEW; ?>" />
-			<input style="vertical-align: middle;" type="image" class="feedwordpress-admin icon32" src="<?php print esc_url(plugins_url('/assets/images/plus.svg', __FILE__)); ?>" alt="<?php print esc_html(FWP_SYNDICATE_NEW); ?>" /></div>
+		  	<div class="container"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
+	  		<label for="add-uri">Add:
+  			<input type="text" name="lookup" id="add-uri" placeholder="Source URL"
+			   value="Source URL" style="width: 55%;" /></label>
+		  	<?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
+  			<input type="hidden" name="action" value="<?php print esc_attr( FWP_SYNDICATE_NEW ); ?>" />
+	  		<input style="vertical-align: middle;" type="image" class="feedwordpress-admin icon32" src="<?php print esc_url(plugins_url('/assets/images/plus.svg', __FILE__)); ?>" alt="<?php print esc_html(FWP_SYNDICATE_NEW); ?>" /></div>
 			</form>
 		</div> <!-- id="add-single-uri" -->
 
@@ -724,8 +733,8 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		<div id="add-multiple-uri" class="hide-if-js">
 		<form action="<?php print esc_url( $formHref ); ?>" method="post">
 		  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-		  <h4><?php _e( 'Add Multiple Sources' ); ?></h4>
-		  <div><?php _e( 'Enter one feed or website URL per line. If a URL links to a website which provides multiple feeds, FeedWordPress will use the first one listed.' ); ?></div>
+		  <h4><?php esc_html_e( 'Add Multiple Sources' ); ?></h4>
+		  <div><?php esc_html_e( 'Enter one feed or website URL per line. If a URL links to a website which provides multiple feeds, FeedWordPress will use the first one listed.' ); ?></div>
 		  <div><textarea name="multilookup" rows="8" cols="60"
 		  style="vertical-align: top"></textarea></div>
 		  <div style="border-top: 1px dotted black; padding-top: 10px">
@@ -736,15 +745,15 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		</div> <!-- id="add-multiple-uri" -->
 
 		<div id="upload-opml" style="float: right" class="hide-if-js">
-		<h4><?php _e( 'Import source list' ); ?></h4>
-		<p><?php _e( 'You can import a list of sources in OPML format, either by providing
+		<h4><?php esc_html_e( 'Import source list' ); ?></h4>
+		<p><?php esc_html_e( 'You can import a list of sources in OPML format, either by providing
 		a URL for the OPML document, or by uploading a copy from your
 		computer.' ); ?></p>
 
 		<form enctype="multipart/form-data" action="<?php print esc_url( $formHref ); ?>" method="post">
 		  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?><input type="hidden" name="MAX_FILE_SIZE" value="100000" /></div>
-		<div style="clear: both"><label for="opml-lookup" style="float: left; width: 8.0em; margin-top: 5px;"><?php _e( 'From URL:' ); ?></label> <input type="text" id="opml-lookup" name="opml_lookup" value="OPML document" /></div>
-		<div style="clear: both"><label for="opml-upload" style="float: left; width: 8.0em; margin-top: 5px;"><?php _e( 'From file:' ); ?></label> <input type="file" id="opml-upload" name="opml_upload" /></div>
+		<div style="clear: both"><label for="opml-lookup" style="float: left; width: 8.0em; margin-top: 5px;"><?php esc_html_e( 'From URL:' ); ?></label> <input type="text" id="opml-lookup" name="opml_lookup" value="OPML document" /></div>
+		<div style="clear: both"><label for="opml-upload" style="float: left; width: 8.0em; margin-top: 5px;"><?php esc_html_e( 'From file:' ); ?></label> <input type="file" id="opml-upload" name="opml_upload" /></div>
 
 		<div style="border-top: 1px dotted black; padding-top: 10px">
 		<div class="alignright"><input type="submit" class="button-primary" name="action" value="<?php print esc_html(FWP_SYNDICATE_NEW); ?>" /></div>
@@ -757,7 +766,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		  <form id="syndicated-links" action="<?php print esc_url( $formHref ); ?>" method="post">
 		  <div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
 		  <ul class="subsubsub">
-		  <li><label for="add-uri"><?php _e( 'New source:' ); ?></label>
+		  <li><label for="add-uri"><?php esc_html_e( 'New source:' ); ?></label>
 		  <input type="text" name="lookup" id="add-uri" value="Website or feed URI" />
 
 		  <?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); FeedWordPressSettingsUI::magic_input_tip_js('opml-lookup'); ?>
@@ -766,9 +775,9 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		  <input type="submit" class="button-secondary" name="action" value="<?php print esc_html( FWP_SYNDICATE_NEW ); ?>" />
 		  <div style="text-align: right; margin-right: 2.0em">
 			<!-- Using WP Dashicon plus and down-arrow symbols below (gwyneth 20210717) -->
-			<a id="turn-on-multiple-sources" href="#add-multiple-uri"><span class="dashicons feedwordpress-dashicons dashicons-list-view"></span>&nbsp;<?php _e( 'add multiple' ); ?></a>
+			<a id="turn-on-multiple-sources" href="#add-multiple-uri"><span class="dashicons feedwordpress-dashicons dashicons-list-view"></span>&nbsp;<?php esc_html_e( 'add multiple' ); ?></a>
 			<span class="screen-reader-text"> or </span>
-			<a id="turn-on-opml-upload" href="#upload-opml"><span class="dashicons feedwordpress-dashicons dashicons-upload"></span>&nbsp;<?php _e( 'import source list' ); ?></a>
+			<a id="turn-on-opml-upload" href="#upload-opml"><span class="dashicons feedwordpress-dashicons dashicons-upload"></span>&nbsp;<?php esc_html_e( 'import source list' ); ?></a>
 		  </div>
 		  </li>
 		  </ul>
@@ -790,7 +799,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 
 		<?php if ($showInactive) : ?>
 		<div style="clear: right" class="alignright">
-		<p style="font-size: smaller; font-style: italic"><?php _e( 'FeedWordPress used to syndicate
+		<p style="font-size: smaller; font-style: italic"><?php esc_html_e( 'FeedWordPress used to syndicate
 		posts from these sources, but you have unsubscribed from them.' ); ?></p>
 		</div>
 		<?php
@@ -824,10 +833,10 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		$hrefN = sprintf( "%s&amp;visibility=%s", $hrefPrefix, "N" );
 ?>
 	<ul class="subsubsub">
-	<li><a <?php if ( ! $showInactive ) : ?>class="current" <?php endif; ?>href="<?php print esc_url( $hrefY ); ?>"><?php _e( 'Subscribed' ); ?>
+	<li><a <?php if ( ! $showInactive ) : ?>class="current" <?php endif; ?>href="<?php print esc_url( $hrefY ); ?>"><?php esc_html_e( 'Subscribed' ); ?>
 	<span class="count">(<?php print count( $sources['Y'] ); ?>)</span></a></li>
 	<?php if ( $showInactive or ( count( $sources['N'] ) > 0 ) ) : ?>
-	<li><a <?php if ( $showInactive ) : ?>class="current" <?php endif; ?>href="<?php print esc_url( $hrefN ); ?>"><?php _e( 'Inactive' ); ?></a>
+	<li><a <?php if ( $showInactive ) : ?>class="current" <?php endif; ?>href="<?php print esc_url( $hrefN ); ?>"><?php esc_html_e( 'Inactive' ); ?></a>
 	<span class="count">(<?php print count( $sources['N'] ); ?>)</span></a></li>
 	<?php endif; ?>
 
@@ -865,15 +874,16 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 	function bleg_thanks( $page, $box = NULL ) {
 		?>
 		<div class="donation-thanks">
-		<h4><?php _e( 'Thank you!' ); ?></h4>
-		<p><?php _e( '<strong>Thank you</strong> for your contribution to <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a> development.
-		Your generous gifts make ongoing support and development for
+		<h4><?php esc_html_e( 'Thank you!' ); ?></h4>
+		<p><strong><?php esc_html_e( 'Thank you' ); ?></strong> <?php esc_html_e( ' for your contribution to '); ?>
+		<a href="<?php print esc_url( FWP_PROJECT_WEBSITE_URL ); ?>"><?php esc_html_e( 'FeedWordPress development' ); ?></a>.
+		<?php esc_html_e( 'Your generous gifts make ongoing support and development for
 		FeedWordPress possible.' ); ?></p>
-		<p><?php _e( 'If you have any questions about FeedWordPress, or if there
+		<p><?php esc_html_e( 'If you have any questions about FeedWordPress, or if there
 		is anything I can do to help make FeedWordPress more useful for
-		you, please <a href="http://feedwordpress.radgeek.com/contact">contact me</a>
-		and let me know what you&rsquo;re thinking about.' ); ?></p>
-		<p class="signature">&mdash;<a href="http://radgeek.com/">Charles Johnson</a>, <?php _e(' Developer' ); ?>, <a href="http://feedwordpress.radgeek.com/">FeedWordPress</a>.</p>
+		you, please '); ?><a href="<?php print esc_url( FWP_PROJECT_WEBSITE_URL ); ?>contact"><?php esc_html_e( 'contact me' ); ?></a>
+		<?php esc_html_e(' and let me know what you&rsquo;re thinking about.' ); ?></p>
+		<p class="signature">&mdash;<a href="<?php print esc_url( FWP_PROJECT_WEBSITE_URL ); ?>">Charles Johnson</a>, <?php esc_html_e(' Developer' ); ?>, <a href="<?php print esc_url( FWP_PROJECT_WEBSITE_URL ); ?>">FeedWordPress</a>.</p>
 		</div>
 		<?php
 	} /* FeedWordPressSyndicationPage::bleg_thanks () */
@@ -889,25 +899,14 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 	 */
 	function bleg_box ($page, $box = NULL) {
 		?>
-<script type="text/javascript">
-/* <![CDATA[ */
-	// Note: Flattr changed their business model and doesn't offer this service any more as of June 2023
-    (function() {
-        var s = document.createElement( 'script' ), t = document.getElementsByTagName( 'script' )[0];
-        s.type = 'text/javascript';
-        s.async = true;
-        s.src = 'https://api.flattr.com/js/0.6/load.js?mode=auto';
-        t.parentNode.insertBefore( s, t );
-    })();
-/* ]]> */</script>
 <div class="donation-form">
-<h4><?php _e( 'Consider a Donation to FeedWordPress' ); ?></h4>
+<h4><?php esc_html_e( 'Consider a Donation to FeedWordPress' ); ?></h4>
 <form action="https://www.paypal.com/cgi-bin/webscr" accept-charset="UTF-8" method="post"><div>
-<p><a href="http://feedwordpress.radgeek.com/">FeedWordPress</a> <?php _e( 'makes syndication
+<p><a href="<?php print esc_url( FWP_PROJECT_WEBSITE_URL ); ?>">FeedWordPress</a> <?php esc_html_e( 'makes syndication
 simple and empowers you to stream content from all over the web into your
-WordPress hub. If you&rsquo;re finding FWP useful,
-<a href="http://feedwordpress.radgeek.com/donate/">a modest gift</a>
-is the best way to support steady progress on development, enhancements,
+WordPress hub. If you&rsquo;re finding FWP useful, ' ); ?>
+<a href="<?php print esc_url( FWP_PROJECT_WEBSITE_URL ); ?>donate/"><?php esc_html_e( 'a modest gift' ); ?></a>
+<?php esc_html_e( ' is the best way to support steady progress on development, enhancements,
 support, and documentation.' ); ?></p>
 
 <div class="donate" style="vertical-align: middle">
@@ -915,21 +914,21 @@ support, and documentation.' ); ?></p>
 <div id="flattr-paypal">
 
 <div class="hovered-component" style="display: inline-block; vertical-align: bottom">
-<a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>"><img src="<?php print esc_url( plugins_url('/'.FeedWordPress::path('assets/images/btc-qr-128px.png') ) ); ?>" alt="<?php _e( 'Donate' ); ?>" /></a>
-<div><a href="bitcoin:<?php print esc_attr(FEEDWORDPRESS_BLEG_BTC); ?>"><?php _e( 'via' ); ?> bitcoin<span class="hover-on pop-over" style="background-color: #ddffdd; padding: 5px; color: black; border-radius: 5px;">bitcoin:<?php print esc_html( FEEDWORDPRESS_BLEG_BTC ); ?></span></a></div>
+<a href="bitcoin:<?php print esc_attr( FEEDWORDPRESS_BLEG_BTC ); ?>"><img src="<?php print esc_url( plugins_url('/'.FeedWordPress::path('assets/images/btc-qr-128px.png') ) ); ?>" alt="<?php esc_html_e( 'Donate' ); ?>" /></a>
+<div><a href="bitcoin:<?php print esc_attr( FEEDWORDPRESS_BLEG_BTC ); ?>"><?php esc_html_e( 'via' ); ?> bitcoin<span class="hover-on pop-over" style="background-color: #ddffdd; padding: 5px; color: black; border-radius: 5px;">bitcoin:<?php print esc_html( FEEDWORDPRESS_BLEG_BTC ); ?></span></a></div>
 </div>
 
 <div style="display: inline-block; vertical-align: bottom">
-<input type="image" name="submit" src="<?php print esc_url( plugins_url( '/' . FeedWordPress::path('assets/images/paypal-donation-64px.png' ) ) ); ?>" style="width: 128px; height: 128px;" alt="<?php _e( 'Donate via PayPal' ); ?>" />
+<input type="image" name="submit" src="<?php print esc_url( plugins_url( '/' . FeedWordPress::path('assets/images/paypal-donation-64px.png' ) ) ); ?>" style="width: 128px; height: 128px;" alt="<?php esc_html_e( 'Donate via PayPal' ); ?>" />
 <input type="hidden" name="business" value="<?php print esc_attr( FEEDWORDPRESS_BLEG_PAYPAL ); ?>"  />
 <input type="hidden" name="cmd" value="_xclick"  />
-<input type="hidden" name="item_name" value="<?php _e( 'FeedWordPress donation' ); ?>"  />
+<input type="hidden" name="item_name" value="<?php esc_html_e( 'FeedWordPress donation' ); ?>"  />
 <input type="hidden" name="no_shipping" value="1"  />
 <input type="hidden" name="return" value="<?php print esc_attr( $this->admin_page_href( basename( $this->filename ), array( 'paid' => 'yes' ) ) ); ?>"  />
 <input type="hidden" name="currency_code" value="USD" />
-<input type="hidden" name="notify_url" value="http://feedwordpress.radgeek.com/ipn/donation"  />
+<input type="hidden" name="notify_url" value="<?php print esc_url( FWP_PROJECT_WEBSITE_URL ); ?>/ipn/donation"  />
 <input type="hidden" name="custom" value="1"  />
-<div><?php _e( 'via PayPal' ); ?></div>
+<div><?php esc_html_e( 'via PayPal' ); ?></div>
 </div> <!-- style="display: inline-block" -->
 
 </div> <!-- id="flattr-paypal" -->
@@ -938,14 +937,13 @@ support, and documentation.' ); ?></p>
 </div> <!-- class="donation-form" -->
 </form>
 
-<p><?php _e( 'You can make a gift online (or
-<a href="http://feedwordpress.radgeek.com/donation">set up an automatic
-regular donation</a>) using an existing PayPal account or any major credit card.' ); ?></p>
+<p><?php esc_html_e( 'You can make a gift online (or ' ); ?><a href="<?php print esc_url( FWP_PROJECT_WEBSITE_URL ) ;?>donation"><?php esc_html_e( 'set up an automatic
+regular donation' ); ?></a><?php esc_html_e( ' using an existing PayPal account or any major credit card.' ); ?></p>
 
 <div class="sod-off">
 <form style="text-align: center" action="<?php print esc_url( $this->form_action() ); ?>" method="POST"><div>
-<input class="button" type="submit" name="maybe_later" value="<?php _e( 'Maybe Later' ); ?>"/>
-<input class="button" type="submit" name="go_away" value="<?php _e( 'Dismiss' ); ?>"/>
+<input class="button" type="submit" name="maybe_later" value="<?php esc_attr_e( 'Maybe Later' ); ?>"/>
+<input class="button" type="submit" name="go_away" value="<?php esc_attr_e( 'Dismiss' ); ?>"/>
 </div></form>
 </div>
 </div> <!-- class="donation-form" -->
@@ -1084,41 +1082,41 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 	<input type="hidden" name="action" value="Unsubscribe" />
 	<input type="hidden" name="confirm" value="Delete" />
 
-	<h2><?php _e( 'Unsubscribe from Syndicated Links:' ); ?></h2>
+	<h2><?php esc_html_e( 'Unsubscribe from Syndicated Links:' ); ?></h2>
 	<?php	foreach ($targets as $link) :
 			$subscribed = ('Y' == strtoupper($link->link_visible));
 	?>
 	<fieldset>
 	<legend><?php echo esc_html($link->link_name); ?></legend>
 	<table class="editform" width="100%" cellspacing="2" cellpadding="5">
-	<tr><th scope="row" width="20%"><?php _e('Feed URI:') ?></th>
-	<td width="80%"><a href="<?php echo esc_url($link->link_rss); ?>"><?php echo esc_html($link->link_rss); ?></a></td></tr>
-	<tr><th scope="row" width="20%"><?php _e('Short description:') ?></th>
-	<td width="80%"><?php echo esc_html($link->link_description); ?></span></td></tr>
-	<tr><th width="20%" scope="row"><?php _e('Homepage:') ?></th>
-	<td width="80%"><a href="<?php echo esc_url($link->link_url); ?>"><?php echo esc_html($link->link_url); ?></a></td></tr>
-	<tr style="vertical-align:top"><th width="20%" scope="row"><?php _e( 'Subscription ' ); ?><?php _e( 'Options' ); ?>:</th>
+	<tr><th scope="row" width="20%"><?php esc_html_e( 'Feed URI:' ) ?></th>
+	<td width="80%"><a href="<?php echo esc_url($link->link_rss); ?>"><?php echo esc_html( $link->link_rss ); ?></a></td></tr>
+	<tr><th scope="row" width="20%"><?php esc_html_e( 'Short description:' ) ?></th>
+	<td width="80%"><?php echo esc_html( $link->link_description ); ?></span></td></tr>
+	<tr><th width="20%" scope="row"><?php esc_html_e( 'Homepage:' ) ?></th>
+	<td width="80%"><a href="<?php echo esc_url($link->link_url); ?>"><?php echo esc_html( $link->link_url ); ?></a></td></tr>
+	<tr style="vertical-align:top"><th width="20%" scope="row"><?php esc_html_e( 'Subscription ' ); ?><?php esc_html_e( 'Options' ); ?>:</th>
 	<td width="80%"><ul style="margin:0; padding: 0; list-style: none">
 	<?php if ($subscribed) : ?>
 	<li><input type="radio" id="hide-<?php echo esc_attr($link->link_id); ?>"
 	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="hide" checked="checked" />
-	<label for="hide-<?php echo esc_attr($link->link_id); ?>"><?php _e( 'Turn off the subscription for this
+	<label for="hide-<?php echo esc_attr($link->link_id); ?>"><?php esc_html_e( 'Turn off the subscription for this
 	syndicated link<br/><span style="font-size:smaller">(Keep the feed information
 	and all the posts from this feed in the database, but don&rsquo;t syndicate any
 	new posts from the feed.)' ); ?></span></label></li>
 	<?php endif; ?>
 	<li><input type="radio" id="nuke-<?php echo esc_attr($link->link_id); ?>"<?php if ( ! $subscribed) : ?> checked="checked"<?php endif; ?>
 	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="nuke" />
-	<label for="nuke-<?php echo esc_attr($link->link_id); ?>"><?php _e( 'Delete this syndicated link and all the
+	<label for="nuke-<?php echo esc_attr($link->link_id); ?>"><?php esc_html_e( 'Delete this syndicated link and all the
 	posts that were syndicated from it' ); ?></label></li>
 	<li><input type="radio" id="delete-<?php echo esc_attr($link->link_id); ?>"
 	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="delete" />
-	<label for="delete-<?php echo esc_attr($link->link_id); ?>"><?php _e( 'Delete this syndicated link, but
+	<label for="delete-<?php echo esc_attr($link->link_id); ?>"><?php esc_html_e( 'Delete this syndicated link, but
 	<em>keep</em> posts that were syndicated from it (as if they were authored
 	locally).' ); ?></label></li>
-	<li><input type="radio" id="nothing-<?php echo esc_attr($link->link_id); ?>"
-	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="nothing" />
-	<label for="nothing-<?php echo esc_attr($link->link_id); ?>"><?php _e( 'Keep this feed as it is. I changed
+	<li><input type="radio" id="nothing-<?php echo esc_attr( $link->link_id ); ?>"
+	name="link_action[<?php echo esc_attr( $link->link_id ); ?>]" value="nothing" />
+	<label for="nothing-<?php echo esc_attr( $link->link_id ); ?>"><?php esc_html_e( 'Keep this feed as it is. I changed
 	my mind.' ); ?></label></li>
 	</ul>
 	</table>
@@ -1126,8 +1124,8 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 	<?php	endforeach; ?>
 
 	<div class="submit">
-	<input type="submit" name="submit" value="<?php _e(FWP_CANCEL_BUTTON); ?>" />
-	<input class="delete" type="submit" name="submit" value="<?php _e(FWP_UNSUB_FULL) ?>" />
+	<input type="submit" name="submit" value="<?php esc_html_e( FWP_CANCEL_BUTTON ); ?>" />
+	<input class="delete" type="submit" name="submit" value="<?php esc_html_e( FWP_UNSUB_FULL ) ?>" />
 	</div>
 	</div>
 	<?php
@@ -1181,10 +1179,10 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 			if (count($alter) > 0) :
 				echo "<div class=\"updated\">\n";
 				if (count($errs) > 0) :
-					_e( 'There were some problems processing your re-subscribe request. ' );
-					echo "[SQL: ".implode('; ', $errs)."]";
+					esc_html_e( 'There were some problems processing your re-subscribe request. ' );
+					echo esc_html( "[SQL: ".implode('; ', $errs)."]" );
 				else :
-					_e( 'Your re-subscribe request(s) have been processed.' );
+					esc_html_e( 'Your re-subscribe request(s) have been processed.' );
 				endif;
 				echo "</div>\n";
 			endif;
@@ -1203,30 +1201,30 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 	<input type="hidden" name="action" value="<?php print esc_attr( FWP_RESUB_CHECKED ); ?>" />
 	<input type="hidden" name="confirm" value="Undelete" />
 
-	<h2><?php _e( 'Re-subscribe to Syndicated Links:' ); ?></h2>
+	<h2><?php esc_html_e( 'Re-subscribe to Syndicated Links:' ); ?></h2>
 	<?php
 		foreach ($targets as $link) :
-			$subscribed = ('Y' == strtoupper($link->link_visible));
-			if ( ! $subscribed) :
+			$subscribed = ( 'Y' == strtoupper( $link->link_visible ) );
+			if ( ! $subscribed ) :
 	?>
 	<fieldset>
-	<legend><?php echo esc_html($link->link_name); ?></legend>
+	<legend><?php echo esc_html( $link->link_name ); ?></legend>
 	<table class="editform" width="100%" cellspacing="2" cellpadding="5">
-	<tr><th scope="row" width="20%"><?php _e('Feed URI:') ?></th>
-	<td width="80%"><a href="<?php echo esc_url($link->link_rss); ?>"><?php echo esc_html($link->link_rss); ?></a></td></tr>
-	<tr><th scope="row" width="20%"><?php _e('Short description:') ?></th>
+	<tr><th scope="row" width="20%"><?php esc_html_e( 'Feed URI:' ) ?></th>
+	<td width="80%"><a href="<?php echo esc_url( $link->link_rss ); ?>"><?php echo esc_html( $link->link_rss ); ?></a></td></tr>
+	<tr><th scope="row" width="20%"><?php esc_html_e( 'Short description:' ) ?></th>
 	<td width="80%"><?php echo esc_html($link->link_description); ?></span></td></tr>
-	<tr><th width="20%" scope="row"><?php _e('Homepage:') ?></th>
+	<tr><th width="20%" scope="row"><?php esc_html_e( 'Homepage:' ) ?></th>
 	<td width="80%"><a href="<?php echo esc_url($link->link_url); ?>"><?php echo esc_html($link->link_url); ?></a></td></tr>
-	<tr style="vertical-align:top"><th width="20%" scope="row"><?php _e( 'Subscription' ); ?> <?php _e( 'Options' ); ?>:</th>
+	<tr style="vertical-align:top"><th width="20%" scope="row"><?php esc_html_e( 'Subscription' ); ?> <?php esc_html_e( 'Options' ); ?>:</th>
 	<td width="80%"><ul style="margin:0; padding: 0; list-style: none">
 	<li><input type="radio" id="unhide-<?php echo esc_attr($link->link_id); ?>"
 	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="unhide" checked="checked" />
-	<label for="unhide-<?php echo esc_attr($link->link_id); ?>"><?php _e( 'Turn back on the subscription
+	<label for="unhide-<?php echo esc_attr($link->link_id); ?>"><?php esc_html_e( 'Turn back on the subscription
 	for this syndication source.' ); ?></label></li>
 	<li><input type="radio" id="nothing-<?php echo esc_attr($link->link_id); ?>"
 	name="link_action[<?php echo esc_attr($link->link_id); ?>]" value="nothing" />
-	<label for="nothing-<?php echo esc_attr($link->link_id); ?>"><?php _e( 'Leave this feed as it is.
+	<label for="nothing-<?php echo esc_attr($link->link_id); ?>"><?php esc_html_e( 'Leave this feed as it is.
 	I changed my mind.' ); ?></label></li>
 	</ul>
 	</table>
@@ -1237,7 +1235,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 	?>
 
 	<div class="submit">
-	<input class="button-primary delete" type="submit" name="submit" value="<?php _e('Re-subscribe to selected feeds &raquo;') ?>" />
+	<input class="button-primary delete" type="submit" name="submit" value="<?php esc_html_e( 'Re-subscribe to selected feeds &raquo;' ) ?>" />
 	</div>
 	</div>
 	<?php
@@ -1268,13 +1266,13 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 					$adminPageHref = $this->admin_page_href( 'feeds-page.php', array( "link_id" => $link_id ) );
 					?>
 <div class="updated"><p><a href="<?php print esc_url($feed_link); ?>"><?php print esc_html($feed_title); ?></a>
-<?php _e( 'has been added as a contributing site, using the feed at' ); ?>
+<?php esc_html_e( 'has been added as a contributing site, using the feed at' ); ?>
 &lt;<a href="<?php print esc_url( $feed ); ?>"><?php print esc_html( $feed ); ?></a>&gt;.
-| <a href="<?php print esc_url( $adminPageHref ); ?>"><?php _e( 'Configure settings' ); ?></a>.</p></div>
+| <a href="<?php print esc_url( $adminPageHref ); ?>"><?php esc_html_e( 'Configure settings' ); ?></a>.</p></div>
 					<?php
 				else:
 					?>
-<div class="updated"><p><?php _e( 'There was a problem adding the feed.' ); ?> [SQL: <?php echo esc_html($wpdb->last_error); ?>]</p></div>
+<div class="updated"><p><?php esc_html_e( 'There was a problem adding the feed.' ); ?> [SQL: <?php echo esc_html($wpdb->last_error); ?>]</p></div>
 					<?php
 				endif;
 			elseif ( ! is_null( $save_link_id ) ):
@@ -1287,8 +1285,8 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 					$home = $existingLink->homepage(/*from feed=*/ false);
 					$name = $existingLink->name(/*from feed=*/ false);
 					?>
-<div class="updated"><p><?php _e( 'Feed for ' ); ?><a href="<?php echo esc_html($home); ?>"><?php echo esc_html($name); ?></a>
-<?php _e( 'updated to ' ); ?>&lt;<a href="<?php echo esc_html( $feed ); ?>"><?php echo esc_html( $feed ); ?></a>&gt;.</p></div>
+<div class="updated"><p><?php esc_html_e( 'Feed for ' ); ?><a href="<?php echo esc_html($home); ?>"><?php echo esc_html($name); ?></a>
+<?php esc_html_e( 'updated to ' ); ?>&lt;<a href="<?php echo esc_html( $feed ); ?>"><?php echo esc_html( $feed ); ?></a>&gt;.</p></div>
 					<?php
 				endif;
 			endif;
@@ -1315,7 +1313,7 @@ regular donation</a>) using an existing PayPal account or any major credit card.
 
 		if ( ! $changed) :
 			?>
-	<div class="updated"><p><?php _e( 'Nothing was changed.' ); ?></p></div>
+	<div class="updated"><p><?php esc_html_e( 'Nothing was changed.' ); ?></p></div>
 			<?php
 		endif;
 		return true; // Continue.
@@ -1357,9 +1355,9 @@ function fwp_dashboard_update_if_requested ($object) {
 		$tdelta = NULL;
 		foreach ($update_set as $uri) :
 			if ( !is_null($crash_ts) and (time() > $crash_ts)) :
-				echo "<li><p><strong>" . __( "Further updates postponed:" ) . "</strong> "
-				. __( "update time limit of " ) . $crash_dt . __( " second" )
-				. ( ( 1 == $crash_dt ) ? "" : "s" ) . __( " exceeded." ) . "</p></li>";
+				echo "<li><p><strong>" . esc_html__( "Further updates postponed:" ) . "</strong> "
+				. esc_html__( "update time limit of " ) . esc_html( $crash_dt ) . esc_html__( " second"
+				. ( ( 1 == $crash_dt ) ? "" : "s" ) ) . esc_html__( " exceeded." ) . "</p></li>";
 				break;
 			endif;
 
@@ -1375,14 +1373,14 @@ function fwp_dashboard_update_if_requested ($object) {
 			else :
 				$display_uri = esc_html(feedwordpress_display_url($uri));
 				$uri = esc_html($uri);
-				echo "<li><p>" . __( "<strong>Error:</strong> There was a problem updating " )
-				. "<code><a href=\"$uri\">{$display_uri}</a></code></p></li>\n";
+				echo '<li><p><strong>' . esc_html__( "Error:" ) . "</strong> ". esc_html__( 'There was a problem updating ' )
+				. '<code><a href="' . esc_url( $uri ) . '">' . esc_html( $display_uri ) . '</a></code></p></li>' . "\n";
 			endif;
 		endforeach;
 		echo "</ul>\n";
 
 		if ( !is_null($tdelta)) :
-			echo "<p><strong>" . __( "Update complete." ) . "</strong>".fwp_update_set_results_message($delta)."</p>";
+			echo '<p><strong>'; esc_html_e( 'Update complete.' ); echo '</strong>'; print esc_html( fwp_update_set_results_message($delta) ); print '</p>';
 			echo "\n"; flush();
 		endif;
 		echo "</div> <!-- class=\"updated\" -->\n";
@@ -1415,9 +1413,9 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	));
 
 	$bleg_box_ready = apply_filters( 'feedwordpress_bleg_box_ready', $bleg_box_ready );
-	if ( FeedWordPress::post( 'paid' ) ) :
+	if ( FeedWordPress::post( 'paid' ) || ( FeedWordPress::param( 'test' ) == 'thanks' ) ) :
 		$object->bleg_thanks($object, $box);
-	elseif ($bleg_box_ready) :
+	elseif ($bleg_box_ready || ( FeedWordPress::param( 'test' ) == 'bleg' ) ) :
 		$object->bleg_box($object, $box);
 	endif;
 	?>
@@ -1428,17 +1426,17 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 		class="update-form<?php if ($bleg_box_ready) : ?> with-donation<?php endif; ?>"
 	>
 	<div><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?></div>
-	<p><?php _e( 'Check currently scheduled feeds for new and updated posts.' ); ?></p>
+	<p><?php esc_html_e( 'Check currently scheduled feeds for new and updated posts.' ); ?></p>
 
 	<?php
 	fwp_dashboard_update_if_requested($object);
 
 	if ( !get_option('feedwordpress_automatic_updates')) :
 	?>
-		<p class="heads-up"><?php _e( '<strong>Note:</strong> Automatic updates are currently turned
+		<p class="heads-up"><strong><?php esc_html_e( 'Note:' ); ?></strong> <?php esc_html_e( 'Automatic updates are currently turned
 		<strong>off</strong>. New posts from your feeds will not be syndicated
 		until you manually check for them here. You can turn on automatic
-		updates under' ); ?> <a href="<?php print esc_url( $object->admin_page_href('feeds-page.php') ); ?>"><?php _e( 'Feed &amp; Update Settings' ); ?></a>.</p>
+		updates under' ); ?> <a href="<?php print esc_url( $object->admin_page_href('feeds-page.php') ); ?>"><?php esc_html_e( 'Feed &amp; Update Settings' ); ?></a>.</p>
 	<?php
 	endif;
 	?>
@@ -1450,7 +1448,7 @@ function fwp_syndication_manage_page_update_box ($object = NULL, $box = NULL) {
 	<?php else : ?>
 	<input type="hidden" name="update_uri" value="*" />
 	<?php endif; ?>
-	<input class="button-primary" type="submit" name="update" value="<?php _e(FWP_CHECK_FOR_UPDATES); ?>" /></div>
+	<input class="button-primary" type="submit" name="update" value="<?php esc_html_e( FWP_CHECK_FOR_UPDATES ); ?>" /></div>
 
 	<br style="clear: both" />
 	</form>

@@ -195,7 +195,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		// Hey ho, let's go...
 		?>
 		<table id="syndicated-publication-form" class="edit-form narrow">
-		<tr><th scope="row"><?php _e('New posts:'); ?></th>
+		<tr><th scope="row"><?php esc_html_e('New posts:'); ?></th>
 		<td><?php
 			$this->setting_radio_control(
 				'post status', 'syndicated_post_status',
@@ -396,7 +396,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 		<?php endforeach; ?>
 
-		  <tr><th scope="row"><?php _e('Comment feeds'); ?></th>
+		  <tr><th scope="row"><?php esc_html_e('Comment feeds'); ?></th>
 		  <td><p>When WordPress feeds and templates link to comments
 		  feeds for <?php print esc_html($page->these_posts_phrase()); ?>, the
 		  URLs for the feeds should...</p>
@@ -440,6 +440,14 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		return $custom_settings;
 	} /* FeedWordPressPostsPage::custom_post_settings() */
 
+	/*static*/ function custom_post_settings_box_tester_button ( $id, $page, $box = NULL ) {
+
+		?>
+		<br/><button id="<?php print esc_attr( sprintf( 'xpath-test-%d', $id ) ); ?>" class="xpath-test">test expression</button>
+		<?php
+		
+	}
+	
 	/**
 	 * Output "Custom Post Settings" settings box
 	 *
@@ -462,16 +470,13 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 		<?php
 		$i = 0;
-		$testerButton = '<br/><button id="xpath-test-%d"'
-			.'class="xpath-test"'
-			.'>test expression</button>';
 		foreach ($custom_settings as $key => $value) :
 		?>
 		  <tr style="vertical-align:top">
 		    <th width="30%" scope="row"><input type="hidden" name="notes[<?php echo esc_attr($i); ?>][key0]" value="<?php echo esc_html($key); ?>" />
 		    <input id="notes-<?php echo esc_attr( $i ); ?>-key" name="notes[<?php echo esc_attr( $i ); ?>][key1]" value="<?php echo esc_html($key); ?>" /></th>
 		    <td width="60%"><textarea rows="2" cols="40" id="notes-<?php echo esc_attr($i); ?>-value" name="notes[<?php echo esc_attr($i); ?>][value]"><?php echo esc_html($value); ?></textarea>
-		    <?php print sprintf($testerButton, esc_attr($i) ); ?></td>
+		    <?php self::custom_post_settings_box_tester_button($i, $page, $box); ?></td>
 		    <td width="10%"><select name="notes[<?php echo esc_attr($i); ?>][action]">
 		    <option value="update">save changes</option>
 		    <option value="delete">delete this setting</option>
@@ -485,7 +490,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 		  <tr style="vertical-align: top">
 		    <th scope="row"><input type="text" size="10" name="notes[<?php echo esc_attr($i); ?>][key1]" value="" /></th>
-		    <td><textarea name="notes[<?php echo esc_attr($i); ?>][value]" rows="2" cols="40"></textarea><?php print sprintf($testerButton, esc_attr($i)); ?>
+		    <td><textarea name="notes[<?php echo esc_attr($i); ?>][value]" rows="2" cols="40"></textarea><?php self::custom_post_settings_box_tester_button( $i, $page, $box ); ?>
 		      <p>Enter a text value, or a path to a data element from the syndicated item.<br/>
 		      For data elements, you can use an XPath-like syntax wrapped in <code>$( ... )</code>.<br/>
 		      <code>hello</code> = the text value <code><span style="background-color: #30FFA0;">hello</span></code><br/>
@@ -525,7 +530,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 		?>
 		<table class="edit-form narrow">
 		<tbody>
-		<tr><th><?php _e('Custom Post Types:'); ?></th>
+		<tr><th><?php esc_html_e('Custom Post Types:'); ?></th>
 		<td><p>Incoming syndicated posts should be stored in the
 		posts database as...</p>
 		<?php
@@ -720,7 +725,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	<h3>Advanced Settings</h3>
 	<table class="edit-form narrow">
 	<tbody>
-	<tr><th scope="row"><?php _e("Hook Order:") ?></th>
+	<tr><th scope="row"><?php esc_html_e("Hook Order:") ?></th>
 	<td><input type="number" name="boilerplate_hook_order" value="<?php print esc_attr($hookOrder); ?>" /></td></tr>
 	</tbody>
 	</table>

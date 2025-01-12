@@ -62,22 +62,22 @@ function feedwordpress_post_edit_controls() {
 
 	if ( ! empty( $post ) and ! empty( $post->ID ) and is_syndicated( $post->ID ) ) :
 	?>
-	<p><?php _e( 'This is a syndicated post, which originally appeared at' ); ?>
+	<p><?php esc_html_e( 'This is a syndicated post, which originally appeared at' ); ?>
 	<cite><?php print esc_html( get_syndication_source( NULL, $post->ID ) ); ?></cite>.
-	<a href="<?php print esc_html( get_syndication_permalink( $post->ID ) ); ?>"><?php _e( 'View original post' ); ?></a>.</p>
+	<a href="<?php print esc_html( get_syndication_permalink( $post->ID ) ); ?>"><?php esc_html_e( 'View original post' ); ?></a>.</p>
 
 	<?php do_action( 'feedwordpress_post_edit_controls_pre', $post ); ?>
 
-	<p><input type="hidden" name="feedwordpress_noncename" id="feedwordpress_noncename" value="<?php print wp_create_nonce( plugin_basename( __FILE__ ) ); ?>" />
-	<label><input type="checkbox" name="freeze_updates" value="yes" <?php if ( $frozen_post ) : ?>checked="checked"<?php endif; ?> /> <strong><?php _e( 'Manual editing.' ); ?></strong>
-	<?php _e( 'If set, FeedWordPress will not overwrite the changes you make manually to this post, if the syndicated content is updated on the feed.' ); ?></label></p>
+	<p><input type="hidden" name="feedwordpress_noncename" id="feedwordpress_noncename" value="<?php print esc_attr( wp_create_nonce( plugin_basename( __FILE__ ) ) ); ?>" />
+	<label><input type="checkbox" name="freeze_updates" value="yes" <?php if ( $frozen_post ) : ?>checked="checked"<?php endif; ?> /> <strong><?php esc_html_e( 'Manual editing.' ); ?></strong>
+	<?php esc_html_e( 'If set, FeedWordPress will not overwrite the changes you make manually to this post, if the syndicated content is updated on the feed.' ); ?></label></p>
 
 	<?php do_action( 'feedwordpress_post_edit_controls', $post ); ?>
 
 	<?php
 	else :
 	?>
-	<p><?php _e( 'This post was created locally at this website.' ); ?></p>
+	<p><?php esc_html_e( 'This post was created locally at this website.' ); ?></p>
 	<?php
 	endif;
 } /* function feedwordpress_post_edit_controls() */
