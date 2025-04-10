@@ -127,7 +127,7 @@ class SyndicatedPostTerm {
 			$tax = $this->tax[0];
 		endif;
 		
-		if ($tax=='category' and strtolower($term)=='uncategorized') :
+		if ($tax=='category' and !is_null($term) && strtolower($term)=='uncategorized') :
 			$forbid = true;
 		endif;
 		

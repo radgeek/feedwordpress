@@ -29,7 +29,9 @@ function is_syndicated ($id = NULL) {
  * @return string containing an abbreviated display form of the URL (e.g.: `feedwordpress.radgeek.net/feed`)
  */
 function feedwordpress_display_url ($url, $before = 60, $after = 0) {
-	$bits = parse_url($url);
+	$bits = is_null($url)
+		? []
+		: parse_url($url);
 
 	// Strip out crufty subdomains
 	if (isset($bits['host'])) :

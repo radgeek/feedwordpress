@@ -413,13 +413,13 @@ class SyndicatedPost {
 
 	public function excerpt () {
 		# Identify and sanitize excerpt: atom:summary, or rss:description
-		$excerpt = $this->entry->get_description();
+		$excerpt = $this->entry->get_description() ?? '';
 
 		# Many RSS feeds use rss:description, inadvisably, to
 		# carry the entire post (typically with escaped HTML).
 		# If that's what happened, we don't want the full
 		# content for the excerpt.
-		$content = $this->content();
+		$content = $this->content() ?? '';
 
 		// Ignore whitespace, case, and tag cruft.
 		$theExcerpt = preg_replace('/\s+/', '', strtolower(strip_tags(html_entity_decode($excerpt))));
@@ -909,7 +909,7 @@ class SyndicatedPost {
 	 */
 	function inline_tags () {
 		$tags = array();
-		$content = $this->content();
+		$content = $this->content() ?? '';
 		$pattern = FeedWordPressHTML::tagWithAttributeRegex('a', 'rel', 'tag');
 		preg_match_all($pattern, $content, $refs, PREG_SET_ORDER);
 		if (is_countable($refs) and count($refs) > 0) :
@@ -1168,11 +1168,13 @@ class SyndicatedPost {
 				// Relying on preg_replace_callback() here can cause a PHP seg fault on my development
 				// server. preg_match_all() causes a similar problem. Apparently this is a PCRE issue
 				// Cf. discussion of similar issue <https://bugs.php.net/bug.php?id=65009>
-				$content = preg_replace_callback (
-					$pattern,
-					array($obj, 'resolve_single_relative_uri'),
-					$content
-				);
+				$content = is_null($content)
+					? ''
+					: preg_replace_callback (
+						$pattern,
+						array($obj, 'resolve_single_relative_uri'),
+						$content
+					);
 
 			endforeach;
 		endif;

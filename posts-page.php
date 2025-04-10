@@ -2,6 +2,7 @@
 require_once(dirname(__FILE__) . '/admin-ui.php');
 require_once(dirname(__FILE__) . '/updatedpostscontrol.class.php');
 
+#[\AllowDynamicProperties]
 class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 	var $link = NULL;
 	var $updatedPosts = NULL;
@@ -224,7 +225,7 @@ class FeedWordPressPostsPage extends FeedWordPressAdminPage {
 
 		if ($page->for_feed_settings()) :
 			$formatting_filters = null;
-			$url = preg_replace('|/+$|', '', $page->link->homepage());
+			$url = preg_replace('|/+$|', '', $page->link->homepage() ?? '');
 		else :
 			$formatting_filters = get_option('feedwordpress_formatting_filters', 'no');
 			$url = 'http://example.com';
