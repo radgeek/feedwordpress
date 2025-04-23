@@ -619,8 +619,9 @@ class SyndicatedPost {
 	 * @uses apply_filters()
 	 */
 	static function normalize_guid_prefix () {
-		$url = trailingslashit(home_url(/*path=*/ '', /*scheme=*/ 'http'));
-		return apply_filters('syndicated_item_guid_normalized_prefix', $url . '?guid=');
+		$scheme = 'http';
+		$url = trailingslashit(home_url(/*path=*/ '', $scheme));
+		return apply_filters('syndicated_item_guid_normalized_prefix', $url . '?guid=', $scheme);
 	} /* SyndicatedPost::normalize_guid_prefix() */
 
 	static function normalize_guid ($guid) {
@@ -636,8 +637,9 @@ class SyndicatedPost {
 	} /* SyndicatedPost::normalize_guid() */
 
 	static function alternative_guid_prefix () {
-		$url = trailingslashit(home_url(/*path=*/ '', /*scheme=*/ 'https'));
-		return apply_filters('syndicated_item_guid_normalized_prefix', $url . '?guid=');
+		$scheme = 'https';
+		$url = trailingslashit(home_url(/*path=*/ '', $scheme));
+		return apply_filters('syndicated_item_guid_normalized_prefix', $url . '?guid=', $scheme);
 	}
 	static function alternative_guid ($guid) {
 		$guid = trim($guid);
