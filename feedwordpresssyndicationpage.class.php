@@ -107,7 +107,7 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 			$defaultVisibility = 'N';
 		endif;
 		// this may be output into HTML, and it should really only ever be Y or N...
-		$sVisibility = FeedWordPress::param( 'visibility', $defaultVisibility );
+		$sVisibility = FeedWordPress::param( 'visibility', 'REQUEST', $defaultVisibility );
 		// Ensure $sVisibility is treated as a string
 $sVisibility = (string) $sVisibility;
 
