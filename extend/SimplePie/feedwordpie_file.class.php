@@ -100,7 +100,7 @@ class FeedWordPie_File extends WP_SimplePie_File {
 				$this->error   = 'WP HTTP Error: ' . $res->get_error_message();
 				$this->success = false;
 			else :
-				$this->headers     = wp_remote_retrieve_headers( $res );
+				$this->headers = array();
 				$this->body        = wp_remote_retrieve_body( $res );
 				$this->status_code = wp_remote_retrieve_response_code( $res );
 			endif;
