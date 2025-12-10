@@ -101,6 +101,43 @@ class FeedWordPie_File extends WP_SimplePie_File {
 				$this->success = false;
 			else :
 				$this->headers     = wp_remote_retrieve_headers( $res );
+				
+				/*
+				 * adapted from changes to class-wp-simplepie-file.php
+				 * by WP core devs between WP 6.7 and WP 6.9
+				 * SimplePie expects headers to be stored as an array
+				 * but WordPress has begun using a CaseInsensitiveDictionary
+				 */
+				if ( $this->headers instanceof \WpOrg\Requests\Utility\CaseInsensitiveDictionary ) {
+					$this->headers = $this->headers->getAll();
+				}
+
+				if ( is_null( $this->headers ) ) {
+					$this->headers = array( );
+				}
+				
+				/*
+				 * SimplePie expects multiple headers to be stored as a comma-separated string,
+				 * but `wp_remote_retrieve_headers()` returns them as an array, so they need
+				 * to be converted.
+				 *
+				 * The only exception to that is the `content-type` header, which should ignore
+				 * any previous values and only use the last one.
+				 *
+				 * @see SimplePie\HTTP\Parser::new_line().
+				 */
+				foreach ( $this->headers as $name => $value ) {
+					if ( ! is_array( $value ) ) {
+						continue;
+					}
+
+					if ( 'content-type' === $name ) {
+						$this->headers[ $name ] = array_pop( $value );
+					} else {
+						$this->headers[ $name ] = implode( ', ', $value );
+					}
+				}
+				
 				$this->body        = wp_remote_retrieve_body( $res );
 				$this->status_code = wp_remote_retrieve_response_code( $res );
 			endif;

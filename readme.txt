@@ -3,7 +3,7 @@ Contributors: C. Johnson
 Donate link: http://feedwordpress.radgeek.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
-Tested up to: 6.7
+Tested up to: 6.9
 Stable tag: 2024.1119
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -71,6 +71,10 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 4. Feed and Update Settings (defaults for all feeds)
 
 == Changelog ==
+
+= 2025.1209 =
+
+* COMPATIBILITY FIXES FOR WORDPRESS 6.9 (Fixes "PHP Fatal error: Cannot make static method SimplePie\\Parser::declare_html_entities() non static in class FeedWordPie_Parser" error, "PHP Fatal error:  Uncaught TypeError: Return value of SimplePie\\File::get_headers() must be of the type array, null returned" error, or "PHP Fatal error:  Uncaught TypeError: Argument 1 passed to SimplePie\\File::SimplePie\\{closure}() must be of the type string, array given" error after WordPress 6.9 upgrade): This version includes fixes to critical compatibility issues with WordPress 6.9 and WP 6.9's upgrade to SimplePie 1.9.0+. If you recently upgraded to WordPress 6.9 and noticed problems with updating or accessing your site, or messages about a "Critical issue" or fatal PHP errors in the interface or your error logs then a quick upgrade to this point release should hopefully resolve that issue for you.
 
 = 2024.1119 =
 

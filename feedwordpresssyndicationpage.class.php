@@ -106,17 +106,18 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		and  ( count( $this->sources( 'Y' ) ) == 0 ) ) :
 			$defaultVisibility = 'N';
 		endif;
+		
 		// this may be output into HTML, and it should really only ever be Y or N...
 		$sVisibility = FeedWordPress::param( 'visibility', $defaultVisibility );
+		
 		// Ensure $sVisibility is treated as a string
-$sVisibility = (string) $sVisibility;
+		$sVisibility = (string) $sVisibility;
 
-// Apply preg_replace to remove unwanted characters
-$visibility = preg_replace('/[^YyNn]+/', '', $sVisibility);
+		// Apply preg_replace to remove unwanted characters
+		$visibility = preg_replace('/[^YyNn]+/', '', $sVisibility);
 
-// If preg_replace fails or returns null, ensure $visibility is an empty string
-$visibility = $visibility !== null ? $visibility : '';
-
+		// If preg_replace fails or returns null, ensure $visibility is an empty string
+		$visibility = $visibility !== null ? $visibility : '';
 
 		return ( strlen( $visibility ) > 0 ? $visibility : $defaultVisibility );
 	} /* FeedWordPressSyndicationPage::visibility_toggle() */

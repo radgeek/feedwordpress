@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: http://feedwordpress.radgeek.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2024.1119
+Version: 2025.1210
 Author: C. Johnson
 Author URI: https://feedwordpress.radgeek.com/contact/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2024.1119
+ * @version 2025.1210
  */
 
 # This plugin uses code derived from:
@@ -23,14 +23,14 @@ License: GPL
 # -	Github contributors @Flynsarmy, @BandonRandon, @david-robinson-practiceweb,
 # 	@daidais, @thegreatmichael, @stedaniels, @alexiskulash, @quassy, @zoul0813,
 # 	@timmmmyboy, @vobornik, @inanimatt, @tristanleboss, @martinburchell,
-# 	@bigalownz, @oppiansteve, and @GwynethLlewelyn
+# 	@bigalownz, @oppiansteve, @GwynethLlewelyn, and @glg222
 # according to the terms of the GNU General Public License.
 
 ####################################################################################
 ## CONSTANTS & DEFAULTS ############################################################
 ####################################################################################
 
-define ('FEEDWORDPRESS_VERSION', '2024.1119');
+define ('FEEDWORDPRESS_VERSION', '2025.1210');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'https://feedwordpress.radgeek.com/contact' );
 
 if ( ! defined( 'FEEDWORDPRESS_BLEG' ) ) :
