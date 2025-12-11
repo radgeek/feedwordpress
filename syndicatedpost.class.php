@@ -44,10 +44,25 @@ class SyndicatedPost {
 	 *
 	 * @param array $item The item syndicated from the feed.
 	 * @param SyndicatedLink $source The feed it was syndicated from.
+	 *
+	 * @uses FeedWordPress
+	 * @uses FeedWordPress::diagnostic()
+	 * @uses MagpieFromSimplePie
 	 */
-	public function __construct( $item, $source ) {
-		if ( empty( $item ) and empty( $source ) )
+	public function __construct( $item, $source )
+	{
+		/* The following checked if both were simultaneously empty. The problem here is that if
+		 * _either_ is empty, we'll be using expected array entries or methods from them,
+		 * which will break execution. I think that "or" is more appropriate here, although I'm
+		 * adding a debug entry here, just in case... (gwyneth 20231017)
+		 */
+		if ( empty( $item ) or empty( $source ) ) :
+			FeedWordPress::diagnostic(
+				'feed_items',
+				'Either \$item or \$source was empty, returning from constructor without doing anything'
+			);
 			return;
+		endif;
 
 		if ( is_array( $item )
 		and isset( $item['simplepie'] )
@@ -274,22 +289,30 @@ class SyndicatedPost {
 	#### EXTRACT DATA FROM FEED ITEM ####
 	#####################################
 
-	function substitution_function ($name) {
+	/**
+	 * Checks if the given function is allowed.
+	 *
+	 * @param  string|null $name Name of the function to check for.
+	 *
+	 * @return string|null Returns the name being checked if allowed, null otherwise.
+	 */
+	function substitution_function( $name )
+	{
 		$ret = NULL;
 
-		switch ($name) :
-		// Allowed PHP string functions
-		case 'trim':
-		case 'ltrim':
-		case 'rtrim':
-		case 'strtoupper':
-		case 'strtolower':
-		case 'urlencode':
-		case 'urldecode':
-			$ret = $name;
-		endswitch;
+		switch( $name ) :
+			// Allowed PHP string functions
+			case 'trim':
+			case 'ltrim':
+			case 'rtrim':
+			case 'strtoupper':
+			case 'strtolower':
+			case 'urlencode':
+			case 'urldecode':
+				$ret = $name;
+			endswitch;
 		return $ret;
-	}
+	} /* SyndicatedPost::substitution_function() */
 
 	/**
 	 * SyndicatedPost::query uses an XPath-like syntax to query arbitrary
@@ -298,16 +321,18 @@ class SyndicatedPost {
 	 * @param string $path
 	 * @returns array of string values representing contents of matching
 	 * elements or attributes
+	 *
+	 * @uses SyndicatedPostXPathQuery
 	 */
 	 public function query ($path) {
-		$xq = new SyndicatedPostXPathQuery(array("path" => $path));
+		$xpathQuery = new SyndicatedPostXPathQuery(array("path" => $path));
 
 		$feedChannel = array_merge(
 			$this->get_feed_root_element(),
 			$this->get_feed_channel_elements()
 		);
 
-		$matches = $xq->match(array(
+		$matches = $xpathQuery->match(array(
 		"type" => $this->link->simplepie->get_type(),
 		"xmlns" => $this->xmlns,
 		"map" => array(
@@ -359,11 +384,21 @@ class SyndicatedPost {
 		return $this->entry->get_title();
 	} /* SyndicatedPost::title () */
 
-	public function content ($params = array())
+	/**
+	 * Extracts content from Atom/RSS feeds and deals with tricky edge cases.
+	 *
+	 * @param  Array $params  Filter parameters to include everything.
+	 *
+	 * @return string|null    The extracted content (which could be null if error).
+	 */
+	public function content( $params = array() )
 	{
-		$params = wp_parse_args($params, array(
-		"full only" => false,
-		));
+		$params = wp_parse_args(
+			$params,
+			array(
+				"full only" => false,
+			)
+		);
 
 		$content = NULL;
 
@@ -374,38 +409,39 @@ class SyndicatedPost {
 		// SimplePie_Item::get_content() with content-only set to TRUE
 		// and some sanitization in effect. -CJ 1jul14
 
+		// Changed isset() with ! empty(), because we have no idea if these are
+		// set but not empty (thus breaking class variable checks). (gwyneth 20231017)
+
 		// atom:content, standard method of providing full HTML content
 		// in Atom feeds.
-		if (isset($this->item['atom_content'])) :
+		if ( ! empty( $this->item['atom_content'] ) ) :
 			$content = $this->item['atom_content'];
-		elseif (isset($this->item['atom']['atom_content'])) :
+		elseif ( ! empty( $this->item['atom']['atom_content'] ) ) :
 			$content = $this->item['atom']['atom_content'];
 
 		// Some exotics: back in the day, before widespread convergence
 		// on content:encoding, some RSS feeds took advantage of XML
 		// namespaces to use an inline xhtml:body or xhtml:div element
 		// for full-content HTML. (E.g. Sam Ruby's feed, IIRC.)
-		elseif (isset($this->item['xhtml']['body'])) :
+		elseif ( ! empty( $this->item['xhtml']['body'] ) ) :
 			$content = $this->item['xhtml']['body'];
-		elseif (isset($this->item['xhtml']['div'])) :
+		elseif ( ! empty( $this->item['xhtml']['div'] ) ) :
 			$content = $this->item['xhtml']['div'];
 
 		// content:encoded, most common method of providing full HTML in
 		// RSS 2.0 feeds.
-		elseif (isset($this->item['content']['encoded']) and $this->item['content']['encoded']):
+		elseif ( ! empty( $this->item['content']['encoded']) and $this->item['content']['encoded'] ) :
 			$content = $this->item['content']['encoded'];
 
 		// Fall back on elements that sometimes may contain full HTML
 		// but sometimes not.
-		elseif ( ! $params['full only']) :
-
+		elseif ( ! $params['full only'] ) :	// hopefully this won't crash here (gwyneth 20231017)
 			// description element is sometimes used for full HTML
 			// sometimes for summary text in RSS. (By the letter of
 			// the standard, it should just be for summary text.)
-			if (isset($this->item['description'])) :
+			if ( ! empty($this->item['description'] ) ) :
 				$content = $this->item['description'];
 			endif;
-
 		endif;
 
 		return $content;
@@ -1219,8 +1255,9 @@ class SyndicatedPost {
 	 *
 	 * @return bool TRUE iff post has been filtered out by a previous filter
 	 */
-	function filtered () {
-		return is_null($this->post);
+	function filtered ()
+	{
+		return is_null( $this->post );
 	} /* SyndicatedPost::filtered() */
 
 	/**
@@ -1229,39 +1266,54 @@ class SyndicatedPost {
 	 * match the latest revision, or a previously syndicated post that is
 	 * still up-to-date.
 	 *
+	 * @param string $format The required format, e.g. 'status' or 'number' (default).
+	 *
 	 * @return int A status code representing the freshness of the post
 	 *	-1 = post already syndicated; has a revision that needs to be stored, but not updated to
-	 *	0 = post already syndicated; no update needed
-	 *	1 = post already syndicated, but needs to be updated to latest
-	 *	2 = post has not yet been syndicated; needs to be created
+	 *	 0 = post already syndicated; no update needed
+	 *	 1 = post already syndicated, but needs to be updated to latest
+	 *	 2 = post has not yet been syndicated; needs to be created
 	 */
-	function freshness ($format = 'number') {
-
-		if ($this->filtered()) : // This should never happen.
-			FeedWordPressDiagnostic::critical_bug('SyndicatedPost', $this, __LINE__, __FILE__);
+	function freshness( $format = 'number' )
+	{
+		if ( $this->filtered() ) : // This should never happen.
+			FeedWordPressDiagnostic::critical_bug( 'SyndicatedPost', $this, __LINE__, __FILE__ );
 		endif;
 
-		if (is_null($this->_freshness)) : // Not yet checked and cached.
+		if ( is_null( $this->_freshness ) ) : // Not yet checked and cached.
 			$guid = $this->post['guid'];
-			$eguid = esc_sql($this->post['guid']);
+			$eguid = esc_sql( $this->post['guid'] );
 
-			$q = new WP_Query(array(
-				'fields' => '_synfresh', // id, guid, post_modified_gmt
+			$q = new WP_Query( array(
+				'fields' 			  => '_synfresh', // id, guid, post_modified_gmt
 				'ignore_sticky_posts' => true,
-				'guid' => $eguid,	// it's always better to use the escaped version, right? (gwyneth 20230915)
+				'guid' 				  => $eguid,	// it's always better to use the escaped version, right? (gwyneth 20230915)
 			));
 
 			$old_post = NULL;
-			if ($q->have_posts()) :
-				while ($q->have_posts()) : $q->the_post();
-					if (get_post_type($q->post->ID) == $this->post['post_type']):
-						$old_post = $q->post;
+			if ( $q->have_posts() ) :
+				while ( $q->have_posts() ) :
+					/** FIXME: Apparently, this can be called outside a hook; as such,
+					  * some functionality might not be loaded, namely, get_userdata() on the returned post.
+					  * This will invariably give a fatal error and abort the script.
+					  * I have no idea how to fix this, so, for now, I'm just avoiding this case and
+					  * logging it (gwyneth 20240208)
+				      */
+					if ( function_exists( 'get_userdata' ) ) :
+						$q->the_post();
+						if ( get_post_type( $q->post->ID ) == $this->post['post_type'] ):
+							$old_post = $q->post;
+						endif;
+					else :
+						FeedWordPressDiagnostic::noncritical_bug( 'freshness: loop encountered outside hook', $this, __LINE__, __FILE__ );
+						// error_log( 'freshness: loop encountered outside hook on ' . __FILE__ . ' (' . __LINE__ . ')' );	// Spews out far too much garbage (gwyneth 20240209).
 					endif;
 				endwhile;
 			endif;
 
-			if (is_null($old_post)) : // No post with this guid
-				FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$guid.'] "'.$this->entry->get_title().'" is a NEW POST.');
+			if ( is_null( $old_post ) ) : // No post with this guid
+				FeedWordPress::diagnostic( 'feed_items:freshness', 'Item [' . $guid . '] "'
+					. $this->entry->get_title() . '" is a NEW POST.' );
 				$this->_wp_id = NULL;
 				$this->_freshness = 2; // New content
 			else :
@@ -1272,36 +1324,36 @@ class SyndicatedPost {
 
 				// Pull the list of existing revisions to get
 				// timestamps.
-				$revisions = wp_get_post_revisions($old_post->ID);
-				foreach ($revisions as $rev) :
-					$revisions_ts[] = mysql2date('G', $rev->post_modified_gmt);
+				$revisions = wp_get_post_revisions( $old_post->ID );
+				foreach ( $revisions as $rev ) :
+					$revisions_ts[] = mysql2date( 'G', $rev->post_modified_gmt );
 				endforeach;
 
-				$revisions_ts[] = mysql2date('G', $old_post->post_modified_gmt);
-				$last_rev_ts = end($revisions_ts);
-				$updated_ts = $this->updated(/*fallback=*/ true, /*default=*/ NULL);
+				$revisions_ts[] = mysql2date( 'G', $old_post->post_modified_gmt );
+				$last_rev_ts = end( $revisions_ts );
+				$updated_ts = $this->updated( /*fallback=*/ true, /*default=*/ NULL );
 
 				// If we have an explicit updated timestamp,
 				// check that against existing stamps.
-				if ( !is_null($updated_ts)) :
-					$updated = !in_array($updated_ts, $revisions_ts);
+				if ( ! is_null( $updated_ts ) ) :
+					$updated = ! in_array( $updated_ts, $revisions_ts );
 
 					// If this a newer revision, make it go
 					// live. If an older one, just record
 					// the contents.
-					$live = ($updated and ($updated_ts > $last_rev_ts));
+					$live = ( $updated and ( $updated_ts > $last_rev_ts ) );
 				endif;
 
 				// This is a revision we haven't seen before, judging by the date.
 
 				$updatedReason = NULL;
-				if ($updated) :
+				if ( $updated ) :
 					$updatedReason = preg_replace(
 						"/\s+/", " ",
 						'has been marked with a new timestamp ('
-						.date('Y-m-d H:i:s', $updated_ts)
+						.date( 'Y-m-d H:i:s', $updated_ts )
 						." > "
-						.date('Y-m-d H:i:s', $last_rev_ts)
+						.date( 'Y-m-d H:i:s', $last_rev_ts )
 						.')'
 					);
 
@@ -1310,14 +1362,14 @@ class SyndicatedPost {
 				else :
 					// Or the hash...
 					$hash = $this->update_hash();
-					$seen = $this->stored_hashes($old_post->ID);
-					if (is_countable($seen) and count($seen) > 0) :
-						$updated = !in_array($hash, $seen); // Not seen yet?
+					$seen = $this->stored_hashes( $old_post->ID );
+					if ( is_countable( $seen ) and count( $seen ) > 0 ) :
+						$updated = ! in_array( $hash, $seen ); // Not seen yet?
 					else :
 						$updated = true; // Can't find syndication meta-data
 					endif;
 
-					if ($updated and FeedWordPressDiagnostic::is_on('feed_items:freshness:reasons')) :
+					if ( $updated and FeedWordPressDiagnostic::is_on( 'feed_items:freshness:reasons' ) ) :
 						// In the absence of definitive
 						// timestamp information, we
 						// just have to assume that a
@@ -1326,59 +1378,62 @@ class SyndicatedPost {
 						$live = true;
 
 						$updatedReason = ' has a not-yet-seen update hash: '
-						.MyPHP::val($hash)
+						.MyPHP::val( $hash )
 						.' not in {'
-						.implode(", ", array_map(array('FeedWordPress', 'val'), $seen))
+						.implode( ", ", array_map( array( 'FeedWordPress', 'val' ), $seen ) )
 						.'}. Basis: '
-						.MyPHP::val(array_keys($this->update_hash(false)));
+						.MyPHP::val( array_keys( $this->update_hash( false ) ) );
 					endif;
 				endif;
 
 				$frozen = false;
-				if ($updated) : // Ignore if the post is frozen
-					$frozen = ('yes' == $this->link->setting('freeze updates', 'freeze_updates', NULL));
+				if ( $updated ) : // Ignore if the post is frozen
+					$frozen = ( 'yes' == $this->link->setting( 'freeze updates', 'freeze_updates', NULL ) );
 					if ( ! $frozen) :
-						$frozen_value = get_post_meta($old_post->ID, '_syndication_freeze_updates', /*single=*/ true);
-						$frozen = ( !is_null($frozen_value) and ('yes' == $frozen_value));
+						$frozen_value = get_post_meta( $old_post->ID, '_syndication_freeze_updates', /*single=*/ true );
+						$frozen = ( ! is_null( $frozen_value ) and ( 'yes' == $frozen_value ) );
 
-						if ($frozen) :
-							$updatedReason = ' IS BLOCKED FROM BEING UPDATED BY A UPDATE LOCK ON THIS POST, EVEN THOUGH IT '.$updatedReason;
+						if ( $frozen ) :
+							$updatedReason = ' IS BLOCKED FROM BEING UPDATED BY A UPDATE LOCK ON THIS POST, EVEN THOUGH IT ' . $updatedReason;
 						endif;
 					else :
 						$updatedReason = ' IS BLOCKED FROM BEING UPDATED BY A FEEDWORDPRESS UPDATE LOCK, EVEN THOUGH IT '.$updatedReason;
 					endif;
 				endif;
-				$live = ($live and ! $frozen);
+				$live = ( $live and ! $frozen );
 
-				if ($updated) :
-					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$guid.'] "'.$this->entry->get_title().'" is an update of an existing post.');
-					if ( !is_null($updatedReason)) :
-						$updatedReason = preg_replace('/\s+/', ' ', $updatedReason);
-						FeedWordPress::diagnostic('feed_items:freshness:reasons', 'Item ['.$guid.'] "'.$this->entry->get_title().'" '.$updatedReason);
+				if ( $updated ) :
+					FeedWordPress::diagnostic( 'feed_items:freshness', 'Item [' . $guid . '] "' . $this->entry->get_title()
+						. '" is an update of an existing post.' );
+					if ( ! is_null( $updatedReason ) ) :
+						$updatedReason = preg_replace( '/\s+/', ' ', $updatedReason );
+						FeedWordPress::diagnostic( 'feed_items:freshness:reasons', 'Item [' . $guid . '] "'
+							. $this->entry->get_title() . '" ' . $updatedReason );
 					endif;
 
-					$this->_freshness = apply_filters('syndicated_item_freshness', ($live ? 1 : -1), $updated, $frozen, $updated_ts, $last_rev_ts, $this);
+					$this->_freshness = apply_filters( 'syndicated_item_freshness', ( $live ? 1 : -1 ), $updated, $frozen, $updated_ts, $last_rev_ts, $this );
 
-					$this->_wp_id = $old_post->ID;
+					$this->_wp_id 	= $old_post->ID;
 					$this->_wp_post = $old_post;
 
 					// We want this to keep a running list of all the
 					// processed update hashes.
 					$this->post['meta']['syndication_item_hash'] = array_merge(
 						$this->stored_hashes(),
-						array($this->update_hash())
+						array( $this->update_hash() )
 					);
 				else :
-					FeedWordPress::diagnostic('feed_items:freshness', 'Item ['.$guid.'] "'.$this->entry->get_title().'" is a duplicate of an existing post.');
+					FeedWordPress::diagnostic( 'feed_items:freshness', 'Item [' . $guid . '] "' . $this->entry->get_title()
+						. '" is a duplicate of an existing post.' );
 					$this->_freshness = 0; // Same old, same old
 					$this->_wp_id = $old_post->ID;
 				endif;
 			endif;
 		endif;
 
-		switch ($format) :
+		switch ( $format ) :
 		case 'status' :
-			switch ($this->_freshness) :
+			switch ( $this->_freshness ) :
 			case -1:
 				$ret = 'stored';
 				break;
@@ -1399,31 +1454,45 @@ class SyndicatedPost {
 			$ret = $this->_freshness;
 		endswitch;
 
-
 		return $ret;
-	} /* SyndicatedPost::freshness () */
+	} /* SyndicatedPost::freshness() */
 
-	function has_fresh_content () {
+	/**
+	 * Checks if the content is fresh and not filtered for any reason.	 *
+	 */
+	function has_fresh_content()
+	{
 		return ( ! $this->filtered() and $this->freshness() != 0 );
-	} /* SyndicatedPost::has_fresh_content () */
+	} /* SyndicatedPost::has_fresh_content() */
 
-	function this_revision_needs_original_post ($freshness = NULL) {
-		if (is_null($freshness)) :
+	/**
+	 * This revision needs the original post.
+	 *
+	 * (duh!!)
+	 *
+	 * @param  integer|null $freshness Freshness level, or null if not set.
+	 *
+	 * @return bool Returns true if the freshness level is 2 or more, false otherwise.
+	 */
+	function this_revision_needs_original_post( $freshness = NULL )
+	{
+		if ( is_null( $freshness ) ) :
 			$freshness = $this->freshness();
 		endif;
 		return ( $freshness >= 2 );
-	}
+	} /* SyndicatedPost::this_revision_needs_original_post() */
 
-	function this_revision_is_current ($freshness = NULL) {
-		if (is_null($freshness)) :
+	function this_revision_is_current( $freshness = NULL )
+	{
+		if ( is_null( $freshness ) ) :
 			$freshness = $this->freshness();
 		endif;
 		return ( $freshness >= 1 );
-	} /* SyndicatedPost::this_revision_is_current () */
+	} /* SyndicatedPost::this_revision_is_current() */
 
-	function fresh_content_is_update () {
+	function fresh_content_is_update() {
 		return ($this->freshness() < 2);
-	} /* SyndicatedPost::fresh_content_is_update () */
+	} /* SyndicatedPost::fresh_content_is_update() */
 
 	function fresh_storage_diagnostic () {
 		$ret = NULL;
@@ -1470,7 +1539,7 @@ class SyndicatedPost {
 			$fresh = $this->freshness(); // sets WP DB id in the process
 		endif;
 		return $this->_wp_id;
-	}
+	} /* SyndicatedPost::wp_id() */
 
 	/**
 	 * SyndicatedPost::secure_author_id(). Look up, or create, a numeric ID
@@ -2125,46 +2194,58 @@ EOM;
 	 * @param string $new_status Unused action parameter.
 	 * @param string $old_status Unused action parameter.
 	 * @param object $post The database record for the post just inserted.
+	 *
+	 * @uses FeedWordPress::diagnostic()
 	 */
-	function add_rss_meta($new_status, $old_status, $post) {
+	function add_rss_meta( $new_status, $old_status, $post ) {
 		global $wpdb;
-		if ($new_status!='inherit') : // Bail if we are creating a revision.
-			FeedWordPress::diagnostic('syndicated_posts:meta_data', 'Adding post meta-data: {'.implode(", ", array_keys($this->post['meta'])).'}');
+		if ( 'inherit' != $new_status ) : // Bail if we are creating a revision.
+			FeedWordPress::diagnostic(
+				'syndicated_posts:meta_data',
+				'Adding post meta-data: {'
+				. implode( ", ", array_keys( $this->post['meta']) )
+				. '}'
+			);
 
-			if ( is_array($this->post) and isset($this->post['meta']) and is_array($this->post['meta']) ) :
+			if ( is_array( $this->post ) and isset( $this->post['meta'] ) and is_array( $this->post['meta'] ) ) :
 				$postId = $post->ID;
 
 				// Aggregated posts should NOT send out pingbacks.
 				// WordPress 2.1-2.2 claim you can tell them not to
 				// using $post_pingback, but they don't listen, so we
 				// make sure here.
-				$result = $wpdb->query("
-				DELETE FROM $wpdb->postmeta
-				WHERE post_id='$postId' AND meta_key='_pingme'
-				");
+				$result = $wpdb->query( "
+					DELETE FROM $wpdb->postmeta
+					WHERE post_id='$postId' AND meta_key='_pingme'
+				" );
 
 				foreach ( $this->post['meta'] as $key => $values ) :
-					$eKey = esc_sql($key);
+					$eKey = esc_sql( $key );
 
 					// If this is an update, clear out the old
 					// values to avoid duplication.
-					$result = $wpdb->query("
-					DELETE FROM $wpdb->postmeta
-					WHERE post_id='$postId' AND meta_key='$eKey'
-					");
+					$result = $wpdb->query( "
+						DELETE FROM $wpdb->postmeta
+						WHERE post_id='$postId' AND meta_key='$eKey'
+					" );
 
 					// Allow for either a single value or an array
-					if ( !is_array($values)) $values = array($values);
+					if ( ! is_array( $values ) ) {
+						$values = array( $values );
+					}
 					foreach ( $values as $value ) :
-					FeedWordPress::diagnostic('syndicated_posts:meta_data', "Adding post meta-datum to post [$postId]: [$key] = ".MyPHP::val($value, /*no newlines=*/ true));
-						add_post_meta($postId, $key, $value, /*unique=*/ false);
+						FeedWordPress::diagnostic(
+							'syndicated_posts:meta_data',
+							"Adding post meta-datum to post [$postId]: [$key] = "
+							. MyPHP::val( $value, /*no newlines=*/ true )
+						);
+						add_post_meta( $postId, $key, $value, /*unique=*/ false );
 					endforeach;
 				endforeach;
 
-				if ( $result === false)
-				{
+				if ( false === $result ) :
 					error_log( "delete query failed: " . $wpdb->last_error );
-				}
+				endif;
 			endif;
 		endif;
 	} /* SyndicatedPost::add_rss_meta () */

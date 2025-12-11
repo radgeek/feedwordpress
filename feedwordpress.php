@@ -30,8 +30,8 @@ License: GPL
 ## CONSTANTS & DEFAULTS ############################################################
 ####################################################################################
 
-define ('FEEDWORDPRESS_VERSION', '2025.1211');
-define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'https://fwpplugin.com/contact' );
+define ( 'FEEDWORDPRESS_VERSION', '2025.1211');
+define ( 'FEEDWORDPRESS_AUTHOR_CONTACT', 'https://fwpplugin.com/contact' );
 
 if ( ! defined( 'FEEDWORDPRESS_BLEG' ) ) :
 	define ( 'FEEDWORDPRESS_BLEG', true );
@@ -826,7 +826,7 @@ class FeedWordPress {
 	    WordPress store.
 
 	@param string|null $uri Either the URI of the feed to poll, the URI of the (human-readable) website whose feed you want to poll, or null.
-	@param mixed|null $crash_ts Unknown purpose.
+	@param mixed|null $crash_ts Unknown purpose (probably it's a timestamp).
 	@return array|null Associative array, with 'new' => # of new posts added during update, and 'updated' => # of old posts that were updated. If both are zero, there was no change since çast update.
 	*/
 	public function update( $uri = null, $crash_ts = null ) {
@@ -850,7 +850,7 @@ class FeedWordPress {
 		do_action( 'feedwordpress_update', $uri );
 
 		if ( is_null( $crash_ts ) ) :
-			$crash_ts = $this->crash_ts();
+			$crash_ts = $this->crash_ts();	// the problem is that this can return null as well... (gwyneth 20230924)
 		endif;
 
 		// Randomize order for load balancing purposes
@@ -935,9 +935,9 @@ class FeedWordPress {
 	 *
 	 * @todo is returning null advisable? (gwyneth 20230916)
 	 *
-	 * @param  int|null $default Default value, called when the corresponding FWP option is not set.
+	 * @param  int|null  $default  Default value, called when the corresponding FWP option is not set.
 	 *
-	 * @return int|null
+	 * @return int|null  Allegedly it's a timestamp, or possibly null.
 	 */
 	public function crash_ts( $default = null ) {
 		$crash_dt = (int) get_option( 'feedwordpress_update_time_limit', 0 );
@@ -1040,29 +1040,36 @@ class FeedWordPress {
 		return ($this->has_secret() and FeedWordPress::param( 'force_update_feeds' ));
 	} /* FeedWordPress::force_update_all () */
 
-	public function stale () {
-		if ( !is_null($this->automatic_update_hook())) :
+	/**
+	 * Checks if the feed is stale, avoiding simultaneous updates.
+	 *
+	 * @return  bool  True if feed is stale, false otherwise,
+	 */
+	public function stale() {
+		/** @var  bool  Set the default return value here, because of scoping issues; just to be sure something valid is returned. (gwyneth 20230924) */
+		$ret = false;
+
+		if ( ! is_null( $this->automatic_update_hook() ) ) :
 			// Do our best to avoid possible simultaneous
 			// updates by getting up-to-the-minute settings.
 
-			$last = $this->last_update_all();
+			$last = $this->last_update_all() ?? false;	// never trust these return values! (gwyneth 20230924)
 
 			// If we haven't updated all yet, give it a time window
-			if (false === $last) :
-				$ret = false;
-				update_option('feedwordpress_last_update_all', time());
+			if ( false === $last ) :
+				update_option( 'feedwordpress_last_update_all', time() );
 
 			// Otherwise, check against freshness interval
-			elseif (is_numeric($last)) : // Expect a timestamp
-				$freshness = get_option('feedwordpress_freshness');
-				if (false === $freshness) : // Use default
+			elseif ( is_numeric( $last ) ) : // Expect a timestamp
+				$freshness = get_option( 'feedwordpress_freshness' ) ?? false;	// If we get a NULL, turn it into false. (gwyneth 20230924)
+				if ( false === $freshness ) : // Use default
 					$freshness = FEEDWORDPRESS_FRESHNESS_INTERVAL;
 				endif;
-				$ret = ( (time() - $last) > $freshness );
+				$ret = ( ( time() - $last ) > $freshness );
 
 			// This should never happen.
 			else :
-				FeedWordPressDiagnostic::critical_bug('FeedWordPress::stale::last', $last, __LINE__, __FILE__);
+				FeedWordPressDiagnostic::critical_bug( 'FeedWordPress::stale::last', $last, __LINE__, __FILE__ );
 			endif;
 
 		else :
@@ -1213,8 +1220,17 @@ class FeedWordPress {
 		endif;
 	} /* FeedWordPress::all_admin_notices () */
 
-	public function process_retirements ($delta) {
-		update_option('feedwordpress_process_zaps', 1);
+	/**
+	 * Retires old posts in the absence of a non-incremental feed.
+	 *
+	 * TODO: Why is $delta returned unchanged? (gwyneth 20240210)
+	 *
+	 * @param  mixed $delta  Whatever this is, it's not used and is returned without change...
+	 *
+	 * @return mixed The value of $delta (unchanged?)
+	 */
+	public function process_retirements( $delta ) {
+		update_option( 'feedwordpress_process_zaps', 1 );
 
 		return $delta;
 	}
@@ -1682,8 +1698,11 @@ class FeedWordPress {
 		return $ret;
 	} /* FeedWordPress::update_requested_url() */
 
-	public function auto_update () {
-		if ($this->stale()) :
+	/**
+	 * Checks if the feed is stale (i.e. no freshness) and requests an update.
+	 */
+	public function auto_update() {
+		if ( $this->stale() ) :
 			$this->update();
 		endif;
 	} /* FeedWordPress::auto_update () */
@@ -2066,13 +2085,20 @@ class FeedWordPress {
 		return $duration;
 	}
 
-	static public function cache_lifetime ($duration) {
+	/**
+	 * Tries to return our own defined cache lifetime, if set; if not.
+	 * falls back to the WordPress default (which is passed to this function).
+	 *
+	 * @param  int $duration  WordPress default cache lifetime duration (as a fallback), in seconds.
+	 * @return int            Set duration, or the WordPress default (in seconds).
+	 */
+	static public function cache_lifetime( $duration ) {
 		// Check for explicit setting of a lifetime duration
-		if (defined('FEEDWORDPRESS_CACHE_LIFETIME')) :
+		if ( defined( 'FEEDWORDPRESS_CACHE_LIFETIME' ) ) :
 			$duration = FEEDWORDPRESS_CACHE_LIFETIME;
 
 		// Fall back to the cache freshness duration
-		elseif (defined('FEEDWORDPRESS_CACHE_AGE')) :
+		elseif ( defined( 'FEEDWORDPRESS_CACHE_AGE' ) ) :
 			$duration = FEEDWORDPRESS_CACHE_AGE;
 		endif;
 
@@ -2080,9 +2106,25 @@ class FeedWordPress {
 		return $duration;
 	} /* FeedWordPress::cache_lifetime () */
 
-	# Utility functions for handling text settings
-	static function get_field( $f, $setting = null ) {
+	/*
+	 * Utility functions for handling text settings.
+	 */
 
+	/**
+	 * Returns the settings (value) for a field (key), if the first
+	 * parameter is an array; if a string was passed, returns the
+	 * string instead.
+	 *
+	 * @note This is a rather awkward way to do this; the function is
+	 * only called on the two functions `negative()` and `affirmative()`,
+	 * which could be totally rewritten in a much simpler way — unless
+	 * I'm missing something! (gwyneth 20230922)
+	 *
+	 * @param  array|string  $f        Associative array with key/value pairs _or_ a simple string.
+	 * @param  string|null   $setting  Either the field name (key) for a setting, or NULL.
+	 * @return string|null   Returns either a valid string (if a setting was found) or NULL otherwise.
+	 */
+	static function get_field( $f, $setting = null ) {
 		$ret = $f;
 		if ( ! is_null( $setting ) ) :
 			$ret = null;
@@ -2091,30 +2133,56 @@ class FeedWordPress {
 			endif;
 		endif;
 		return $ret;
-
 	} /* FeedWordPress::get_field () */
 
-	static function negative ($f, $setting = null) {
-		$nego = array ('n', 'no', 'f', 'false');
+	/**
+	 * Checks if the passed parameter is one of the "negative" values.
+	 *
+	 * @note This static method is never used.
+	 *
+	 * @param  array|string  $f        Associative array with key/value pairs _or_ a simple string.
+	 * @param  string|null   $setting  Either the field name (key) for a setting, or NULL.
+	 * @return bool                    Returns TRUE if the field being tested is negative, FALSE otherwise.
+	 */
+	static function negative( $f, $setting = null ) {
+		$nego = array( 'n', 'no', 'f', 'false' );	// why not `0` as well? (gwyneth 20230922) @see affirmative()
 		$q = self::get_field( $f, $setting );
-		return in_array( strtolower( trim( $q ) ), $nego );
+		// Check first if `$q` is empty or, worse, null, so that `trim()` below
+		// doesn't give an error (gwyneth 20230922).
+		if ( ! empty( $q ) ) :
+			return in_array( strtolower( trim( $q ) ), $nego );
+		endif;
+		// A null/empty check above is undefined; all we can say is that it is NOT negative,
+		// so we return FALSE! (gwyneth 20230922)
+		return FALSE;
 	} /* FeedWordPress::negative () */
 
-	static function affirmative ($f, $setting = null) {
-		// Defining possible affirmative values
-		$affirmo = [ 'y', 'yes', 't', 'true', 1 ];
-    
-		// Get the field value (presumably from some form or other input)
-		$q = self::get_field( $f, $setting );
-    
-		// Ensure $q is treated properly even if it's null or not set
-		if ( null === $q ) {
-			return false;  // Or you can return false or other fallback as needed
-		}
+	/**
+	 * Checks if the passed parameter is one of the "affirmative" values.
+	 *
+	 * @note A sparsely used method which might benefit from some code refactoring.
+	 * Most notably, it treats variable types _very_ loosely for my taste! (gwyneth 20230922)
+	 *
+	 * @param  array|string  $f        Associative array with key/value pairs _or_ a simple string.
+	 * @param  string|null   $setting  Either the field name (key) for a setting, or NULL.
+	 * @return bool                    Returns TRUE if the field being tested is affirmative, FALSE otherwise.
+	 */
+	static function affirmative( $f, $setting = null) {
+    // Defining possible affirmative values
+    $affirmo = [ 'y', 'yes', 't', 'true', 1 ];
 
-		// Check if the value, after trimming and converting to lowercase, is in the affirmative array
-		return in_array( strtolower( trim( $q ) ), $affirmo, true ); // The third argument `true` ensures strict type checking
-	} /* FeedWordPress::affirmative () */
+    // Get the field value (presumably from some form or other input)
+    $q = self::get_field( $f, $setting );
+
+    // Ensure $q is treated properly even if it's null or not set
+    if ( ! empty( $q ) ) {
+        return false;  // Or you can return false or other fallback as needed
+    }
+
+    // Check if the value, after trimming and converting to lowercase, is in the affirmative array
+    return in_array( strtolower( trim( $q ) ), $affirmo, true ); // The third argument `true` ensures strict type checking
+}
+ /* FeedWordPress::affirmative () */
 
 	/**
 	  * Internal debugging functions.
@@ -2122,9 +2190,22 @@ class FeedWordPress {
 	  * @todo radgeek needs to document this better. What levels exist, and
 	  * how/where are they defined? (gwyneth 20230919)
 	  *
+	  * @note Diagnostics can be sent out to different loggers (stderr, file-based
+	  *       logging, dialogue boxes, error sent by email, etc...) and this method
+	  *       will attempt to contact the correct one.
+	  *
+	  * @param  string      $level       Error level, in a structured way (usually `class/method`).
+	  * @param  string      $out         Error message to output.
+	  * @param  mixed|null  $persist     Probably checks if the error is transitory or persistent.
+	  * @param  mixed|null  $since       Probably the date (or a timestamp?) of the first occurrence of this error.
+	  * @param  mixed|null  $mostRecent  Probably the date (or a timestamp?) of the most recent occurence of this error.
+	  *
 	  * @global $feedwordpress_admin_footer
+	  * @uses error_log()
+	  * @uses get_option()
+	  * @uses update_option()
 	  */
-	static function diagnostic( $level, $out, $persist = null, $since = null, $mostRecent = null ) {
+	static function diagnostic($level, $out, $persist = null, $since = null, $mostRecent = null) {
 		global $feedwordpress_admin_footer;
 
 		$output = get_option( 'feedwordpress_diagnostics_output', array() );
@@ -2152,7 +2233,6 @@ class FeedWordPress {
 					error_log(self::log_prefix() . ' ' . $out);
 					break;
 				case 'email' :
-
 					if (is_null($persist)) :
 						$sect = 'occurrent';
 						$hook = (isset($dlog['mesg'][$sect]) ? count($dlog['mesg'][$sect]) : 0);
@@ -2163,6 +2243,8 @@ class FeedWordPress {
 						$line = array("Since" => $since, "Message" => $out, "Most Recent" => $mostRecent);
 					endif;
 
+					// Is this the default case?! If not, this code will very likely _never_ run! (gwyneth 20230922)
+					// @see PHP Manual for switch()
 					if ( !isset($dlog['mesg'])) : $dlog['mesg'] = array(); endif;
 					if ( !isset($dlog['mesg'][$sect])) : $dlog['mesg'][$sect] = array(); endif;
 

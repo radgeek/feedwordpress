@@ -655,6 +655,9 @@ class MagpieFromSimplePie {
 	 * MagpieFromSimplePie::normalize_category: Normalize Atom 1.0 and
 	 * RSS 2.0 categories to Dublin Core...
 	 *
+	 * Note: in some cases, there is no "category" taxonomy, and this fails
+	 * upstream with an error of invalid category. (gwyneth 20231017)
+	 *
 	 * @param array &$source
 	 * @param string $from
 	 * @param array &$dest
@@ -663,26 +666,33 @@ class MagpieFromSimplePie {
 	 *
 	 * @uses MagpieFromSimplePie::element_id
 	 * @uses MagpieFromSimplePie::is_rss
+	 * @uses FeedWordPress::diagnostic
 	 */
-	function normalize_category (&$source, $from, &$dest, $to, $i) {
-		 $cat_id = $this->element_id($from, $i);
-		 $dc_id = $this->element_id($to, $i);
+	function normalize_category( &$source, $from, &$dest, $to, $i ) {
+		 $cat_id = $this->element_id( $from, $i ) ?? "Uncategorized";	// attempt to overcome an error (gwyneth 20231017)
+		 $dc_id  = $this->element_id( $to,   $i );
 
 		 // first normalize category elements: Atom 1.0 <=> RSS 2.0
-		 if ( isset($source["{$cat_id}@term"]) ) : // category identifier
-		 	$source[$cat_id] = $source["{$cat_id}@term"];
-		elseif ( $this->is_rss() ) :
-			$source["{$cat_id}@term"] = $source[$cat_id];
+		 if ( ! empty( $source["{$cat_id}@term"] ) ) : // category identifier
+		 	$source[ $cat_id ] = $source["{$cat_id}@term"];
+		elseif ( $this->is_rss() and ! empty( $source[ $cat_id ] ) ) :
+			$source["{$cat_id}@term"] = $source[ $cat_id ];
+		else :
+			FeedWordPress::diagnostic(
+				'MagpieFromSimplePie::normalize_category',
+				"Error in normalizing category to Dublin Core. \$cat_id is '" . $cat_id
+					. "' and \$dc_id is '" . $dc_id . "'"
+			);
 		endif;
 
-		if ( isset($source["{$cat_id}@scheme"]) ) : // URI to taxonomy
+		if ( ! empty( $source["{$cat_id}@scheme"] ) ) : // URI to taxonomy
 			$source["{$cat_id}@domain"] = $source["{$cat_id}@scheme"];
-		elseif ( isset($source["{$cat_id}@domain"]) ) :
+		elseif ( ! empty( $source["{$cat_id}@domain"] ) ) :
 			$source["{$cat_id}@scheme"] = $source["{$cat_id}@domain"];
 		endif;
 
 		// Now put the identifier into dc:subject
-		$dest[$dc_id] = $source[$cat_id];
+		$dest[ $dc_id ] = $source[ $cat_id ] ?? "Uncategorized";
 	} /* MagpieFromSimplePie::normalize_category */
 
 	/**
@@ -707,15 +717,15 @@ class MagpieFromSimplePie {
 
 	/**
 	 * MagpieFromSimplePie::element_id
-	 * Magic ID function for multiple elemenets.
+	 * Magic ID function for multiple elements.
 	 * Can be called as static MagpieRSS::element_id()
 	 *
 	 * @param string $el
 	 * @param int $counter
 	 * @return string
 	 */
-	function element_id ($el, $counter) {
-		return $el . (($counter > 1) ? '#'.$counter : '');
+	function element_id( $el, $counter ) {
+		return $el . ( ( $counter > 1 ) ? '#' . $counter : '' );
 	} /* MagpieFromSimplePie::element_id */
 
 	/**

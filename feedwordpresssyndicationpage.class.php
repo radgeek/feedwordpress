@@ -685,21 +685,20 @@ class FeedWordPressSyndicationPage extends FeedWordPressAdminPage
 		<div id="add-single-uri">
 			<?php if (count($sources['Y']) > 0) : ?>
 			<form id="check-for-updates" action="<?php print esc_url( $this->form_action() ); ?>" method="POST">
-			<div class="container"><input type="submit" class="button-primary" name"update" value="<?php print esc_attr(FWP_CHECK_FOR_UPDATES); ?>" />
-			<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
-			<input type="hidden" name="update_uri" value="*" /></div>
+  			<div class="container"><input type="submit" class="button-primary" name"update" value="<?php print esc_attr(FWP_CHECK_FOR_UPDATES); ?>" />
+  			<?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
+  			<input type="hidden" name="update_uri" value="*" /></div>
 			</form>
 			<?php endif; ?>
 
 			<form id="syndicated-links" action="<?php print esc_url( $this->form_action() ); // TODO: needs to be checked, because it doesn't seem to be defined properly (gwyneth 20230915) ?>" method="post">
-			<div class="container"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
-			<label for="add-uri">Add:
-			<input type="text" name="lookup" id="add-uri" placeholder="Source URL"
-			value="Source URL" style="width: 55%;" /></label>
-
-			<?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
-			<input type="hidden" name="action" value="<?php print esc_attr( FWP_SYNDICATE_NEW ); ?>" />
-			<input style="vertical-align: middle;" type="image" src="<?php print esc_url(plugins_url('plus.png', __FILE__)); ?>" alt="<?php print esc_html(FWP_SYNDICATE_NEW); ?>" /></div>
+		  	<div class="container"><?php FeedWordPressCompatibility::stamp_nonce('feedwordpress_feeds'); ?>
+	  		<label for="add-uri">Add:
+  			<input type="text" name="lookup" id="add-uri" placeholder="Source URL"
+			   value="Source URL" style="width: 55%;" /></label>
+		  	<?php FeedWordPressSettingsUI::magic_input_tip_js('add-uri'); ?>
+  			<input type="hidden" name="action" value="<?php print esc_attr( FWP_SYNDICATE_NEW ); ?>" />
+	  		<input style="vertical-align: middle;" type="image" class="feedwordpress-admin icon32" src="<?php print esc_url(plugins_url('/assets/images/plus.svg', __FILE__)); ?>" alt="<?php print esc_html(FWP_SYNDICATE_NEW); ?>" /></div>
 			</form>
 		</div> <!-- id="add-single-uri" -->
 
