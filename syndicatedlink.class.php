@@ -379,7 +379,7 @@ class SyndicatedLink {
 		}
 
 		// Adding a random fudge value (ensure it works across versions)
-		$this->update_setting( 'update/fudge', rand( 0, (int) ($ttl / 3) ) * 60 );
+		$this->update_setting( 'update/fudge', rand( 0, (int) ( $ttl / 3 ) ) * 60 );
 
 		// Apply filter to ttl (should be compatible with all PHP 8.x versions)
 		$this->update_setting(
@@ -391,7 +391,7 @@ class SyndicatedLink {
 			)
 		);
 	} /* SyndicatedLink::do_update_ttl () */
-	
+
 	public function process_retirements ($delta) {
 		$q = new WP_Query(array(
 		'fields' => '_synfrom',
@@ -871,12 +871,12 @@ class SyndicatedLink {
 
 	public function password () {
 		return $this->setting('http password', 'http_password', NULL);
-	}/* SyndicatedLink::password () */
+	} /* SyndicatedLink::password () */
 
-	public function authentication_method() {
+	public function authentication_method () {
 		// Retrieve the authentication method from settings
 		$auth = $this->setting( 'http auth method', null );
-    
+		
 		// If the value is '-' or empty, treat it as NULL
 		if ( '-' === $auth || empty( $auth ) ) {
 			$auth = null;

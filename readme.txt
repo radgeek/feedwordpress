@@ -1,10 +1,10 @@
 === FeedWordPress ===
-Contributors: C. Johnson
-Donate link: http://feedwordpress.radgeek.com/donate/
+Contributors: radgeek
+Donate link: https://fwpplugin.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
 Tested up to: 6.9
-Stable tag: 2024.1119
+Stable tag: 2025.1211
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,8 +12,8 @@ FeedWordPress syndicates content from feeds you choose into your WordPress weblo
 
 == Description ==
 
-* Author: [C. Johnson](http://feedback.radgeek.com/contact)
-* Project URI: <http://feedwordpress.radgeek.com/>
+* Author: [C. Johnson](https://fwpplugin.com/contact/)
+* Project URI: <http://fwpplugin.com/>
 * License: GPL 2. See License below for copyright jots and tittles.
 
 FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content from feeds that you choose into your WordPress weblog, and then the content it syndicates appears as a series of special posts in your WordPress posts database. If you syndicate several feeds then you can use WordPress's posts database and templating engine as the back-end of an aggregation ("planet") website. It was developed, originally, as a utility/hobby project, because I needed a more flexible replacement for [Planet][] for aggregator sites that I administered.
