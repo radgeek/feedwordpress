@@ -1,15 +1,10 @@
 === FeedWordPress ===
-Contributors: C. Johnson
-Donate link: http://feedwordpress.radgeek.com/donate/
+Contributors: radgeek
+Donate link: https://fwpplugin.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
-<<<<<<< HEAD
-Tested up to: 5.9
-Stable tag: 2025.0112
-=======
-Tested up to: 6.7
-Stable tag: 2024.1119
->>>>>>> 9cdbe08028f99b0600c84bf2c3f786d725a45d7d
+Tested up to: 6.9
+Stable tag: 2025.1211
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,8 +12,8 @@ FeedWordPress syndicates content from feeds you choose into your WordPress weblo
 
 == Description ==
 
-* Author: [C. Johnson](http://feedback.radgeek.com/contact)
-* Project URI: <http://feedwordpress.radgeek.com/>
+* Author: [C. Johnson](https://fwpplugin.com/contact/)
+* Project URI: <http://fwpplugin.com/>
 * License: GPL 2. See License below for copyright jots and tittles.
 
 FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content from feeds that you choose into your WordPress weblog, and then the content it syndicates appears as a series of special posts in your WordPress posts database. If you syndicate several feeds then you can use WordPress's posts database and templating engine as the back-end of an aggregation ("planet") website. It was developed, originally, as a utility/hobby project, because I needed a more flexible replacement for [Planet][] for aggregator sites that I administered.
@@ -76,6 +71,10 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 4. Feed and Update Settings (defaults for all feeds)
 
 == Changelog ==
+
+= 2025.1209 =
+
+* COMPATIBILITY FIXES FOR WORDPRESS 6.9 (Fixes "PHP Fatal error: Cannot make static method SimplePie\\Parser::declare_html_entities() non static in class FeedWordPie_Parser" error, "PHP Fatal error:  Uncaught TypeError: Return value of SimplePie\\File::get_headers() must be of the type array, null returned" error, or "PHP Fatal error:  Uncaught TypeError: Argument 1 passed to SimplePie\\File::SimplePie\\{closure}() must be of the type string, array given" error after WordPress 6.9 upgrade): This version includes fixes to critical compatibility issues with WordPress 6.9 and WP 6.9's upgrade to SimplePie 1.9.0+. If you recently upgraded to WordPress 6.9 and noticed problems with updating or accessing your site, or messages about a "Critical issue" or fatal PHP errors in the interface or your error logs then a quick upgrade to this point release should hopefully resolve that issue for you.
 
 = 2025.0112 =
 

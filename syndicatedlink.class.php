@@ -874,8 +874,8 @@ class SyndicatedLink {
         return $type;
     } /* SyndicatedLink::get_feed_type () */
 
-    public function uri($params = array()) {
-        $params = wp_parse_args($params, array(
+    public function uri ( $params = array() ) {
+        $params = wp_parse_args( $params, array(
         'add_params' => false,
         'fetch' => false,
         ));
@@ -925,10 +925,14 @@ class SyndicatedLink {
     } /* SyndicatedLink::password () */
 
     public function authentication_method () {
-        $auth = $this->setting('http auth method', NULL);
-        if (('-' == $auth) or (strlen($auth)==0)) :
-            $auth = NULL;
-        endif;
+        // Retrieve the authentication method from settings
+        $auth = $this->setting( 'http auth method' , null );
+
+        // If the value is '-' or empty, treat it as NULL
+        if ( '-' === $auth || empty( $auth ) ) {
+            $auth = null;
+        }
+
         return $auth;
     } /* SyndicatedLink::authentication_method () */
 
@@ -1083,7 +1087,7 @@ class SyndicatedLink {
         return $ret;
     }
 
-    public function ttl ($return_element = false) {
+public function ttl ($return_element = false) {
         if (is_object($this->magpie)) :
             $channel = $this->magpie->channel;
         else :
@@ -1177,7 +1181,7 @@ class SyndicatedLink {
      * returned array for FeedWordPress::flatten_array($a) will contain a key
      * $a['feed/b/c/d'] with value 'e'.
      *
-     * @param  array   $arr           Array to flatten.
+     * @param  array   $arr		   Array to flatten.
      * @param  string  $prefix     Hierarchical prefix (e.g. "feed/" as in "feed/a/b/c").
      * @param  string  $separator  Hierarchy separator (e.g., '/').
      * @return array   Flattened one-dimensional array.
@@ -1239,7 +1243,7 @@ class SyndicatedLink {
      * @return array
      */
     public function category_ids ($post, $cats, $unfamiliar_category = 'create', $taxonomies = NULL, $params = array()) {
-        $singleton = (isset($params['singleton']) ? $params['singleton'] : true);   // shouldn't it be FALSE...? (gwyneth 20250112)
+        $singleton = (isset($params['singleton']) ? $params['singleton'] : true);
         $allowFilters = (isset($params['filters']) ? $params['filters'] : false);
 
         $catTax = 'category';
