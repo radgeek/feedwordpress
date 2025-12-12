@@ -1,6 +1,7 @@
 <?php
 require_once(dirname(__FILE__) . '/admin-ui.php');
 
+#[\AllowDynamicProperties]
 class FeedWordPressCategoriesPage extends FeedWordPressAdminPage {
 	public function __construct( $link = -1 ) {
 		if (is_numeric($link) and -1 == $link) :

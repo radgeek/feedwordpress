@@ -1115,7 +1115,7 @@ class SyndicatedLink {
 
 		// We get a fudge of 1/3 of window from elsewhere. We'll do some more
 		// fudging here.
-		$fudgedInterval = $updateWindow + rand( - ( $updateWindow / 6 ), 5 * ( $updateWindow / 12 ) );
+		$fudgedInterval = $updateWindow + rand( (int) - ( $updateWindow / 6 ), (int) (5 * ( $updateWindow / 12 )) );
 		return apply_filters( 'syndicated_feed_automatic_ttl', $fudgedInterval, $this );
 	} /* SyndicatedLink::automatic_ttl() */
 

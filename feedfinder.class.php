@@ -190,6 +190,10 @@ class FeedFinder {
 	function is_feed ($uri = NULL) {
 		$data = $this->data($uri);
 
+		if (is_null($data)) {
+			return false;
+		}
+
 		return (
 			preg_match (
 				"\007(".implode('|',$this->_feed_markers).")\007i",
@@ -269,7 +273,10 @@ class FeedFinder {
 		$href = array ();
 		for ($n=0; $n<$link_count; $n++) {
 			if (strtolower($links[$n]['rel']) == 'alternate') {
-				if (in_array(strtolower($links[$n]['type']), $this->_feed_types)) {
+				if (isset($links[$n]['type'])
+					&& !is_null($links[$n]['type'])
+					&& in_array(strtolower($links[$n]['type']), $this->_feed_types)
+				) {
 					$href[] = $links[$n]['href'];
 				} /* if */
 			} /* if */

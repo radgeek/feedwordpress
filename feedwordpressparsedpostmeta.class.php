@@ -1,4 +1,6 @@
 <?php
+
+#[\AllowDynamicProperties]
 class FeedWordPressParsedPostMeta {
 	var $s, $ptr, $ptrEOS;
 	var $delims, $delimCount, $delimPtr;
