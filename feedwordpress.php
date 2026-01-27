@@ -152,6 +152,10 @@ require_once "{$dir}/feedwordpressrpc.class.php";
 require_once "{$dir}/feedwordpresshttpauthenticator.class.php";
 require_once "{$dir}/feedwordpresslocalpost.class.php";
 
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once "{$dir}/wp-cli-command.php";
+}
+
 ####################################################################################
 ## GLOBAL PARAMETERS ###############################################################
 ####################################################################################
@@ -2127,7 +2131,7 @@ class FeedWordPress {
 	static function diagnostic( $level, $out, $persist = null, $since = null, $mostRecent = null ) {
 		global $feedwordpress_admin_footer;
 
-		$output = get_option( 'feedwordpress_diagnostics_output', array() );
+		$output = (array) get_option( 'feedwordpress_diagnostics_output', array() );
 		$dlog   = get_option( 'feedwordpress_diagnostics_log', array() );
 
 		$diagnostic_nesting = count( explode( ":", $level ) );
