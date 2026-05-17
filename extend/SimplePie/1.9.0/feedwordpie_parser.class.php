@@ -77,16 +77,42 @@ class FeedWordPie_Parser extends SimplePie_Parser {
     }
 
     public function do_xml_parse_attempt($xml, $data) {
-        xml_set_start_namespace_decl_handler($xml, 'start_xmlns');
-        $parseResults = xml_parse($xml, $data, true);
+        xml_set_start_namespace_decl_handler( $xml, 'start_xmlns' );
 
-        if (!$parseResults && (xml_get_error_code($xml) == 26)) {
-            $data = $this->html_convert_entities($data);
-            $this->reset_parser($xml);
-            $parseResults = xml_parse($xml, $data, true);
+        // Parse!
+        $parseResults = xml_parse( $xml, $data, true );
+
+        // FALLBACK: are there junk characters we can detect before XML prolog?
+        // If so, chances are, there's a server-side problem with the feed provider
+        // jamming whitespace, a stray error message, or something similar before
+        // the output of the target XML starts. Often there's still parseable XML,
+        // so let's try stripping out the junk characters before the XML prolog
+        // and starting over.
+        $endOfJunk = strpos( $data, '<?xml' );
+        if ( ! $parseResults and $endOfJunk > 0 ) {
+            $data = substr( $data, $endOfJunk );
+            $data = trim( $data );
+            $this->reset_parser( $xml );
+            
+            $parseResults = xml_parse( $xml, $data, true );
         }
-
-        return array($parseResults, $data);
+    
+        // FALLBACK: was there an entity that libxml couldn't understand?
+        // If so, chances are, it was a stray HTML entity. So let's try
+        // converting all the named HTML entities to numeric XML entities
+        // and starting over.
+        $badEntity = ( xml_get_error_code( $xml ) == 26 );
+        if ( ! $parseResults and $badEntity ) {
+            $data = $this->html_convert_entities( $data );
+            $this->reset_parser( $xml );
+        
+            $parseResults = xml_parse( $xml, $data, true );
+        }
+    
+        return array(
+            $parseResults,
+            $data
+        );
     }
 
     function tag_open($parser, $tag, $attributes) {
