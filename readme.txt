@@ -3,8 +3,8 @@ Contributors: radgeek
 Donate link: https://fwpplugin.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 4.5
-Tested up to: 6.9
-Stable tag: 2025.1211
+Tested up to: 7.0
+Stable tag: 2026.0517
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -71,6 +71,10 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 4. Feed and Update Settings (defaults for all feeds)
 
 == Changelog ==
+
+= 2026.0517 =
+
+* BUG FIX FOR Custom Post Settings AFTER WordPress/FeedWordPress UPGRADE: If you used "Custom Post Settings" fields in Syndication > Posts to set custom post fields on syndicated articles (either static text or dynamic values using the XPath-like syntax), these may have stopped creating custom settings fields as expected after upgrading FeedWordPress or after upgrading WordPress to the most recent version. This is due to a regression introduced by the SimplePie version compatibility fix in 2025.1209. That has been fixed thanks to a patch submitted by @fl0om on Github; if you noticed that posts were being syndicated but syndicated posts were not assigned, then the custom post setting fields that you expected, upgrading to this point release should hopefully resolve that issue for you.
 
 = 2025.1209 =
 
