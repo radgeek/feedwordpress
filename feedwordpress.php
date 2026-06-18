@@ -152,6 +152,10 @@ require_once "{$dir}/feedwordpressrpc.class.php";
 require_once "{$dir}/feedwordpresshttpauthenticator.class.php";
 require_once "{$dir}/feedwordpresslocalpost.class.php";
 
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once "{$dir}/wp-cli-command.php";
+}
+
 ####################################################################################
 ## GLOBAL PARAMETERS ###############################################################
 ####################################################################################
