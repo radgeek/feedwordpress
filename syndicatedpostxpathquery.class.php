@@ -53,16 +53,20 @@ class SyndicatedPostXPathQuery {
 		$this->urlHash = array();
 
 		$this->path = $path;
+		
+		if (is_string($path)) {
+			// got a non-string path, probably a place marker e.g. `category[1]`, so for now just don't give a warning, but should be fixed by not trying to set the path of an array!
+		
+		 	// Allow {url} notation for namespaces. URLs will contain : and /, so...
+		 	preg_match_all('/{([^}]+)}/', $path, $match, PREG_SET_ORDER);
+		 	foreach ($match as $ref) :
+		 	 	$this->urlHash[md5($ref[1])] = $ref[1];
+			endforeach;
 
-	 	// Allow {url} notation for namespaces. URLs will contain : and /, so...
-	 	preg_match_all('/{([^}]+)}/', $path, $match, PREG_SET_ORDER);
-	 	foreach ($match as $ref) :
-	 	 	$this->urlHash[md5($ref[1])] = $ref[1];
-		endforeach;
-
-		foreach ($this->urlHash as $hash => $url) :
-			$path = str_replace('{'.$url.'}', '{#'.$hash.'}', $path);
-		endforeach;
+			foreach ($this->urlHash as $hash => $url) :
+				$path = str_replace('{'.$url.'}', '{#'.$hash.'}', $path);
+			endforeach;
+		}
 
 		$path = $this->parsePath(/*cur=*/ $path, /*orig=*/ $path);
 

@@ -9,6 +9,7 @@ require_once(dirname(__FILE__).'/feedtime.class.php');
  * @version 2010.0612
  */
 
+#[\AllowDynamicProperties]
 class MagpieFromSimplePie {
 	var $pie;
 	var $originals;
@@ -672,7 +673,9 @@ class MagpieFromSimplePie {
 		 if ( isset($source["{$cat_id}@term"]) ) : // category identifier
 		 	$source[$cat_id] = $source["{$cat_id}@term"];
 		elseif ( $this->is_rss() ) :
-			$source["{$cat_id}@term"] = $source[$cat_id];
+			$source["{$cat_id}@term"] = isset($source[$cat_id])
+				? $source[$cat_id]
+				: null; // Avoid PHP notice nastygrams - the source key is probably missing because was a self-closing or empty node
 		endif;
 
 		if ( isset($source["{$cat_id}@scheme"]) ) : // URI to taxonomy
@@ -682,7 +685,9 @@ class MagpieFromSimplePie {
 		endif;
 
 		// Now put the identifier into dc:subject
-		$dest[$dc_id] = $source[$cat_id];
+		$dest[$dc_id] = isset($source[$cat_id])
+			? $source[$cat_id]
+			: null; // Avoid PHP notice nastygrams - the source key is probably missing because was a self-closing or empty node
 	} /* MagpieFromSimplePie::normalize_category */
 
 	/**
