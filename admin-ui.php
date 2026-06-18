@@ -127,6 +127,10 @@ endif;
 function fwp_update_set_results_message( $delta, $joiner = ';' ) {
 
 	$mesg = array();
+	if (isset($delta['new'])) : $mesg[] = ' '.$delta['new'].' new posts were syndicated'; endif;
+	if (isset($delta['updated']) and ($delta['updated'] != 0)) : $mesg[] = ' '.$delta['updated'].' existing posts were updated'; endif;
+	if (isset($delta['stored']) and ($delta['stored'] != 0)) : $mesg[] = ' '.$delta['stored'].' alternate versions of existing posts were stored for reference'; endif;
+    if (isset($delta['failed']) and ($delta['failed'] != 0)) : $mesg[] = ' Failed to import '.$delta['failed'].' post' . ($delta['failed'] != 1 ? 's' : ''); endif;
 
 	$delta = wp_parse_args(
 		$delta,
