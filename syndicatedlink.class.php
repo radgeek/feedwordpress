@@ -37,11 +37,11 @@ require_once dirname( __FILE__ ) . '/magpiefromsimplepie.class.php';
 require_once dirname( __FILE__ ) . '/feedwordpressparsedpostmeta.class.php';
 
 class SyndicatedLink {
-	var $id = null;
-	var $link = null;
-	var $settings = array ();
+	public $id = null;
+	public $link = null;
+	public $settings = array ();
 	public $simplepie = null;
-	var $magpie = null;
+	public $magpie = null;
 
 	public function __construct( $link ) {
 		if (is_object($link)) :
@@ -269,7 +269,12 @@ class SyndicatedLink {
 							$processed[] = $post->guid();
 							if ( ! $post->filtered()) :
 								$new = $post->store();
-								if ( $new !== false ) $new_count[$new]++;
+								if ( $new !== false ) {
+									if (!isset($new_count[$new])) {
+										$new_count[$new] = 0;
+									}
+									$new_count[$new]++;
+								}
 							endif;
 
 							if ( !is_null($crash_ts) and (time() > $crash_ts)) :
@@ -277,7 +282,6 @@ class SyndicatedLink {
 								break;
 							endif;
 						endif;
-
 						unset($post);
 					endif;
 				endforeach;
@@ -392,27 +396,36 @@ class SyndicatedLink {
 		);
 	} /* SyndicatedLink::do_update_ttl () */
 
-	public function process_retirements ($delta) {
+public function process_retirements ($delta) {
 		$q = new WP_Query(array(
-		'fields' => '_synfrom',
-		'post_status__not' => 'fwpretired',
-		'ignore_sticky_posts' => true,
-		'meta_key' => '_feedwordpress_retire_me_'.$this->id,
-		'meta_value' => '1',
+			'post_type'           => 'post',
+			'post_status'         => 'any',
+			'posts_per_page'      => 15,
+			'ignore_sticky_posts' => true,
+			'fields'              => 'ids',
+			'meta_query'          => array(
+				array(
+					'key'     => '_feedwordpress_retire_me_' . $this->id,
+					'value'   => '1',
+					'compare' => '='
+				)
+			)
 		));
 		if ($q->have_posts()) :
-			foreach ($q->posts as $p) :
-				$old_status = $p->post_status;
-				FeedWordPress::diagnostic('syndicated_posts', 'Retiring existing post # '.$p->ID.' "'.$p->post_title.'" due to absence from a non-incremental feed.');
-				set_post_field('post_status', 'fwpretired', $p->ID);
-				wp_transition_post_status('fwpretired', $old_status, $p);
-				delete_post_meta($p->ID, '_feedwordpress_retire_me_'.$this->id);
+			foreach ($q->posts as $post_id) :
+				$p = get_post($post_id);
+				if ($p) :
+					$old_status = $p->post_status;
+					FeedWordPress::diagnostic('syndicated_posts', 'Retiring existing post # '.$p->ID.' "'.$p->post_title.'" due to absence from a non-incremental feed.');
+					set_post_field('post_status', 'fwpretired', $p->ID);
+					wp_transition_post_status('fwpretired', $old_status, $p);
+					delete_post_meta($p->ID, '_feedwordpress_retire_me_'.$this->id);
+				endif;
 			endforeach;
 		endif;
 
 		return $delta;
 	} /* SyndicatedLink::process_retirements () */
-
 	/**
 	 * Updates the URL for the feed syndicated by this link.
 	 *
@@ -886,7 +899,7 @@ class SyndicatedLink {
 		return $auth;
 	} /* SyndicatedLink::authentication_method () */
 	
-	var $postmeta = array();
+	public $postmeta = array();
 	public function postmeta ($params = array()) {
 		$params = wp_parse_args($params, /*defaults=*/ array(
 		"field" => NULL,
