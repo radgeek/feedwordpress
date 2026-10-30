@@ -2,9 +2,9 @@
 Contributors: radgeek
 Donate link: https://fwpplugin.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
-Requires at least: 4.5
-Tested up to: 7.0
-Stable tag: 2026.0517
+Requires at least: 6.2
+Tested up to: 7.1.3
+Stable tag: 2026.1016
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,16 +20,16 @@ FeedWordPress is an Atom/RSS aggregator for WordPress. It syndicates content fro
 
 [Planet]: https://web.archive.org/web/20051029095046/http://www.planetplanet.org/
 
-FeedWordPress is designed with flexibility, ease of use, and ease of configuration in mind. You'll need a working installation of WordPress (version [4.5][] or later), and it helps to have SFTP or FTP access to your web host. The ability to create cron jobs on your web host is helpful but not required.
+FeedWordPress is designed with flexibility, ease of use, and ease of configuration in mind. You'll need a working installation of WordPress (version [6.2][] or later), and it helps to have SFTP or FTP access to your web host. The ability to create cron jobs on your web host is helpful but not required.
 
   [WordPress]: https://wordpress.org/
-  [4.5]: http://codex.wordpress.org/Version_4.5
+  [6.2]: http://codex.wordpress.org/Version_6.2
 
 == Installation ==
 
 To use FeedWordPress, you will need:
 
-* 	an installed and configured copy of [WordPress](https://wordpress.org/) (version 4.5 or later).
+* 	an installed and configured copy of [WordPress](https://wordpress.org/) (version 6.2 or later).
 
 *	the ability to install new plugins on your site using either WordPress's Plugins Repository, SFTP, FTP or shell access to your web host
 
@@ -71,6 +71,12 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 4. Feed and Update Settings (defaults for all feeds)
 
 == Changelog ==
+
+= 2026.1016 =
+
+* SECURITY HARDENING: SYNDICATED CONTENT NOW TREATED AS UNTRUSTED HTML, FILTERED THROUGH WORDPRESS KSES: Syndicated post content and excerpts now always go through WordPress's KSES sanitizer before content is stored, to filter out potentially malicious content. Previous versions made a policy decision to avoid KSES filtering and possible collateral damage to valid layout markup, on the use-at-your-own-peril assumption that you would subscribe to syndication sources whose HTML you can trust. In today's security environment that no longer seems like the right trade-off; I have received requests to adopt a more security-hardened policy, and I agree that these requests are reasonable. Syndicated content is now filtered through KSES as untrusted HTML; but audiovisual embeds from YouTube, Vimeo and Spotify, as well as `video` and `audio` tags, are preserved from being filtered out, and fixed or sticky CSS positioning is also stripped out of syndicated HTML elements. `iframe` elements from sites not explicitly allowed, HTML forms, and some other interactive elements, are stripped out during sanitizing. Developers can adjust embedding rules for their own use case using the `feedwordpress_allow_syndicated_embeds` and `feedwordpress_allowed_iframe_hosts` filters. Content is filtered at the time of syndication; existing posts are not affected by this update unless you erase and resyndicate them, or updated versions appear on the source feed. Thanks to Adrien Brunner and Wordfence for the report. Analysis and patch drafted with help from Claude (Anthropic). Addresses CVE-2026-110530. 
+
+* WORDPRESS VERSION SUPPORT: NOW REQUIRES WORDPRESS 6.2 OR LATER: I'm dropping testing and version support for versions of WordPress prior to version 6.2; some of the new filtering code depends on WordPress 6.2 or later.
 
 = 2026.0517 =
 

@@ -1720,17 +1720,26 @@ class SyndicatedPost {
 			// This is a ridiculous fucking kludge necessitated by WordPress 2.6 munging authorship meta-data
 			add_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
 
-			// Kludge to prevent kses filters from stripping the
-			// content of posts when updating without a logged in
-			// user who has `unfiltered_html` capability.
-			$mungers = array('wp_filter_kses', 'wp_filter_post_kses');
-			$removed = array();
-			foreach ($mungers as $munger) :
-				if (has_filter('content_save_pre', $munger)) :
-					remove_filter('content_save_pre', $munger);
-					$removed[] = $munger;
-				endif;
-			endforeach;
+			// Always run syndicated content through kses, using the
+			// rules WordPress applies to users without `unfiltered_html`,
+			// no matter who (if anyone) triggered this update.
+			$kses_forced = ! has_filter('content_save_pre', 'wp_filter_post_kses');
+			if ($kses_forced) :
+				kses_init_filters();
+			endif;
+
+			// Let kses keep <video>, <audio>, and iframes from a short
+			// list of trusted video hosts in syndicated post content.
+			$allow_embeds = apply_filters('feedwordpress_allow_syndicated_embeds', true, $this);
+			if ($allow_embeds) :
+				add_filter('content_save_pre', array(__CLASS__, 'kses_embeds_open'), 9);
+				add_filter('content_save_pre', array(__CLASS__, 'kses_embeds_close'), 11);
+			endif;
+
+			// kses allows position:fixed/sticky in style attributes,
+			// which lets feed content overlay the whole page.
+			add_filter('content_save_pre', array(__CLASS__, 'strip_fixed_positioning'), 12);
+			add_filter('excerpt_save_pre', array(__CLASS__, 'strip_fixed_positioning'), 12);
 
 			if ($update and function_exists('get_post_field')) :
 				// Don't munge status fields that the user may
@@ -1824,11 +1833,19 @@ class SyndicatedPost {
 			/*arguments=*/ 3
 			);
 
-			// Turn off ridiculous fucking kludges #1 and #2
+			// Turn off ridiculous fucking kludge #1
 			remove_action('_wp_put_post_revision', array($this, 'fix_revision_meta'));
-			foreach ($removed as $filter) :
-				add_filter('content_save_pre', $filter);
-			endforeach;
+
+			// Restore normal content filtering for the current user.
+			if ($allow_embeds) :
+				remove_filter('content_save_pre', array(__CLASS__, 'kses_embeds_open'), 9);
+				remove_filter('content_save_pre', array(__CLASS__, 'kses_embeds_close'), 11);
+			endif;
+			remove_filter('content_save_pre', array(__CLASS__, 'strip_fixed_positioning'), 12);
+			remove_filter('excerpt_save_pre', array(__CLASS__, 'strip_fixed_positioning'), 12);
+			if ($kses_forced) :
+				kses_init();
+			endif;
 
 			$this->validate_post_id($dbpost, $update, array(__CLASS__, __FUNCTION__));
 
@@ -1836,6 +1853,170 @@ class SyndicatedPost {
 		endif;
 		return $ret;
 	} /* function SyndicatedPost::insert_post () */
+
+	/**
+	 * SyndicatedPost::kses_allow_embeds() -- wp_kses_allowed_html filter that
+	 * adds <video>, <audio>, their <source>/<track> children, and a minimal
+	 * <iframe> to the 'post' context. Only hooked in (by kses_embeds_open())
+	 * for the duration of kses's pass over syndicated post_content.
+	 *
+	 * Iframe attributes are deliberately minimal: never srcdoc (runs in our
+	 * origin), allow (delegates browser permissions), sandbox, name or style.
+	 * Iframe hosts are checked afterward by restrict_iframe_hosts().
+	 */
+	static function kses_allow_embeds ($allowed, $context) {
+		if ('post' !== $context) :
+			return $allowed;
+		endif;
+
+		$allowed['video'] = array_merge(isset($allowed['video']) ? $allowed['video'] : array(), array(
+			'controls' => true, 'width' => true, 'height' => true, 'preload' => true,
+			'muted' => true, 'loop' => true, 'playsinline' => true, 'src' => true, 'poster' => true,
+		));
+		$allowed['audio'] = array_merge(isset($allowed['audio']) ? $allowed['audio'] : array(), array(
+			'controls' => true, 'preload' => true, 'muted' => true, 'loop' => true, 'src' => true,
+		));
+		$allowed['source'] = array('src' => true, 'type' => true);
+		$allowed['track'] = array('src' => true, 'kind' => true, 'srclang' => true, 'label' => true, 'default' => true);
+		$allowed['iframe'] = array(
+			'src' => true, 'width' => true, 'height' => true,
+			'title' => true, 'allowfullscreen' => true, 'loading' => true,
+		);
+		return $allowed;
+	} /* SyndicatedPost::kses_allow_embeds () */
+
+	/**
+	 * SyndicatedPost::kses_embeds_open() -- content_save_pre @ 9, just
+	 * before kses (@ 10): widen the allowlist for this one kses pass.
+	 */
+	static function kses_embeds_open ($content) {
+		add_filter('wp_kses_allowed_html', array(__CLASS__, 'kses_allow_embeds'), 10, 2);
+		return $content;
+	} /* SyndicatedPost::kses_embeds_open () */
+
+	/**
+	 * SyndicatedPost::kses_embeds_close() -- content_save_pre @ 11, just
+	 * after kses: close the widened allowlist, then host-check iframes.
+	 */
+	static function kses_embeds_close ($content) {
+		remove_filter('wp_kses_allowed_html', array(__CLASS__, 'kses_allow_embeds'), 10);
+		return self::restrict_iframe_hosts($content);
+	} /* SyndicatedPost::kses_embeds_close () */
+
+	/**
+	 * SyndicatedPost::restrict_iframe_hosts() -- keep only https iframes on
+	 * an exact host + path allowlist; remove all others. Fails closed: if
+	 * the HTML parser can't account for every iframe, strip them all.
+	 *
+	 * @param string $content Slashed post content (as on content_save_pre).
+	 * @return string Slashed post content.
+	 */
+	static function restrict_iframe_hosts ($content) {
+		if (false === stripos($content, '<iframe')) :
+			return $content;
+		endif;
+
+		$youtube = '#^/embed/[A-Za-z0-9_-]+/?$#';
+		$hosts = apply_filters('feedwordpress_allowed_iframe_hosts', array(
+			'www.youtube.com' => $youtube,
+			'youtube.com' => $youtube,
+			'www.youtube-nocookie.com' => $youtube,
+			'youtube-nocookie.com' => $youtube,
+			'player.vimeo.com' => '#^/video/[0-9]+/?$#',
+			'open.spotify.com' => '#^/embed/(track|album|playlist|episode|show|artist)/[A-Za-z0-9]+/?$#',
+		));
+
+		$html = wp_unslash($content);
+		$p = new WP_HTML_Tag_Processor($html);
+		$bad = false; $seen = 0;
+		while ($p->next_tag('IFRAME')) :
+			if ($p->is_tag_closer()) :
+				continue;
+			endif;
+			$seen++;
+
+			$parts = wp_parse_url((string) $p->get_attribute('src')); // entity-decoded
+			$host = (is_array($parts) and isset($parts['host'])) ? strtolower($parts['host']) : '';
+			$ok = ($host and isset($hosts[$host], $parts['scheme'], $parts['path'])
+				and 'https' === strtolower($parts['scheme'])
+				and ! isset($parts['user']) and ! isset($parts['pass']) and ! isset($parts['port'])
+				and preg_match($hosts[$host], $parts['path']));
+
+			if ($ok) :
+				$p->set_attribute('allow', 'encrypted-media; picture-in-picture; fullscreen');
+				$p->set_attribute('referrerpolicy', 'strict-origin-when-cross-origin');
+			else :
+				$p->remove_attribute('src');
+				$p->set_attribute('data-fwp-blocked-iframe', '1');
+				$bad = true;
+			endif;
+		endwhile;
+
+		// paused_at_incomplete_token() is WP 6.5+; on 6.2-6.4 the count
+		// comparison below is what catches an unclosed or unparsed iframe.
+		$visited_all = ! (method_exists($p, 'paused_at_incomplete_token') and $p->paused_at_incomplete_token());
+		$html = $p->get_updated_html();
+
+		if ( ! $visited_all or preg_match_all('#<iframe\b#i', $html) !== $seen) :
+			return wp_slash(preg_replace('#</?iframe\b[^>]*>?#i', '', $html));
+		endif;
+
+		if ($bad) :
+			$html = preg_replace('#<iframe\b[^>]*\bdata-fwp-blocked-iframe="1"[^>]*>.*?</iframe>#is', '', $html);
+			$html = preg_replace('#<iframe\b[^>]*\bdata-fwp-blocked-iframe="1"[^>]*>#is', '', $html);
+		endif;
+		return wp_slash($html);
+	} /* SyndicatedPost::restrict_iframe_hosts () */
+
+	/**
+	 * SyndicatedPost::strip_fixed_positioning() -- content_save_pre and
+	 * excerpt_save_pre @ 12, after kses: remove any CSS `position`
+	 * declaration from style attributes unless its value is static,
+	 * relative or absolute. That removes fixed and sticky (incl.
+	 * -webkit-sticky), and also var(...) values, which kses allows and
+	 * which could otherwise resolve to fixed via a custom property.
+	 *
+	 * @param string $content Slashed content (as on *_save_pre).
+	 * @return string Slashed content.
+	 */
+	static function strip_fixed_positioning ($content) {
+		if (false === stripos($content, 'position')) :
+			return $content;
+		endif;
+
+		$html = wp_unslash($content);
+		$p = new WP_HTML_Tag_Processor($html);
+		while ($p->next_tag()) :
+			$style = $p->get_attribute('style'); // entity-decoded
+			if ( ! is_string($style) or false === stripos($style, 'position')) :
+				continue;
+			endif;
+
+			$kept = array();
+			foreach (explode(';', $style) as $decl) :
+				if (preg_match('/^\s*position\s*:(.*)$/is', $decl, $m)
+				and ! preg_match('/^\s*(static|relative|absolute)\s*(!\s*important\s*)?$/i', $m[1])) :
+					continue;
+				endif;
+				$kept[] = $decl;
+			endforeach;
+
+			$style = trim(implode(';', $kept), " \t\n\r;");
+			if ('' === $style) :
+				$p->remove_attribute('style');
+			else :
+				$p->set_attribute('style', $style);
+			endif;
+		endwhile;
+		$html = $p->get_updated_html();
+
+		// Fail closed: an unterminated tag at the end of the content is
+		// never visited by the parser (and browsers drop it anyway), but
+		// text appended later, e.g. boilerplate, could complete it. Drop it.
+		$html = preg_replace('#<[a-z][^>]*$#i', '', $html);
+
+		return wp_slash($html);
+	} /* SyndicatedPost::strip_fixed_positioning () */
 
 	/**
 	 * SyndicatedPost::insert_new(). Uses the data collected in this post object to insert
