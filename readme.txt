@@ -3,7 +3,7 @@ Contributors: radgeek
 Donate link: https://fwpplugin.com/donate/
 Tags: syndication, aggregation, feed, atom, rss
 Requires at least: 6.2
-Tested up to: 7.1.3
+Tested up to: 7.1.4
 Stable tag: 2026.1016
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -71,6 +71,10 @@ FeedWordPress has many options which can be accessed through the WordPress Dashb
 4. Feed and Update Settings (defaults for all feeds)
 
 == Changelog ==
+
+= 2026.1030 =
+
+* BUG FIX FOR FEED UPDATES HANGING ON SOME FEEDS WITH LONG AUTHOR URLS: You may have encountered a bug preventing some feeds from completing a full update when the author URL for a post is too long -- most often, this appears when syndicating comment feeds, which may include long full post URLs when listing pingbacks in the feed. This update catches that and should allow updates to complete successfully. Tested and co-authored with Claude (Anthropic).
 
 = 2026.1016 =
 

@@ -2557,6 +2557,14 @@ EOM;
 								// Reassemble
 								$userdata['user_email'] = $parts[0].'@'.$parts[1];
 								break;
+							case 'user_url_too_long' :
+								// WordPress limits user_url to 100 characters. Long
+								// URLs are common for pingback authors in comment
+								// feeds. Fall back to the site's root URL, or none.
+								$url = wp_parse_url($userdata['user_url']);
+								$root = (isset($url['scheme'], $url['host']) ? $url['scheme'].'://'.$url['host'].'/' : '');
+								$userdata['user_url'] = (mb_strlen($root) <= 100 ? $root : '');
+								break;
 							default :
 								if ( $insanity > 10 ) :
 									// Try some settings that are unlikely to cause complaint...
@@ -2565,14 +2573,14 @@ EOM;
 									$userdata['user_login'] = substr(md5(uniqid(microtime())), 0, 6);
 									$userdata['user_nicename'] = $userdata['user_login'];
 									$userdata['user_email'] = 'noreply@' . $url['host'];
-								elseif ( $insanity > 50 ) :
-									// Stop doing the same thing and expecting a different result
-									break;
+									$userdata['user_url'] = '';
 								endif;
 							endswitch;
 						endif;
 						$insanity = $insanity + 1;
-					} while (is_wp_error($id));
+
+					// Stop doing the same thing and expecting a different result
+					} while (is_wp_error($id) and $insanity <= 50);
 
 					// $id should now contain the numeric ID of a newly minted
 					// user account. Let's mark them as having been generated

@@ -3,7 +3,7 @@
 Plugin Name: FeedWordPress
 Plugin URI: https://fwpplugin.com/
 Description: simple and flexible Atom/RSS syndication for WordPress
-Version: 2026.1016
+Version: 2026.1030
 Author: C. Johnson
 Author URI: https://fwpplugin.com/contact/
 License: GPL
@@ -11,7 +11,7 @@ License: GPL
 
 /**
  * @package FeedWordPress
- * @version 2026.1016
+ * @version 2026.1030
  */
 
 # This plugin uses code derived from:
@@ -31,7 +31,7 @@ License: GPL
 ## CONSTANTS & DEFAULTS ############################################################
 ####################################################################################
 
-define ('FEEDWORDPRESS_VERSION', '2026.1016');
+define ('FEEDWORDPRESS_VERSION', '2026.1030');
 define ('FEEDWORDPRESS_AUTHOR_CONTACT', 'https://fwpplugin.com/contact' );
 
 if ( ! defined( 'FEEDWORDPRESS_BLEG' ) ) :
